@@ -1,1 +1,60 @@
-helloworld2
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>自己紹介</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 0.8em;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>自己紹介</h1>
+        <p>tarakokko3233</p>
+        <p>各種リンク</p>
+        <ul>
+            <li><a href="https://github.com/tarakokko3233" target="_blank">GitHub</a></li>
+            <li>Email: <a href="mailto:tarakokko3233@gmail.com">youremail@gmail.com</a></li>
+            <li><a href="https://twitter.com/tarakokko3233" target="_blank">Twitter</a></li>
+        </ul>
+        <div class="footer">
+            <p>現在の年: <span id="year"></span></p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('year').textContent = new Date().getFullYear();
+
+        // ここにJavaScriptを追加できます。例えば、クリックイベントのリスナーなど。
+    </script>
+</body>
+</html>
