@@ -2,93 +2,224 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>自己紹介</title>
+    <title>Self Introduction Animation</title>
     <style>
-        body {
-            font-family: 'Arial', sans-serif;
+        body, html {
+            height: 300%;
             margin: 0;
-            padding: 0;
-            background-color: #f4f4f4;
-            color: #333;
+            overflow-y: scroll;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); /* グラデーションを設定 */
+            color: #fff;
+            font-family: 'Arial', sans-serif;
         }
-        .container {
-            max-width: 800px;
-            margin: auto;
-            padding: 20px;
-            background-color: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            position: relative;
-            z-index: 2;
+        #scrollPrompt {
+            position: fixed;
+            top: 20%;
+            left: 20%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            color: #fff;
+            z-index: 1000;
+            display: none;
+        }
+        #portfolio {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 18px;
+            color: #000;
+            z-index: 100;
+            display: none;
         }
         canvas {
+            display: block;
             position: fixed;
             top: 0;
             left: 0;
-            z-index: 1;
         }
-        h1 {
-            color: #333;
+        #tooltip {
+            display: none;
+            position: fixed;
+            background-color: white;
+            color: black;
+            padding: 8px;
+            border-radius: 5px;
+            font-size: 14px;
+            z-index: 1000;
         }
-        a {
-            color: #007bff;
-            text-decoration: none;
-        }
-        a:hover {
-            text-decoration: underline;
-        }
-        .footer {
-            margin-top: 20px;
-            font-size: 0.8em;
-            text-align: center;
+        .portfolio-item {
+            background-color: #fff;
+            color: #000;
+            margin: 20px;
+            padding: 20px;
+            border-radius: 10px;
         }
     </style>
-    <!-- Three.js CDN -->
+
     <script src="https://unpkg.com/three@0.132.2/build/three.min.js"></script>
 </head>
 <body>
-    <div class="container">
-        <h1>自己紹介</h1>
-        <p>tarakokko3233</p>
-        <p>以下のリンクから私についてもっと知ることができます：</p>
-        <ul>
-            <li><a href="https://github.com/yourusername" target="_blank">GitHub</a></li>
-            <li>Email: <a href="mailto:youremail@gmail.com">youremail@gmail.com</a></li>
-            <li><a href="https://twitter.com/yourusername" target="_blank">Twitter</a></li>
-        </ul>
-        <div class="footer">
-            <p>現在の年: <span id="year"></span></p>
-        </div>
+    <div id="scrollPrompt">スクロールしてね</div>
+    <div id="tooltip"></div>
+    <div id="portfolio" style="display:none;">
+        <div class="portfolio-item">tarakokko3233's portfolio</div>
+        <div class="portfolio-item">基本情報技術者試験合格 </div>
+        <div class="portfolio-item">プロジェクト3: <a href="#">リンク</a></div>
     </div>
-    </div>
+<script>
+let scene = new THREE.Scene();
+let camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+let renderer = new THREE.WebGLRenderer({ alpha: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
 
-    <script>
-        document.getElementById('year').textContent = new Date().getFullYear();
+let textMeshes = [];
+let linkMeshes = [];
+let loader = new THREE.FontLoader();
+let scrollProgress = 0;
 
-        // Three.jsのコード
-        let scene = new THREE.Scene();
-        let camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
-        let renderer = new THREE.WebGLRenderer();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
+camera.position.z = 500;
 
-        let geometry = new THREE.BoxGeometry();
-        let material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-        let cube = new THREE.Mesh(geometry, material);
-        scene.add(cube);
+// selfintroductionのテキスト生成と配置
+loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function(font) {
+    const texts = ['tarakokko3233', 'Introduction'];
+    let offset = window.innerWidth / 30; // 文字の間隔を調整
+    texts.forEach((text, index) => {
+        let yPosition = index * 50 - 25; // Y位置と文字サイズの調整により変更
+        for (let i = 0; i < text.length; i++) {
+            let geometry = new THREE.TextGeometry(text[i], {
+                font: font,
+                size: 30, // 文字サイズを小さく調整
+                height: 5,
+                curveSegments: 12,
+            });
+            let material = new THREE.MeshBasicMaterial({ color: 0x000000 });
+            let mesh = new THREE.Mesh(geometry, material);
+            let randomX = Math.random() * window.innerWidth * 0.8 - window.innerWidth * 0.4;
+            let randomY = Math.random() * 200 - 100 + yPosition;
+            mesh.position.set(randomX, randomY, 0);
+            scene.add(mesh);
+            textMeshes.push({mesh, initialPosition: mesh.position.clone(), finalPosition: new THREE.Vector3(i * offset - (text.length - 1) * offset / 2, yPosition, 0)});
+        }
+    });
+    createLinks(); // テキストが配置された後にリンクを作成
+});
 
-        camera.position.z = 5;
+// リンク図形の生成と配置
+function createLinks() {
+    const linkData = [
+        { url: 'https://twitter.com/tarakokko3233', color: 0x1DA1F2 },
+        { url: 'https://github.com/tarakokko3233', color: 0x333333 },
+        { url: 'https://qiita.com/tarakokko3233', color: 0x55C500 },
+        { url: 'mailto:tarakokko3233@gmail.com', color: 0xE4405F },
+    ];
+    const offset = window.innerWidth / (linkData.length + 1);
+    linkData.forEach((link, index) => {
+        let geometry = new THREE.BoxGeometry(50, 50, 50);
+        let material = new THREE.MeshBasicMaterial({ color: link.color });
+        let mesh = new THREE.Mesh(geometry, material);
+        mesh.position.set((index - linkData.length / 2) * offset, -window.innerHeight, 0);
+        mesh.userData = { url: link.url };
+        scene.add(mesh);
+        linkMeshes.push(mesh);
+    });
+}
 
-        function animate() {
-            requestAnimationFrame(animate);
+// スクロールイベントでアニメーションを更新
+function update() {
+    scrollProgress = window.scrollY / (document.body.scrollHeight - window.innerHeight);
+    textMeshes.forEach(({mesh, initialPosition, finalPosition}) => {
+        mesh.position.lerpVectors(initialPosition, finalPosition, Math.min(scrollProgress * 2, 1));
+    });
+    if (scrollProgress > 0.25) {
+        let linkProgress = Math.min((scrollProgress - 0.25) * 2, 1);
+        linkMeshes.forEach((mesh, index) => {
+            let targetY = -250;
+            mesh.position.y = THREE.MathUtils.lerp(window.innerHeight * 0.5, targetY, linkProgress);
+            mesh.rotation.x += 0.05;
+            mesh.rotation.y += 0.05;
+        });
+    }
+}
 
-            cube.rotation.x += 0.01;
-            cube.rotation.y += 0.01;
+window.addEventListener('scroll', update);
 
-            renderer.render(scene, camera);
+// リンククリックイベント
+renderer.domElement.addEventListener('click', (event) => {
+    let mouse = new THREE.Vector2(
+        (event.clientX / window.innerWidth) * 2 - 1,
+        -(event.clientY / window.innerHeight) * 2 + 1
+    );
+    let raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, camera);
+    let intersects = raycaster.intersectObjects(linkMeshes);
+    if (intersects.length > 0) {
+        let url = intersects[0].object.userData.url;
+        window.open(url, '_blank');
+    }
+});
+
+function animate() {
+    requestAnimationFrame(animate);
+    renderer.render(scene, camera);
+}
+
+animate();
+document.body.addEventListener('mousemove', (event) => {
+    let mouse = new THREE.Vector2(
+        (event.clientX / window.innerWidth) * 2 - 1,
+        -(event.clientY / window.innerHeight) * 2 + 1
+    );
+    let raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, camera);
+    let intersects = raycaster.intersectObjects(linkMeshes);
+
+    let tooltip = document.getElementById('tooltip');
+    if (intersects.length > 0) {
+        let intersected = intersects[0].object;
+        let text = "";
+        switch (intersected.userData.url) {
+            case 'https://twitter.com/tarakokko3233':
+                text = "Twitter";
+                break;
+            case 'https://github.com/tarakokko3233':
+                text = "GitHub";
+                break;
+            case 'https://qiita.com/tarakokko3233':
+                text = "Qiita";
+                break;
+            case 'mailto:tarakokko3233@gmail.com':
+                text = "Email";
+                break;
+            default:
+                text = "";
+                break;
+        }
+        tooltip.style.display = 'block';
+        tooltip.style.left = `${event.clientX + 10}px`;
+        tooltip.style.top = `${event.clientY + 10}px`;
+        tooltip.textContent = text;
+    } else {
+        tooltip.style.display = 'none';
+    }
+});
+function showPortfolio() {
+            document.getElementById('portfolio').style.display = 'block';
         }
 
-        animate();
-    </script>
+        window.addEventListener('scroll', function() {
+            // Example condition: if the user scrolled to the bottom, hide animations and show portfolio
+            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight) {
+                // Hide animations
+                textMeshes.forEach(mesh => mesh.mesh.visible = false);
+
+                document.getElementById('scrollPrompt').style.display = 'none';
+
+                // Show portfolio
+                showPortfolio();
+            }
+        });
+</script>
 </body>
 </html>
