@@ -18,6 +18,14 @@
             background-color: #fff;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: relative;
+            z-index: 2;
+        }
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1;
         }
         h1 {
             color: #333;
@@ -35,26 +43,52 @@
             text-align: center;
         }
     </style>
+    <!-- Three.js CDN -->
+    <script src="https://unpkg.com/three@0.132.2/build/three.min.js"></script>
 </head>
 <body>
     <div class="container">
         <h1>自己紹介</h1>
         <p>tarakokko3233</p>
-        <p>各種リンク</p>
+        <p>以下のリンクから私についてもっと知ることができます：</p>
         <ul>
-            <li><a href="https://github.com/tarakokko3233" target="_blank">GitHub</a></li>
-            <li>Email: <a href="mailto:tarakokko3233@gmail.com">youremail@gmail.com</a></li>
-            <li><a href="https://twitter.com/tarakokko3233" target="_blank">Twitter</a></li>
+            <li><a href="https://github.com/yourusername" target="_blank">GitHub</a></li>
+            <li>Email: <a href="mailto:youremail@gmail.com">youremail@gmail.com</a></li>
+            <li><a href="https://twitter.com/yourusername" target="_blank">Twitter</a></li>
         </ul>
         <div class="footer">
             <p>現在の年: <span id="year"></span></p>
         </div>
     </div>
+    </div>
 
     <script>
         document.getElementById('year').textContent = new Date().getFullYear();
 
-        // ここにJavaScriptを追加できます。例えば、クリックイベントのリスナーなど。
+        // Three.jsのコード
+        let scene = new THREE.Scene();
+        let camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+        let renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        let geometry = new THREE.BoxGeometry();
+        let material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+        let cube = new THREE.Mesh(geometry, material);
+        scene.add(cube);
+
+        camera.position.z = 5;
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            cube.rotation.x += 0.01;
+            cube.rotation.y += 0.01;
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
     </script>
 </body>
 </html>
