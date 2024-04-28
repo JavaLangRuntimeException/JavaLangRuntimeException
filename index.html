@@ -55,17 +55,84 @@
             padding: 20px;
             border-radius: 10px;
         }
+        .bubble {
+            display: none;
+            position: absolute;
+            background-color: white;
+            color: black;
+            padding: 8px;
+            border-radius: 5px;
+            font-size: 14px;
+            z-index: 1000;
+            transform: translateY(-60px);
+            text-align: center;
+        }
+        .bubble::after {
+            content: "";
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: white transparent transparent transparent;
+        }
+        .small-bubble {
+            display: none;
+            position: absolute;
+            background-color: white;
+            color: black;
+            padding: 4px;
+            border-radius: 3px;
+            font-size: 12px;
+            z-index: 1000;
+            transform: translateY(-30px);
+            text-align: center;
+        }
+        .white-square {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 80%;
+        max-width: 600px;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        display: none;
+        color: black;
+        text-align: center;
+    }
+
+    .white-square h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .white-square h2 {
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+
+        .white-square p {
+            font-size: 18px;
+        }
     </style>
 
     <script src="https://unpkg.com/three@0.132.2/build/three.min.js"></script>
 </head>
 <body>
-    <div id="scrollPrompt">スクロールしてね</div>
-    <div id="tooltip"></div>
-    <div id="portfolio" style="display:none;">
-        <div class="portfolio-item">tarakokko3233's portfolio</div>
-        <div class="portfolio-item">基本情報技術者試験合格 </div>
-        <div class="portfolio-item">プロジェクト3: <a href="#">リンク</a></div>
+    <div class="portfolio-item">tarakokko3233です! スクロールしてね</div>
+    <div class="white-square">
+        <h1>Portfolio Links</h1>
+        <h2>各色の立方体をクリックしてね</h2>
+        <p>白:ポートフォリオ</p>
+        <p>青:X(Twitter)</p>
+        <p>黒:GitHub</p>
+        <p>緑:Qiita</p>
+        <p>赤:Email送信</p>
+        <p>Email:tarakokko32332gmail.com</p>
+        <p>※各リンクは新しいタブで開きます</p>
     </div>
 <script>
 let scene = new THREE.Scene();
@@ -83,7 +150,7 @@ camera.position.z = 500;
 
 // selfintroductionのテキスト生成と配置
 loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function(font) {
-    const texts = ['tarakokko3233', 'Introduction'];
+    const texts = ['tarakokko3233', 'Portfolio Links'];
     let offset = window.innerWidth / 30; // 文字の間隔を調整
     texts.forEach((text, index) => {
         let yPosition = index * 50 - 25; // Y位置と文字サイズの調整により変更
@@ -109,43 +176,34 @@ loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json
 // リンク図形の生成と配置
 function createLinks() {
     const linkData = [
-        { url: 'https://twitter.com/tarakokko3233', color: 0x1DA1F2 },
-        { url: 'https://github.com/tarakokko3233', color: 0x333333 },
-        { url: 'https://qiita.com/tarakokko3233', color: 0x55C500 },
-        { url: 'mailto:tarakokko3233@gmail.com', color: 0xE4405F },
+        { url: 'https://tarakokko3233.github.io/', color: 0xFFFFFF, text: 'Portfolio' },
+        { url: 'https://twitter.com/tarakokko3233', color: 0x1DA1F2, text: 'Twitter' },
+        { url: 'https://github.com/tarakokko3233', color: 0x333333, text: 'GitHub' },
+        { url: 'https://qiita.com/tarakokko3233', color: 0x55C500, text: 'Qiita' },
+        { url: 'mailto:tarakokko3233@gmail.com', color: 0xE4405F, text: 'Email' },
     ];
     const offset = window.innerWidth / (linkData.length + 1);
     linkData.forEach((link, index) => {
         let geometry = new THREE.BoxGeometry(50, 50, 50);
         let material = new THREE.MeshBasicMaterial({ color: link.color });
         let mesh = new THREE.Mesh(geometry, material);
-        mesh.position.set((index - linkData.length / 2) * offset, -window.innerHeight, 0);
-        mesh.userData = { url: link.url };
+        mesh.position.set((index - linkData.length / 2) * offset + window.innerWidth / 10, -window.innerHeight, 0);
+        mesh.userData = { url: link.url, text: link.text };
         scene.add(mesh);
         linkMeshes.push(mesh);
+
+        // 吹き出しの作成
+        let bubble = document.createElement('div');
+        bubble.className = 'bubble';
+        bubble.textContent = link.text;
+        document.body.appendChild(bubble);
+        mesh.userData.bubble = bubble;
     });
 }
 
-// スクロールイベントでアニメーションを更新
-function update() {
-    scrollProgress = window.scrollY / (document.body.scrollHeight - window.innerHeight);
-    textMeshes.forEach(({mesh, initialPosition, finalPosition}) => {
-        mesh.position.lerpVectors(initialPosition, finalPosition, Math.min(scrollProgress * 2, 1));
-    });
-    if (scrollProgress > 0.25) {
-        let linkProgress = Math.min((scrollProgress - 0.25) * 2, 1);
-        linkMeshes.forEach((mesh, index) => {
-            let targetY = -250;
-            mesh.position.y = THREE.MathUtils.lerp(window.innerHeight * 0.5, targetY, linkProgress);
-            mesh.rotation.x += 0.05;
-            mesh.rotation.y += 0.05;
-        });
-    }
-}
 
 window.addEventListener('scroll', update);
 
-// リンククリックイベント
 renderer.domElement.addEventListener('click', (event) => {
     let mouse = new THREE.Vector2(
         (event.clientX / window.innerWidth) * 2 - 1,
@@ -160,12 +218,46 @@ renderer.domElement.addEventListener('click', (event) => {
     }
 });
 
-function animate() {
-    requestAnimationFrame(animate);
-    renderer.render(scene, camera);
+// スクロールイベントでアニメーションを更新
+function update() {
+    scrollProgress = window.scrollY / (document.body.scrollHeight - window.innerHeight);
+    textMeshes.forEach(({mesh, initialPosition, finalPosition}) => {
+        mesh.position.lerpVectors(initialPosition, finalPosition, Math.min(scrollProgress * 2, 1));
+    });
+
+        let linkProgress = Math.min((scrollProgress - 0.25) * 2, 1);
+        linkMeshes.forEach((mesh, index) => {
+            let targetY = -250;
+            mesh.position.y = THREE.MathUtils.lerp(window.innerHeight * 0.5, targetY, linkProgress);
+            mesh.rotation.x += 0.05;
+            mesh.rotation.y += 0.05;
+
+            // 吹き出しの位置を更新してるんだけど動かない
+            let screenPosition = mesh.position.clone();
+            screenPosition.project(camera);
+            screenPosition.x = (screenPosition.x + 1) / 2 * window.innerWidth;
+            screenPosition.y = -(screenPosition.y - 1) / 2 * window.innerHeight;
+
+            let bubble = mesh.userData.bubble;
+            bubble.style.left = `${screenPosition.x}px`;
+            bubble.style.top = `${screenPosition.y - 80}px`;
+        });
+
+
+    // ページの一番下までスクロールしたらテキストを非表示にし、白い四角を表示
+    if (window.innerHeight + window.scrollY >= document.body.offsetHeight) {
+        textMeshes.forEach(({mesh}) => {
+            mesh.visible = false;
+        });
+        document.querySelector('.white-square').style.display = 'block';
+    } else {
+        textMeshes.forEach(({mesh}) => {
+            mesh.visible = true;
+        });
+        document.querySelector('.white-square').style.display = 'none';
+    }
 }
 
-animate();
 document.body.addEventListener('mousemove', (event) => {
     let mouse = new THREE.Vector2(
         (event.clientX / window.innerWidth) * 2 - 1,
@@ -175,51 +267,29 @@ document.body.addEventListener('mousemove', (event) => {
     raycaster.setFromCamera(mouse, camera);
     let intersects = raycaster.intersectObjects(linkMeshes);
 
-    let tooltip = document.getElementById('tooltip');
-    if (intersects.length > 0) {
-        let intersected = intersects[0].object;
-        let text = "";
-        switch (intersected.userData.url) {
-            case 'https://twitter.com/tarakokko3233':
-                text = "Twitter";
-                break;
-            case 'https://github.com/tarakokko3233':
-                text = "GitHub";
-                break;
-            case 'https://qiita.com/tarakokko3233':
-                text = "Qiita";
-                break;
-            case 'mailto:tarakokko3233@gmail.com':
-                text = "Email";
-                break;
-            default:
-                text = "";
-                break;
+    linkMeshes.forEach((mesh) => {
+        let bubble = mesh.userData.bubble;
+
+        if (intersects.length > 0 && intersects[0].object === mesh) {
+            bubble.style.display = 'block';
+            bubble.style.opacity = '1';
+        } else {
+            bubble.style.opacity = '0';
+            setTimeout(() => {
+                if (bubble.style.opacity === '0') {
+                    bubble.style.display = 'none';
+                }
+            }, 200);
         }
-        tooltip.style.display = 'block';
-        tooltip.style.left = `${event.clientX + 10}px`;
-        tooltip.style.top = `${event.clientY + 10}px`;
-        tooltip.textContent = text;
-    } else {
-        tooltip.style.display = 'none';
-    }
+    });
 });
-function showPortfolio() {
-            document.getElementById('portfolio').style.display = 'block';
-        }
 
-        window.addEventListener('scroll', function() {
-            // Example condition: if the user scrolled to the bottom, hide animations and show portfolio
-            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight) {
-                // Hide animations
-                textMeshes.forEach(mesh => mesh.mesh.visible = false);
+function animate() {
+    requestAnimationFrame(animate);
+    renderer.render(scene, camera);
+}
 
-                document.getElementById('scrollPrompt').style.display = 'none';
-
-                // Show portfolio
-                showPortfolio();
-            }
-        });
+animate();
 </script>
 </body>
 </html>
