@@ -2,34 +2,32 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Self Introduction Animation</title>
     <style>
         body, html {
-            height: 100%;
+            height: 300%;
             margin: 0;
             overflow-y: scroll;
-            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); /* グラデーションを設定 */
             color: #fff;
             font-family: 'Arial', sans-serif;
         }
         #scrollPrompt {
             position: fixed;
             top: 20%;
-            left: 50%;
+            left: 20%;
             transform: translate(-50%, -50%);
-            font-size: 18px;
+            font-size: 24px;
             color: #fff;
             z-index: 1000;
             display: none;
-            text-align: center;
         }
         #portfolio {
             position: fixed;
             top: 20px;
             left: 50%;
             transform: translateX(-50%);
-            font-size: 16px;
+            font-size: 18px;
             color: #000;
             z-index: 100;
             display: none;
@@ -39,8 +37,6 @@
             position: fixed;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
         }
         #tooltip {
             display: none;
@@ -58,7 +54,6 @@
             margin: 20px;
             padding: 20px;
             border-radius: 10px;
-            text-align: center;
         }
         .bubble {
             display: none;
@@ -95,30 +90,32 @@
             text-align: center;
         }
         .white-square {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 80%;
-            max-width: 400px;
-            background-color: white;
-            padding: 20px;
-            border-radius: 10px;
-            display: none;
-            color: black;
-            text-align: center;
-        }
-        .white-square h1 {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 80%;
+        max-width: 600px;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        display: none;
+        color: black;
+        text-align: center;
+    }
+
+    .white-square h1 {
             font-size: 24px;
             margin-bottom: 10px;
         }
+
         .white-square h2 {
-            font-size: 20px;
+            font-size: 24px;
             margin-bottom: 15px;
         }
+
         .white-square p {
-            font-size: 16px;
-            margin-bottom: 5px;
+            font-size: 18px;
         }
     </style>
 
@@ -185,12 +182,12 @@ function createLinks() {
         { url: 'https://qiita.com/tarakokko3233', color: 0x55C500, text: 'Qiita' },
         { url: 'mailto:tarakokko3233@gmail.com', color: 0xE4405F, text: 'Email' },
     ];
-    const offset = window.innerWidth / (linkData.length + 1);
+    const offset = window.innerWidth / (linkData.length + 6);
     linkData.forEach((link, index) => {
-        let geometry = new THREE.BoxGeometry(50, 50, 50);
+        let geometry = new THREE.BoxGeometry(30, 30, 30);
         let material = new THREE.MeshBasicMaterial({ color: link.color });
         let mesh = new THREE.Mesh(geometry, material);
-        mesh.position.set((index - linkData.length / 2) * offset + window.innerWidth / 10, -window.innerHeight, 0);
+        mesh.position.set((index - linkData.length/1.6 ) * offset + window.innerWidth / 10, -window.innerHeight, 0);
         mesh.userData = { url: link.url, text: link.text };
         scene.add(mesh);
         linkMeshes.push(mesh);
@@ -220,6 +217,22 @@ renderer.domElement.addEventListener('click', (event) => {
         window.open(url, '_blank');
     }
 });
+
+renderer.domElement.addEventListener('touchstart', (event) => {
+    let mouse = new THREE.Vector2(
+        (event.clientX / window.innerWidth) * 2 - 1,
+        -(event.clientY / window.innerHeight) * 2 + 1
+    );
+    let raycaster = new THREE.Raycaster();
+    raycaster.setFromCamera(mouse, camera);
+    let intersects = raycaster.intersectObjects(linkMeshes);
+    if (intersects.length > 0) {
+        let url = intersects[0].object.userData.url;
+        window.open(url, '_blank');
+    }
+});
+
+
 
 // スクロールイベントでアニメーションを更新
 function update() {
@@ -286,25 +299,6 @@ document.body.addEventListener('mousemove', (event) => {
         }
     });
 });
-
-function onTouchStart(event) {
-    event.preventDefault();
-    const touch = event.touches[0];
-    const mouse = new THREE.Vector2(
-        (touch.clientX / window.innerWidth) * 2 - 1,
-        -(touch.clientY / window.innerHeight) * 2 + 1
-    );
-    const raycaster = new THREE.Raycaster();
-    raycaster.setFromCamera(mouse, camera);
-    const intersects = raycaster.intersectObjects(linkMeshes);
-    if (intersects.length > 0) {
-        const url = intersects[0].object.userData.url;
-        window.open(url, '_blank');
-    }
-}
-
-renderer.domElement.addEventListener('click', onTouchStart);
-renderer.domElement.addEventListener('touchstart', onTouchStart);
 
 function animate() {
     requestAnimationFrame(animate);
