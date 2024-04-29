@@ -218,21 +218,33 @@ renderer.domElement.addEventListener('click', (event) => {
     }
 });
 
-document.addEventListener('touchstart', onTouchStart, false);
-function onTouchStart(event){
-    event.preventDefault();
-    let mouse = new THREE.Vector2(
-        (event.clientX / window.innerWidth) * 2 - 1,
-        -(event.clientY / window.innerHeight) * 2 + 1
-    );
-    let raycaster = new THREE.Raycaster();
-    raycaster.setFromCamera(mouse, camera);
-    let intersects = raycaster.intersectObjects(linkMeshes);
-    if (intersects.length > 0) {
-        let url = intersects[0].object.userData.url;
-        window.open(url, '_blank');
-    }
-}
+function onTouchStart(event) {
+            event.preventDefault();
+
+            // タッチ位置を取得
+            const touch = event.touches[0];
+            const touchX = touch.clientX;
+            const touchY = touch.clientY;
+
+            // タッチ位置を正規化（-1〜1の範囲に変換）
+            const normalizedX = (touchX / window.innerWidth) * 2 - 1;
+            const normalizedY = -(touchY / window.innerHeight) * 2 + 1;
+
+            // レイキャスターを生成
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(new THREE.Vector2(normalizedX, normalizedY), camera);
+
+            // レイキャスティングを行い、交差したオブジェクトを取得
+            const intersects = raycaster.intersectObjects(linkMeshes);
+
+            if (intersects.length > 0) {
+                const url = intersects[0].object.userData.url;
+                window.open(url, '_blank');
+            }
+        }
+
+        document.body.addEventListener('touchstart', onTouchStart, false);
+
 
 
 window.addEventListener('scroll', update);
@@ -301,6 +313,39 @@ document.body.addEventListener('mousemove', (event) => {
         }
     });
 });
+
+document.body.addEventListener('touchmove', (event) => {
+            event.preventDefault();
+
+            const touch = event.touches[0];
+            const touchX = touch.clientX;
+            const touchY = touch.clientY;
+
+            const normalizedX = (touchX / window.innerWidth) * 2 - 1;
+            const normalizedY = -(touchY / window.innerHeight) * 2 + 1;
+
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(new THREE.Vector2(normalizedX, normalizedY), camera);
+
+            const intersects = raycaster.intersectObjects(linkMeshes);
+
+            linkMeshes.forEach((mesh) => {
+                const bubble = mesh.userData.bubble;
+
+                if (intersects.length > 0 && intersects[0].object === mesh) {
+                    bubble.style.display = 'block';
+                    bubble.style.opacity = '1';
+                } else {
+                    bubble.style.opacity = '0';
+                    setTimeout(() => {
+                        if (bubble.style.opacity === '0') {
+                            bubble.style.display = 'none';
+                        }
+                    }, 200);
+                }
+            });
+        });
+
 
 function animate() {
     requestAnimationFrame(animate);
