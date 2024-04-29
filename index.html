@@ -151,7 +151,7 @@ camera.position.z = 500;
 // selfintroductionのテキスト生成と配置
 loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function(font) {
     const texts = ['tarakokko3233', 'Portfolio Links'];
-    let offset = window.innerWidth / 30; // 文字の間隔を調整
+    let offset = window.innerWidth / 40; // 文字の間隔を調整
     texts.forEach((text, index) => {
         let yPosition = index * 50 - 25; // Y位置と文字サイズの調整により変更
         for (let i = 0; i < text.length; i++) {
@@ -202,7 +202,7 @@ function createLinks() {
 }
 
 
-window.addEventListener('scroll', update);
+
 
 renderer.domElement.addEventListener('click', (event) => {
     let mouse = new THREE.Vector2(
@@ -218,7 +218,9 @@ renderer.domElement.addEventListener('click', (event) => {
     }
 });
 
-renderer.domElement.addEventListener('touchstart', (event) => {
+document.addEventListener('touchstart', onTouchStart, false);
+function onTouchStart(event){
+    event.preventDefault();
     let mouse = new THREE.Vector2(
         (event.clientX / window.innerWidth) * 2 - 1,
         -(event.clientY / window.innerHeight) * 2 + 1
@@ -230,10 +232,10 @@ renderer.domElement.addEventListener('touchstart', (event) => {
         let url = intersects[0].object.userData.url;
         window.open(url, '_blank');
     }
-});
+}
 
 
-
+window.addEventListener('scroll', update);
 // スクロールイベントでアニメーションを更新
 function update() {
     scrollProgress = window.scrollY / (document.body.scrollHeight - window.innerHeight);
