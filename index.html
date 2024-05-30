@@ -8,7 +8,7 @@
             height: 300%;
             margin: 0;
             overflow-y: scroll;
-            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); /* グラデーションを設定 */
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
             color: #fff;
             font-family: 'Arial', sans-serif;
         }
@@ -90,35 +90,31 @@
             text-align: center;
         }
         .white-square {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 80%;
-        max-width: 600px;
-        background-color: white;
-        padding: 20px;
-        border-radius: 10px;
-        display: none;
-        color: black;
-        text-align: center;
-    }
-
-    .white-square h1 {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            max-width: 600px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+            color: black;
+            text-align: center;
+        }
+        .white-square h1 {
             font-size: 24px;
             margin-bottom: 10px;
         }
-
         .white-square h2 {
             font-size: 24px;
             margin-bottom: 15px;
         }
-
         .white-square p {
             font-size: 18px;
         }
     </style>
-
     <script src="https://unpkg.com/three@0.132.2/build/three.min.js"></script>
 </head>
 <body>
@@ -134,225 +130,140 @@
         <p>Email:tarakokko32332gmail.com</p>
         <p>※各リンクは新しいタブで開きます</p>
     </div>
-<script>
-let scene = new THREE.Scene();
-let camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-let renderer = new THREE.WebGLRenderer({ alpha: true });
-renderer.setSize(window.innerWidth, window.innerHeight);
-document.body.appendChild(renderer.domElement);
+    <script>
+        let scene = new THREE.Scene();
+        let camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        let renderer = new THREE.WebGLRenderer({ alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
 
-let textMeshes = [];
-let linkMeshes = [];
-let loader = new THREE.FontLoader();
-let scrollProgress = 0;
+        let textMeshes = [];
+        let linkMeshes = [];
+        let loader = new THREE.FontLoader();
+        let scrollProgress = 0;
 
-camera.position.z = 500;
+        camera.position.z = 500;
 
-// selfintroductionのテキスト生成と配置
-loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function(font) {
-    const texts = ['tarakokko3233', 'Portfolio Links'];
-    let offset = window.innerWidth / 40; // 文字の間隔を調整
-    texts.forEach((text, index) => {
-        let yPosition = index * 50 - 25; // Y位置と文字サイズの調整により変更
-        for (let i = 0; i < text.length; i++) {
-            let geometry = new THREE.TextGeometry(text[i], {
-                font: font,
-                size: 30, // 文字サイズを小さく調整
-                height: 5,
-                curveSegments: 12,
+        // selfintroductionのテキスト生成と配置
+        loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function(font) {
+            const texts = ['tarakokko3233', 'Portfolio Links'];
+            let offset = window.innerWidth / 40;
+            texts.forEach((text, index) => {
+                let yPosition = index * 50 - 25;
+                for (let i = 0; i < text.length; i++) {
+                    let geometry = new THREE.TextGeometry(text[i], {
+                        font: font,
+                        size: 30,
+                        height: 5,
+                        curveSegments: 12,
+                    });
+                    let material = new THREE.MeshBasicMaterial({ color: 0x000000 });
+                    let mesh = new THREE.Mesh(geometry, material);
+                    let randomX = Math.random() * window.innerWidth * 0.8 - window.innerWidth * 0.4;
+                    let randomY = Math.random() * 200 - 100 + yPosition;
+                    mesh.position.set(randomX, randomY, 0);
+                    scene.add(mesh);
+                    textMeshes.push({mesh, initialPosition: mesh.position.clone(), finalPosition: new THREE.Vector3(i * offset - (text.length - 1) * offset / 2, yPosition, 0)});
+                }
             });
-            let material = new THREE.MeshBasicMaterial({ color: 0x000000 });
-            let mesh = new THREE.Mesh(geometry, material);
-            let randomX = Math.random() * window.innerWidth * 0.8 - window.innerWidth * 0.4;
-            let randomY = Math.random() * 200 - 100 + yPosition;
-            mesh.position.set(randomX, randomY, 0);
-            scene.add(mesh);
-            textMeshes.push({mesh, initialPosition: mesh.position.clone(), finalPosition: new THREE.Vector3(i * offset - (text.length - 1) * offset / 2, yPosition, 0)});
+            createLinks();
+        });
+
+        // リンク図形の生成と配置
+        function createLinks() {
+            const linkData = [
+                { url: 'https://tarakokko3233.github.io/', color: 0xFFFFFF, text: 'Portfolio' },
+                { url: 'https://twitter.com/tarakokko3233su', color: 0x1DA1F2, text: 'Twitter' },
+                { url: 'https://github.com/tarakokko3233', color: 0x333333, text: 'GitHub' },
+                { url: 'https://qiita.com/tarakokko3233', color: 0x55C500, text: 'Qiita' },
+                { url: 'mailto:tarakokko3233@gmail.com', color: 0xE4405F, text: 'Email' },
+            ];
+            const offset = window.innerWidth / (linkData.length + 6);
+            linkData.forEach((link, index) => {
+                let geometry = new THREE.BoxGeometry(30, 30, 30);
+                let material = new THREE.MeshBasicMaterial({ color: link.color });
+                let mesh = new THREE.Mesh(geometry, material);
+                mesh.position.set((index - linkData.length/1.6 ) * offset + window.innerWidth / 10, -window.innerHeight, 0);
+                mesh.userData = { url: link.url, text: link.text };
+                scene.add(mesh);
+                linkMeshes.push(mesh);
+
+                // 吹き出しの作成
+                let bubble = document.createElement('div');
+                bubble.classList.add('bubble');
+                bubble.innerText = link.text;
+                document.body.appendChild(bubble);
+                mesh.userData.bubble = bubble;
+
+                mesh.addEventListener('mouseover', function() {
+                    this.userData.bubble.style.display = 'block';
+                    this.userData.bubble.style.left = (this.position.x + window.innerWidth/2 - this.userData.bubble.offsetWidth/2) + 'px';
+                    this.userData.bubble.style.top = (window.innerHeight/2 - this.position.y - 60) + 'px';
+                });
+
+                mesh.addEventListener('mouseout', function() {
+                    this.userData.bubble.style.display = 'none';
+                });
+
+                mesh.addEventListener('click', function() {
+                    window.open(this.userData.url, '_blank');
+                });
+            });
         }
-    });
-    createLinks(); // テキストが配置された後にリンクを作成
-});
 
-// リンク図形の生成と配置
-function createLinks() {
-    const linkData = [
-        { url: 'https://tarakokko3233.github.io/', color: 0xFFFFFF, text: 'Portfolio' },
-        { url: 'https://twitter.com/tarakokko3233su', color: 0x1DA1F2, text: 'Twitter' },
-        { url: 'https://github.com/tarakokko3233', color: 0x333333, text: 'GitHub' },
-        { url: 'https://qiita.com/tarakokko3233', colorす: 0x55C500, text: 'Qiita' },
-        { url: 'mailto:tarakokko3233@gmail.com', color: 0xE4405F, text: 'Email' },
-    ];
-    const offset = window.innerWidth / (linkData.length + 6);
-    linkData.forEach((link, index) => {
-        let geometry = new THREE.BoxGeometry(30, 30, 30);
-        let material = new THREE.MeshBasicMaterial({ color: link.color });
-        let mesh = new THREE.Mesh(geometry, material);
-        mesh.position.set((index - linkData.length/1.6 ) * offset + window.innerWidth / 10, -window.innerHeight, 0);
-        mesh.userData = { url: link.url, text: link.text };
-        scene.add(mesh);
-        linkMeshes.push(mesh);
+        let animationProgress = 0;
+        let animationDuration = 2000;
+        let lastTime = null;
 
-        // 吹き出しの作成
-        let bubble = document.createElement('div');
-        bubble.className = 'bubble';
-        bubble.textContent = link.text;
-        document.body.appendChild(bubble);
-        mesh.userData.bubble = bubble;
-    });
-}
-
-
-
-
-renderer.domElement.addEventListener('click', (event) => {
-    let mouse = new THREE.Vector2(
-        (event.clientX / window.innerWidth) * 2 - 1,
-        -(event.clientY / window.innerHeight) * 2 + 1
-    );
-    let raycaster = new THREE.Raycaster();
-    raycaster.setFromCamera(mouse, camera);
-    let intersects = raycaster.intersectObjects(linkMeshes);
-    if (intersects.length > 0) {
-        let url = intersects[0].object.userData.url;
-        window.open(url, '_blank');
-    }
-});
-
-function onTouchStart(event) {
-            event.preventDefault();
-
-            // タッチ位置を取得
-            const touch = event.touches[0];
-            const touchX = touch.clientX;
-            const touchY = touch.clientY;
-
-            // タッチ位置を正規化（-1〜1の範囲に変換）
-            const normalizedX = (touchX / window.innerWidth) * 2 - 1;
-            const normalizedY = -(touchY / window.innerHeight) * 2 + 1;
-
-            // レイキャスターを生成
-            const raycaster = new THREE.Raycaster();
-            raycaster.setFromCamera(new THREE.Vector2(normalizedX, normalizedY), camera);
-
-            // レイキャスティングを行い、交差したオブジェクトを取得
-            const intersects = raycaster.intersectObjects(linkMeshes);
-
-            if (intersects.length > 0) {
-                const url = intersects[0].object.userData.url;
-                window.open(url, '_blank');
+        function animate(time) {
+            if (!lastTime) {
+                lastTime = time;
             }
-        }
+            let deltaTime = time - lastTime;
+            lastTime = time;
 
-        document.body.addEventListener('touchstart', onTouchStart, false);
+            if (animationProgress < 1) {
+                animationProgress += deltaTime / animationDuration;
+                animationProgress = Math.min(animationProgress, 1);
 
+                textMeshes.forEach(textMesh => {
+                    textMesh.mesh.position.lerpVectors(textMesh.initialPosition, textMesh.finalPosition, animationProgress);
+                });
+            }
 
+            camera.position.y = -scrollProgress * window.innerHeight * 2;
 
-window.addEventListener('scroll', update);
-// スクロールイベントでアニメーションを更新
-function update() {
-    scrollProgress = window.scrollY / (document.body.scrollHeight - window.innerHeight);
-    textMeshes.forEach(({mesh, initialPosition, finalPosition}) => {
-        mesh.position.lerpVectors(initialPosition, finalPosition, Math.min(scrollProgress * 2, 1));
-    });
+            linkMeshes.forEach(mesh => {
+                let targetY = scrollProgress * window.innerHeight * 2 - window.innerHeight;
+                mesh.position.y += (targetY - mesh.position.y) * 0.05;
 
-        let linkProgress = Math.min((scrollProgress - 0.25) * 2, 1);
-        linkMeshes.forEach((mesh, index) => {
-            let targetY = -250;
-            mesh.position.y = THREE.MathUtils.lerp(window.innerHeight * 0.5, targetY, linkProgress);
-            mesh.rotation.x += 0.05;
-            mesh.rotation.y += 0.05;
-
-            // 吹き出しの位置を更新してるんだけど動かない
-            let screenPosition = mesh.position.clone();
-            screenPosition.project(camera);
-            screenPosition.x = (screenPosition.x + 1) / 2 * window.innerWidth;
-            screenPosition.y = -(screenPosition.y - 1) / 2 * window.innerHeight;
-
-            let bubble = mesh.userData.bubble;
-            bubble.style.left = `${screenPosition.x}px`;
-            bubble.style.top = `${screenPosition.y - 80}px`;
-        });
-
-
-    // ページの一番下までスクロールしたらテキストを非表示にし、白い四角を表示
-    if (window.innerHeight + window.scrollY >= document.body.offsetHeight) {
-        textMeshes.forEach(({mesh}) => {
-            mesh.visible = false;
-        });
-        document.querySelector('.white-square').style.display = 'block';
-    } else {
-        textMeshes.forEach(({mesh}) => {
-            mesh.visible = true;
-        });
-        document.querySelector('.white-square').style.display = 'none';
-    }
-}
-
-document.body.addEventListener('mousemove', (event) => {
-    let mouse = new THREE.Vector2(
-        (event.clientX / window.innerWidth) * 2 - 1,
-        -(event.clientY / window.innerHeight) * 2 + 1
-    );
-    let raycaster = new THREE.Raycaster();
-    raycaster.setFromCamera(mouse, camera);
-    let intersects = raycaster.intersectObjects(linkMeshes);
-
-    linkMeshes.forEach((mesh) => {
-        let bubble = mesh.userData.bubble;
-
-        if (intersects.length > 0 && intersects[0].object === mesh) {
-            bubble.style.display = 'block';
-            bubble.style.opacity = '1';
-        } else {
-            bubble.style.opacity = '0';
-            setTimeout(() => {
-                if (bubble.style.opacity === '0') {
-                    bubble.style.display = 'none';
-                }
-            }, 200);
-        }
-    });
-});
-
-document.body.addEventListener('touchmove', (event) => {
-            event.preventDefault();
-
-            const touch = event.touches[0];
-            const touchX = touch.clientX;
-            const touchY = touch.clientY;
-
-            const normalizedX = (touchX / window.innerWidth) * 2 - 1;
-            const normalizedY = -(touchY / window.innerHeight) * 2 + 1;
-
-            const raycaster = new THREE.Raycaster();
-            raycaster.setFromCamera(new THREE.Vector2(normalizedX, normalizedY), camera);
-
-            const intersects = raycaster.intersectObjects(linkMeshes);
-
-            linkMeshes.forEach((mesh) => {
-                const bubble = mesh.userData.bubble;
-
-                if (intersects.length > 0 && intersects[0].object === mesh) {
-                    bubble.style.display = 'block';
-                    bubble.style.opacity = '1';
-                } else {
-                    bubble.style.opacity = '0';
-                    setTimeout(() => {
-                        if (bubble.style.opacity === '0') {
-                            bubble.style.display = 'none';
-                        }
-                    }, 200);
-                }
+                let scale = 1 + Math.abs(mesh.position.y - targetY) / 500;
+                mesh.scale.set(scale, scale, scale);
             });
+
+            renderer.render(scene, camera);
+            requestAnimationFrame(animate);
+        }
+
+        requestAnimationFrame(animate);
+
+        window.addEventListener('resize', function() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
         });
 
+        window.addEventListener('scroll', function() {
+            scrollProgress = window.scrollY / (document.body.scrollHeight - window.innerHeight);
+        });
 
-function animate() {
-    requestAnimationFrame(animate);
-    renderer.render(scene, camera);
-}
+        document.querySelector('.portfolio-item').addEventListener('click', function() {
+            document.querySelector('.white-square').style.display = 'block';
+        });
 
-animate();
-</script>
+        document.querySelector('.white-square').addEventListener('click', function() {
+            this.style.display = 'none';
+        });
+    </script>
 </body>
 </html>
