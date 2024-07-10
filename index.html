@@ -133,6 +133,7 @@
     <p>緑:Qiita</p>
     <p>深緑:Speaker Deck</p>
     <p>薄灰:Teratail</p>
+    <p>橙:stackoverflow</p>
     <p>赤:Email送信</p>
     <p>Email:tarakokko3233gmail.com</p>
     <p>※各リンクは新しいタブで開きます</p>
@@ -186,6 +187,7 @@
             { url: 'https://qiita.com/tarakokko3233', color: 0x55C500, text: 'Qiita' },
             { url: 'https://speakerdeck.com/tarakokko3233', color: 0x008b8b, text: 'SpeakerDeck' },
             { url: 'https://teratail.com/users/tarakokko3233', color: 0xc0c0c0, text: 'Teratail' },
+            { url: 'https://stackoverflow.com/users/25707513/tarakokko3233', color: 0xffa500, text: 'stackoverflow' },
             { url: 'mailto:tarakokko3233@gmail.com', color: 0xE4405F, text: 'Email' },
         ];
         const offset = window.innerWidth / (linkData.length + 6);
@@ -193,7 +195,7 @@
             let geometry = new THREE.BoxGeometry(25, 25, 25);
             let material = new THREE.MeshBasicMaterial({ color: link.color });
             let mesh = new THREE.Mesh(geometry, material);
-            mesh.position.set((index - linkData.length/1.6 ) * offset + window.innerWidth / 10, -window.innerHeight/2, 0);
+            mesh.position.set((index - linkData.length/1.7 ) * offset + window.innerWidth / 10, -window.innerHeight/2, 0);
             mesh.userData = { url: link.url, text: link.text };
             scene.add(mesh);
             linkMeshes.push(mesh);
