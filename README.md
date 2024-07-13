@@ -1,9 +1,10 @@
-# JavaLangRuntimeError.github.io
+# JavaLangRuntimeException.github.io
 JavaLangRuntimeErrorのポートフォリオページ
 
-## JavaLangRuntimeError's Portfolio
+## taramanji's Portfolio
 
 ### 各種リンク集
 [X(Twitter)](https://twitter.com/JavaLangRuntime)
 
-[Qiita](https://qiita.com/JavaLangRuntimeError)
+[Qiita](https://qiita.com/JavaLangRuntimeException)
+
