@@ -1,5 +1,5 @@
 # JavaLangRuntimeError.github.io
-tarakokko3233のポートフォリオページ
+JavaLangRuntimeErrorのポートフォリオページ
 
 ## JavaLangRuntimeError's Portfolio
 
