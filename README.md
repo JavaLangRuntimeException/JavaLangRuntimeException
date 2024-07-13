@@ -1,9 +1,9 @@
-# tarakokko3233.github.io
+# JavaLangRuntimeError.github.io
 tarakokko3233のポートフォリオページ
 
-## tarakokko3233's Portfolio
+## JavaLangRuntimeError's Portfolio
 
 ### 各種リンク集
-[X(Twitter)](https://twitter.com/tarakokko3233su)
+[X(Twitter)](https://twitter.com/JavaLangRuntime)
 
-[Qiita](https://qiita.com/tarakokko3233)
+[Qiita](https://qiita.com/JavaLangRuntimeError)
