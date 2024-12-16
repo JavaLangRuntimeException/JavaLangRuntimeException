@@ -2,363 +2,327 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>taramanji(JavaLangRuntimeException)</title>
+    <title>taramanji(JavaLangRuntimeException) ポートフォリオリンク集</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        body, html {
-            height: 300%;
+        *, *::before, *::after {
+            box-sizing: border-box;
             margin: 0;
-            overflow-y: scroll;
-            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); /* グラデーションを設定 */
-            color: #fff;
+            padding: 0;
+        }
+
+        body {
             font-family: 'Arial', sans-serif;
-        }
-        #scrollPrompt {
-            position: fixed;
-            top: 20%;
-            left: 20%;
-            transform: translate(-50%, -50%);
-            font-size: 24px;
+            line-height: 1.6;
+            background: url('https://via.placeholder.com/1920x1080/302b63/ffffff?text=背景画像') fixed no-repeat center center / cover;
             color: #fff;
-            z-index: 1000;
-            display: none;
+            overflow-x: hidden;
         }
-        #portfolio {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 18px;
-            color: #000;
-            z-index: 100;
-            display: none;
-        }
-        canvas {
-            display: block;
+
+        .parallax {
             position: fixed;
             top: 0;
             left: 0;
+            width: 100%;
+            height: 100%;
+            background: inherit;
+            background-attachment: fixed;
+            transform: translateZ(-1px) scale(2);
+            z-index: -1;
         }
-        #tooltip {
-            display: none;
-            position: fixed;
-            background-color: white;
-            color: black;
-            padding: 8px;
-            border-radius: 5px;
-            font-size: 14px;
-            z-index: 1000;
+
+        h1, h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            opacity: 0;
+            transform: translateY(50px);
+            animation: fadeInUp 1s forwards;
         }
-        .portfolio-item {
-            background-color: #fff;
+
+        h1 {
+            animation-delay: 0.2s;
+        }
+
+        h2 {
+            animation-delay: 0.4s;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            perspective: 1000px;
+            position: relative;
+            opacity: 0;
+            transform: translateY(50px);
+            animation: fadeInUp 1s forwards;
+            text-decoration: none;
+            /* 高さを設定します */
+            height: 340px; /* 画像の高さ(180px) + コンテンツの高さ(約160px) */
+        }
+
+        .card:nth-child(odd) {
+            animation-delay: 0.6s;
+        }
+
+        .card:nth-child(even) {
+            animation-delay: 0.8s;
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.8s;
+            transform-style: preserve-3d;
+        }
+
+        .card:hover .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .card-front {
+            background-color: rgba(255, 255, 255, 0.9);
             color: #000;
-            margin: 20px;
+        }
+
+        .card-back {
+            background-color: rgba(30, 30, 30, 0.9);
+            color: #fff;
+            transform: rotateY(180deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
             padding: 20px;
-            border-radius: 10px;
-        }
-        .bubble {
-            display: none;
-            position: absolute;
-            background-color: white;
-            color: black;
-            padding: 8px;
-            border-radius: 5px;
-            font-size: 14px;
-            z-index: 1000;
-            transform: translateY(-60px);
-            text-align: center;
-        }
-        .bubble::after {
-            content: "";
-            position: absolute;
-            bottom: -10px;
-            left: 50%;
-            margin-left: -5px;
-            border-width: 5px;
-            border-style: solid;
-            border-color: white transparent transparent transparent;
-        }
-        .small-bubble {
-            display: none;
-            position: absolute;
-            background-color: white;
-            color: black;
-            padding: 4px;
-            border-radius: 3px;
-            font-size: 12px;
-            z-index: 1000;
-            transform: translateY(-30px);
-            text-align: center;
-        }
-        .white-square {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 80%;
-            max-width: 600px;
-            background-color: white;
-            padding: 20px;
-            border-radius: 10px;
-            display: none;
-            color: black;
             text-align: center;
         }
 
-        .white-square h1 {
-            font-size: 24px;
+        .card-front img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            transition: transform 0.3s;
+        }
+
+        .card:hover .card-front img {
+            transform: scale(1.1);
+        }
+
+        .card-content {
+            padding: 15px;
+        }
+
+        .card-content h3 {
             margin-bottom: 10px;
+            font-size: 1.5em;
         }
 
-        .white-square h2 {
-            font-size: 24px;
-            margin-bottom: 15px;
+        .card-content p {
+            font-size: 1em;
+            line-height: 1.4;
         }
 
-        .white-square p {
-            font-size: 18px;
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media screen and (max-width: 600px) {
+            h1 {
+                font-size: 1.8em;
+            }
+            .card-content h3 {
+                font-size: 1.3em;
+            }
         }
     </style>
-
-    <script src="https://unpkg.com/three@0.132.2/build/three.min.js"></script>
 </head>
 <body>
-<div class="portfolio-item">taramanji(JavaLangRuntimeexception)です! 1番下までスクロールしてね</div>
-<div class="white-square">
-    <h1>Portfolio Links</h1>
-    <h2>各色の立方体をクリックしてね</h2>
-    <p>白:ポートフォリオ</p>
-    <p>青:X(Twitter)</p>
-    <p>灰:GitHub</p>
-    <p>黒:AtCoder</p>
-    <p>緑:Qiita</p>
-    <p>深緑:Speaker Deck</p>
-    <p>薄灰:Teratail</p>
-    <p>橙:Stackoverflow</p>
-    <p>赤:Email送信</p>
-    <p>Email:tarakokko3233gmail.com</p>
-    <p>※各リンクは新しいタブで開きます</p>
-</div>
-<script>
-    let scene = new THREE.Scene();
-    let camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    let renderer = new THREE.WebGLRenderer({ alpha: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
+    <div class="parallax"></div>
+    <div class="container">
+        <h1>taramanji (JavaLangRuntimeException)</h1>
+        <h2>ポートフォリオリンク集</h2>
+        <div class="grid">
+            <!-- カード要素 -->
+            <!-- Portfolio -->
+            <a class="card" href="https://javalangruntimeexception.github.io/" target="_blank">
+                <div class="card-inner">
+                    <div class="card-front">
+                        <img src="https://via.placeholder.com/400x180/FFFFFF/000000?text=Portfolio" alt="Portfolio">
+                        <div class="card-content">
+                            <h3>ポートフォリオ</h3>
+                            <p>私の作品やプロジェクトをまとめたポートフォリオサイトです。</p>
+                        </div>
+                    </div>
+                    <div class="card-back">
+                        <p>よくぞエラーの名のユーザーのページを見つけました！JavaLangRuntimeExceptionの対処法を調べたユーザーはいますか？</p>
+                    </div>
+                </div>
+            </a>
+            <!-- Twitter -->
+            <a class="card" href="https://twitter.com/javalangruntime" target="_blank">
+                <div class="card-inner">
+                    <div class="card-front">
+                        <img src="https://via.placeholder.com/400x180/1DA1F2/FFFFFF?text=Twitter" alt="Twitter">
+                        <div class="card-content">
+                            <h3>X (Twitter)</h3>
+                            <p>@JavaLangRuntime</p>
+                        </div>
+                    </div>
+                    <div class="card-back">
+                        <p>なぜJavaの実行時のエラーにしたか?</p>
+                    </div>
+                </div>
+            </a>
+            <!-- MiXi2 -->
+            <a class="card" href="https://mixi.social/@JavaLangRuntime" target="_blank">
+                <div class="card-inner">
+                    <div class="card-front">
+                        <img src="https://via.placeholder.com/400x180/ff4500/FFFFFF?text=MiXi2" alt="MiXi2">
+                        <div class="card-content">
+                            <h3>MiXi2</h3>
+                            <p>@JavaLangRuntime</p>
+                        </div>
+                    </div>
+                    <div class="card-back">
+                        <p>それは私が一番みたエラーだからです(本音はJavaLangRuntimeExceptionを調べたエンジニアがこのサイトに来る誘導...?)</p>
+                    </div>
+                </div>
+            </a>
+            <!-- GitHub -->
+            <a class="card" href="https://github.com/javalangruntimeexception" target="_blank">
+                <div class="card-inner">
+                    <div class="card-front">
+                        <img src="https://via.placeholder.com/400x180/666666/FFFFFF?text=GitHub" alt="GitHub">
+                        <div class="card-content">
+                            <h3>GitHub</h3>
+                            <p>@JavaLangRuntimeException</p>
+                        </div>
+                    </div>
+                    <div class="card-back">
+                        <p>実はJavaLangRuntimeExceptionは結構な種類があるよ！</p>
+                    </div>
+                </div>
+            </a>
+            <!-- AtCoder -->
+            <a class="card" href="https://atcoder.jp/users/javalangruntimee" target="_blank">
+                <div class="card-inner">
+                    <div class="card-front">
+                        <img src="https://via.placeholder.com/400x180/000000/FFFFFF?text=AtCoder" alt="AtCoder">
+                        <div class="card-content">
+                            <h3>AtCoder</h3>
+                            <p>@javalangruntimee</p>
+                        </div>
+                    </div>
+                    <div class="card-back">
+                        <p>有名なものだとjava.lang.ArithmeticExceptionとか!</p>
+                    </div>
+                </div>
+            </a>
+            <!-- Qiita -->
+            <a class="card" href="https://qiita.com/javalangruntimeexception" target="_blank">
+                <div class="card-inner">
+                    <div class="card-front">
+                        <img src="https://via.placeholder.com/400x180/55C500/FFFFFF?text=Qiita" alt="Qiita">
+                        <div class="card-content">
+                            <h3>Qiita</h3>
+                            <p>@JavaLangRuntimeException</p>
+                        </div>
+                    </div>
+                    <div class="card-back">
+                        <p>java.lang.ArithmeticExceptionは0除算の時にスローされるクラスです</p>
+                    </div>
+                </div>
+            </a>
+            <!-- SpeakerDeck -->
+            <a class="card" href="https://speakerdeck.com/javalangruntimeexception" target="_blank">
+                <div class="card-inner">
+                    <div class="card-front">
+                        <img src="https://via.placeholder.com/400x180/008b8b/FFFFFF?text=SpeakerDeck" alt="SpeakerDeck">
+                        <div class="card-content">
+                            <h3>Speaker Deck</h3>
+                            <p>@JavaLangRuntimeException</p>
+                        </div>
+                    </div>
+                    <div class="card-back">
+                        <p>本来であればもっと有名なjava.lang.NullPointerExceptionにしたかったです...</p>
+                    </div>
+                </div>
+            </a>
+            <!-- Teratail -->
+            <a class="card" href="https://teratail.com/users/JavaLangRuntime" target="_blank">
+                <div class="card-inner">
+                    <div class="card-front">
+                        <img src="https://via.placeholder.com/400x180/c0c0c0/000000?text=Teratail" alt="Teratail">
+                        <div class="card-content">
+                            <h3>Teratail</h3>
+                            <p>@JavaLangRuntime</p>
+                        </div>
+                    </div>
+                    <div class="card-back">
+                        <p>もう使われていたユーザであったことや長すぎて入らなかったので没にしました</p>
+                    </div>
+                </div>
+            </a>
+            <!-- Stackoverflow -->
+            <a class="card" href="https://stackoverflow.com/users/26359061/javalangruntimeexception" target="_blank">
+                <div class="card-inner">
+                    <div class="card-front">
+                        <img src="https://via.placeholder.com/400x180/ffa500/FFFFFF?text=StackOverflow" alt="StackOverflow">
+                        <div class="card-content">
+                            <h3>Stack Overflow</h3>
+                            <p>@JavaLangRuntimeException</p>
+                        </div>
+                    </div>
+                    <div class="card-back">
+                        <p>某T〇〇TT〇〇の文字数制限許すまじ</p>
+                    </div>
+                </div>
+            </a>
 
-    let textMeshes = [];
-    let linkMeshes = [];
-    let loader = new THREE.FontLoader();
-    let scrollProgress = 0;
-
-    camera.position.z = 500;
-
-    // selfintroductionのテキスト生成と配置
-    loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', function(font) {
-        const texts = ['taramanji(JavaLangRuntimeError)', 'Portfolio Links'];
-        let offset = window.innerWidth / 40; // 文字の間隔を調整
-        texts.forEach((text, index) => {
-            let yPosition = index * 50 - 25; // Y位置と文字サイズの調整により変更
-            for (let i = 0; i < text.length; i++) {
-                let geometry = new THREE.TextGeometry(text[i], {
-                    font: font,
-                    size: 30, // 文字サイズを小さく調整
-                    height: 5,
-                    curveSegments: 12,
-                });
-                let material = new THREE.MeshBasicMaterial({ color: 0x000000 });
-                let mesh = new THREE.Mesh(geometry, material);
-                let randomX = Math.random() * window.innerWidth * 0.8 - window.innerWidth * 0.4;
-                let randomY = Math.random() * 200 - 100 + yPosition;
-                mesh.position.set(randomX, randomY, 0);
-                scene.add(mesh);
-                textMeshes.push({mesh, initialPosition: mesh.position.clone(), finalPosition: new THREE.Vector3(i * offset - (text.length - 1) * offset / 2, yPosition, 0)});
-            }
+            <!-- Email -->
+            <a class="card" href="mailto:tarakokko3233@gmail.com" target="_blank">
+                <div class="card-inner">
+                    <div class="card-front">
+                        <img src="https://via.placeholder.com/400x180/E4405F/FFFFFF?text=Email" alt="Email">
+                        <div class="card-content">
+                            <h3>Email</h3>
+                            <p>tarakokko3233@gmail.com</p>
+                        </div>
+                    </div>
+                    <div class="card-back">
+                        <p>ここまで読んでくれてありがとう！つまり言いたいことはエラーはお友達ということです！これであなたも私とお友達です!!!(スパムはやめてね)</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <script>
+        window.addEventListener('scroll', function() {
+            let scrollPosition = window.pageYOffset;
+            let parallax = document.querySelector('.parallax');
+            parallax.style.transform = 'translateY(' + scrollPosition * 0.5 + 'px)';
         });
-        createLinks(); // テキストが配置された後にリンクを作成
-    });
-
-    // リンク図形の生成と配置
-    function createLinks() {
-        const linkData = [
-            { url: 'https://javalangruntimeexception.github.io/', color: 0xFFFFFF, text: 'Portfolio' },
-            { url: 'https://twitter.com/javalangruntime', color: 0x1DA1F2, text: 'Twitter' },
-            { url: 'https://github.com/javalangruntimeexception', color: 0x666666, text: 'GitHub' },
-            { url: 'https://atcoder.jp/users/javalangruntimee', color: 0x000000, text: 'Atcoder' },
-            { url: 'https://qiita.com/javalangruntimeexception', color: 0x55C500, text: 'Qiita' },
-            { url: 'https://speakerdeck.com/javalangruntimeexception', color: 0x008b8b, text: 'SpeakerDeck' },
-            { url: 'https://teratail.com/users/JavaLangRuntime', color: 0xc0c0c0, text: 'Teratail' },
-            { url: 'https://stackoverflow.com/users/26359061/javalangruntimeexception', color: 0xffa500, text: 'stackoverflow' },
-            { url: 'mailto:tarakokko3233@gmail.com', color: 0xE4405F, text: 'Email' },
-        ];
-        const offset = window.innerWidth / (linkData.length + 6);
-        linkData.forEach((link, index) => {
-            let geometry = new THREE.BoxGeometry(25, 25, 25);
-            let material = new THREE.MeshBasicMaterial({ color: link.color });
-            let mesh = new THREE.Mesh(geometry, material);
-            mesh.position.set((index - linkData.length/1.7 ) * offset + window.innerWidth / 10, -window.innerHeight/2, 0);
-            mesh.userData = { url: link.url, text: link.text };
-            scene.add(mesh);
-            linkMeshes.push(mesh);
-
-            // 吹き出しの作成
-            let bubble = document.createElement('div');
-            bubble.className = 'bubble';
-            bubble.textContent = link.text;
-            document.body.appendChild(bubble);
-            mesh.userData.bubble = bubble;
-        });
-    }
-
-
-    renderer.domElement.addEventListener('click', (event) => {
-        let mouse = new THREE.Vector2(
-            (event.clientX / window.innerWidth) * 2 - 1,
-            -(event.clientY / window.innerHeight) * 2 + 1
-        );
-        let raycaster = new THREE.Raycaster();
-        raycaster.setFromCamera(mouse, camera);
-        let intersects = raycaster.intersectObjects(linkMeshes);
-        if (intersects.length > 0) {
-            let url = intersects[0].object.userData.url;
-            window.open(url, '_blank');
-        }
-    });
-
-    function onTouchStart(event) {
-        event.preventDefault();
-
-        // タッチ位置を取得
-        const touch = event.touches[0];
-        const touchX = touch.clientX;
-        const touchY = touch.clientY;
-
-        // タッチ位置を正規化（-1〜1の範囲に変換）
-        const normalizedX = (touchX / window.innerWidth) * 2 - 1;
-        const normalizedY = -(touchY / window.innerHeight) * 2 + 1;
-
-        // レイキャスターを生成
-        const raycaster = new THREE.Raycaster();
-        raycaster.setFromCamera(new THREE.Vector2(normalizedX, normalizedY), camera);
-
-        // レイキャスティングを行い、交差したオブジェクトを取得
-        const intersects = raycaster.intersectObjects(linkMeshes);
-
-        if (intersects.length > 0) {
-            const url = intersects[0].object.userData.url;
-            window.open(url, '_blank');
-        }
-    }
-
-    document.body.addEventListener('touchstart', onTouchStart, false);
-
-
-
-    window.addEventListener('scroll', update);
-    // スクロールイベントでアニメーションを更新
-    function update() {
-        scrollProgress = window.scrollY / (document.body.scrollHeight - window.innerHeight);
-        textMeshes.forEach(({mesh, initialPosition, finalPosition}) => {
-            mesh.position.lerpVectors(initialPosition, finalPosition, Math.min(scrollProgress * 2, 1));
-        });
-
-        let linkProgress = Math.min((scrollProgress - 0.25) * 2, 1);
-        linkMeshes.forEach((mesh, index) => {
-            let targetY = -250;
-            mesh.position.y = THREE.MathUtils.lerp(window.innerHeight * 0.5, targetY, linkProgress);
-            mesh.rotation.x += 0.05;
-            mesh.rotation.y += 0.05;
-
-            // 吹き出しの位置を更新してるんだけど動かない
-            let screenPosition = mesh.position.clone();
-            screenPosition.project(camera);
-            screenPosition.x = (screenPosition.x + 1) / 2 * window.innerWidth;
-            screenPosition.y = -(screenPosition.y - 1) / 2 * window.innerHeight;
-
-            let bubble = mesh.userData.bubble;
-            bubble.style.left = `${screenPosition.x}px`;
-            bubble.style.top = `${screenPosition.y - 80}px`;
-        });
-
-
-        // ページの一番下までスクロールしたらテキストを非表示にし、白い四角を表示
-        if (window.innerHeight + window.scrollY >= document.body.offsetHeight) {
-            textMeshes.forEach(({mesh}) => {
-                mesh.visible = false;
-            });
-            document.querySelector('.white-square').style.display = 'block';
-        } else {
-            textMeshes.forEach(({mesh}) => {
-                mesh.visible = true;
-            });
-            document.querySelector('.white-square').style.display = 'none';
-        }
-    }
-
-    document.body.addEventListener('mousemove', (event) => {
-        let mouse = new THREE.Vector2(
-            (event.clientX / window.innerWidth) * 2 - 1,
-            -(event.clientY / window.innerHeight) * 2 + 1
-        );
-        let raycaster = new THREE.Raycaster();
-        raycaster.setFromCamera(mouse, camera);
-        let intersects = raycaster.intersectObjects(linkMeshes);
-
-        linkMeshes.forEach((mesh) => {
-            let bubble = mesh.userData.bubble;
-
-            if (intersects.length > 0 && intersects[0].object === mesh) {
-                bubble.style.display = 'block';
-                bubble.style.opacity = '1';
-            } else {
-                bubble.style.opacity = '0';
-                setTimeout(() => {
-                    if (bubble.style.opacity === '0') {
-                        bubble.style.display = 'none';
-                    }
-                }, 200);
-            }
-        });
-    });
-
-    document.body.addEventListener('touchmove', (event) => {
-        event.preventDefault();
-
-        const touch = event.touches[0];
-        const touchX = touch.clientX;
-        const touchY = touch.clientY;
-
-        const normalizedX = (touchX / window.innerWidth) * 2 - 1;
-        const normalizedY = -(touchY / window.innerHeight) * 2 + 1;
-
-        const raycaster = new THREE.Raycaster();
-        raycaster.setFromCamera(new THREE.Vector2(normalizedX, normalizedY), camera);
-
-        const intersects = raycaster.intersectObjects(linkMeshes);
-
-        linkMeshes.forEach((mesh) => {
-            const bubble = mesh.userData.bubble;
-
-            if (intersects.length > 0 && intersects[0].object === mesh) {
-                bubble.style.display = 'block';
-                bubble.style.opacity = '1';
-            } else {
-                bubble.style.opacity = '0';
-                setTimeout(() => {
-                    if (bubble.style.opacity === '0') {
-                        bubble.style.display = 'none';
-                    }
-                }, 200);
-            }
-        });
-    });
-
-
-    function animate() {
-        requestAnimationFrame(animate);
-        renderer.render(scene, camera);
-    }
-
-    animate();
-</script>
+    </script>
 </body>
 </html>
