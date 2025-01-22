@@ -1,0 +1,44 @@
+# Node.js
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# ローカルのビルドファイル
+dist/
+build/
+out/
+
+# ログファイル
+*.log
+
+# OS関連のファイル
+.DS_Store
+Thumbs.db
+
+# IDE関連のファイル
+.vscode/
+.idea/
+.sublime-workspace
+.sublime-project
+
+# 一時ファイル
+*~
+*.swp
+*.swo
+.history/
+
+# ローカル環境関連
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+
+# テスト関連
+coverage/
+*.lcov
+
+# IDE / エディタ設定
+.project
+
