@@ -1,4 +1,4 @@
-// File: /Users/taramanjimacbookpro/Documents/GitHub/JavaLangRuntimeException.github.io/src/app/blogs/page.tsx
+// File: /mnt/c/Users/tanah/git/JavaLangRuntimeException.github.io/src/app/blogs/page.tsx
 import * as entry from '../../../../src/app/blogs/page.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
