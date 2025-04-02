@@ -12,10 +12,10 @@ module.exports = {
                     protocol: 'https',
                     hostname: 'picsum.photos',
                     port: '',
-                    pathname: '/**', // 任意のパスを許可
+                    pathname: '/**',
                },
           ],
      },
-     // 静的エクスポートを無効にする（デフォルトでは無効ですが明示的に指定）
-     output: 'standalone',  // または設定しない
+     // 'export'の設定を削除するか、以下のように変更する
+     // output: 'standalone',
 };
