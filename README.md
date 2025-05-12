@@ -9,7 +9,7 @@
 
 - 🧑‍💻 I'm a backend engineer.
 - 🌱 I’m currently learning go!
-- 📫 How to reach me: [Twitter - @username](https://twitter.com/username)
+- 📫 How to reach me: [Twitter - @JavaLangRuntime](https://twitter.com/JavaLangRuntime)
 <br>
 
 
@@ -17,7 +17,7 @@
 <!-- ライトモート：theme=light, ダークモート：theme=dark -->
 <!-- アイコンの選択肢一覧：https://arc.net/l/quote/zizyykfh -->
 ## 🌱 Skills
-<img alt="my skills" src="https://skillicons.dev/icons?theme=dark&perline=7&i=html,css,js,ts,react,next,figma,python,fastapi,go,docker,terraform,aws,gcp" />
+<img alt="my skills" src="https://skillicons.dev/icons?theme=dark&perline=7&i=html,css,js,ts,react,next,python,java,csharp,unity,go,docker,aws,gcp" />
 <br>
 
 
@@ -25,8 +25,8 @@
 <!-- ライトモート：theme=light, ダークモート：theme=vue-dark  -->
 ## 🏃‍♀️ Activities
 <div align="left"> 
-  <img alt="Top Langs" height="170px" src="https://github-readme-stats.vercel.app/api?username=username&theme=vue-dark&layout=compact" />
-  <img alt="github stats" height="170px" src="https://github-readme-stats.vercel.app/api/top-langs/?username=username&theme=vue-dark&layout=compact" />
+  <img alt="Top Langs" height="170px" src="https://github-readme-stats.vercel.app/api?username=JavaLangRuntimeException&theme=vue-dark&layout=compact" />
+  <img alt="github stats" height="170px" src="https://github-readme-stats.vercel.app/api/top-langs/?username=JavaLangRuntimeException&theme=vue-dark&layout=compact" />
 </div>
 
 
