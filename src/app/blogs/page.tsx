@@ -6,6 +6,7 @@ import { atom, useAtom } from "jotai";
 import { fetchQiitaURLs, fetchOgp } from "./server";
 import Link from "next/link";
 import Image from 'next/image';
+import { useInView } from 'react-intersection-observer';
 
 const searchAtom = atom("");
 
@@ -38,48 +39,25 @@ export default function BlogsPage() {
     const [selectedSeries, setSelectedSeries] = React.useState("");
     const [articles, setArticles] = React.useState<Ogp[]>([]);
     const [currentPage, setCurrentPage] = React.useState(1);
+    const [hasMore, setHasMore] = React.useState(true);
+    const { ref, inView } = useInView();
 
     const fetchedUrls = React.useRef<Set<string>>(new Set());
-    const intervalRef = React.useRef<NodeJS.Timeout | null>(null);
 
-    const stopPolling = () => {
-        if (intervalRef.current) {
-            clearInterval(intervalRef.current);
-            intervalRef.current = null;
-        }
-    };
+    const fetchArticles = React.useCallback(async (page: number, shouldAppend: boolean) => {
+        if (loading || !hasMore) return;
 
-    React.useEffect(() => {
-        const startPolling = () => {
-            if (intervalRef.current) return;
-            intervalRef.current = setInterval(() => {
-                setCurrentPage((prev) => {
-                    const nextPage = prev + 1;
-                    fetchArticles(nextPage, true);
-                    return nextPage;
-                });
-            }, 8000);
-        };
-
-        fetchArticles(currentPage, true);
-        startPolling();
-
-        return () => {
-            stopPolling();
-        };
-    }, [currentPage]);
-
-    const fetchArticles = async (page: number, shouldAppend: boolean) => {
         try {
             setLoading(true);
-            const urls = await fetchQiitaURLs(page);
-            const newUrls = urls.filter((url) => !fetchedUrls.current.has(url));
-            newUrls.forEach((url) => fetchedUrls.current.add(url));
+            const urls = await fetchQiitaURLs(page, page === 1);
 
-            if (newUrls.length === 0) {
-                console.log("No new articles to fetch");
+            if (urls.length === 0) {
+                setHasMore(false);
                 return;
             }
+
+            const newUrls = urls.filter((url) => !fetchedUrls.current.has(url));
+            newUrls.forEach((url) => fetchedUrls.current.add(url));
 
             const ogpResults = await Promise.all(
                 newUrls.map(async (url) => {
@@ -98,10 +76,25 @@ export default function BlogsPage() {
             );
         } catch (error) {
             console.error("Error fetching articles:", error);
+            setHasMore(false);
         } finally {
             setLoading(false);
         }
-    };
+    }, [loading, hasMore]);
+
+    React.useEffect(() => {
+        fetchArticles(1, false);
+    }, []);
+
+    React.useEffect(() => {
+        if (inView && hasMore && !loading) {
+            setCurrentPage((prev) => {
+                const nextPage = prev + 1;
+                fetchArticles(nextPage, true);
+                return nextPage;
+            });
+        }
+    }, [inView, hasMore, loading, fetchArticles]);
 
     const filteredData = React.useMemo(() => {
         let filtered = articles;
@@ -210,6 +203,9 @@ export default function BlogsPage() {
                                         className="w-full h-40 object-cover mb-2"
                                         width={500}
                                         height={250}
+                                        loading="lazy"
+                                        placeholder="blur"
+                                        blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDABQODxIPDRQSEBIXFRQdHx4eHRoaHSQtJSEkLzYvLy02LjY2OjY2Njo2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Njb/2wBDAR0XFx8aHx4fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx//wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
                                     />
                                 )}
                                 <h2 className="font-bold text-lg mb-1">{title}</h2>
@@ -219,7 +215,22 @@ export default function BlogsPage() {
                     })}
                 </div>
 
-                <div className="text-center mt-6">{loading && <p>新しい記事を取得中...</p>}</div>
+                {loading && (
+                    <div className="text-center mt-6">
+                        <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                        <p className="mt-2">記事を読み込み中...</p>
+                    </div>
+                )}
+
+                {!loading && hasMore && (
+                    <div ref={ref} className="h-10 w-full" />
+                )}
+
+                {!hasMore && (
+                    <div className="text-center mt-6 text-gray-500">
+                        すべての記事を読み込みました
+                    </div>
+                )}
             </AnimatePresence>
         </main>
     );
