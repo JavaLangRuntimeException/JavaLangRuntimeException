@@ -26,6 +26,11 @@ export type OGPResponse = {
 const urlCache = new Map<number, string[]>();
 let isFetchingBackground = false;
 
+// メモリキャッシュ（拡張版）
+const ogpCache = new Map<string, OGPResponse>();
+const cacheTimestamps = new Map<string, number>();
+const CACHE_DURATION = 365 * 24 * 60 * 60 * 1000; // 1年間（ミリ秒）
+
 /**
  * 指定したpage番号に応じて
  * [JavaLangRuntimeException]ユーザーの記事URL一覧を取得。
@@ -70,19 +75,30 @@ export async function fetchQiitaURLs(page: number, isInitialLoad: boolean = fals
     }
 }
 
-// Add caching for OGP data
-const ogpCache = new Map<string, OGPResponse>();
+/**
+ * キャッシュの有効性をチェック
+ */
+function isCacheValid(url: string): boolean {
+    const timestamp = cacheTimestamps.get(url);
+    if (!timestamp) return false;
+
+    const now = Date.now();
+    return (now - timestamp) < CACHE_DURATION;
+}
 
 /**
- * OGP情報を取得
+ * OGP情報を取得（長期キャッシュ対応）
  */
 export async function fetchOgp(url: string): Promise<OGPResponse> {
     try {
-        // Check cache first
-        if (ogpCache.has(url)) {
+        // キャッシュをチェック（有効期限も考慮）
+        if (ogpCache.has(url) && isCacheValid(url)) {
+            console.log(`Using cached OGP data for: ${url}`);
             return ogpCache.get(url) || {};
         }
 
+        // 新規取得
+        console.log(`Fetching new OGP data for: ${url}`);
         const preview = await getLinkPreview(url, {
             followRedirects: "follow",
             timeout: 5000,
@@ -91,11 +107,125 @@ export async function fetchOgp(url: string): Promise<OGPResponse> {
             }
         }) as OGPResponse;
 
-        // Store in cache
+        // キャッシュに保存（タイムスタンプ付き）
         ogpCache.set(url, preview);
+        cacheTimestamps.set(url, Date.now());
+
         return preview;
     } catch (err) {
         console.error("fetchOgp error:", err);
         return {};
     }
+}
+
+/**
+ * 複数のOGP情報を一括取得（既存キャッシュを最大限活用）
+ */
+export async function fetchMultipleOgp(urls: string[]): Promise<OGPResponse[]> {
+    try {
+        const results: OGPResponse[] = [];
+        const urlsToFetch: string[] = [];
+
+        // 既存キャッシュをチェック
+        for (const url of urls) {
+            if (ogpCache.has(url) && isCacheValid(url)) {
+                results.push(ogpCache.get(url) || {});
+            } else {
+                // 新規取得が必要
+                urlsToFetch.push(url);
+                results.push({}); // プレースホルダー
+            }
+        }
+
+        // 新規取得が必要なURLがある場合
+        if (urlsToFetch.length > 0) {
+            console.log(`Fetching ${urlsToFetch.length} new OGP data entries`);
+
+            const newOgpData = await Promise.all(
+                urlsToFetch.map(async (url) => {
+                    try {
+                        const preview = await getLinkPreview(url, {
+                            followRedirects: "follow",
+                            timeout: 5000,
+                            headers: {
+                                'Accept-Language': 'ja',
+                            }
+                        }) as OGPResponse;
+
+                        // キャッシュに保存
+                        ogpCache.set(url, preview);
+                        cacheTimestamps.set(url, Date.now());
+
+                        return { url, data: preview };
+                    } catch (error) {
+                        console.error(`Error fetching OGP for ${url}:`, error);
+                        return { url, data: {} as OGPResponse };
+                    }
+                })
+            );
+
+            // 結果をマージ
+            let fetchIndex = 0;
+            for (let i = 0; i < urls.length; i++) {
+                if (!ogpCache.has(urls[i]) || !isCacheValid(urls[i])) {
+                    results[i] = newOgpData[fetchIndex].data;
+                    fetchIndex++;
+                }
+            }
+        }
+
+        return results;
+    } catch (error) {
+        console.error("fetchMultipleOgp error:", error);
+        return urls.map(() => ({} as OGPResponse));
+    }
+}
+
+/**
+ * キャッシュの統計情報を取得（デバッグ用）
+ */
+export async function getCacheStats(): Promise<{
+    cacheSize: number;
+    validCacheCount: number;
+    expiredCacheCount: number;
+    totalUrls: string[];
+}> {
+    const now = Date.now();
+    let validCount = 0;
+    let expiredCount = 0;
+
+    for (const [url] of ogpCache) {
+        const timestamp = cacheTimestamps.get(url);
+        if (timestamp && (now - timestamp) < CACHE_DURATION) {
+            validCount++;
+        } else {
+            expiredCount++;
+        }
+    }
+
+    return {
+        cacheSize: ogpCache.size,
+        validCacheCount: validCount,
+        expiredCacheCount: expiredCount,
+        totalUrls: [...ogpCache.keys()]
+    };
+}
+
+/**
+ * 期限切れキャッシュをクリーンアップ
+ */
+export async function cleanupExpiredCache(): Promise<number> {
+    const now = Date.now();
+    let cleanedCount = 0;
+
+    for (const [url, timestamp] of cacheTimestamps) {
+        if ((now - timestamp) >= CACHE_DURATION) {
+            ogpCache.delete(url);
+            cacheTimestamps.delete(url);
+            cleanedCount++;
+        }
+    }
+
+    console.log(`Cleaned up ${cleanedCount} expired cache entries`);
+    return cleanedCount;
 }

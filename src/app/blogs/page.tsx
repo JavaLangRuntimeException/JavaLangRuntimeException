@@ -3,7 +3,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { atom, useAtom } from "jotai";
-import { fetchQiitaURLs, fetchOgp, type OGPResponse } from "./server";
+import { fetchQiitaURLs, fetchMultipleOgp, getCacheStats, type OGPResponse } from "./server";
 import Link from "next/link";
 import Image from 'next/image';
 import { useInView } from 'react-intersection-observer';
@@ -17,13 +17,148 @@ interface Ogp {
     images?: string[];
 }
 
-// fetchOgpの戻り値の型を明示的に定義（server.tsからインポート）
-// type OgpResponse = {
-//     title?: string;
-//     description?: string;
-//     url?: string;
-//     images?: string[];
-// }
+// ローカルストレージキャッシュの設定
+const LOCAL_STORAGE_KEY = 'taramanji_qiita_ogp_cache';
+const CACHE_DURATION = 365 * 24 * 60 * 60 * 1000; // 1年間（ミリ秒）
+
+interface CachedOgpData {
+    data: OGPResponse;
+    timestamp: number;
+}
+
+/**
+ * ローカルストレージからキャッシュを取得
+ */
+function getLocalStorageCache(): Record<string, CachedOgpData> {
+    if (typeof window === 'undefined') return {};
+
+    try {
+        const cached = localStorage.getItem(LOCAL_STORAGE_KEY);
+        return cached ? JSON.parse(cached) : {};
+    } catch (error) {
+        console.error("Error reading from localStorage:", error);
+        return {};
+    }
+}
+
+/**
+ * ローカルストレージにキャッシュを保存
+ */
+function saveToLocalStorage(cache: Record<string, CachedOgpData>): void {
+    if (typeof window === 'undefined') return;
+
+    try {
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(cache));
+    } catch (error) {
+        console.error("Error saving to localStorage:", error);
+    }
+}
+
+/**
+ * キャッシュの有効性をチェック
+ */
+function isCacheValid(cachedData: CachedOgpData): boolean {
+    const now = Date.now();
+    return (now - cachedData.timestamp) < CACHE_DURATION;
+}
+
+/**
+ * 期限切れキャッシュをクリーンアップ
+ */
+function cleanupExpiredLocalCache(): void {
+    if (typeof window === 'undefined') return;
+
+    const cache = getLocalStorageCache();
+    const cleanedCache: Record<string, CachedOgpData> = {};
+    let cleanedCount = 0;
+
+    for (const [url, cachedData] of Object.entries(cache)) {
+        if (isCacheValid(cachedData)) {
+            cleanedCache[url] = cachedData;
+        } else {
+            cleanedCount++;
+        }
+    }
+
+    if (cleanedCount > 0) {
+        console.log(`Cleaned up ${cleanedCount} expired localStorage entries`);
+        saveToLocalStorage(cleanedCache);
+    }
+}
+
+/**
+ * 複数URLのOGP情報を効率的に取得（ローカルキャッシュ活用）
+ */
+async function fetchOgpWithLocalCache(urls: string[]): Promise<Ogp[]> {
+    const cache = getLocalStorageCache();
+    const results: Ogp[] = [];
+    const urlsToFetch: string[] = [];
+
+    // 既存キャッシュをチェック
+    for (const url of urls) {
+        const cachedData = cache[url];
+        if (cachedData && isCacheValid(cachedData)) {
+            // キャッシュから復元
+            results.push({
+                title: cachedData.data.title || "",
+                description: cachedData.data.description || "",
+                url: cachedData.data.url || url,
+                images: cachedData.data.images || []
+            });
+        } else {
+            // 新規取得が必要
+            urlsToFetch.push(url);
+            results.push({
+                title: "",
+                description: "",
+                url: "",
+                images: []
+            }); // プレースホルダー
+        }
+    }
+
+    // 新規取得が必要なURLがある場合
+    if (urlsToFetch.length > 0) {
+        console.log(`Fetching ${urlsToFetch.length} new OGP data entries from server`);
+
+        try {
+            const newOgpData = await fetchMultipleOgp(urlsToFetch);
+
+            // 結果をマージし、キャッシュに保存
+            const updatedCache = { ...cache };
+            let fetchIndex = 0;
+
+            for (let i = 0; i < urls.length; i++) {
+                const url = urls[i];
+                const cachedData = cache[url];
+
+                if (!cachedData || !isCacheValid(cachedData)) {
+                    const ogpData = newOgpData[fetchIndex];
+                    results[i] = {
+                        title: ogpData.title || "",
+                        description: ogpData.description || "",
+                        url: ogpData.url || url,
+                        images: ogpData.images || []
+                    };
+
+                    // ローカルキャッシュに保存
+                    updatedCache[url] = {
+                        data: ogpData,
+                        timestamp: Date.now()
+                    };
+
+                    fetchIndex++;
+                }
+            }
+
+            saveToLocalStorage(updatedCache);
+        } catch (error) {
+            console.error("Error fetching OGP data:", error);
+        }
+    }
+
+    return results;
+}
 
 // チートシート記事の静的データ
 const cheatSheetData = [
@@ -113,28 +248,48 @@ export default function BlogsPage() {
     const [cheatSheetArticles, setCheatSheetArticles] = React.useState<Ogp[]>([]);
     const [currentPage, setCurrentPage] = React.useState(1);
     const [hasMore, setHasMore] = React.useState(true);
+    const [cacheStats, setCacheStats] = React.useState<{
+        localCacheSize: number;
+        serverCacheSize: number;
+    }>({ localCacheSize: 0, serverCacheSize: 0 });
     const { ref, inView } = useInView();
 
     const fetchedUrls = React.useRef<Set<string>>(new Set());
 
-    // チートシートのOGPデータを取得
+    // 初期化時にキャッシュクリーンアップを実行
+    React.useEffect(() => {
+        cleanupExpiredLocalCache();
+
+        // キャッシュ統計を更新
+        const updateCacheStats = async () => {
+            const localCache = getLocalStorageCache();
+            const serverStats = await getCacheStats();
+            setCacheStats({
+                localCacheSize: Object.keys(localCache).length,
+                serverCacheSize: serverStats.cacheSize
+            });
+        };
+        updateCacheStats();
+    }, []);
+
+    // チートシートのOGPデータを取得（ローカルキャッシュ活用）
     const fetchCheatSheetOgp = React.useCallback(async () => {
         if (cheatSheetArticles.length > 0) return; // 既に取得済みの場合はスキップ
 
         try {
             setLoading(true);
-            const ogpResults = await Promise.all(
-                cheatSheetData.map(async (item) => {
-                    const result = await fetchOgp(item.url) as OGPResponse;
-                    return {
-                        title: result.title ?? item.title,
-                        description: result.description ?? "",
-                        url: result.url ?? item.url,
-                        images: result.images ?? []
-                    } satisfies Ogp;
-                })
-            );
-            setCheatSheetArticles(ogpResults);
+            const urls = cheatSheetData.map(item => item.url);
+            const ogpResults = await fetchOgpWithLocalCache(urls);
+
+            // フォールバック処理：OGPデータが取得できない場合は元のタイトルを使用
+            const finalResults = ogpResults.map((ogp, index) => ({
+                title: ogp.title || cheatSheetData[index].title,
+                description: ogp.description || "",
+                url: ogp.url || cheatSheetData[index].url,
+                images: ogp.images || []
+            }));
+
+            setCheatSheetArticles(finalResults);
         } catch (error) {
             console.error("Error fetching cheat sheet articles:", error);
         } finally {
@@ -157,17 +312,8 @@ export default function BlogsPage() {
             const newUrls = urls.filter((url) => !fetchedUrls.current.has(url));
             newUrls.forEach((url) => fetchedUrls.current.add(url));
 
-            const ogpResults = await Promise.all(
-                newUrls.map(async (url) => {
-                    const result = await fetchOgp(url) as OGPResponse;
-                    return {
-                        title: result.title ?? "",
-                        description: result.description ?? "",
-                        url: result.url ?? "",
-                        images: result.images ?? []
-                    } satisfies Ogp;
-                })
-            );
+            // ローカルキャッシュを活用してOGP情報を取得
+            const ogpResults = await fetchOgpWithLocalCache(newUrls);
 
             setArticles((prev) =>
                 shouldAppend ? [...prev, ...ogpResults] : ogpResults
@@ -251,14 +397,20 @@ export default function BlogsPage() {
     React.useEffect(() => {
         if (process.env.NODE_ENV === 'development') {
             console.log(`Current page: ${currentPage}, Selected series: ${selectedSeries}`);
+            console.log(`Cache stats - Local: ${cacheStats.localCacheSize}, Server: ${cacheStats.serverCacheSize}`);
         }
-    }, [currentPage, selectedSeries]);
+    }, [currentPage, selectedSeries, cacheStats]);
 
     return (
         <main className="p-4">
             <AnimatePresence mode="wait">
                 <motion.div className="mb-6 text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                     <h1 className="text-xl font-bold">Qiita 記事一覧</h1>
+                    {process.env.NODE_ENV === 'development' && (
+                        <p className="text-sm text-gray-500 mt-2">
+                            キャッシュ: ローカル{cacheStats.localCacheSize}件 / サーバー{cacheStats.serverCacheSize}件
+                        </p>
+                    )}
                 </motion.div>
 
                 {/* ルートへのリンクボタン */}
