@@ -3,10 +3,10 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { atom, useAtom } from "jotai";
-import { fetchQiitaURLs, fetchMultipleOgp, getCacheStats, type OGPResponse } from "./server";
+import { qiitaUrlsAtom, ogpCacheAtom, isFetchingAtom, hasMoreAtom, currentPageAtom } from "../../components/BackgroundFetcher";
+import { fetchMultipleOgp, getCacheStats, type OGPResponse } from "./server";
 import Link from "next/link";
 import Image from 'next/image';
-import { useInView } from 'react-intersection-observer';
 
 const searchAtom = atom("");
 
@@ -17,9 +17,10 @@ interface Ogp {
     images?: string[];
 }
 
-// ローカルストレージキャッシュの設定
+// ローカルストレージキャッシュの設定（既存のOGP取得用）
 const LOCAL_STORAGE_KEY = 'taramanji_qiita_ogp_cache';
 const CACHE_DURATION = 365 * 24 * 60 * 60 * 1000; // 1年間（ミリ秒）
+
 interface CachedOgpData {
     data: OGPResponse;
     timestamp: number;
@@ -249,15 +250,17 @@ export default function BlogsPage() {
     const [selectedSeries, setSelectedSeries] = React.useState("");
     const [articles, setArticles] = React.useState<Ogp[]>([]);
     const [cheatSheetArticles, setCheatSheetArticles] = React.useState<Ogp[]>([]);
-    const [currentPage, setCurrentPage] = React.useState(1);
-    const [hasMore, setHasMore] = React.useState(true);
     const [cacheStats, setCacheStats] = React.useState<{
         localCacheSize: number;
         serverCacheSize: number;
     }>({ localCacheSize: 0, serverCacheSize: 0 });
-    const { ref, inView } = useInView();
 
-    const fetchedUrls = React.useRef<Set<string>>(new Set());
+    // グローバル状態から取得
+    const qiitaUrls = useAtom(qiitaUrlsAtom)[0];
+    const ogpCache = useAtom(ogpCacheAtom)[0];
+    const isFetching = useAtom(isFetchingAtom)[0];
+    const hasMore = useAtom(hasMoreAtom)[0];
+    const currentPage = useAtom(currentPageAtom)[0];
 
     // 初期化時にキャッシュクリーンアップを実行
     React.useEffect(() => {
@@ -300,65 +303,32 @@ export default function BlogsPage() {
         }
     }, [cheatSheetArticles.length]);
 
-    const fetchArticles = React.useCallback(async (page: number, shouldAppend: boolean) => {
-        if (loading || !hasMore) return;
+    // Jotaiから記事データを構築
+    React.useEffect(() => {
+        if (selectedSeries !== "チートシート" && qiitaUrls.length > 0) {
+            console.log(`Building articles from Jotai data: ${qiitaUrls.length} URLs`);
 
-        try {
-            console.log(`Starting fetchArticles: page=${page}, shouldAppend=${shouldAppend}`);
-            setLoading(true);
-            const urls = await fetchQiitaURLs(page, page === 1);
-            console.log(`Fetched URLs from Qiita API:`, urls);
+            const articlesFromJotai = qiitaUrls.map(url => {
+                const cachedOgp = ogpCache[url];
+                return cachedOgp || {
+                    title: "",
+                    description: "",
+                    url: url,
+                    images: []
+                };
+            }).filter(article => article.url); // URLが存在する記事のみ
 
-            if (urls.length === 0) {
-                console.log('No URLs found, setting hasMore to false');
-                setHasMore(false);
-                return;
-            }
-
-            const newUrls = urls.filter((url) => !fetchedUrls.current.has(url));
-            console.log(`New URLs to fetch OGP for:`, newUrls);
-            newUrls.forEach((url) => fetchedUrls.current.add(url));
-
-            // ローカルキャッシュを活用してOGP情報を取得
-            const ogpResults = await fetchOgpWithLocalCache(newUrls);
-            console.log(`OGP results:`, ogpResults);
-
-            setArticles((prev) => {
-                const updated = shouldAppend ? [...prev, ...ogpResults] : ogpResults;
-                console.log(`Updated articles:`, updated);
-                return updated;
-            });
-        } catch (error) {
-            console.error("Error fetching articles:", error);
-            setHasMore(false);
-        } finally {
-            console.log('Finished fetchArticles, setting loading to false');
-            setLoading(false);
+            setArticles(articlesFromJotai);
+            console.log(`Set ${articlesFromJotai.length} articles from Jotai cache`);
         }
-    }, [loading, hasMore]);
+    }, [qiitaUrls, ogpCache, selectedSeries]);
 
     React.useEffect(() => {
         console.log(`useEffect triggered: selectedSeries="${selectedSeries}"`);
         if (selectedSeries === "チートシート") {
             fetchCheatSheetOgp();
-        } else {
-            // チートシート以外の場合は記事をリセットしてから取得
-            setArticles([]);
-            setHasMore(true);
-            fetchedUrls.current.clear();
-            fetchArticles(1, false);
         }
-    }, [selectedSeries, fetchCheatSheetOgp, fetchArticles]);
-
-    React.useEffect(() => {
-        if (inView && hasMore && !loading && selectedSeries !== "チートシート") {
-            setCurrentPage((prev) => {
-                const nextPage = prev + 1;
-                fetchArticles(nextPage, true);
-                return nextPage;
-            });
-        }
-    }, [inView, hasMore, loading, fetchArticles, selectedSeries]);
+    }, [selectedSeries, fetchCheatSheetOgp]);
 
     const filteredData = React.useMemo(() => {
         let filtered: Ogp[] = [];
@@ -384,25 +354,22 @@ export default function BlogsPage() {
             });
         }
 
+        console.log(`Filtered data for rendering:`, filtered);
+        console.log(`Selected series: "${selectedSeries}", Articles count: ${articles.length}, CheatSheet count: ${cheatSheetArticles.length}`);
+        console.log(`Background fetch status: fetching=${isFetching}, hasMore=${hasMore}, currentPage=${currentPage}`);
+
         return filtered;
-    }, [articles, cheatSheetArticles, searchText, selectedSeries]);
+    }, [articles, cheatSheetArticles, searchText, selectedSeries, isFetching, hasMore, currentPage]);
 
     const handleSeriesClick = (series: string) => {
         setSelectedSeries(series);
-        setCurrentPage(1); // currentPageを使用
-        setHasMore(true);
-        fetchedUrls.current.clear();
         if (series !== "チートシート") {
-            setArticles([]); // チートシート以外の場合は記事リストをリセット
+            // Jotaiのデータを使用するため、特別な処理は不要
         }
     };
 
     const clearSeries = () => {
         setSelectedSeries("");
-        setCurrentPage(1); // currentPageを使用
-        setHasMore(true);
-        fetchedUrls.current.clear();
-        setArticles([]);
     };
 
     const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -412,10 +379,10 @@ export default function BlogsPage() {
     // 現在のページ情報をコンソールに出力（開発時のデバッグ用）
     React.useEffect(() => {
         if (process.env.NODE_ENV === 'development') {
-            console.log(`Current page: ${currentPage}, Selected series: ${selectedSeries}`);
+            console.log(`Jotai URLs: ${qiitaUrls.length}, OGP Cache: ${Object.keys(ogpCache).length}`);
             console.log(`Cache stats - Local: ${cacheStats.localCacheSize}, Server: ${cacheStats.serverCacheSize}`);
         }
-    }, [currentPage, selectedSeries, cacheStats]);
+    }, [qiitaUrls.length, ogpCache, cacheStats]);
 
     return (
         <main className="p-4">
@@ -423,9 +390,11 @@ export default function BlogsPage() {
                 <motion.div className="mb-6 text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                     <h1 className="text-xl font-bold">Qiita 記事一覧</h1>
                     {process.env.NODE_ENV === 'development' && (
-                        <p className="text-sm text-gray-500 mt-2">
-                            キャッシュ: ローカル{cacheStats.localCacheSize}件 / サーバー{cacheStats.serverCacheSize}件
-                        </p>
+                        <div className="text-sm text-gray-500 mt-2">
+                            <p>キャッシュ: ローカル{cacheStats.localCacheSize}件 / サーバー{cacheStats.serverCacheSize}件</p>
+                            <p>Jotai: URLs {qiitaUrls.length}件 / OGP {Object.keys(ogpCache).length}件</p>
+                            <p>バックグラウンド: {isFetching ? '取得中' : '待機中'} / ページ{currentPage} / {hasMore ? '継続' : '完了'}</p>
+                        </div>
                     )}
                 </motion.div>
 
@@ -481,7 +450,13 @@ export default function BlogsPage() {
                     {filteredData.map((ogp, idx) => {
                         const { title, description, url, images } = ogp;
                         const imgidx = images?.[0];
-                        if (!url) return null;
+
+                        console.log(`Rendering item ${idx}:`, { title, url, hasImages: !!imgidx });
+
+                        if (!url) {
+                            console.log(`Skipping item ${idx} due to missing URL:`, ogp);
+                            return null;
+                        }
 
                         return (
                             <motion.a
@@ -520,11 +495,14 @@ export default function BlogsPage() {
                     </div>
                 )}
 
-                {!loading && hasMore && selectedSeries !== "チートシート" && (
-                    <div ref={ref} className="h-10 w-full" />
+                {isFetching && (
+                    <div className="text-center mt-6">
+                        <div className="inline-block animate-pulse bg-blue-500 rounded-full h-3 w-3 mr-2"></div>
+                        <span className="text-sm text-gray-500">バックグラウンドで記事を取得中...</span>
+                    </div>
                 )}
 
-                {!hasMore && selectedSeries !== "チートシート" && (
+                {!hasMore && (
                     <div className="text-center mt-6 text-gray-500">
                         すべての記事を読み込みました
                     </div>
