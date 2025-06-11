@@ -125,6 +125,20 @@ export const BackgroundFetcher: React.FC = () => {
                 const parsedUrls = JSON.parse(cookieUrls);
                 setQiitaUrls(parsedUrls);
                 console.log(`[BackgroundFetcher] Restored ${parsedUrls.length} URLs from cookie`);
+
+                // 復元されたURL数に基づいて適切なページ数を設定
+                // 初回5件、以降20件ずつなので計算式: Math.floor((count - 5) / 20) + 2
+                if (parsedUrls.length > 0) {
+                    let restoredPage = 1;
+                    if (parsedUrls.length > 5) {
+                        restoredPage = Math.floor((parsedUrls.length - 5) / 20) + 2;
+                    } else {
+                        restoredPage = 2; // 最初の5件なら次は2ページ目
+                    }
+                    setCurrentPage(restoredPage);
+                    setHasMore(true); // 復元時は必ずhasMoreをtrueに
+                    console.log(`[BackgroundFetcher] Set current page to ${restoredPage} based on ${parsedUrls.length} URLs`);
+                }
             } catch (error) {
                 console.error('[BackgroundFetcher] Error parsing URLs from cookie:', error);
             }
@@ -153,7 +167,7 @@ export const BackgroundFetcher: React.FC = () => {
         }
 
         return () => clearInterval(interval);
-    }, [fetchNextBatch, lastFetchTime, qiitaUrls.length, ogpCache, setQiitaUrls, setOgpCache]);
+    }, [fetchNextBatch, lastFetchTime, qiitaUrls.length, ogpCache, setQiitaUrls, setOgpCache, setCurrentPage, setHasMore]);
 
     // このコンポーネントは何もレンダリングしない（バックグラウンド処理のみ）
     return null;

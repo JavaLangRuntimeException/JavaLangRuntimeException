@@ -247,7 +247,7 @@ const seriesList = [
 export default function BlogsPage() {
     const [searchText, setSearchText] = useAtom(searchAtom);
     const [loading, setLoading] = React.useState(false);
-    const [selectedSeries, setSelectedSeries] = React.useState("チートシート");
+    const [selectedSeries, setSelectedSeries] = React.useState("");
     const [articles, setArticles] = React.useState<Ogp[]>([]);
     const [cheatSheetArticles, setCheatSheetArticles] = React.useState<Ogp[]>([]);
     const [cacheStats, setCacheStats] = React.useState<{
@@ -283,11 +283,15 @@ export default function BlogsPage() {
         updateCacheStats();
     }, []);
 
-    // 開発用：キャッシュをクリアする関数
+        // 開発用：キャッシュをクリアする関数
     const clearAllCache = React.useCallback(() => {
         // localStorage をクリア
         localStorage.removeItem('taramanji_qiita_urls');
         localStorage.removeItem('taramanji_ogp_cache');
+        localStorage.removeItem('taramanji_last_fetch');
+        localStorage.removeItem('taramanji_current_page');
+        localStorage.removeItem('taramanji_has_more');
+        localStorage.removeItem('taramanji_is_fetching');
         localStorage.removeItem(LOCAL_STORAGE_KEY);
 
         // Cookie をクリア
