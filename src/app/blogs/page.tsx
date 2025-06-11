@@ -262,6 +262,11 @@ export default function BlogsPage() {
     const hasMore = useAtom(hasMoreAtom)[0];
     const currentPage = useAtom(currentPageAtom)[0];
 
+    // デバッグ情報を表示
+    React.useEffect(() => {
+        console.log(`[BlogPage] State update: URLs=${qiitaUrls.length}, OGP=${Object.keys(ogpCache).length}, fetching=${isFetching}, hasMore=${hasMore}, page=${currentPage}`);
+    }, [qiitaUrls.length, Object.keys(ogpCache).length, isFetching, hasMore, currentPage]);
+
     // 初期化時にキャッシュクリーンアップを実行
     React.useEffect(() => {
         cleanupExpiredLocalCache();
@@ -276,6 +281,22 @@ export default function BlogsPage() {
             });
         };
         updateCacheStats();
+    }, []);
+
+    // 開発用：キャッシュをクリアする関数
+    const clearAllCache = React.useCallback(() => {
+        // localStorage をクリア
+        localStorage.removeItem('taramanji_qiita_urls');
+        localStorage.removeItem('taramanji_ogp_cache');
+        localStorage.removeItem(LOCAL_STORAGE_KEY);
+
+        // Cookie をクリア
+        document.cookie = 'taramanji_qiita_urls=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        document.cookie = 'taramanji_ogp_cache=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+
+        // 状態をリセット（ページリロードが必要）
+        console.log('All cache cleared. Please reload the page.');
+        window.location.reload();
     }, []);
 
     // チートシートのOGPデータを取得（ローカルキャッシュ活用）
@@ -345,10 +366,35 @@ export default function BlogsPage() {
         }
     }, [isFetching, qiitaUrls.length]);
 
-    // Jotaiから記事データを構築
+    // チートシート表示時はJotaiの状態から記事を構築
     React.useEffect(() => {
-        if (selectedSeries !== "チートシート" && qiitaUrls.length > 0) {
-            console.log(`Building articles from Jotai data: ${qiitaUrls.length} URLs`);
+        if (selectedSeries === "チートシート" && qiitaUrls.length > 0) {
+            console.log(`[BlogPage] Building cheat sheet articles from Jotai data: ${qiitaUrls.length} URLs`);
+
+            const articlesFromJotai = qiitaUrls.map(url => {
+                const cachedOgp = ogpCache[url];
+                if (cachedOgp) {
+                    return {
+                        title: cachedOgp.title || "",
+                        description: cachedOgp.description || "",
+                        url: cachedOgp.url || url,
+                        images: cachedOgp.images || []
+                    };
+                } else {
+                    // OGPデータがまだない場合はプレースホルダー
+                    return {
+                        title: "読み込み中...",
+                        description: "",
+                        url: url,
+                        images: []
+                    };
+                }
+            });
+
+            setCheatSheetArticles(articlesFromJotai);
+            console.log(`[BlogPage] Set ${articlesFromJotai.length} cheat sheet articles from Jotai cache`);
+        } else if (selectedSeries !== "チートシート" && qiitaUrls.length > 0) {
+            console.log(`[BlogPage] Building articles from Jotai data: ${qiitaUrls.length} URLs`);
 
             const articlesFromJotai = qiitaUrls.map(url => {
                 const cachedOgp = ogpCache[url];
@@ -361,13 +407,13 @@ export default function BlogsPage() {
             }).filter(article => article.url); // URLが存在する記事のみ
 
             setArticles(articlesFromJotai);
-            console.log(`Set ${articlesFromJotai.length} articles from Jotai cache`);
+            console.log(`[BlogPage] Set ${articlesFromJotai.length} articles from Jotai cache`);
         } else if (selectedSeries !== "チートシート" && qiitaUrls.length === 0) {
             // バックグラウンドfetchが動作していない場合は手動fetch
             console.log("No Jotai data found, attempting manual fetch...");
             manualFetchQiitaArticles();
         }
-    }, [qiitaUrls, ogpCache, selectedSeries, manualFetchQiitaArticles]);
+    }, [selectedSeries, qiitaUrls, ogpCache, manualFetchQiitaArticles]);
 
     // 初期ロード時にチートシートをfetch
     React.useEffect(() => {
@@ -438,7 +484,16 @@ export default function BlogsPage() {
                     <h1 className="text-xl font-bold">Qiita 記事一覧</h1>
                     {process.env.NODE_ENV === 'development' && (
                         <div className="text-sm text-gray-500 mt-2">
-                            <p>キャッシュ: ローカル{cacheStats.localCacheSize}件 / サーバー{cacheStats.serverCacheSize}件</p>
+                            <div className="flex items-center justify-between">
+                                <p>キャッシュ: ローカル{cacheStats.localCacheSize}件 / サーバー{cacheStats.serverCacheSize}件</p>
+                                <button
+                                    onClick={clearAllCache}
+                                    className="ml-4 px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
+                                    title="すべてのキャッシュをクリア（開発用）"
+                                >
+                                    キャッシュクリア
+                                </button>
+                            </div>
                             <p>Jotai: URLs {qiitaUrls.length}件 / OGP {Object.keys(ogpCache).length}件</p>
                             <p>バックグラウンド: {isFetching ? '取得中' : '待機中'} / ページ{currentPage} / {hasMore ? '継続' : '完了'}</p>
                         </div>
@@ -525,7 +580,7 @@ export default function BlogsPage() {
                                         height={250}
                                         loading="lazy"
                                         placeholder="blur"
-                                        blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDABQODxIPDRQSEBIXFRQdHx4eHRoaHSQtJSEkLzYvLy02LjY2OjY2Njo2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Njb/2wBDAR0XFx8aHx4fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx//wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
+                                        blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDABQODxIPDRQSEBIXFRQdHx4eHRoaHSQtJSEkLzYvLy02LjY2OjY2Njo2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Njb/2wBDAR0XFx8aHx4fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx//wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
                                     />
                                 )}
                                 <h2 className="font-bold text-lg mb-1">{title}</h2>
