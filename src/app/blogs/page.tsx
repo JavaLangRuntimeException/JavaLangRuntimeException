@@ -247,7 +247,7 @@ const seriesList = [
 export default function BlogsPage() {
     const [searchText, setSearchText] = useAtom(searchAtom);
     const [loading, setLoading] = React.useState(false);
-    const [selectedSeries, setSelectedSeries] = React.useState("");
+    const [selectedSeries, setSelectedSeries] = React.useState("チートシート");
     const [articles, setArticles] = React.useState<Ogp[]>([]);
     const [cheatSheetArticles, setCheatSheetArticles] = React.useState<Ogp[]>([]);
     const [cacheStats, setCacheStats] = React.useState<{
@@ -284,6 +284,7 @@ export default function BlogsPage() {
 
         try {
             setLoading(true);
+            console.log("Fetching cheat sheet OGP data...");
             const urls = cheatSheetData.map(item => item.url);
             const ogpResults = await fetchOgpWithLocalCache(urls);
 
@@ -295,13 +296,54 @@ export default function BlogsPage() {
                 images: ogp.images || []
             }));
 
+            console.log(`Cheat sheet articles loaded: ${finalResults.length} items`);
             setCheatSheetArticles(finalResults);
         } catch (error) {
             console.error("Error fetching cheat sheet articles:", error);
+            // エラー時はフォールバック：最低限のデータで表示
+            const fallbackResults = cheatSheetData.map(item => ({
+                title: item.title,
+                description: "",
+                url: item.url,
+                images: []
+            }));
+            setCheatSheetArticles(fallbackResults);
         } finally {
             setLoading(false);
         }
     }, [cheatSheetArticles.length]);
+
+    // 手動でQiita記事をfetchする関数（バックグラウンドfetchが動かない場合の対策）
+    const manualFetchQiitaArticles = React.useCallback(async () => {
+        if (isFetching || qiitaUrls.length > 0) return; // 既にfetch中または取得済み
+
+        try {
+            setLoading(true);
+            console.log("Manual fetch of Qiita articles...");
+
+            const { fetchQiitaURLs } = await import("./server");
+            const urls = await fetchQiitaURLs(1, true);
+
+            if (urls.length > 0) {
+                console.log(`Manual fetch got ${urls.length} URLs`);
+                const ogpResults = await fetchOgpWithLocalCache(urls);
+
+                const articlesData = ogpResults.map((ogp, index) => ({
+                    title: ogp.title || "",
+                    description: ogp.description || "",
+                    url: ogp.url || urls[index],
+                    images: ogp.images || []
+                }));
+
+                setArticles(articlesData);
+                console.log(`Manual fetch completed: ${articlesData.length} articles`);
+            }
+        } catch (error) {
+            console.error("Manual fetch error:", error);
+        } finally {
+            setLoading(false);
+        }
+    }, [isFetching, qiitaUrls.length]);
 
     // Jotaiから記事データを構築
     React.useEffect(() => {
@@ -320,9 +362,14 @@ export default function BlogsPage() {
 
             setArticles(articlesFromJotai);
             console.log(`Set ${articlesFromJotai.length} articles from Jotai cache`);
+        } else if (selectedSeries !== "チートシート" && qiitaUrls.length === 0) {
+            // バックグラウンドfetchが動作していない場合は手動fetch
+            console.log("No Jotai data found, attempting manual fetch...");
+            manualFetchQiitaArticles();
         }
-    }, [qiitaUrls, ogpCache, selectedSeries]);
+    }, [qiitaUrls, ogpCache, selectedSeries, manualFetchQiitaArticles]);
 
+    // 初期ロード時にチートシートをfetch
     React.useEffect(() => {
         console.log(`useEffect triggered: selectedSeries="${selectedSeries}"`);
         if (selectedSeries === "チートシート") {
