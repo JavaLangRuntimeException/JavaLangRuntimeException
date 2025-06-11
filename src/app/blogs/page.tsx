@@ -299,7 +299,7 @@ export default function BlogsPage() {
         window.location.reload();
     }, []);
 
-    // チートシートのOGPデータを取得（Jotaiキャッシュ + ローカルキャッシュ活用）
+        // チートシートのOGPデータを取得（ローカルキャッシュ活用）
     const fetchCheatSheetOgp = React.useCallback(async () => {
         if (cheatSheetArticles.length > 0) return; // 既に取得済みの場合はスキップ
 
@@ -307,46 +307,15 @@ export default function BlogsPage() {
             setLoading(true);
             console.log("Fetching cheat sheet OGP data...");
             const urls = cheatSheetData.map(item => item.url);
+            const ogpResults = await fetchOgpWithLocalCache(urls);
 
-            // Jotaiキャッシュから優先的に取得
-            const resultsFromJotai: (Ogp | null)[] = urls.map(url => {
-                const cachedOgp = ogpCache[url];
-                if (cachedOgp) {
-                    return {
-                        title: cachedOgp.title || "",
-                        description: cachedOgp.description || "",
-                        url: cachedOgp.url || url,
-                        images: cachedOgp.images || []
-                    };
-                }
-                return null;
-            });
-
-            // Jotaiキャッシュにないものはローカルキャッシュ/サーバーから取得
-            const urlsToFetch = urls.filter((url, index) => resultsFromJotai[index] === null);
-            console.log(`Using Jotai cache for ${urls.length - urlsToFetch.length}/${urls.length} URLs, fetching ${urlsToFetch.length} from server`);
-
-            let ogpResults: Ogp[] = [];
-            if (urlsToFetch.length > 0) {
-                ogpResults = await fetchOgpWithLocalCache(urlsToFetch);
-            }
-
-            // 結果をマージ
-            let fetchIndex = 0;
-            const finalResults = urls.map((url, index) => {
-                const fromJotai = resultsFromJotai[index];
-                if (fromJotai) {
-                    return fromJotai;
-                } else {
-                    const ogp = ogpResults[fetchIndex++] || {};
-                    return {
-                        title: ogp.title || cheatSheetData[index].title,
-                        description: ogp.description || "",
-                        url: ogp.url || cheatSheetData[index].url,
-                        images: ogp.images || []
-                    };
-                }
-            });
+            // フォールバック処理：OGPデータが取得できない場合は元のタイトルを使用
+            const finalResults = ogpResults.map((ogp, index) => ({
+                title: ogp.title || cheatSheetData[index].title,
+                description: ogp.description || "",
+                url: ogp.url || cheatSheetData[index].url,
+                images: ogp.images || []
+            }));
 
             console.log(`Cheat sheet articles loaded: ${finalResults.length} items`);
             setCheatSheetArticles(finalResults);
@@ -363,7 +332,7 @@ export default function BlogsPage() {
         } finally {
             setLoading(false);
         }
-    }, [cheatSheetArticles.length, ogpCache]);
+    }, [cheatSheetArticles.length]);
 
     // 手動でQiita記事をfetchする関数（バックグラウンドfetchが動かない場合の対策）
     const manualFetchQiitaArticles = React.useCallback(async () => {
@@ -397,15 +366,9 @@ export default function BlogsPage() {
         }
     }, [isFetching, qiitaUrls.length]);
 
-    // チートシート表示時は静的データを使用し、Jotaiから記事データを構築（非チートシートのみ）
+    // Jotaiから記事データを構築（非チートシートのみ）
     React.useEffect(() => {
-        if (selectedSeries === "チートシート") {
-            // チートシートの場合は静的データを使用し、fetchCheatSheetOgpを呼び出すのみ
-            console.log(`[BlogPage] Cheat sheet selected, using static data (17 items)`);
-            if (cheatSheetArticles.length === 0) {
-                fetchCheatSheetOgp();
-            }
-        } else if (selectedSeries !== "チートシート" && qiitaUrls.length > 0) {
+        if (selectedSeries !== "チートシート" && qiitaUrls.length > 0) {
             console.log(`[BlogPage] Building articles from Jotai data: ${qiitaUrls.length} URLs`);
 
             const articlesFromJotai = qiitaUrls.map(url => {
@@ -425,12 +388,13 @@ export default function BlogsPage() {
             console.log("No Jotai data found, attempting manual fetch...");
             manualFetchQiitaArticles();
         }
-    }, [selectedSeries, qiitaUrls, ogpCache, manualFetchQiitaArticles, fetchCheatSheetOgp, cheatSheetArticles.length]);
+    }, [selectedSeries, qiitaUrls, ogpCache, manualFetchQiitaArticles]);
 
-    // 初期ロード時にチートシートをfetch
+    // チートシート選択時の処理
     React.useEffect(() => {
         console.log(`useEffect triggered: selectedSeries="${selectedSeries}"`);
         if (selectedSeries === "チートシート") {
+            console.log(`[BlogPage] Cheat sheet selected, using static data (17 items)`);
             fetchCheatSheetOgp();
         }
     }, [selectedSeries, fetchCheatSheetOgp]);
