@@ -20,7 +20,6 @@ interface Ogp {
 // ローカルストレージキャッシュの設定
 const LOCAL_STORAGE_KEY = 'taramanji_qiita_ogp_cache';
 const CACHE_DURATION = 365 * 24 * 60 * 60 * 1000; // 1年間（ミリ秒）
-
 interface CachedOgpData {
     data: OGPResponse;
     timestamp: number;
@@ -91,29 +90,25 @@ function cleanupExpiredLocalCache(): void {
  */
 async function fetchOgpWithLocalCache(urls: string[]): Promise<Ogp[]> {
     const cache = getLocalStorageCache();
-    const results: Ogp[] = [];
-    const urlsToFetch: string[] = [];
+    const results: (Ogp | null)[] = [];
+    const urlsToFetch: { url: string; index: number }[] = [];
 
     // 既存キャッシュをチェック
-    for (const url of urls) {
+    for (let i = 0; i < urls.length; i++) {
+        const url = urls[i];
         const cachedData = cache[url];
         if (cachedData && isCacheValid(cachedData)) {
             // キャッシュから復元
-            results.push({
+            results[i] = {
                 title: cachedData.data.title || "",
                 description: cachedData.data.description || "",
                 url: cachedData.data.url || url,
                 images: cachedData.data.images || []
-            });
+            };
         } else {
             // 新規取得が必要
-            urlsToFetch.push(url);
-            results.push({
-                title: "",
-                description: "",
-                url: "",
-                images: []
-            }); // プレースホルダー
+            urlsToFetch.push({ url, index: i });
+            results[i] = null; // プレースホルダー
         }
     }
 
@@ -122,42 +117,50 @@ async function fetchOgpWithLocalCache(urls: string[]): Promise<Ogp[]> {
         console.log(`Fetching ${urlsToFetch.length} new OGP data entries from server`);
 
         try {
-            const newOgpData = await fetchMultipleOgp(urlsToFetch);
+            const urlsOnly = urlsToFetch.map(item => item.url);
+            const newOgpData = await fetchMultipleOgp(urlsOnly);
 
             // 結果をマージし、キャッシュに保存
             const updatedCache = { ...cache };
-            let fetchIndex = 0;
 
-            for (let i = 0; i < urls.length; i++) {
-                const url = urls[i];
-                const cachedData = cache[url];
+            for (let i = 0; i < urlsToFetch.length; i++) {
+                const { url, index } = urlsToFetch[i];
+                const ogpData = newOgpData[i];
 
-                if (!cachedData || !isCacheValid(cachedData)) {
-                    const ogpData = newOgpData[fetchIndex];
-                    results[i] = {
-                        title: ogpData.title || "",
-                        description: ogpData.description || "",
-                        url: ogpData.url || url,
-                        images: ogpData.images || []
-                    };
+                results[index] = {
+                    title: ogpData.title || "",
+                    description: ogpData.description || "",
+                    url: ogpData.url || url,
+                    images: ogpData.images || []
+                };
 
-                    // ローカルキャッシュに保存
-                    updatedCache[url] = {
-                        data: ogpData,
-                        timestamp: Date.now()
-                    };
-
-                    fetchIndex++;
-                }
+                // ローカルキャッシュに保存
+                updatedCache[url] = {
+                    data: ogpData,
+                    timestamp: Date.now()
+                };
             }
 
             saveToLocalStorage(updatedCache);
         } catch (error) {
             console.error("Error fetching OGP data:", error);
+
+            // エラー時はフォールバック値を設定
+            for (const { url, index } of urlsToFetch) {
+                if (results[index] === null) {
+                    results[index] = {
+                        title: "",
+                        description: "",
+                        url: url, // 元のURLを保持
+                        images: []
+                    };
+                }
+            }
         }
     }
 
-    return results;
+    // nullの要素を除外してOgp[]として返す
+    return results.filter((result): result is Ogp => result !== null);
 }
 
 // チートシート記事の静的データ
@@ -301,35 +304,48 @@ export default function BlogsPage() {
         if (loading || !hasMore) return;
 
         try {
+            console.log(`Starting fetchArticles: page=${page}, shouldAppend=${shouldAppend}`);
             setLoading(true);
             const urls = await fetchQiitaURLs(page, page === 1);
+            console.log(`Fetched URLs from Qiita API:`, urls);
 
             if (urls.length === 0) {
+                console.log('No URLs found, setting hasMore to false');
                 setHasMore(false);
                 return;
             }
 
             const newUrls = urls.filter((url) => !fetchedUrls.current.has(url));
+            console.log(`New URLs to fetch OGP for:`, newUrls);
             newUrls.forEach((url) => fetchedUrls.current.add(url));
 
             // ローカルキャッシュを活用してOGP情報を取得
             const ogpResults = await fetchOgpWithLocalCache(newUrls);
+            console.log(`OGP results:`, ogpResults);
 
-            setArticles((prev) =>
-                shouldAppend ? [...prev, ...ogpResults] : ogpResults
-            );
+            setArticles((prev) => {
+                const updated = shouldAppend ? [...prev, ...ogpResults] : ogpResults;
+                console.log(`Updated articles:`, updated);
+                return updated;
+            });
         } catch (error) {
             console.error("Error fetching articles:", error);
             setHasMore(false);
         } finally {
+            console.log('Finished fetchArticles, setting loading to false');
             setLoading(false);
         }
     }, [loading, hasMore]);
 
     React.useEffect(() => {
+        console.log(`useEffect triggered: selectedSeries="${selectedSeries}"`);
         if (selectedSeries === "チートシート") {
             fetchCheatSheetOgp();
         } else {
+            // チートシート以外の場合は記事をリセットしてから取得
+            setArticles([]);
+            setHasMore(true);
+            fetchedUrls.current.clear();
             fetchArticles(1, false);
         }
     }, [selectedSeries, fetchCheatSheetOgp, fetchArticles]);
@@ -487,7 +503,7 @@ export default function BlogsPage() {
                                         height={250}
                                         loading="lazy"
                                         placeholder="blur"
-                                        blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDABQODxIPDRQSEBIXFRQdHx4eHRoaHSQtJSEkLzYvLy02LjY2OjY2Njo2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Njb/2wBDAR0XFx8aHx4fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx//wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
+                                        blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDABQODxIPDRQSEBIXFRQdHx4eHRoaHSQtJSEkLzYvLy02LjY2OjY2Njo2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Njb/2wBDAR0XFx8aHx4fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx//wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
                                     />
                                 )}
                                 <h2 className="font-bold text-lg mb-1">{title}</h2>
