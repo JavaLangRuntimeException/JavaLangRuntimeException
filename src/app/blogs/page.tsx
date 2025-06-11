@@ -25,6 +25,78 @@ type OgpResponse = {
     images?: string[];
 }
 
+// チートシート記事の静的データ
+const cheatSheetData = [
+    {
+        title: "git/gh コマンド(gitコマンド以外にもgitの概念も書いてあります)",
+        url: "https://qiita.com/JavaLangRuntimeException/items/6b46551f56e0def76eba"
+    },
+    {
+        title: "lazygit",
+        url: "https://qiita.com/JavaLangRuntimeException/items/42087d09728d5739d73d"
+    },
+    {
+        title: "Docker コマンド(dockerコマンド以外にもdockerの概念の記事へのリンクもあります)",
+        url: "https://qiita.com/JavaLangRuntimeException/items/21f7c7bf3d143f821697"
+    },
+    {
+        title: "ステータスコード",
+        url: "https://qiita.com/JavaLangRuntimeException/items/ab1bc7b976ed2dfad91c"
+    },
+    {
+        title: "TypeScript",
+        url: "https://qiita.com/JavaLangRuntimeException/items/5894391c08e0d8e28389"
+    },
+    {
+        title: "Go/Gorm",
+        url: "https://qiita.com/JavaLangRuntimeException/items/d388717fc1436bc3ec9d"
+    },
+    {
+        title: "testing/gomock",
+        url: "https://qiita.com/JavaLangRuntimeException/items/bf521190f6f4d79e59fb"
+    },
+    {
+        title: "C#/.NET/Unity",
+        url: "https://qiita.com/JavaLangRuntimeException/items/7849b32bc223d4aa0247"
+    },
+    {
+        title: "Ruby・Ruby on Rails",
+        url: "https://qiita.com/JavaLangRuntimeException/items/42d935cf92c212f1c7ec"
+    },
+    {
+        title: "SQL",
+        url: "https://qiita.com/JavaLangRuntimeException/items/f038fbaccdd92fb0308a"
+    },
+    {
+        title: "Vim",
+        url: "https://qiita.com/JavaLangRuntimeException/items/0c68ab96ea198e0a7294"
+    },
+    {
+        title: "プルリクエスト・マークダウン記法チートシート",
+        url: "https://qiita.com/JavaLangRuntimeException/items/329eb92a47a07ff4dde8"
+    },
+    {
+        title: "ファイル操作コマンドチートシート",
+        url: "https://qiita.com/JavaLangRuntimeException/items/16f244606a73f7d106e4"
+    },
+    {
+        title: "VSCode Github Copilot拡張機能",
+        url: "https://qiita.com/JavaLangRuntimeException/items/be13dc3a346cf6e5ee44"
+    },
+    {
+        title: "OpenAI Assistants API",
+        url: "https://qiita.com/JavaLangRuntimeException/items/1a1abc01e8d7d05dce93"
+    },
+    {
+        title: "GitHub API",
+        url: "https://qiita.com/JavaLangRuntimeException/items/ab1bc7b976ed2dfad91c"
+    },
+    {
+        title: "変数・関数(メソッド)・クラス命名規則",
+        url: "https://qiita.com/JavaLangRuntimeException/items/b93865c448f69bcfca4a"
+    }
+];
+
 const seriesList = [
     "チートシート",
     "TypeScriptで学ぶプログラミングの世界",
@@ -38,11 +110,37 @@ export default function BlogsPage() {
     const [loading, setLoading] = React.useState(false);
     const [selectedSeries, setSelectedSeries] = React.useState("");
     const [articles, setArticles] = React.useState<Ogp[]>([]);
+    const [cheatSheetArticles, setCheatSheetArticles] = React.useState<Ogp[]>([]);
     const [currentPage, setCurrentPage] = React.useState(1);
     const [hasMore, setHasMore] = React.useState(true);
     const { ref, inView } = useInView();
 
     const fetchedUrls = React.useRef<Set<string>>(new Set());
+
+    // チートシートのOGPデータを取得
+    const fetchCheatSheetOgp = React.useCallback(async () => {
+        if (cheatSheetArticles.length > 0) return; // 既に取得済みの場合はスキップ
+
+        try {
+            setLoading(true);
+            const ogpResults = await Promise.all(
+                cheatSheetData.map(async (item) => {
+                    const result = await fetchOgp(item.url) as OgpResponse;
+                    return {
+                        title: result.title ?? item.title,
+                        description: result.description ?? "",
+                        url: result.url ?? item.url,
+                        images: result.images ?? []
+                    } satisfies Ogp;
+                })
+            );
+            setCheatSheetArticles(ogpResults);
+        } catch (error) {
+            console.error("Error fetching cheat sheet articles:", error);
+        } finally {
+            setLoading(false);
+        }
+    }, [cheatSheetArticles.length]);
 
     const fetchArticles = React.useCallback(async (page: number, shouldAppend: boolean) => {
         if (loading || !hasMore) return;
@@ -83,21 +181,38 @@ export default function BlogsPage() {
     }, [loading, hasMore]);
 
     React.useEffect(() => {
-        fetchArticles(1, false);
-    }, []);
+        if (selectedSeries === "チートシート") {
+            fetchCheatSheetOgp();
+        } else {
+            fetchArticles(1, false);
+        }
+    }, [selectedSeries, fetchCheatSheetOgp]);
 
     React.useEffect(() => {
-        if (inView && hasMore && !loading) {
+        if (inView && hasMore && !loading && selectedSeries !== "チートシート") {
             setCurrentPage((prev) => {
                 const nextPage = prev + 1;
                 fetchArticles(nextPage, true);
                 return nextPage;
             });
         }
-    }, [inView, hasMore, loading, fetchArticles]);
+    }, [inView, hasMore, loading, fetchArticles, selectedSeries]);
 
     const filteredData = React.useMemo(() => {
-        let filtered = articles;
+        let filtered: Ogp[] = [];
+
+        if (selectedSeries === "チートシート") {
+            filtered = cheatSheetArticles;
+        } else {
+            filtered = articles;
+
+            if (selectedSeries) {
+                filtered = filtered.filter((ogpObj) => {
+                    const title = ogpObj.title || "";
+                    return title.includes(selectedSeries);
+                });
+            }
+        }
 
         if (searchText.trim()) {
             const key = searchText.toLowerCase();
@@ -107,18 +222,26 @@ export default function BlogsPage() {
             });
         }
 
-        if (selectedSeries) {
-            filtered = filtered.filter((ogpObj) => {
-                const title = ogpObj.title || "";
-                return title.includes(selectedSeries);
-            });
-        }
-
         return filtered;
-    }, [articles, searchText, selectedSeries]);
+    }, [articles, cheatSheetArticles, searchText, selectedSeries]);
 
-    const handleSeriesClick = (series: string) => setSelectedSeries(series);
-    const clearSeries = () => setSelectedSeries("");
+    const handleSeriesClick = (series: string) => {
+        setSelectedSeries(series);
+        setCurrentPage(1);
+        setHasMore(true);
+        fetchedUrls.current.clear();
+        if (series !== "チートシート") {
+            setArticles([]); // チートシート以外の場合は記事リストをリセット
+        }
+    };
+
+    const clearSeries = () => {
+        setSelectedSeries("");
+        setCurrentPage(1);
+        setHasMore(true);
+        fetchedUrls.current.clear();
+        setArticles([]);
+    };
 
     const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSearchText(e.target.value);
@@ -222,11 +345,11 @@ export default function BlogsPage() {
                     </div>
                 )}
 
-                {!loading && hasMore && (
+                {!loading && hasMore && selectedSeries !== "チートシート" && (
                     <div ref={ref} className="h-10 w-full" />
                 )}
 
-                {!hasMore && (
+                {!hasMore && selectedSeries !== "チートシート" && (
                     <div className="text-center mt-6 text-gray-500">
                         すべての記事を読み込みました
                     </div>
