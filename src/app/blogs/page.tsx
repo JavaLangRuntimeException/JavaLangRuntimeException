@@ -3,7 +3,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { atom, useAtom } from "jotai";
-import { fetchQiitaURLs, fetchOgp } from "./server";
+import { fetchQiitaURLs, fetchOgp, type OGPResponse } from "./server";
 import Link from "next/link";
 import Image from 'next/image';
 import { useInView } from 'react-intersection-observer';
@@ -17,13 +17,13 @@ interface Ogp {
     images?: string[];
 }
 
-// fetchOgpの戻り値の型を明示的に定義
-type OgpResponse = {
-    title?: string;
-    description?: string;
-    url?: string;
-    images?: string[];
-}
+// fetchOgpの戻り値の型を明示的に定義（server.tsからインポート）
+// type OgpResponse = {
+//     title?: string;
+//     description?: string;
+//     url?: string;
+//     images?: string[];
+// }
 
 // チートシート記事の静的データ
 const cheatSheetData = [
@@ -125,7 +125,7 @@ export default function BlogsPage() {
             setLoading(true);
             const ogpResults = await Promise.all(
                 cheatSheetData.map(async (item) => {
-                    const result = await fetchOgp(item.url) as OgpResponse;
+                    const result = await fetchOgp(item.url) as OGPResponse;
                     return {
                         title: result.title ?? item.title,
                         description: result.description ?? "",
@@ -159,7 +159,7 @@ export default function BlogsPage() {
 
             const ogpResults = await Promise.all(
                 newUrls.map(async (url) => {
-                    const result = await fetchOgp(url) as OgpResponse;
+                    const result = await fetchOgp(url) as OGPResponse;
                     return {
                         title: result.title ?? "",
                         description: result.description ?? "",
@@ -186,7 +186,7 @@ export default function BlogsPage() {
         } else {
             fetchArticles(1, false);
         }
-    }, [selectedSeries, fetchCheatSheetOgp]);
+    }, [selectedSeries, fetchCheatSheetOgp, fetchArticles]);
 
     React.useEffect(() => {
         if (inView && hasMore && !loading && selectedSeries !== "チートシート") {
@@ -227,7 +227,7 @@ export default function BlogsPage() {
 
     const handleSeriesClick = (series: string) => {
         setSelectedSeries(series);
-        setCurrentPage(1);
+        setCurrentPage(1); // currentPageを使用
         setHasMore(true);
         fetchedUrls.current.clear();
         if (series !== "チートシート") {
@@ -237,7 +237,7 @@ export default function BlogsPage() {
 
     const clearSeries = () => {
         setSelectedSeries("");
-        setCurrentPage(1);
+        setCurrentPage(1); // currentPageを使用
         setHasMore(true);
         fetchedUrls.current.clear();
         setArticles([]);
@@ -246,6 +246,13 @@ export default function BlogsPage() {
     const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSearchText(e.target.value);
     };
+
+    // 現在のページ情報をコンソールに出力（開発時のデバッグ用）
+    React.useEffect(() => {
+        if (process.env.NODE_ENV === 'development') {
+            console.log(`Current page: ${currentPage}, Selected series: ${selectedSeries}`);
+        }
+    }, [currentPage, selectedSeries]);
 
     return (
         <main className="p-4">

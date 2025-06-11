@@ -11,6 +11,17 @@ export type QiitaItemResponse = {
     title: string;
 };
 
+/**
+ * OGP情報の型定義
+ */
+export type OGPResponse = {
+    title?: string;
+    description?: string;
+    url?: string;
+    images?: string[];
+    [key: string]: unknown; // その他のプロパティ
+};
+
 // URLのキャッシュ
 const urlCache = new Map<number, string[]>();
 let isFetchingBackground = false;
@@ -60,16 +71,16 @@ export async function fetchQiitaURLs(page: number, isInitialLoad: boolean = fals
 }
 
 // Add caching for OGP data
-const ogpCache = new Map<string, any>();
+const ogpCache = new Map<string, OGPResponse>();
 
 /**
  * OGP情報を取得
  */
-export async function fetchOgp(url: string) {
+export async function fetchOgp(url: string): Promise<OGPResponse> {
     try {
         // Check cache first
         if (ogpCache.has(url)) {
-            return ogpCache.get(url);
+            return ogpCache.get(url) || {};
         }
 
         const preview = await getLinkPreview(url, {
@@ -78,7 +89,7 @@ export async function fetchOgp(url: string) {
             headers: {
                 'Accept-Language': 'ja',
             }
-        });
+        }) as OGPResponse;
 
         // Store in cache
         ogpCache.set(url, preview);
