@@ -133,7 +133,7 @@ export const BackgroundFetcher: React.FC = () => {
 
             // すべてのURLを取得完了したかチェック
             if (updatedUrls.length >= CHEAT_SHEET_URLS.length) {
-                console.log(`[BackgroundFetcher] All cheat sheet articles loaded! (${updatedUrls.length}/${CHEAT_SHEET_URLS.length})`);
+                console.log(`[BackgroundFetcher] すべての記事を読み込みました (${updatedUrls.length}/${CHEAT_SHEET_URLS.length})`);
                 setHasMore(false);
             }
 
@@ -167,7 +167,7 @@ export const BackgroundFetcher: React.FC = () => {
                 // すべて復元済みかチェック
                 if (parsedUrls.length >= CHEAT_SHEET_URLS.length) {
                     setHasMore(false);
-                    console.log(`[BackgroundFetcher] All URLs already restored from cookie`);
+                    console.log(`[BackgroundFetcher] すべての記事を読み込みました (復元: ${parsedUrls.length}/${CHEAT_SHEET_URLS.length})`);
                 }
             } catch (error) {
                 console.error('[BackgroundFetcher] Error parsing URLs from cookie:', error);
