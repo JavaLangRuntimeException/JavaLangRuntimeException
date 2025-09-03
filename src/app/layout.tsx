@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { ClientWrapper } from "../components/ClientWrapper";
+import { Header } from "../widgets/header";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -23,6 +24,7 @@ export default function RootLayout({
       </head>
       <body className={`${inter.className} min-h-screen w-full`}>
         <ClientWrapper>
+          <Header />
           {children}
         </ClientWrapper>
       </body>

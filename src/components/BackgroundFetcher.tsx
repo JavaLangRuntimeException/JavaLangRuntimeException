@@ -3,7 +3,7 @@
 import React from "react";
 import { useAtom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
-import { fetchQiitaURLs, fetchMultipleOgp } from "../app/blogs/server";
+import { apiFetchQiita, apiFetchMultipleOgp } from "../shared/api/blogs";
 
 interface Ogp {
     title: string;
@@ -22,7 +22,7 @@ export const isFetchingAtom = atomWithStorage<boolean>('taramanji_is_fetching', 
 
 // バックグラウンドfetchの設定
 const FETCH_INTERVAL = 30000; // 30秒間隔
-const MAX_PAGES_PER_SESSION = 10; // 1セッションで最大10ページまで取得
+const MAX_PAGES_PER_SESSION = 50; // 1セッションで最大50ページまで取得（約1000件）
 
 // Cookie操作用のヘルパー関数
 const setCookie = (name: string, value: string, days: number = 365) => {
@@ -51,6 +51,15 @@ export const BackgroundFetcher: React.FC = () => {
     const [isFetching, setIsFetching] = useAtom(isFetchingAtom);
 
     const fetchNextBatch = React.useCallback(async () => {
+        // ページ数の異常値チェックと修正
+        if (currentPage > 200) {
+            const correctPage = Math.max(1, Math.floor((qiitaUrls.length - 15) / 20) + 2);
+            console.warn(`[BackgroundFetcher] Fixing abnormal page number: ${currentPage} -> ${correctPage}`);
+            setCurrentPage(correctPage);
+            setHasMore(true);
+            return;
+        }
+
         if (isFetching || !hasMore || currentPage > MAX_PAGES_PER_SESSION) {
             console.log(`[BackgroundFetcher] Fetch skipped: fetching=${isFetching}, hasMore=${hasMore}, page=${currentPage}`);
             return;
@@ -60,7 +69,7 @@ export const BackgroundFetcher: React.FC = () => {
             setIsFetching(true);
             console.log(`[BackgroundFetcher] Fetching page ${currentPage}...`);
 
-            const urls = await fetchQiitaURLs(currentPage, currentPage === 1);
+            const urls = await apiFetchQiita(currentPage, currentPage === 1);
 
             if (urls.length === 0) {
                 console.log('[BackgroundFetcher] No more URLs found, stopping fetch');
@@ -82,7 +91,7 @@ export const BackgroundFetcher: React.FC = () => {
             }
 
             // OGP情報もバックグラウンドで取得
-            const newOgpData = await fetchMultipleOgp(newUrls);
+            const newOgpData = await apiFetchMultipleOgp(newUrls);
             const updatedOgpCache = { ...ogpCache };
 
             newUrls.forEach((url, index) => {
@@ -127,14 +136,23 @@ export const BackgroundFetcher: React.FC = () => {
                 console.log(`[BackgroundFetcher] Restored ${parsedUrls.length} URLs from cookie`);
 
                 // 復元されたURL数に基づいて適切なページ数を設定
-                // 初回5件、以降20件ずつなので計算式: Math.floor((count - 5) / 20) + 2
+                // 初回15件、以降20件ずつなので計算式: Math.floor((count - 15) / 20) + 2
                 if (parsedUrls.length > 0) {
                     let restoredPage = 1;
-                    if (parsedUrls.length > 5) {
-                        restoredPage = Math.floor((parsedUrls.length - 5) / 20) + 2;
-                    } else {
-                        restoredPage = 2; // 最初の5件なら次は2ページ目
+                    if (parsedUrls.length > 15) {
+                        restoredPage = Math.floor((parsedUrls.length - 15) / 20) + 2;
+                    } else if (parsedUrls.length >= 1) {
+                        restoredPage = 2; // 1件以上あれば次は2ページ目
                     }
+
+                    // 異常に大きな値を防ぐ（最大200ページまで）
+                    if (restoredPage > 200) {
+                        console.warn(`[BackgroundFetcher] Abnormal page number detected: ${restoredPage}, resetting to calculated page`);
+                        // 55件の場合: (55-15)/20 + 2 = 4ページが正しい
+                        restoredPage = Math.max(1, Math.floor((parsedUrls.length - 15) / 20) + 2);
+                        setHasMore(true);
+                    }
+
                     setCurrentPage(restoredPage);
                     setHasMore(true); // 復元時は必ずhasMoreをtrueに
                     console.log(`[BackgroundFetcher] Set current page to ${restoredPage} based on ${parsedUrls.length} URLs`);

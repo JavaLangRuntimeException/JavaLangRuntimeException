@@ -1,8 +1,7 @@
 "use client";
 
 import React from "react";
-import { Provider } from "jotai";
-import { BackgroundFetcher } from "./BackgroundFetcher";
+import { AppProviders } from "../processes/app-providers";
 
 interface ClientWrapperProps {
     children: React.ReactNode;
@@ -10,9 +9,8 @@ interface ClientWrapperProps {
 
 export const ClientWrapper: React.FC<ClientWrapperProps> = ({ children }) => {
     return (
-        <Provider>
-            <BackgroundFetcher />
+        <AppProviders>
             {children}
-        </Provider>
+        </AppProviders>
     );
 };

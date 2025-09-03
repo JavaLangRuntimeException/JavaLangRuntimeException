@@ -41,27 +41,51 @@ export async function fetchQiitaURLs(page: number, isInitialLoad: boolean = fals
     try {
         // キャッシュチェック
         if (urlCache.has(page)) {
-            return urlCache.get(page) || [];
+            const cached = urlCache.get(page) || [];
+            console.log(`[fetchQiitaURLs] Using cached data for page ${page}: ${cached.length} URLs`);
+            return cached;
         }
 
-        // 初回ロードは5件だけ高速に取得
-        const perPage = isInitialLoad ? 5 : 20;
+        // 初回ロードは15件を取得
+        const perPage = isInitialLoad ? 15 : 20;
+        const apiUrl = `https://qiita.com/api/v2/users/JavaLangRuntimeException/items?page=${page}&per_page=${perPage}`;
+
+        console.log(`[fetchQiitaURLs] Fetching page ${page}, perPage: ${perPage}`);
+        console.log(`[fetchQiitaURLs] API URL: ${apiUrl}`);
+        console.log(`[fetchQiitaURLs] Bearer token available: ${!!process.env.NEXT_PUBLIC_BEARER_TOKEN}`);
+
+        const headers: Record<string, string> = {};
+        if (process.env.NEXT_PUBLIC_BEARER_TOKEN) {
+            headers.Authorization = `Bearer ${process.env.NEXT_PUBLIC_BEARER_TOKEN}`;
+        } else {
+            console.warn('[fetchQiitaURLs] No bearer token found, trying without authentication');
+        }
 
         const response = await axios.get<QiitaItemResponse[]>(
-            `https://qiita.com/api/v2/users/JavaLangRuntimeException/items?page=${page}&per_page=${perPage}`,
+            apiUrl,
             {
-                headers: {
-                    Authorization: `Bearer ${process.env.NEXT_PUBLIC_BEARER_TOKEN}`,
-                },
-                timeout: isInitialLoad ? 3000 : 5000, // 初回は短めのタイムアウト
+                headers,
+                timeout: isInitialLoad ? 5000 : 8000, // タイムアウトを延長
             }
         );
+
+        console.log(`[fetchQiitaURLs] Response status: ${response.status}`);
+        console.log(`[fetchQiitaURLs] Response data length: ${response.data?.length || 0}`);
+
+        if (response.data && response.data.length > 0) {
+            console.log(`[fetchQiitaURLs] First item sample:`, {
+                title: response.data[0].title,
+                url: response.data[0].url
+            });
+        }
 
         const urls = response.data.map((item) => item.url);
         urlCache.set(page, urls);
 
+        console.log(`[fetchQiitaURLs] Successfully fetched ${urls.length} URLs for page ${page}`);
+
         // 初回ロード時は、バックグラウンドで次のページを事前取得
-        if (isInitialLoad && !isFetchingBackground) {
+        if (isInitialLoad && !isFetchingBackground && urls.length > 0) {
             isFetchingBackground = true;
             fetchQiitaURLs(page + 1, false).catch(() => {
                 isFetchingBackground = false;
@@ -70,7 +94,11 @@ export async function fetchQiitaURLs(page: number, isInitialLoad: boolean = fals
 
         return urls;
     } catch (error) {
-        console.error("fetchQiitaURLs error:", error);
+        console.error(`[fetchQiitaURLs] Error fetching page ${page}:`, error);
+        if (axios.isAxiosError(error)) {
+            console.error(`[fetchQiitaURLs] Response status: ${error.response?.status}`);
+            console.error(`[fetchQiitaURLs] Response data:`, error.response?.data);
+        }
         return [];
     }
 }
@@ -91,6 +119,15 @@ function isCacheValid(url: string): boolean {
  */
 export async function fetchOgp(url: string): Promise<OGPResponse> {
     try {
+        // Restrict to Qiita pages only
+        try {
+            const { hostname } = new URL(url);
+            if (!hostname.endsWith("qiita.com")) {
+                return {};
+            }
+        } catch {
+            return {};
+        }
         // キャッシュをチェック（有効期限も考慮）
         if (ogpCache.has(url) && isCacheValid(url)) {
             console.log(`Using cached OGP data for: ${url}`);
@@ -128,6 +165,19 @@ export async function fetchMultipleOgp(urls: string[]): Promise<OGPResponse[]> {
 
         // 既存キャッシュをチェック
         for (const url of urls) {
+            // Restrict to Qiita pages only
+            let isQiita = false;
+            try {
+                const { hostname } = new URL(url);
+                isQiita = hostname.endsWith("qiita.com");
+            } catch {
+                isQiita = false;
+            }
+
+            if (!isQiita) {
+                results.push({});
+                continue;
+            }
             if (ogpCache.has(url) && isCacheValid(url)) {
                 results.push(ogpCache.get(url) || {});
             } else {
@@ -156,6 +206,7 @@ export async function fetchMultipleOgp(urls: string[]): Promise<OGPResponse[]> {
                         ogpCache.set(url, preview);
                         cacheTimestamps.set(url, Date.now());
 
+                        console.log(`OGP fetched for ${url}: title="${preview.title || 'NO_TITLE'}"`);
                         return { url, data: preview };
                     } catch (error) {
                         console.error(`Error fetching OGP for ${url}:`, error);
