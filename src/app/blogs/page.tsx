@@ -4,6 +4,8 @@ import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { atom, useAtom } from "jotai";
 import { qiitaUrlsAtom, ogpCacheAtom, isFetchingAtom, hasMoreAtom, currentPageAtom } from "../../components/BackgroundFetcher";
+import dynamic from "next/dynamic";
+const BackgroundFetcher = dynamic(() => import("../../components/BackgroundFetcher").then(m => m.BackgroundFetcher), { ssr: false });
 import { fetchMultipleOgp, getCacheStats, type OGPResponse } from "./server";
 import Link from "next/link";
 import Image from 'next/image';
@@ -265,7 +267,19 @@ export default function BlogsPage() {
     // デバッグ情報を表示
     React.useEffect(() => {
         console.log(`[BlogPage] State update: URLs=${qiitaUrls.length}, OGP=${Object.keys(ogpCache).length}, fetching=${isFetching}, hasMore=${hasMore}, page=${currentPage}`);
-    }, [qiitaUrls.length, Object.keys(ogpCache).length, isFetching, hasMore, currentPage]);
+        console.log(`[BlogPage] Selected series: "${selectedSeries}"`);
+    }, [qiitaUrls.length, Object.keys(ogpCache).length, isFetching, hasMore, currentPage, selectedSeries]);
+
+    // 開発環境での強制初期化
+    React.useEffect(() => {
+        if (process.env.NODE_ENV === 'development') {
+            // 初期状態を強制設定
+            if (selectedSeries === "チートシート") {
+                console.log('[BlogPage] Force clearing selectedSeries in development');
+                setSelectedSeries("");
+            }
+        }
+    }, [selectedSeries]);
 
     // 初期化時にキャッシュクリーンアップを実行
     React.useEffect(() => {
@@ -305,7 +319,10 @@ export default function BlogsPage() {
 
         // チートシートのOGPデータを取得（ローカルキャッシュ活用）
     const fetchCheatSheetOgp = React.useCallback(async () => {
-        if (cheatSheetArticles.length > 0) return; // 既に取得済みの場合はスキップ
+        if (cheatSheetArticles.length > 0) {
+            console.log('[fetchCheatSheetOgp] Already loaded, skipping');
+            return; // 既に取得済みの場合はスキップ
+        }
 
         try {
             setLoading(true);
@@ -457,9 +474,32 @@ export default function BlogsPage() {
         }
     }, [qiitaUrls.length, ogpCache, cacheStats]);
 
+    // 開発用：APIテスト機能
+    const testQiitaAPI = React.useCallback(async () => {
+        try {
+            console.log('[API Test] Testing Qiita API connection...');
+            const { fetchQiitaURLs } = await import("./server");
+            const urls = await fetchQiitaURLs(1, true);
+            console.log(`[API Test] Result: ${urls.length} URLs fetched`);
+            alert(`API Test Result: ${urls.length} URLs fetched. Check console for details.`);
+        } catch (error) {
+            console.error('[API Test] Error:', error);
+            alert(`API Test Failed: ${error}. Check console for details.`);
+        }
+    }, []);
+
+    // 開発用：ページ数リセット機能
+    const resetPageCounter = React.useCallback(() => {
+        localStorage.removeItem('taramanji_current_page');
+        localStorage.removeItem('taramanji_has_more');
+        console.log('[Debug] Page counter reset. Please reload the page.');
+        alert('Page counter reset. Please reload the page.');
+    }, []);
+
     return (
         <main className="p-4">
-            <AnimatePresence mode="wait">
+            <BackgroundFetcher />
+            <AnimatePresence>
                 <motion.div className="mb-6 text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                     <h1 className="text-xl font-bold">Qiita 記事一覧</h1>
                     {process.env.NODE_ENV === 'development' && (
@@ -472,6 +512,27 @@ export default function BlogsPage() {
                                     title="すべてのキャッシュをクリア（開発用）"
                                 >
                                     キャッシュクリア
+                                </button>
+                                <button
+                                    onClick={() => window.location.reload()}
+                                    className="ml-2 px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+                                    title="ページリロード"
+                                >
+                                    リロード
+                                </button>
+                                <button
+                                    onClick={testQiitaAPI}
+                                    className="ml-2 px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
+                                    title="Qiita API接続テスト"
+                                >
+                                    APIテスト
+                                </button>
+                                <button
+                                    onClick={resetPageCounter}
+                                    className="ml-2 px-2 py-1 text-xs bg-orange-500 text-white rounded hover:bg-orange-600"
+                                    title="ページカウンターをリセット"
+                                >
+                                    ページリセット
                                 </button>
                             </div>
                             <p>Jotai: URLs {qiitaUrls.length}件 / OGP {Object.keys(ogpCache).length}件</p>
@@ -529,45 +590,77 @@ export default function BlogsPage() {
 
                 {/* 記事一覧 */}
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 max-w-7xl mx-auto">
-                    {filteredData.map((ogp, idx) => {
-                        const { title, description, url, images } = ogp;
-                        const imgidx = images?.[0];
+                    {filteredData
+                        .filter((ogp, idx, array) => {
+                            // 有効なURLチェック
+                            if (!ogp.url || ogp.url.trim() === '') {
+                                console.warn(`[Filtering] Removing item with invalid URL at index ${idx}:`, ogp);
+                                return false;
+                            }
 
-                        console.log(`Rendering item ${idx}:`, { title, url, hasImages: !!imgidx });
+                            // URLで重複を除去（最初の出現のみ保持）
+                            const firstIndex = array.findIndex(item => item.url === ogp.url);
+                            if (firstIndex !== idx) {
+                                console.warn(`[Filtering] Removing duplicate URL at index ${idx}:`, ogp.url);
+                                return false;
+                            }
 
-                        if (!url) {
-                            console.log(`Skipping item ${idx} due to missing URL:`, ogp);
-                            return null;
-                        }
+                            return true;
+                        })
+                        .map((ogp, idx) => {
+                            const { title, description, url, images } = ogp;
+                            const imgidx = images?.[0];
 
-                        return (
-                            <motion.a
-                                key={`${selectedSeries}-${url}-${idx}-${title?.slice(0, 10)}`}
-                                href={url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="block bg-gray-800 text-white rounded p-4 hover:opacity-90"
-                                initial={{ opacity: 0, y: 30 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                            >
-                                {imgidx && (
-                                    <Image
-                                        src={imgidx}
-                                        alt={title || "Qiita 記事一覧"}
-                                        className="w-full h-40 object-cover mb-2"
-                                        width={500}
-                                        height={250}
-                                        loading="lazy"
-                                        placeholder="blur"
-                                        blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDABQODxIPDRQSEBIXFRQdHx4eHRoaHSQtJSEkLzYvLy02LjY2OjY2Njo2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Njb/2wBDAR0XFx8aHx4fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx//wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
-                                    />
-                                )}
-                                <h2 className="font-bold text-lg mb-1">{title}</h2>
-                                <p className="text-sm line-clamp-3">{description}</p>
-                            </motion.a>
-                        );
-                    })}
+                            // より堅牢なキー生成：URLハッシュ + インデックス + シリーズ
+                            const urlHash = url ? (url.split('/').pop() || url.replace(/[^a-zA-Z0-9]/g, '') || 'unknown') : 'empty';
+                            const seriesKey = selectedSeries || 'all';
+                            const safeUrlHash = urlHash || 'fallback';
+                            const uniqueKey = `article-${seriesKey}-${safeUrlHash}-${idx}-${url?.length || 0}`;
+
+                            // キーが空文字列になることを防ぐ最終チェック
+                            if (!uniqueKey || uniqueKey.trim() === '') {
+                                console.error(`[KeyError] Generated empty key for item ${idx}:`, { url, seriesKey, urlHash });
+                                return null; // 空キーの場合はコンポーネントをレンダリングしない
+                            }
+
+                            if (process.env.NODE_ENV === 'development') {
+                                console.log(`Rendering item ${idx}:`, {
+                                    title: title || '(No title)',
+                                    url,
+                                    hasImages: !!imgidx,
+                                    uniqueKey
+                                });
+                            }
+
+                            return (
+                                <motion.a
+                                    key={uniqueKey}
+                                    href={url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block bg-gray-800 text-white rounded p-4 hover:opacity-90"
+                                    initial={{ opacity: 0, y: 30 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                >
+                                    {imgidx && (
+                                        <Image
+                                            src={imgidx}
+                                            alt={title || "Qiita 記事一覧"}
+                                            className="w-full h-40 object-cover mb-2"
+                                            width={500}
+                                            height={250}
+                                            loading="lazy"
+                                            placeholder="blur"
+                                            blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDABQODxIPDRQSEBIXFRQdHx4eHRoaHSQtJSEkLzYvLy02LjY2OjY2Njo2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Njb/2wBDAR0XFx8aHx4fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx//wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
+                                        />
+                                    )}
+                                    <h2 className="font-bold text-lg mb-1">{title || "タイトル取得中..."}</h2>
+                                    <p className="text-sm line-clamp-3">{description || "説明文を取得中..."}</p>
+                                </motion.a>
+                            );
+                        })
+                        .filter(Boolean)}
                 </div>
 
                 {loading && (

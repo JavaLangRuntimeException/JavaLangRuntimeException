@@ -32,3 +32,11 @@ body {
 .animation-delay-800 {
   animation-delay: 0.8s;
 }
+
+/* Ensure 3D flips render consistently */
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+.backface-hidden {
+  backface-visibility: hidden;
+}
