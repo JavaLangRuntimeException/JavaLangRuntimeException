@@ -32,6 +32,23 @@ export async function POST(req: Request) {
       accessToken = await getAccessTokenFromRequest(req);
     }
     if (accessToken) {
+        // Enforce 2-hour lead time on server
+        try {
+          const startDate = new Date(
+            body.year,
+            body.month - 1,
+            body.day,
+            body.start?.hour,
+            body.start?.minute,
+            0,
+            0
+          );
+          const now = Date.now();
+          const minStart = now + 2 * 60 * 60 * 1000;
+          if (startDate.getTime() < minStart) {
+            return NextResponse.json({ ok: false, error: "lead_time_violation", message: "予約は現在から2時間後以降のみ可能です" }, { status: 400 });
+          }
+        } catch {}
         const startISO = new Date(
           body.year,
           body.month - 1,
@@ -66,6 +83,7 @@ export async function POST(req: Request) {
         const descriptionLines: string[] = [
           `目的: ${body.purpose}`,
         ];
+        if (body.meetingNote) descriptionLines.push(`打ち合わせ内容: ${body.meetingNote}`);
         const contactMethod = String(body.contactMethod || "");
         if (contactMethod) descriptionLines.push(`連絡手段: ${contactMethod}`);
         if (body.discordName) descriptionLines.push(`Discord名: ${body.discordName}`);
@@ -260,6 +278,7 @@ export async function POST(req: Request) {
         summary: summaryTitleWebhook,
         description: [
           `目的: ${body.purpose}`,
+          body.meetingNote ? `打ち合わせ内容: ${body.meetingNote}` : undefined,
           body.contactMethod ? `連絡手段: ${body.contactMethod}` : undefined,
           body.discordName ? `Discord名: ${body.discordName}` : undefined,
           body.slackName ? `Slack名: ${body.slackName}` : undefined,

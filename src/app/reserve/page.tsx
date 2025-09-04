@@ -3,12 +3,17 @@
 import React from "react";
 import { motion } from "framer-motion";
 
-type Purpose = "TechSelect+" | "STECH" | "その他";
+type Purpose = "TechSelect+" | "STECH" | "RM2C" | "JINEN" | "NxTEND" | "RCC" | "その他";
 
 export default function ReservePage() {
-  const now = new Date();
+  const now = React.useMemo(() => new Date(), []);
   const currentMonday = getMonday(now);
   const [weekStart, setWeekStart] = React.useState<Date>(currentMonday);
+  const oneMonthLater = React.useMemo(() => {
+    const d = new Date(now);
+    d.setMonth(d.getMonth() + 1);
+    return d;
+  }, [now]);
   const [year, setYear] = React.useState<number | null>(null);
   const [month, setMonth] = React.useState<number | null>(null);
   const [day, setDay] = React.useState<number | null>(null);
@@ -29,6 +34,7 @@ export default function ReservePage() {
   const [discordName, setDiscordName] = React.useState("");
   const [slackName, setSlackName] = React.useState("");
   const [otherNote, setOtherNote] = React.useState("");
+  const [meetingNote, setMeetingNote] = React.useState("");
   const [busy, setBusy] = React.useState<{ start: string; end: string }[]>([]);
   // current selected range (driven by inputs)
   const hasDate = year != null && month != null && day != null;
@@ -39,6 +45,21 @@ export default function ReservePage() {
   const selectedEnd = hasDate && hasTime
     ? new Date(year as number, (month as number) - 1, day as number, endHour as number, endMin as number, 0, 0)
     : new Date(0);
+
+  // 選択中の時間帯が無効かどうか（過去/リードタイム/1ヶ月先/Busy重複）
+  const selectionInvalid = React.useMemo(() => {
+    if (!hasDate || !hasTime) return false;
+    const s = new Date(year as number, (month as number) - 1, day as number, startHour as number, startMin as number);
+    const e = new Date(year as number, (month as number) - 1, day as number, endHour as number, endMin as number);
+    const nowTs = Date.now();
+    const leadCutoff = nowTs + 2 * 60 * 60 * 1000;
+    if (!(e > s)) return true;
+    if (s.getTime() <= nowTs) return true;
+    if (s.getTime() < leadCutoff) return true;
+    if (s.getTime() > oneMonthLater.getTime()) return true;
+    if (isOverlappingBusy(s, e, busy)) return true;
+    return false;
+  }, [hasDate, hasTime, year, month, day, startHour, startMin, endHour, endMin, busy, oneMonthLater]);
 
   // fetch busy intervals for current week (Mon-Sun)
   React.useEffect(() => {
@@ -68,6 +89,8 @@ export default function ReservePage() {
     }
     // 過去は不可
     const nowTs = Date.now();
+    // 2時間以内は不可
+    const minStartTs = nowTs + 2 * 60 * 60 * 1000;
     if (!isValidEmail(email)) {
       alert("正しいメールアドレスを入力してください");
       return;
@@ -86,11 +109,14 @@ export default function ReservePage() {
       alert("過去の時間は選択できません");
       return;
     }
+    if (startDate.getTime() < minStartTs) {
+      alert("現在時刻から2時間後以降のみ予約できます");
+      return;
+    }
     if (!(endDate > startDate)) {
       alert("終了は開始より後にしてください");
       return;
     }
-    // validation: must not overlap busy
     if (isOverlappingBusy(startDate, endDate, busy)) {
       alert("選択した時間帯は不可です");
       return;
@@ -111,6 +137,7 @@ export default function ReservePage() {
       discordName: contactMethod === "discord" ? discordName.trim() : undefined,
       slackName: contactMethod === "slack" ? slackName.trim() : undefined,
       otherNote: contactMethod === "other" ? otherNote.trim() : undefined,
+      meetingNote: meetingNote.trim() || undefined,
     };
     try {
       const res = await fetch("/api/reserve", {
@@ -129,54 +156,40 @@ export default function ReservePage() {
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-10 text-zinc-900">
-      <motion.h1 className="text-2xl font-bold tracking-tight" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-        1on1予約
+      <motion.h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+        お打ち合わせ予約
       </motion.h1>
+      <p className="mt-2 text-xs text-zinc-600 dark:text-zinc-300">
+        お問い合わせはメール(<a className="underline" href="mailto:tanahashishuta@gmail.com">tanahashishuta@gmail.com</a>)またはX(<a className="underline" href="https://x.com/JavaLangRuntime" target="_blank" rel="noreferrer">@JavaLangRuntime</a>)でも承っております
+      </p>
 
-      {/* 予定取消機能は廃止 */}
 
-      {/* 日付入力 */}
+
+
       <section className="mt-6 grid gap-4 sm:grid-cols-2">
-        <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-          <h2 className="mb-3 text-sm font-semibold text-zinc-700">日付</h2>
-          <div className="grid grid-cols-4 gap-3">
-            <UnderLabelSelect
-              value={year}
-              setValue={setYear}
-              options={range(now.getFullYear() - 1, now.getFullYear() + 2)}
-              underLabel="年"
-            />
-            <UnderLabelSelect value={month} setValue={setMonth} options={range(1, 12)} underLabel="月" />
-            <UnderLabelSelect value={day} setValue={setDay} options={range(1, 31)} underLabel="日" />
-            <div className="flex flex-col items-center justify-center">
-              <div className="text-base font-semibold text-zinc-900">{weekday || "X"}</div>
-              <div className="text-xs text-zinc-500">曜日</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-          <h2 className="mb-3 text-sm font-semibold text-zinc-700">時間</h2>
-          <div className="flex items-end gap-3 text-zinc-900">
-            <UnderLabelSelect value={startHour} setValue={setStartHour} options={hours} underLabel="時" />
-            <div className="pb-4 text-lg text-zinc-500">:</div>
-            <UnderLabelSelect value={startMin} setValue={setStartMin} options={[0, 30]} underLabel="分" />
-            <div className="pb-4 text-lg text-zinc-400">~</div>
-            <UnderLabelSelect value={endHour} setValue={setEndHour} options={hours} underLabel="時" />
-            <div className="pb-4 text-lg text-zinc-500">:</div>
-            <UnderLabelSelect value={endMin} setValue={setEndMin} options={[0, 30]} underLabel="分" />
-          </div>
-          <p className="mt-2 text-xs text-zinc-500">月曜〜日曜 9:00 - 24:00</p>
+        <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm sm:col-span-2">
+          <h2 className="mb-3 text-sm font-semibold text-zinc-700">打ち合わせ内容</h2>
+          <textarea
+            className="w-full rounded-md border border-zinc-300 bg-white p-2 text-zinc-900 placeholder-zinc-400 min-h-[120px]"
+            placeholder="当日話したい内容や事前共有事項があればご記入ください"
+            value={meetingNote}
+            onChange={(e) => setMeetingNote(e.target.value)}
+          />
+          <p className="mt-1 text-xs text-zinc-500">Googleカレンダーの予定の詳細に記載されます（任意）。</p>
         </div>
       </section>
 
-      {/* 目的/名前/連絡手段 */}
+      {/* 目的/名前/ご連絡手段 */}
       <section className="mt-6 grid gap-4 sm:grid-cols-2">
         <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
           <h2 className="mb-3 text-sm font-semibold text-zinc-700">目的</h2>
           <select className="w-full rounded-md border border-zinc-300 bg-white p-2 text-zinc-900" value={purpose} onChange={(e) => setPurpose(e.target.value as Purpose)}>
             <option value="TechSelect+">TechSelect+</option>
             <option value="STECH">STECH</option>
+            <option value="RM2C">RM2C</option>
+            <option value="JINEN">JINEN</option>
+            <option value="NxTEND">NxTEND</option>
+            <option value="RCC">RCC</option>
             <option value="その他">その他</option>
           </select>
         </div>
@@ -185,7 +198,7 @@ export default function ReservePage() {
           <input className="w-full rounded-md border border-zinc-300 bg-white p-2 text-zinc-900 placeholder-zinc-400" placeholder="お名前" value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm sm:col-span-2">
-          <h2 className="mb-3 text-sm font-semibold text-zinc-700">メール</h2>
+          <h2 className="mb-3 text-sm font-semibold text-zinc-700">メールアドレス</h2>
           <input
             className="w-full rounded-md border border-zinc-300 bg-white p-2 text-zinc-900 placeholder-zinc-400"
             type="email"
@@ -194,10 +207,10 @@ export default function ReservePage() {
             onChange={(e) => setEmail(e.target.value)}
             pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
           />
-          <p className="mt-1 text-xs text-zinc-500">招待メールを送れるアドレスをご入力ください。</p>
+          <p className="mt-1 text-xs text-zinc-500">招待メールを送信できるアドレスをご入力ください。</p>
         </div>
         <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm sm:col-span-2">
-          <h2 className="mb-3 text-sm font-semibold text-zinc-700">話す手段</h2>
+          <h2 className="mb-3 text-sm font-semibold text-zinc-700">ご連絡手段</h2>
           <div className="grid gap-3 sm:grid-cols-3">
             <select className="rounded-md border border-zinc-300 bg-white p-2 text-zinc-900" value={contactMethod} onChange={(e) => setContactMethod(e.target.value as "meet" | "discord" | "slack" | "other")}>
               <option value="meet">Google Meet</option>
@@ -206,15 +219,47 @@ export default function ReservePage() {
               <option value="other">その他 (Zoom等)</option>
             </select>
             {contactMethod === "discord" && (
-              <input className="rounded-md border border-zinc-300 bg-white p-2 text-zinc-900 placeholder-zinc-400" placeholder="Discord名 (必須)" value={discordName} onChange={(e) => setDiscordName(e.target.value)} />
+              <input className="rounded-md border border-zinc-300 bg-white p-2 text-zinc-900 placeholder-zinc-400" placeholder="Discord名（必須）" value={discordName} onChange={(e) => setDiscordName(e.target.value)} />
             )}
             {contactMethod === "slack" && (
-              <input className="rounded-md border border-zinc-300 bg-white p-2 text-zinc-900 placeholder-zinc-400" placeholder="Slack名 (必須)" value={slackName} onChange={(e) => setSlackName(e.target.value)} />
+              <input className="rounded-md border border-zinc-300 bg-white p-2 text-zinc-900 placeholder-zinc-400" placeholder="Slack名（必須）" value={slackName} onChange={(e) => setSlackName(e.target.value)} />
             )}
             {contactMethod === "other" && (
-              <input className="rounded-md border border-zinc-300 bg-white p-2 text-zinc-900 placeholder-zinc-400" placeholder="備考 (任意: Zoomリンク等)" value={otherNote} onChange={(e) => setOtherNote(e.target.value)} />
+              <input className="rounded-md border border-zinc-300 bg-white p-2 text-zinc-900 placeholder-zinc-400" placeholder="備考（任意：Zoomリンク等）" value={otherNote} onChange={(e) => setOtherNote(e.target.value)} />
             )}
           </div>
+        </div>
+      </section>
+
+      {/* 日付と時間（ご連絡手段の下） */}
+      <section className="mt-6 grid gap-4 sm:grid-cols-2">
+        <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+          <h2 className="mb-3 text-sm font-semibold text-zinc-700">日付</h2>
+          <div className="grid grid-cols-4 gap-3">
+            <UnderLabelSelect value={year} setValue={setYear} options={range(now.getFullYear() - 1, now.getFullYear() + 2)} underLabel="年" />
+            <UnderLabelSelect value={month} setValue={setMonth} options={range(1, 12)} underLabel="月" />
+            <UnderLabelSelect value={day} setValue={setDay} options={range(1, 31)} underLabel="日" />
+            <div className="flex flex-col items-center justify-center">
+              <div className="text-base font-semibold text-zinc-900">{weekday || "X"}</div>
+              <div className="text-xs text-zinc-500">曜日</div>
+            </div>
+          </div>
+        </div>
+        <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+          <h2 className="mb-3 text-sm font-semibold text-zinc-700">時間</h2>
+          <div className="flex flex-wrap items-end gap-3 text-zinc-900">
+            <UnderLabelSelect value={startHour} setValue={setStartHour} options={hours} underLabel="時" />
+            <div className="pb-4 text-lg text-zinc-500">:</div>
+            <UnderLabelSelect value={startMin} setValue={setStartMin} options={[0, 30]} underLabel="分" />
+            <div className="pb-4 text-lg text-zinc-400">~</div>
+            <UnderLabelSelect value={endHour} setValue={setEndHour} options={hours} underLabel="時" />
+            <div className="pb-4 text-lg text-zinc-500">:</div>
+            <UnderLabelSelect value={endMin} setValue={setEndMin} options={[0, 30]} underLabel="分" />
+          </div>
+          <p className="mt-2 text-xs text-zinc-500">予約可能時間: 1ヶ月後までの月曜〜日曜 9:00 - 24:00</p>
+          {hasDate && hasTime && selectionInvalid && (
+            <p className="mt-2 text-xs text-red-600">ご指定の時間では予約できません</p>
+          )}
         </div>
       </section>
 
@@ -241,8 +286,9 @@ export default function ReservePage() {
               {`${weekStart.getMonth() + 1}/${weekStart.getDate()}(${weekdayName(weekStart)})`} 〜 {`${new Date(weekStart.getTime() + 6 * 86400000).getMonth() + 1}/${new Date(weekStart.getTime() + 6 * 86400000).getDate()}(${weekdayName(new Date(weekStart.getTime() + 6 * 86400000))})`}
             </div>
             <button
-              className="rounded-md border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-900"
+              className="rounded-md border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-900 disabled:opacity-50"
               onClick={() => setWeekStart(new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000))}
+              disabled={new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000) > oneMonthLater}
             >
               次の週 →
             </button>
@@ -355,6 +401,7 @@ export default function ReservePage() {
       {creating && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/40">
           <div className="w-full max-w-xs rounded-xl border border-zinc-200 bg-white p-5 shadow-lg text-center">
+            <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-blue-600" />
             <div className="text-sm text-zinc-700">イベントを作成しています…</div>
           </div>
         </div>
@@ -363,7 +410,7 @@ export default function ReservePage() {
       {/* 作成完了モーダル */}
       {createdInfo && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/40">
-          <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl">
+          <div className="w-full max-w-lg sm:max-w-xl md:max-w-2xl overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl">
             <div className="flex items-center gap-2 border-b border-zinc-200 bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-3">
               <div className="text-lg">✅</div>
               <h3 className="text-base font-semibold text-white">作成しました！</h3>
@@ -375,6 +422,7 @@ export default function ReservePage() {
                     <div>
                       <div className="text-xs text-zinc-500">EventID</div>
                       <div className="mt-1 inline-flex items-center rounded-md bg-zinc-100 px-2 py-1 font-mono text-[13px] text-zinc-800">{createdInfo.eventId}</div>
+                      <p className="mt-1 text-xs text-zinc-600">問い合わせの際はこちらのEventIDを記載の上お問い合わせください。</p>
                     </div>
                   )}
                   <div className="flex flex-wrap gap-3">
@@ -452,7 +500,7 @@ export default function ReservePage() {
                   {/* ご案内 */}
                   <div className="mt-4 rounded-lg bg-amber-50 p-3 text-[13px] leading-relaxed text-amber-900">
                     <p>・予約いただいたのにこちらの都合で取り消しさせていただく場合があります。その際はメールなどでお知らせします。</p>
-                    <p className="mt-1">・予約の取り消しをご希望の場合は、メール（<a className="underline" href="mailto:tarakokko3233@gmail.com">tarakokko3233@gmail.com</a>）またはDiscord・Slackでご連絡ください。</p>
+                    <p className="mt-1">・予約の取り消しをご希望の場合は、メール（<a className="underline" href="mailto:tanahashishuta@gmail.com">tanahashishuta@gmail.com</a>）またはDiscord・Slackでご連絡ください。</p>
                   </div>
                 </div>
               ) : (
@@ -528,6 +576,10 @@ function WeekGrid({
   // 30-min slots: 9:00 to 24:00 -> 15 hours * 2 = 30 rows
   const rows = Array.from({ length: 30 }, (_, i) => ({ hour: 9 + Math.floor(i / 2), min: i % 2 === 0 ? 0 : 30 }));
   const now = new Date();
+  const leadMs = 2 * 60 * 60 * 1000; // 2 hours
+  const leadCutoff = new Date(now.getTime() + leadMs);
+  const oneMonthLater = new Date(now);
+  oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
   return (
     <div className="overflow-x-auto">
       <div className="min-w-[700px] rounded-lg border border-zinc-200">
@@ -549,6 +601,8 @@ function WeekGrid({
                 const cellStart = new Date(d.getFullYear(), d.getMonth(), d.getDate(), hour, min, 0);
                 const cellEnd = new Date(cellStart.getTime() + 30 * 60 * 1000);
                 const isPast = cellEnd.getTime() <= now.getTime();
+                const withinLead = cellStart.getTime() < leadCutoff.getTime();
+                const beyondOneMonth = cellStart.getTime() > oneMonthLater.getTime();
                 const blocked = isOverlappingBusy(cellStart, cellEnd, busy);
                 const withinSelection = cellEnd > selectedStart && cellStart < selectedEnd;
                 return (
@@ -556,19 +610,19 @@ function WeekGrid({
                     type="button"
                     key={`${d.toDateString()}-${hour}-${min}`}
                     className={`border-t border-l border-zinc-200 p-2 text-center text-xs transition-colors ${
-                      blocked || isPast
+                      blocked || isPast || withinLead || beyondOneMonth
                         ? "cursor-not-allowed bg-zinc-100 text-zinc-400"
                         : withinSelection
                         ? "bg-blue-50 text-blue-700 hover:bg-blue-100"
                         : "bg-white hover:bg-zinc-50"
                     }`}
-                    disabled={blocked || isPast}
+                    disabled={blocked || isPast || withinLead || beyondOneMonth}
                     onClick={() => {
-                      if (isPast) return;
+                      if (isPast || withinLead || beyondOneMonth) return;
                       onSelectSlot(cellStart, cellEnd);
                     }}
                   >
-                    {isPast ? "過去" : blocked ? "不可" : withinSelection ? "選択中" : "可"}
+                    {isPast ? "過去" : withinLead || beyondOneMonth ? "不可" : blocked ? "不可" : withinSelection ? "選択中" : "可"}
                   </button>
                 );
               })}

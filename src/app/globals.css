@@ -2,6 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Simple marquee animation for header usage guide */
+@keyframes marquee {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+.marquee {
+  display: inline-block;
+  animation: marquee 20s linear infinite;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
