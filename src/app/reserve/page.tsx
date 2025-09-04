@@ -14,7 +14,7 @@ export default function ReservePage() {
     d.setMonth(d.getMonth() + 1);
     return d;
   }, [now]);
-  const [year, setYear] = React.useState<number | null>(null);
+  const [year, setYear] = React.useState<number | null>(now.getFullYear());
   const [month, setMonth] = React.useState<number | null>(null);
   const [day, setDay] = React.useState<number | null>(null);
   const [weekday, setWeekday] = React.useState("");
@@ -85,20 +85,12 @@ export default function ReservePage() {
   const currentMonth = now.getMonth() + 1;
   const nextMonth = currentMonth === 12 ? 1 : currentMonth + 1;
   const yearOptions = React.useMemo(() => (currentMonth === 12 ? [currentYear, currentYear + 1] : [currentYear]), [currentYear, currentMonth]);
-  const monthOptions = React.useMemo(() => {
-    if (year == null) return [] as number[];
-    if (year === currentYear) {
-      return currentMonth === 12 ? [12] : [currentMonth, nextMonth];
-    }
-    if (currentMonth === 12 && year === currentYear + 1) return [1];
-    return [] as number[];
-  }, [year, currentYear, currentMonth, nextMonth]);
+  const monthOptions = React.useMemo(() => (currentMonth === 12 ? [12, 1] : [currentMonth, nextMonth]), [currentMonth, nextMonth]);
   React.useEffect(() => {
-    if (year == null) return;
     if (month == null || !monthOptions.includes(month)) {
       setMonth(monthOptions[0] ?? null);
     }
-  }, [year, month, monthOptions]);
+  }, [month, monthOptions]);
 
   async function handleSubmit() {
     // validation: start < end
