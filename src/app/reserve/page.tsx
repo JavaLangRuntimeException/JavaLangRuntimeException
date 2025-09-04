@@ -14,7 +14,7 @@ export default function ReservePage() {
     d.setMonth(d.getMonth() + 1);
     return d;
   }, [now]);
-  const [year, setYear] = React.useState<number | null>(null);
+  const [year, setYear] = React.useState<number | null>(now.getFullYear());
   const [month, setMonth] = React.useState<number | null>(null);
   const [day, setDay] = React.useState<number | null>(null);
   const [weekday, setWeekday] = React.useState("");
