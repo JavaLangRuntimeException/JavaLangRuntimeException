@@ -502,43 +502,7 @@ export default function BlogsPage() {
             <AnimatePresence>
                 <motion.div className="mb-6 text-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                     <h1 className="text-xl font-bold">Qiita 記事一覧</h1>
-                    {process.env.NODE_ENV === 'development' && (
-                        <div className="text-sm text-gray-500 mt-2">
-                            <div className="flex items-center justify-between">
-                                <p>キャッシュ: ローカル{cacheStats.localCacheSize}件 / サーバー{cacheStats.serverCacheSize}件</p>
-                                <button
-                                    onClick={clearAllCache}
-                                    className="ml-4 px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
-                                    title="すべてのキャッシュをクリア（開発用）"
-                                >
-                                    キャッシュクリア
-                                </button>
-                                <button
-                                    onClick={() => window.location.reload()}
-                                    className="ml-2 px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
-                                    title="ページリロード"
-                                >
-                                    リロード
-                                </button>
-                                <button
-                                    onClick={testQiitaAPI}
-                                    className="ml-2 px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
-                                    title="Qiita API接続テスト"
-                                >
-                                    APIテスト
-                                </button>
-                                <button
-                                    onClick={resetPageCounter}
-                                    className="ml-2 px-2 py-1 text-xs bg-orange-500 text-white rounded hover:bg-orange-600"
-                                    title="ページカウンターをリセット"
-                                >
-                                    ページリセット
-                                </button>
-                            </div>
-                            <p>Jotai: URLs {qiitaUrls.length}件 / OGP {Object.keys(ogpCache).length}件</p>
-                            <p>バックグラウンド: {isFetching ? '取得中' : '待機中'} / ページ{currentPage} / {hasMore ? '継続' : '完了'}</p>
-                        </div>
-                    )}
+                    {/* Debug panel removed for production design */}
                 </motion.div>
 
                 {/* ルートへのリンクボタン */}

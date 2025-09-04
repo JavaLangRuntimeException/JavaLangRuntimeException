@@ -12,10 +12,15 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-zinc-900/60 border-b border-zinc-200/60 dark:border-zinc-800/60">
       <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-        <Link href="/" className="font-semibold tracking-tight">
-          JavaLangRuntimeException
+        <Link href="/" className="font-semibold tracking-tight whitespace-nowrap">
+          taramanji
         </Link>
-        <nav className="flex items-center gap-2">
+        <div className="mx-4 flex-1 overflow-hidden hidden sm:block">
+          <div className="marquee whitespace-nowrap text-xs text-zinc-600 dark:text-zinc-300">
+            Links/Contactでプロフィール・SNS・連絡先を確認できます。Reserveでお打ち合わせ予約ができます。
+          </div>
+        </div>
+        <nav className="flex items-center gap-2 whitespace-nowrap">
           <Link
             href="/"
             className={cn(
@@ -36,7 +41,7 @@ export function Header() {
                 : "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
             )}
           >
-            Links
+            Links/Contact
           </Link>
           <Link
             href="/reserve"

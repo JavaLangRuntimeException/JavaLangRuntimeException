@@ -21,6 +21,7 @@ export default function RootLayout({
     <html lang="ja">
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <link rel="icon" href="/image.png" />
       </head>
       <body className={`${inter.className} min-h-screen w-full`}>
         <ClientWrapper>

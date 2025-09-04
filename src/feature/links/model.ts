@@ -26,7 +26,7 @@ export const linkCards: LinkCard[] = [
   // StackOverflow → 1on1予約
   { href: "/reserve", imgSrc: "/image2.png", title: "お打ち合わせ予約", description: "お打ち合わせのの予約はこちら", backText: "/reserve へ" },
   // Email
-  { href: "mailto:tarakokko3233@gmail.com", imgSrc: "/email.png", title: "Email", description: "tarakokko3233@gmail.com", backText: "気軽にどうぞ (スパムはご遠慮ください)" },
+  { href: "mailto:tanahashishuta@gmail.com", imgSrc: "/email.png", title: "Email", description: "tanahashishuta@gmail.com", backText: "気軽にどうぞ (スパムはご遠慮ください)" },
 ];
 
 

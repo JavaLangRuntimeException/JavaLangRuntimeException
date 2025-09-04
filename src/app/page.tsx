@@ -81,8 +81,8 @@ export default function PortfolioLinks() {
                 transition={{ duration: 0.6, ease: "easeOut" }}
                 className="text-center"
               >
-                <div className="text-2xl font-semibold tracking-wide text-white">JavaLangRuntimeException</div>
-                <div className="mt-2 text-sm text-zinc-300">Loading portfolio...</div>
+                <div className="text-2xl font-semibold tracking-wide text-white">taramanji</div>
+                <div className="mt-2 text-sm text-zinc-300">Loading...</div>
               </motion.div>
             </motion.div>
           )}
@@ -103,7 +103,7 @@ export default function PortfolioLinks() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.7 }}
           >
-            taramanji (JavaLangRuntimeException)
+            taramanji
           </motion.h1>
           <motion.h2
               className="text-center text-xl sm:text-2xl md:text-3xl mb-12"
@@ -111,12 +111,23 @@ export default function PortfolioLinks() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.35, duration: 0.7 }}
           >
-            ポートフォリオ
           </motion.h2>
 
           <div className="mx-auto max-w-4xl">
             <ProfileHeader />
             <AffiliationBadges />
+          </div>
+
+          {/* Intro to key pages */}
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 max-w-4xl mx-auto">
+            <a href="/link" className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur hover:bg-white/10 transition">
+              <h3 className="text-base font-semibold">Links/Contact</h3>
+              <p className="mt-1 text-sm text-zinc-200/90">プロフィール・SNSのリンク一覧。お問い合わせはこちらから。</p>
+            </a>
+            <a href="/reserve" className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur hover:bg-white/10 transition">
+              <h3 className="text-base font-semibold">Reserve</h3>
+              <p className="mt-1 text-sm text-zinc-200/90">1on1予約ページ。ご希望の日時を選択してください。</p>
+            </a>
           </div>
         </div>
       </div>
