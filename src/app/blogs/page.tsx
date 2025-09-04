@@ -266,9 +266,12 @@ export default function BlogsPage() {
 
     // デバッグ情報を表示
     React.useEffect(() => {
-        console.log(`[BlogPage] State update: URLs=${qiitaUrls.length}, OGP=${Object.keys(ogpCache).length}, fetching=${isFetching}, hasMore=${hasMore}, page=${currentPage}`);
-        console.log(`[BlogPage] Selected series: "${selectedSeries}"`);
-    }, [qiitaUrls.length, Object.keys(ogpCache).length, isFetching, hasMore, currentPage, selectedSeries]);
+        if (process.env.NODE_ENV === 'development') {
+            const ogpSize = Object.keys(ogpCache).length;
+            console.log(`[BlogPage] State update: URLs=${qiitaUrls.length}, OGP=${ogpSize}, fetching=${isFetching}, hasMore=${hasMore}, page=${currentPage}`);
+            console.log(`[BlogPage] Selected series: "${selectedSeries}"`);
+        }
+    }, [qiitaUrls.length, isFetching, hasMore, currentPage, selectedSeries, ogpCache]);
 
     // 開発環境での強制初期化
     React.useEffect(() => {
@@ -298,7 +301,7 @@ export default function BlogsPage() {
     }, []);
 
         // 開発用：キャッシュをクリアする関数
-    const clearAllCache = React.useCallback(() => {
+    /* const clearAllCache = React.useCallback(() => {
         // localStorage をクリア
         localStorage.removeItem('taramanji_qiita_urls');
         localStorage.removeItem('taramanji_ogp_cache');
@@ -315,7 +318,7 @@ export default function BlogsPage() {
         // 状態をリセット（ページリロードが必要）
         console.log('All cache cleared. Please reload the page.');
         window.location.reload();
-    }, []);
+    }, []); */
 
         // チートシートのOGPデータを取得（ローカルキャッシュ活用）
     const fetchCheatSheetOgp = React.useCallback(async () => {
@@ -475,7 +478,7 @@ export default function BlogsPage() {
     }, [qiitaUrls.length, ogpCache, cacheStats]);
 
     // 開発用：APIテスト機能
-    const testQiitaAPI = React.useCallback(async () => {
+    /* const testQiitaAPI = React.useCallback(async () => {
         try {
             console.log('[API Test] Testing Qiita API connection...');
             const { fetchQiitaURLs } = await import("./server");
@@ -486,15 +489,15 @@ export default function BlogsPage() {
             console.error('[API Test] Error:', error);
             alert(`API Test Failed: ${error}. Check console for details.`);
         }
-    }, []);
+    }, []); */
 
     // 開発用：ページ数リセット機能
-    const resetPageCounter = React.useCallback(() => {
+    /* const resetPageCounter = React.useCallback(() => {
         localStorage.removeItem('taramanji_current_page');
         localStorage.removeItem('taramanji_has_more');
         console.log('[Debug] Page counter reset. Please reload the page.');
         alert('Page counter reset. Please reload the page.');
-    }, []);
+    }, []); */
 
     return (
         <main className="p-4">
