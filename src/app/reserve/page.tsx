@@ -24,6 +24,7 @@ export default function ReservePage() {
   const [endMin, setEndMin] = React.useState<number | null>(null);
   const [name, setName] = React.useState("");
   const [email, setEmail] = React.useState("");
+  const [emailError, setEmailError] = React.useState<string>("");
   const [purpose, setPurpose] = React.useState<Purpose>("TechSelect+");
   const [confirmOpen, setConfirmOpen] = React.useState(false);
   const [creating, setCreating] = React.useState(false);
@@ -78,8 +79,26 @@ export default function ReservePage() {
     else setWeekday("");
   }, [hasDate, year, month, day]);
 
-  const hours = Array.from({ length: 16 }, (_, i) => 9 + i); // 9-24
-  // const minutes = [0, 15, 30, 45]; // not used with toggles
+  const hours = React.useMemo(() => Array.from({ length: 16 }, (_, i) => 9 + i), []); // 9-24
+  const minuteOptions = React.useMemo(() => [0, 30], []);
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+  const nextMonth = currentMonth === 12 ? 1 : currentMonth + 1;
+  const yearOptions = React.useMemo(() => (currentMonth === 12 ? [currentYear, currentYear + 1] : [currentYear]), [currentYear, currentMonth]);
+  const monthOptions = React.useMemo(() => {
+    if (year == null) return [] as number[];
+    if (year === currentYear) {
+      return currentMonth === 12 ? [12] : [currentMonth, nextMonth];
+    }
+    if (currentMonth === 12 && year === currentYear + 1) return [1];
+    return [] as number[];
+  }, [year, currentYear, currentMonth, nextMonth]);
+  React.useEffect(() => {
+    if (year == null) return;
+    if (month == null || !monthOptions.includes(month)) {
+      setMonth(monthOptions[0] ?? null);
+    }
+  }, [year, month, monthOptions]);
 
   async function handleSubmit() {
     // validation: start < end
@@ -204,10 +223,15 @@ export default function ReservePage() {
             type="email"
             placeholder="your.name@example.com"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              const v = e.target.value;
+              setEmail(v);
+              setEmailError(v && !isValidEmail(v) ? "正しいメールアドレスを入力してください" : "");
+            }}
             pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$"
           />
-          <p className="mt-1 text-xs text-zinc-500">招待メールを送信できるアドレスをご入力ください。</p>
+          {emailError && <p className="mt-1 text-xs text-red-600">{emailError}</p>}
+          {!emailError && <p className="mt-1 text-xs text-zinc-500">招待メールを送信できるアドレスをご入力ください。</p>}
         </div>
         <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm sm:col-span-2">
           <h2 className="mb-3 text-sm font-semibold text-zinc-700">ご連絡手段</h2>
@@ -236,8 +260,8 @@ export default function ReservePage() {
         <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
           <h2 className="mb-3 text-sm font-semibold text-zinc-700">日付</h2>
           <div className="grid grid-cols-4 gap-3">
-            <UnderLabelSelect value={year} setValue={setYear} options={range(now.getFullYear() - 1, now.getFullYear() + 2)} underLabel="年" />
-            <UnderLabelSelect value={month} setValue={setMonth} options={range(1, 12)} underLabel="月" />
+            <UnderLabelSelect value={year} setValue={setYear} options={yearOptions} underLabel="年" />
+            <UnderLabelSelect value={month} setValue={setMonth} options={monthOptions} underLabel="月" />
             <UnderLabelSelect value={day} setValue={setDay} options={range(1, 31)} underLabel="日" />
             <div className="flex flex-col items-center justify-center">
               <div className="text-base font-semibold text-zinc-900">{weekday || "X"}</div>
@@ -250,11 +274,11 @@ export default function ReservePage() {
           <div className="flex flex-wrap items-end gap-3 text-zinc-900">
             <UnderLabelSelect value={startHour} setValue={setStartHour} options={hours} underLabel="時" />
             <div className="pb-4 text-lg text-zinc-500">:</div>
-            <UnderLabelSelect value={startMin} setValue={setStartMin} options={[0, 30]} underLabel="分" />
+            <UnderLabelSelect value={startMin} setValue={setStartMin} options={minuteOptions} underLabel="分" />
             <div className="pb-4 text-lg text-zinc-400">~</div>
             <UnderLabelSelect value={endHour} setValue={setEndHour} options={hours} underLabel="時" />
             <div className="pb-4 text-lg text-zinc-500">:</div>
-            <UnderLabelSelect value={endMin} setValue={setEndMin} options={[0, 30]} underLabel="分" />
+            <UnderLabelSelect value={endMin} setValue={setEndMin} options={minuteOptions} underLabel="分" />
           </div>
           <p className="mt-2 text-xs text-zinc-500">予約可能時間: 1ヶ月後までの月曜〜日曜 9:00 - 24:00</p>
           {hasDate && hasTime && selectionInvalid && (
