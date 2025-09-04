@@ -340,13 +340,13 @@ export default function ReservePage() {
 
       {/* 確認モーダル（簡易） */}
       {confirmOpen && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/40">
-          <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-3">
+          <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl max-h-[85vh]">
             <div className="flex items-center gap-2 border-b border-zinc-200 bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-3">
               <div className="text-lg">📝</div>
               <h3 className="text-base font-semibold text-white">最終確認</h3>
             </div>
-            <div className="p-5">
+            <div className="p-5 overflow-y-auto">
               <div className="grid gap-3 text-sm text-zinc-900 sm:grid-cols-2">
                 <div className="rounded-lg bg-zinc-50 p-3">
                   <div className="text-xs text-zinc-500">日付</div>
@@ -409,13 +409,13 @@ export default function ReservePage() {
 
       {/* 作成完了モーダル */}
       {createdInfo && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/40">
-          <div className="w-full max-w-lg sm:max-w-xl md:max-w-2xl overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-3">
+          <div className="w-full max-w-lg sm:max-w-xl md:max-w-2xl overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl max-h-[85vh]">
             <div className="flex items-center gap-2 border-b border-zinc-200 bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-3">
               <div className="text-lg">✅</div>
               <h3 className="text-base font-semibold text-white">作成しました！</h3>
             </div>
-            <div className="p-5">
+            <div className="p-5 overflow-y-auto">
               {createdInfo.ok ? (
                 <div className="space-y-3 text-sm text-zinc-800">
                   {createdInfo.eventId && (

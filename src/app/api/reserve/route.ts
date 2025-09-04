@@ -49,24 +49,12 @@ export async function POST(req: Request) {
             return NextResponse.json({ ok: false, error: "lead_time_violation", message: "予約は現在から2時間後以降のみ可能です" }, { status: 400 });
           }
         } catch {}
-        const startISO = new Date(
-          body.year,
-          body.month - 1,
-          body.day,
-          body.start.hour,
-          body.start.minute,
-          0,
-          0
-        ).toISOString();
-        const endISO = new Date(
-          body.year,
-          body.month - 1,
-          body.day,
-          body.end.hour,
-          body.end.minute,
-          0,
-          0
-        ).toISOString();
+        const formatLocalDateTime = (y: number, m1: number, d: number, h: number, mi: number) => {
+          const pad = (n: number) => String(n).padStart(2, "0");
+          return `${y}-${pad(m1 + 1)}-${pad(d)}T${pad(h)}:${pad(mi)}:00`;
+        };
+        const startLocal = formatLocalDateTime(body.year, body.month - 1, body.day, body.start.hour, body.start.minute);
+        const endLocal = formatLocalDateTime(body.year, body.month - 1, body.day, body.end.hour, body.end.minute);
 
         type GEvent = {
           summary: string;
@@ -95,8 +83,8 @@ export async function POST(req: Request) {
           summary: summaryTitle,
           description: descriptionLines.join("\n"),
           location: body.location || "",
-          start: { dateTime: startISO, timeZone: "Asia/Tokyo" },
-          end: { dateTime: endISO, timeZone: "Asia/Tokyo" },
+          start: { dateTime: startLocal, timeZone: "Asia/Tokyo" },
+          end: { dateTime: endLocal, timeZone: "Asia/Tokyo" },
           attendees: body.email ? [{ email: body.email }] : [],
           reminders: {
             useDefault: false,
@@ -247,24 +235,9 @@ export async function POST(req: Request) {
         return NextResponse.json({ ok: true, eventId, htmlLink: created?.htmlLink, invited: !!(baseEvent.attendees && baseEvent.attendees.length), meetLink });
     } else if (process.env.GCAL_WEBHOOK_URL) {
       const webhook = process.env.GCAL_WEBHOOK_URL;
-      const startISO = new Date(
-        body.year,
-        body.month - 1,
-        body.day,
-        body.start.hour,
-        body.start.minute,
-        0,
-        0
-      ).toISOString();
-      const endISO = new Date(
-        body.year,
-        body.month - 1,
-        body.day,
-        body.end.hour,
-        body.end.minute,
-        0,
-        0
-      ).toISOString();
+      const pad = (n: number) => String(n).padStart(2, "0");
+      const startLocal = `${body.year}-${pad(body.month)}-${pad(body.day)}T${pad(body.start.hour)}:${pad(body.start.minute)}:00`;
+      const endLocal = `${body.year}-${pad(body.month)}-${pad(body.day)}T${pad(body.end.hour)}:${pad(body.end.minute)}:00`;
 
       const summaryTitleWebhook = String(body.purpose) === "STECH"
         ? `STECH面談_${body.name || "ゲスト"}さん`
@@ -284,8 +257,8 @@ export async function POST(req: Request) {
           body.slackName ? `Slack名: ${body.slackName}` : undefined,
           body.otherNote ? `備考: ${body.otherNote}` : undefined,
         ].filter(Boolean).join("\n"),
-        start: { dateTime: startISO, timeZone: "Asia/Tokyo" },
-        end: { dateTime: endISO, timeZone: "Asia/Tokyo" },
+        start: { dateTime: startLocal, timeZone: "Asia/Tokyo" },
+        end: { dateTime: endLocal, timeZone: "Asia/Tokyo" },
         attendees: body.email ? [{ email: body.email }] : [],
         // Ask webhook to create Meet as well when contact is meet
         contactMethod: body.contactMethod,
