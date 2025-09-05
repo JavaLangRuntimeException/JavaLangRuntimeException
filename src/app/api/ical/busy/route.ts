@@ -1,3 +1,6 @@
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 import { NextResponse } from "next/server";
 
 type BusyRequest = {
@@ -19,7 +22,7 @@ export async function POST(req: Request) {
       urls = csv.split(/\s*,\s*/).filter(Boolean);
     } else {
       const envUrls: string[] = [];
-      for (let i = 1; i <= 10; i++) {
+      for (let i = 1; i <= 19; i++) {
         const v = process.env[`ICAL_URL_${i}`];
         if (v && v.trim()) envUrls.push(v.trim());
       }
@@ -53,7 +56,15 @@ export async function POST(req: Request) {
 
 async function safeFetchText(url: string): Promise<string> {
   try {
-    const res = await fetch(url, { next: { revalidate: 300 } });
+    const res = await fetch(url, {
+      cache: "no-store",
+      headers: {
+        // Some calendar hosts reject generic serverless UAs; emulate a browser UA and accept iCal content
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36",
+        Accept: "text/calendar, text/plain, */*",
+      },
+    });
     if (!res.ok) return "";
     return await res.text();
   } catch {
