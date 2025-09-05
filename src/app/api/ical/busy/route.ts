@@ -11,6 +11,8 @@ type BusyInterval = { start: string; end: string };
 
 export async function POST(req: Request) {
   try {
+    const url = new URL(req.url);
+    const debug = url.searchParams.get("debug") === "1";
     const body = (await req.json()) as BusyRequest;
     const weekStart = new Date(body.weekStartISO);
     const weekEnd = new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000);
@@ -29,7 +31,8 @@ export async function POST(req: Request) {
       urls = envUrls;
     }
     urls = urls.map((u) => u.replace(/^webcal:\/\//i, "https://"));
-    const texts = await Promise.all(urls.map((u) => safeFetchText(u)));
+    const results = await Promise.all(urls.map((u) => safeFetchText(u)));
+    const texts = results.map((r) => r.text);
     const intervals = texts.flatMap((t) => parseIcsBusyIntervals(t));
 
     // Add 30-minute buffer before/after each busy interval, clip to the requested week, then merge overlaps
@@ -47,6 +50,18 @@ export async function POST(req: Request) {
 
     const merged = mergeIntervals(clipped);
     const payload: BusyInterval[] = merged.map((iv) => ({ start: iv.start.toISOString(), end: iv.end.toISOString() }));
+    if (debug) {
+      return NextResponse.json({
+        busy: payload,
+        sourceCount: urls.length,
+        sources: urls.map((u, i) => ({
+          url: u,
+          ok: results[i].ok,
+          status: results[i].status,
+          length: results[i].text.length,
+        })),
+      });
+    }
     return NextResponse.json({ busy: payload });
   } catch (e) {
     console.error(e);
@@ -54,7 +69,7 @@ export async function POST(req: Request) {
   }
 }
 
-async function safeFetchText(url: string): Promise<string> {
+async function safeFetchText(url: string): Promise<{ ok: boolean; status: number; text: string }> {
   try {
     const res = await fetch(url, {
       cache: "no-store",
@@ -65,10 +80,11 @@ async function safeFetchText(url: string): Promise<string> {
         Accept: "text/calendar, text/plain, */*",
       },
     });
-    if (!res.ok) return "";
-    return await res.text();
+    if (!res.ok) return { ok: false, status: res.status, text: "" };
+    const text = await res.text();
+    return { ok: true, status: res.status, text };
   } catch {
-    return "";
+    return { ok: false, status: 0, text: "" };
   }
 }
 
@@ -99,21 +115,34 @@ function extractDateValue(line: string): string {
 }
 
 function icsToISO(v: string): string {
-  // Supports: 20250101T130000Z or 20250101T130000
+  // Supports: 20250101T130000Z or 20250101T130000 (no Z = local time of calendar)
+  // In serverless(UTC), non-ZをローカルJST等として扱う必要があるため、オフセットを明示してUTCに正規化する
+  const tzOffsetMinutes = Number(process.env.ICAL_TZ_OFFSET_MINUTES ?? "540"); // default: JST(+09:00)
+
   if (/Z$/.test(v)) {
     const iso = v.replace(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/, "$1-$2-$3T$4:$5:$6Z");
     return iso;
   }
   const m = v.match(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})$/);
   if (m) {
-    const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), Number(m[4]), Number(m[5]), Number(m[6]));
-    return d.toISOString();
+    const y = Number(m[1]);
+    const mo = Number(m[2]) - 1;
+    const d = Number(m[3]);
+    const hh = Number(m[4]);
+    const mm = Number(m[5]);
+    const ss = Number(m[6]);
+    // Local time (calendar) → UTC instant
+    const utcMs = Date.UTC(y, mo, d, hh, mm, ss) - tzOffsetMinutes * 60 * 1000;
+    return new Date(utcMs).toISOString();
   }
-  // All-day events (YYYYMMDD)
+  // All-day events (YYYYMMDD) → same approach at 00:00 local
   const d = v.match(/^(\d{4})(\d{2})(\d{2})$/);
   if (d) {
-    const start = new Date(Number(d[1]), Number(d[2]) - 1, Number(d[3]));
-    return start.toISOString();
+    const y = Number(d[1]);
+    const mo = Number(d[2]) - 1;
+    const day = Number(d[3]);
+    const utcMs = Date.UTC(y, mo, day, 0, 0, 0) - tzOffsetMinutes * 60 * 1000;
+    return new Date(utcMs).toISOString();
   }
   return "";
 }
