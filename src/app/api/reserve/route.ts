@@ -69,13 +69,15 @@ export async function POST(req: Request) {
 
         const wantMeet = String(body.contactMethod || "").toLowerCase() === "meet";
         const descriptionLines: string[] = [
-          `目的: ${body.purpose}`,
+          `ご相談内容: ${body.purpose}`,
         ];
-        if (body.meetingNote) descriptionLines.push(`打ち合わせ内容: ${body.meetingNote}`);
+        if (body.meetingNote) descriptionLines.push(`ご相談詳細(任意): ${body.meetingNote}`);
         const contactMethod = String(body.contactMethod || "");
-        if (contactMethod) descriptionLines.push(`連絡手段: ${contactMethod}`);
+        if (contactMethod) descriptionLines.push(`ご連絡手段（ミーティング媒体）: ${contactMethod}`);
         if (body.discordName) descriptionLines.push(`Discord名: ${body.discordName}`);
+        if (body.discordServer) descriptionLines.push(`Discordサーバー: ${body.discordServer}`);
         if (body.slackName) descriptionLines.push(`Slack名: ${body.slackName}`);
+        if (body.slackWorkspace) descriptionLines.push(`Slackワークスペース: ${body.slackWorkspace}`);
         if (body.otherNote) descriptionLines.push(`備考: ${body.otherNote}`);
 
         const summaryTitle = String(body.purpose) === "STECH" ? `STECH面談_${body.name || "ゲスト"}さん` : `TS+面談_${body.name || "ゲスト"}さん`;
@@ -239,20 +241,27 @@ export async function POST(req: Request) {
       const startLocal = `${body.year}-${pad(body.month)}-${pad(body.day)}T${pad(body.start.hour)}:${pad(body.start.minute)}:00`;
       const endLocal = `${body.year}-${pad(body.month)}-${pad(body.day)}T${pad(body.end.hour)}:${pad(body.end.minute)}:00`;
 
-      const summaryTitleWebhook = String(body.purpose) === "STECH"
-        ? `STECH面談_${body.name || "ゲスト"}さん`
-        : String(body.purpose) === "TechSelect+"
-        ? `TS+面談_${body.name || "ゲスト"}さん`
-        : `面談_${body.name || "ゲスト"}さん`;
+      const purpose = String(body.purpose || "");
+      const baseName = body.name || "ゲスト";
+      const summaryTitleWebhook =
+        purpose === "TechSelect+" ? `TS+面談_${baseName}さんx棚橋(taramanji)` :
+        purpose === "開発委託/相談" ? `開発に関するご相談_${baseName}さんx棚橋(taramanji)` :
+        purpose === "STECH"      ? `STECHご相談_${baseName}さんx棚橋(taramanji)` :
+        purpose === "RM2C"       ? `RM2Cご相談_${baseName}さんx棚橋(taramanji)` :
+        purpose === "JINEN"      ? `コミュニティやイベントに関するご相談(JINEN)_${baseName}さんx棚橋(taramanji)` :
+        purpose === "NxTEND"     ? `NxTENDご相談_${baseName}さんx棚橋(taramanji)` :
+        purpose === "RCC"        ? `RCCご相談_${baseName}さんx棚橋(taramanji)` :
+        purpose === "その他"        ? `ご相談_${baseName}さんx棚橋(taramanji)` :
+        `ご相談_${baseName}さん`;
 
       const payload = {
         calendarId,
         ownerEmail: "tanahashishuta@gmail.com",
         summary: summaryTitleWebhook,
         description: [
-          `目的: ${body.purpose}`,
-          body.meetingNote ? `打ち合わせ内容: ${body.meetingNote}` : undefined,
-          body.contactMethod ? `連絡手段: ${body.contactMethod}` : undefined,
+          `ご相談内容: ${body.purpose}`,
+          body.meetingNote ? `ご相談詳細(任意): ${body.meetingNote}` : undefined,
+          body.contactMethod ? `ご連絡手段（ミーティング媒体）: ${body.contactMethod}` : undefined,
           body.discordName ? `Discord名: ${body.discordName}` : undefined,
           body.slackName ? `Slack名: ${body.slackName}` : undefined,
           body.otherNote ? `備考: ${body.otherNote}` : undefined,

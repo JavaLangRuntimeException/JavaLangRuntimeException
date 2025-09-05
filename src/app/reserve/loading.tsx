@@ -3,7 +3,7 @@
 import { FullScreenLoading } from "../../components/FullScreenLoading";
 
 export default function Loading() {
-  return <FullScreenLoading title="Reserve" />;
+  return <FullScreenLoading title="" subtitle="Loading... Reserve" />;
 }
 
 

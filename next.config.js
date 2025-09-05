@@ -1,7 +1,12 @@
 module.exports = {
      images: {
-          domains: ['qiita-user-contents.imgix.net', 'picsum.photos'],
           remotePatterns: [
+               {
+                    protocol: 'https',
+                    hostname: 'qiita-user-contents.imgix.net',
+                    port: '',
+                    pathname: '/**',
+               },
                {
                     protocol: 'https',
                     hostname: 'via.placeholder.com',
