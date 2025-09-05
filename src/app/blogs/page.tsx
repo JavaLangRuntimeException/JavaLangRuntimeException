@@ -264,14 +264,6 @@ export default function BlogsPage() {
     const hasMore = useAtom(hasMoreAtom)[0];
     const currentPage = useAtom(currentPageAtom)[0];
 
-    // デバッグ情報を表示
-    React.useEffect(() => {
-        if (process.env.NODE_ENV === 'development') {
-            const ogpSize = Object.keys(ogpCache).length;
-            console.log(`[BlogPage] State update: URLs=${qiitaUrls.length}, OGP=${ogpSize}, fetching=${isFetching}, hasMore=${hasMore}, page=${currentPage}`);
-            console.log(`[BlogPage] Selected series: "${selectedSeries}"`);
-        }
-    }, [qiitaUrls.length, isFetching, hasMore, currentPage, selectedSeries, ogpCache]);
 
     // 開発環境での強制初期化
     React.useEffect(() => {
@@ -300,27 +292,6 @@ export default function BlogsPage() {
         updateCacheStats();
     }, []);
 
-        // 開発用：キャッシュをクリアする関数
-    /* const clearAllCache = React.useCallback(() => {
-        // localStorage をクリア
-        localStorage.removeItem('taramanji_qiita_urls');
-        localStorage.removeItem('taramanji_ogp_cache');
-        localStorage.removeItem('taramanji_last_fetch');
-        localStorage.removeItem('taramanji_current_page');
-        localStorage.removeItem('taramanji_has_more');
-        localStorage.removeItem('taramanji_is_fetching');
-        localStorage.removeItem(LOCAL_STORAGE_KEY);
-
-        // Cookie をクリア
-        document.cookie = 'taramanji_qiita_urls=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-        document.cookie = 'taramanji_ogp_cache=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-
-        // 状態をリセット（ページリロードが必要）
-        console.log('All cache cleared. Please reload the page.');
-        window.location.reload();
-    }, []); */
-
-        // チートシートのOGPデータを取得（ローカルキャッシュ活用）
     const fetchCheatSheetOgp = React.useCallback(async () => {
         if (cheatSheetArticles.length > 0) {
             console.log('[fetchCheatSheetOgp] Already loaded, skipping');
@@ -476,28 +447,6 @@ export default function BlogsPage() {
             console.log(`Cache stats - Local: ${cacheStats.localCacheSize}, Server: ${cacheStats.serverCacheSize}`);
         }
     }, [qiitaUrls.length, ogpCache, cacheStats]);
-
-    // 開発用：APIテスト機能
-    /* const testQiitaAPI = React.useCallback(async () => {
-        try {
-            console.log('[API Test] Testing Qiita API connection...');
-            const { fetchQiitaURLs } = await import("./server");
-            const urls = await fetchQiitaURLs(1, true);
-            console.log(`[API Test] Result: ${urls.length} URLs fetched`);
-            alert(`API Test Result: ${urls.length} URLs fetched. Check console for details.`);
-        } catch (error) {
-            console.error('[API Test] Error:', error);
-            alert(`API Test Failed: ${error}. Check console for details.`);
-        }
-    }, []); */
-
-    // 開発用：ページ数リセット機能
-    /* const resetPageCounter = React.useCallback(() => {
-        localStorage.removeItem('taramanji_current_page');
-        localStorage.removeItem('taramanji_has_more');
-        console.log('[Debug] Page counter reset. Please reload the page.');
-        alert('Page counter reset. Please reload the page.');
-    }, []); */
 
     return (
         <main className="p-4">

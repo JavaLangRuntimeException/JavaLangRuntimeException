@@ -29,12 +29,17 @@ export async function POST(req: Request) {
     const texts = await Promise.all(urls.map((u) => safeFetchText(u)));
     const intervals = texts.flatMap((t) => parseIcsBusyIntervals(t));
 
-    // Clip to the requested week and merge overlaps
+    // Add 30-minute buffer before/after each busy interval, clip to the requested week, then merge overlaps
+    const bufferMs = 30 * 60 * 1000;
     const clipped = intervals
-      .map((iv) => ({
-        start: new Date(Math.max(new Date(iv.start).getTime(), weekStart.getTime())),
-        end: new Date(Math.min(new Date(iv.end).getTime(), weekEnd.getTime())),
-      }))
+      .map((iv) => {
+        const s = new Date(new Date(iv.start).getTime() - bufferMs);
+        const e = new Date(new Date(iv.end).getTime() + bufferMs);
+        return {
+          start: new Date(Math.max(s.getTime(), weekStart.getTime())),
+          end: new Date(Math.min(e.getTime(), weekEnd.getTime())),
+        };
+      })
       .filter((iv) => iv.end > iv.start);
 
     const merged = mergeIntervals(clipped);
