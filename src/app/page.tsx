@@ -67,20 +67,8 @@ export default function PortfolioLinks() {
         {/* Intro Overlay */}
         <AnimatePresence>
           {showIntro && (
-            <motion.div
-              className="fixed inset-0 z-50 grid place-items-center bg-black"
-              initial={{ opacity: 1 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.6 }}
-            >
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 1.05, opacity: 0 }}
-                transition={{ duration: 0.6, ease: "easeOut" }}
-                className="text-center"
-              >
+            <motion.div className="fixed inset-0 z-50 grid place-items-center bg-black" initial={{ opacity: 1 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.6 }}>
+              <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 1.05, opacity: 0 }} transition={{ duration: 0.6, ease: "easeOut" }} className="text-center">
                 <div className="text-2xl font-semibold tracking-wide text-white">taramanji</div>
                 <div className="mt-2 text-sm text-zinc-300">Loading...</div>
               </motion.div>

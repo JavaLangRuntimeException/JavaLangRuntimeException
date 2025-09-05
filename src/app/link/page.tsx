@@ -60,7 +60,8 @@ export default function LinksPage() {
             transition={{ duration: 0.5 }}
           >
             <div className="text-center">
-              <div className="text-2xl font-semibold tracking-wide text-white">Links</div>
+              <div className="text-2xl font-semibold tracking-wide text-white">Links/Contact</div>
+              <div className="mt-2 text-sm text-zinc-300">Loading...</div>
             </div>
           </motion.div>
         )}

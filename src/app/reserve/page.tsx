@@ -2,6 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
+import { FullScreenLoading } from "../../components/FullScreenLoading";
 
 type Purpose = "TechSelect+" | "STECH" | "RM2C" | "JINEN" | "NxTEND" | "RCC" | "その他";
 
@@ -37,6 +38,7 @@ export default function ReservePage() {
   const [otherNote, setOtherNote] = React.useState("");
   const [meetingNote, setMeetingNote] = React.useState("");
   const [busy, setBusy] = React.useState<{ start: string; end: string }[]>([]);
+  const [busyLoading, setBusyLoading] = React.useState(true);
   // current selected range (driven by inputs)
   const hasDate = year != null && month != null && day != null;
   const hasTime = startHour != null && startMin != null && endHour != null && endMin != null;
@@ -64,6 +66,7 @@ export default function ReservePage() {
 
   // fetch busy intervals for current week (Mon-Sun)
   React.useEffect(() => {
+    setBusyLoading(true);
     fetch("/api/ical/busy", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -71,7 +74,8 @@ export default function ReservePage() {
     })
       .then((r) => r.json())
       .then((d) => setBusy(d.busy || []))
-      .catch(() => setBusy([]));
+      .catch(() => setBusy([]))
+      .finally(() => setBusyLoading(false));
   }, [weekStart]);
 
   React.useEffect(() => {
@@ -167,6 +171,7 @@ export default function ReservePage() {
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-10 text-zinc-900">
+      {busyLoading && <FullScreenLoading title="Reserve" />}
       <motion.h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
         お打ち合わせ予約
       </motion.h1>
