@@ -366,6 +366,23 @@ export default function ReservePage() {
       alert("終了は開始より後にしてください");
       return;
     }
+    // Just-in-time availability re-check to mitigate race conditions
+    try {
+      const weekToCheck = getMonday(startDate);
+      const latest = await fetch("/api/ical/busy", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ weekStartISO: weekToCheck.toISOString() }),
+      }).then((r) => r.json()).catch(() => ({ busy: [] }));
+      const latestBusy: { start: string; end: string }[] = latest?.busy || [];
+      if (isOverlappingBusy(startDate, endDate, latestBusy)) {
+        alert("直前に同時間帯の予約が入りました。別の時間をお選びください");
+        // refresh current busy state for UI feedback
+        setBusy(latestBusy);
+        return;
+      }
+    } catch {}
+    // Local cached check as fallback
     if (isOverlappingBusy(startDate, endDate, busy)) {
       alert("選択した時間帯は不可です");
       return;
