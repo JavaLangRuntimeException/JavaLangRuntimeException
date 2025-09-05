@@ -49,11 +49,11 @@ export function WeekGrid({
   oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
   return (
     <div className="overflow-x-auto">
-      <div className="min-w-[700px] rounded-lg border border-zinc-200">
+      <div className="min-w-[700px] overflow-hidden rounded-2xl border border-white/20 bg-white/90 shadow-lg backdrop-blur">
         <div className="grid grid-cols-[100px_repeat(7,1fr)] text-zinc-900">
-          <div />
+          <div className="bg-gradient-to-b from-zinc-50 to-white" />
           {days.map((d) => (
-            <div key={d.toDateString()} className="p-2 text-center text-sm text-zinc-600">
+            <div key={d.toDateString()} className="bg-gradient-to-b from-zinc-50 to-white p-2 text-center text-sm text-zinc-600">
               {`${d.getMonth() + 1}/${d.getDate()}(${weekdayName(d)})`}
             </div>
           ))}
@@ -74,7 +74,7 @@ export function WeekGrid({
                   <button
                     type="button"
                     key={`${d.toDateString()}-${hour}-${min}`}
-                    className={`border-t border-l border-zinc-200 p-2 text-center text-xs transition-colors ${
+                    className={`border-t border-l border-zinc-200 p-2 text-center text-xs transition-colors focus:z-10 focus:outline-none focus:ring-2 focus:ring-blue-500/40 ${
                       blocked || isPast || withinLead || beyondOneMonth
                         ? "cursor-not-allowed bg-zinc-100 text-zinc-400"
                         : withinSelection

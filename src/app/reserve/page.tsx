@@ -13,6 +13,7 @@ import { MeetingNoteField } from "../../feature/reserve/ui/MeetingNoteField";
 import { WeekGrid as WeekGridComponent } from "../../feature/reserve/ui/WeekGrid";
 import { CompletionModal } from "../../feature/reserve/ui/CompletionModal";
 import { useAtom } from "jotai";
+import { Info, ChevronLeft, ChevronRight, CalendarClock, NotebookText } from "lucide-react";
 import {
   emailAtom,
   contactMethodAtom,
@@ -32,6 +33,8 @@ import {
   endMinAtom,
   meetingNoteAtom,
 } from "../../feature/reserve/state";
+import Image from "next/image";
+import { AlertBanner } from "../../shared/ui/AlertBanner";
 
 // Purpose type and list centralized in shared config
 
@@ -69,6 +72,24 @@ export default function ReservePage() {
   const [meetingNote, setMeetingNote] = useAtom(meetingNoteAtom);
   const [busy, setBusy] = React.useState<{ start: string; end: string }[]>([]);
   const [busyLoading, setBusyLoading] = React.useState(true);
+  const [notify, setNotify] = React.useState<string>("");
+  const [completedDetails, setCompletedDetails] = React.useState<{
+    year: number | null;
+    month: number | null;
+    day: number | null;
+    weekday: string;
+    startHour: number | null;
+    startMin: number | null;
+    endHour: number | null;
+    endMin: number | null;
+    name: string;
+    purpose: string;
+    email: string;
+    discordName: string;
+    slackName: string;
+    otherNote: string;
+    meetingNote?: string;
+  } | null>(null);
 
   const hasDate = year != null && month != null && day != null;
   const hasTime = startHour != null && startMin != null && endHour != null && endMin != null;
@@ -214,6 +235,37 @@ export default function ReservePage() {
     return "";
   }, [busy, busyLoading]);
 
+  // Quick-apply the next available 30-min slot to the selection
+  const applyNextAvailableSlot = React.useCallback(() => {
+    if (!nextAvailableSlotText) return;
+    // Format: YYYY/MM/DD(曜) HH:MM〜HH:MM
+    const m = nextAvailableSlotText.match(/^(\d{4})\/(\d{2})\/(\d{2})\(.+\)\s+(\d{2}):(\d{2})〜(\d{2}):(\d{2})$/);
+    if (!m) return;
+    const y = Number(m[1]);
+    const mo = Number(m[2]);
+    const d = Number(m[3]);
+    const sh = Number(m[4]);
+    const sm = Number(m[5]);
+    const eh = Number(m[6]);
+    const em = Number(m[7]);
+    setYear(y);
+    setMonth(mo);
+    setDay(d);
+    setStartHour(sh);
+    setStartMin(sm);
+    setEndHour(eh);
+    setEndMin(em);
+    // Align week view to the selected date
+    const selectedDate = new Date(y, mo - 1, d);
+    setWeekStart(getMonday(selectedDate));
+    // Show notification banner
+    setNotify(`予約日時を ${nextAvailableSlotText} にセットしました`);
+    try {
+      // Auto hide
+      setTimeout(() => setNotify(""), 3000);
+    } catch {}
+  }, [nextAvailableSlotText, setYear, setMonth, setDay, setStartHour, setStartMin, setEndHour, setEndMin]);
+
 
 
   const { register, trigger, setValue, watch } = useForm<ContactForm>({
@@ -346,6 +398,26 @@ export default function ReservePage() {
       });
       const json = await res.json().catch(() => ({}));
       const ok = !!json?.ok;
+      // Snapshot details BEFORE clearing state so modal can show consistent data
+      if (ok) {
+        setCompletedDetails({
+          year,
+          month,
+          day,
+          weekday: weekdayText,
+          startHour,
+          startMin,
+          endHour,
+          endMin,
+          name,
+          purpose,
+          email,
+          discordName,
+          slackName,
+          otherNote,
+          meetingNote,
+        });
+      }
       setCreatedInfo({ ok, eventId: json?.eventId, htmlLink: json?.htmlLink, meetLink: json?.meetLink });
       if (ok) {
         // 成功送信後は次回以降の自動保存をクリア
@@ -401,7 +473,7 @@ export default function ReservePage() {
 
   return (
     <HeroBackground images={bgImages} intro={{ enabled: false }}>
-      <main className="text-zinc-900">
+      <main className="text-white">
       {/* RHF hidden bindings to ensure Zod validation stays in sync with Jotai-controlled fields */}
       <input type="hidden" {...register("name")} value={name} readOnly />
       <input type="hidden" {...register("email")} value={email} readOnly />
@@ -412,46 +484,49 @@ export default function ReservePage() {
       <input type="hidden" {...register("slackWorkspace")} value={slackWorkspace} readOnly />
       <input type="hidden" {...register("slackName")} value={slackName} readOnly />
       <input type="hidden" {...register("otherNote")} value={otherNote} readOnly />
-      <motion.h1 className="text-2xl font-bold tracking-tight text-white" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+      <motion.h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent drop-shadow" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
         お打ち合わせ予約
       </motion.h1>
-      <p className="mt-2 text-xs text-white">
+      <p className="mt-3 text-sm text-white/80">
         お問い合わせはメール(<a className="underline" href="mailto:tanahashishuta@gmail.com">tanahashishuta@gmail.com</a>)またはX(<a className="underline" href="https://x.com/JavaLangRuntime" target="_blank" rel="noreferrer">@JavaLangRuntime</a>)でも承っております
       </p>
 
       {/* 入力保持の案内 */}
-      <p className="mt-3 text-[11px] text-white/80">入力内容は10分間保持されます</p>
+      <p className="mt-3 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[11px] text-white/80 backdrop-blur">
+        <span className="h-2 w-2 rounded-full bg-emerald-400/80" /> 入力内容は10分間保持されます
+      </p>
 
       {nextAvailableSlotText && (
         <div className="mt-4 sm:mt-6">
-          <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3">
-            <div className="flex items-start gap-2">
-              <svg
-                className="mt-0.5 h-5 w-5 text-blue-600"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
+          <div className="relative overflow-hidden rounded-2xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur animate-in fade-in-50">
+            <div className="absolute inset-y-0 left-0 w-1.5 bg-gradient-to-b from-blue-400 to-indigo-500" />
+            <div className="ml-3 flex items-center justify-between gap-3">
+              <Info className="mt-0.5 h-5 w-5 text-blue-300" aria-hidden="true" />
+              <p className="m-0 flex-1 text-sm text-white/90">直近で予約できる30分枠: <span className="font-semibold text-white">{nextAvailableSlotText}</span></p>
+              <button
+                type="button"
+                onClick={applyNextAvailableSlot}
+                className="shrink-0 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
               >
-                <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
-                <path d="M12 17v-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                <circle cx="12" cy="8" r="1.2" fill="currentColor" />
-              </svg>
-              <p className="m-0 text-sm text-blue-700">直近で予約できる30分枠: {nextAvailableSlotText}</p>
+                この時間で予約
+              </button>
             </div>
           </div>
+          {notify && (
+            <AlertBanner className="mt-2" message={notify} variant="success" />
+          )}
         </div>
       )}
 
 
 
 
-      {/* ご相談内容（目的）を最上部に配置 */}
+      {/* ご相談内容（ご相談内容）を最上部に配置 */}
       <section className="mt-6 grid gap-4 sm:grid-cols-2">
-        <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm sm:col-span-2">
-          <h2 className="mb-3 text-sm font-semibold text-zinc-700">ご相談内容</h2>
+        <div className="rounded-2xl border border-white/20 bg-white/90 p-6 shadow-lg backdrop-blur sm:col-span-2 animate-in fade-in-50">
+          <h2 className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-zinc-700"><CalendarClock className="h-4 w-4 text-zinc-500" /> ご相談内容</h2>
           <select
-            className="w-full rounded-md border border-zinc-300 bg-white p-2 text-zinc-900"
+            className="w-full rounded-md border border-zinc-300 bg-white p-2 text-zinc-900 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
             value={purpose || ""}
             onChange={(e) => setPurpose(e.target.value)}
           >
@@ -470,13 +545,13 @@ export default function ReservePage() {
 
       {/* お名前/メールを横並び */}
       <section className="mt-6 grid gap-4 sm:grid-cols-2">
-        <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm sm:col-span-2">
+        <div className="rounded-2xl border border-white/20 bg-white/90 p-6 shadow-lg backdrop-blur sm:col-span-2 animate-in fade-in-50">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <h2 className="mb-3 text-sm font-semibold text-zinc-700">お名前</h2>
               <input
-                className="w-full rounded-md border border-zinc-300 bg-white p-2 text-zinc-900 placeholder-zinc-400"
-                placeholder="お名前"
+                className="w-full rounded-md border border-zinc-300 bg-white p-2 text-zinc-900 placeholder-zinc-400 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                placeholder="お名前(本名)"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
               />
@@ -487,7 +562,7 @@ export default function ReservePage() {
             <div>
               <h2 className="mb-3 text-sm font-semibold text-zinc-700">メールアドレス</h2>
               <input
-                className="w-full rounded-md border border-zinc-300 bg-white p-2 text-zinc-900 placeholder-zinc-400"
+                className="w-full rounded-md border border-zinc-300 bg-white p-2 text-zinc-900 placeholder-zinc-400 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                 type="email"
                 placeholder="your.name@example.com"
                 value={email}
@@ -498,10 +573,16 @@ export default function ReservePage() {
               )}
             </div>
           </div>
+          <div className="mt-3 rounded-md bg-zinc-50 p-3">
+            <ul className="list-disc space-y-1 pl-5 text-xs text-zinc-700">
+              入力いただいたメールアドレスに Google カレンダーから招待が届きます。お手数ですが必ずご確認ください。
+              こちらの都合で予定のキャンセルや変更のお願いを差し上げる場合も、上記のメールアドレス宛にご連絡いたします。
+            </ul>
+          </div>
         </div>
       </section>
 
-      {/* ご連絡手段（ミーティング媒体）を横長で下に配置 */}
+      {/*ご連絡手段（ミーティング媒体）（ミーティング媒体）（ミーティング媒体）を横長で下に配置 */}
       <section className="mt-4 grid gap-4 sm:grid-cols-2">
         <ContactFields
           contactMethod={contactMethod}
@@ -557,46 +638,60 @@ export default function ReservePage() {
 
       {/* 決定ボタン（カレンダーの上） */}
       <div className="mt-8 flex flex-col items-center justify-center">
-        <button
-          className={`rounded-xl px-8 py-3 text-lg font-semibold ${canSubmit ? "bg-blue-600 text-white hover:bg-blue-500" : "bg-zinc-300 text-zinc-500 cursor-not-allowed"}`}
-          disabled={!canSubmit}
-          onClick={() => setConfirmOpen(true)}
-        >
-          決定
-        </button>
+        <div className={`relative inline-block ${canSubmit ? "group" : ""}`}>
+          {canSubmit && (
+            <>
+              {/* Left-top peeking mascot (Qiitan) */}
+              <div className="pointer-events-none absolute -top-1 -left-2 opacity-0 translate-x-4 translate-y-2 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:-translate-x-1 group-hover:-translate-y-4 group-hover:z-10" aria-hidden="true">
+                <Image src="/qiitan.png" alt="Qiitan" width={100} height={100} className="h-10 w-10 -rotate-45" />
+              </div>
+              {/* Right-top peeking mascot (Gopher) */}
+              <div className="pointer-events-none absolute -top-1 -right-2 opacity-0 -translate-x-4 translate-y-2 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:translate-x-1 group-hover:-translate-y-4 group-hover:z-10" aria-hidden="true">
+                <Image src="/gopher.png" alt="Gopher" width={100} height={100} className="h-10 w-10 rotate-45" />
+              </div>
+            </>
+          )}
+          <button
+            className={`relative z-10 rounded-xl px-8 py-3 text-lg font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent ${canSubmit ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25 hover:from-blue-500 hover:to-indigo-500" : "bg-zinc-300 text-zinc-500 cursor-not-allowed"}`}
+            disabled={!canSubmit}
+            onClick={() => setConfirmOpen(true)}
+          >
+            決定
+          </button>
+        </div>
         {!canSubmit && submitBlockMessage && (
           <p className="mt-2 text-xs text-red-600">{submitBlockMessage}</p>
         )}
       </div>
 
       {/* 週カレンダー（灰色でbusy埋め） */}
-      <section className="relative mt-6 rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+      <section className="relative mt-6 rounded-2xl border border-white/20 bg-white/90 p-6 shadow-lg backdrop-blur animate-in fade-in-50">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-zinc-700">カレンダー</h2>
+          <h2 className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-700"><CalendarClock className="h-4 w-4 text-zinc-500" /> カレンダー</h2>
           <div className="flex items-center gap-2">
             <button
-              className="rounded-md border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-900 disabled:opacity-50"
+              className="inline-flex items-center gap-1 rounded-md border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-900 transition hover:bg-zinc-50 disabled:opacity-50"
               onClick={() => setWeekStart(new Date(weekStart.getTime() - 7 * 24 * 60 * 60 * 1000))}
               disabled={weekStart.getTime() <= currentMonday.getTime()}
             >
-              ← 前の週
+              <ChevronLeft className="h-4 w-4" aria-hidden="true" /> 前の週
             </button>
             <div className="text-xs text-zinc-600">
               {`${weekStart.getMonth() + 1}/${weekStart.getDate()}(${weekdayName(weekStart)})`} 〜 {`${new Date(weekStart.getTime() + 6 * 86400000).getMonth() + 1}/${new Date(weekStart.getTime() + 6 * 86400000).getDate()}(${weekdayName(new Date(weekStart.getTime() + 6 * 86400000))})`}
             </div>
             <button
-              className="rounded-md border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-900 disabled:opacity-50"
+              className="inline-flex items-center gap-1 rounded-md border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-900 transition hover:bg-zinc-50 disabled:opacity-50"
               onClick={() => setWeekStart(new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000))}
               disabled={new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000) > oneMonthLater}
             >
-              次の週 →
+              次の週 <ChevronRight className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
         </div>
-        <p className="-mt-2 mb-3 text-xs text-zinc-500">30分枠をクリックで選択／同日の隣接時間枠をクリックで1時間以上の面談設定ができます</p>
+        <p className="-mt-2 mb-3 text-xs text-zinc-600">30分枠をクリックで選択／同日の隣接時間枠をクリックで1時間以上の面談設定ができます</p>
         <div className="relative">
         {busyLoading && (
-          <div className="absolute inset-0 z-10 grid place-items-center bg-white/70">
+          <div className="absolute inset-0 z-10 grid place-items-center bg-white/60 backdrop-blur-sm">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-blue-600" />
           </div>
         )}
@@ -621,8 +716,9 @@ export default function ReservePage() {
                 const adjacentToEnd = Math.abs(slotStart.getTime() - curEnd.getTime()) === 0;
                 const adjacentToStart = Math.abs(slotEnd.getTime() - curStart.getTime()) === 0;
                 if (adjacentToEnd) {
-                  setEndHour(slotEnd.getHours());
-                  setEndMin(slotEnd.getMinutes());
+                  const endHourForUI = (slotEnd.getHours() === 0 && slotEnd.getDate() !== slotStart.getDate()) ? 24 : slotEnd.getHours();
+                  setEndHour(endHourForUI);
+                  setEndMin(endHourForUI === 24 ? 0 : slotEnd.getMinutes());
                   return;
                 }
                 if (adjacentToStart) {
@@ -636,8 +732,9 @@ export default function ReservePage() {
             // Otherwise, set selection to exactly this slot
             setStartHour(slotStart.getHours());
             setStartMin(slotStart.getMinutes());
-            setEndHour(slotEnd.getHours());
-            setEndMin(slotEnd.getMinutes());
+            const endHourForUI = (slotEnd.getHours() === 0 && slotEnd.getDate() !== slotStart.getDate()) ? 24 : slotEnd.getHours();
+            setEndHour(endHourForUI);
+            setEndMin(endHourForUI === 24 ? 0 : slotEnd.getMinutes());
           }}
         />
         </div>
@@ -648,7 +745,7 @@ export default function ReservePage() {
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-3">
           <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl max-h-[85vh]">
             <div className="flex items-center gap-2 border-b border-zinc-200 bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-3">
-              <div className="text-lg">📝</div>
+              <NotebookText className="h-5 w-5 text-white" aria-hidden="true" />
               <h3 className="text-base font-semibold text-white">最終確認</h3>
             </div>
             <div className="p-5 overflow-y-auto">
@@ -662,17 +759,17 @@ export default function ReservePage() {
                   <div className="mt-1 font-medium">{formatTimeRange(startHour, startMin, endHour, endMin)}</div>
                 </div>
                 <div className="rounded-lg bg-zinc-50 p-3">
-                  <div className="text-xs text-zinc-500">お名前</div>
+                  <div className="text-xs text-zinc-500">お名前(本名)</div>
                   <div className="mt-1 font-medium">{name || "(未入力)"}</div>
                 </div>
                 <div className="rounded-lg bg-zinc-50 p-3">
-                  <div className="text-xs text-zinc-500">目的</div>
+                  <div className="text-xs text-zinc-500">ご相談内容</div>
                   <div className="mt-1 font-medium">{purpose}</div>
                 </div>
                 <div className="rounded-lg bg-zinc-50 p-3 sm:col-span-2">
-                  <div className="text-xs text-zinc-500">連絡手段</div>
+                  <div className="text-xs text-zinc-500">ご連絡手段（ミーティング媒体）</div>
                   <div className="mt-1 font-medium">
-                    {contactMethod}
+                    {contactMethod === "meet" ? "GoogleMeet" : contactMethod}
                     {contactMethod === "discord" && (
                       <span className="ml-2 inline-flex items-center rounded-full bg-zinc-200 px-2 py-0.5 text-xs text-zinc-700">Discord名: {discordName || "(必須)"}</span>
                     )}
@@ -688,6 +785,12 @@ export default function ReservePage() {
                   <div className="text-xs text-zinc-500">メール</div>
                   <div className="mt-1 font-medium">{email || "(メール未入力)"}</div>
                 </div>
+                {meetingNote && (
+                  <div className="rounded-lg bg-zinc-50 p-3 sm:col-span-2">
+                    <div className="text-xs text-zinc-500">ご相談詳細</div>
+                    <div className="mt-1 whitespace-pre-wrap text-[13px] leading-relaxed text-zinc-800">{meetingNote}</div>
+                  </div>
+                )}
               </div>
               <div className="mt-5 flex justify-end gap-2">
                 <button className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 hover:bg-zinc-50" onClick={() => setConfirmOpen(false)}>
@@ -707,7 +810,7 @@ export default function ReservePage() {
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/40">
           <div className="w-full max-w-xs rounded-xl border border-zinc-200 bg-white p-5 shadow-lg text-center">
             <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-zinc-300 border-t-blue-600" />
-            <div className="text-sm text-zinc-700">イベントを作成しています…</div>
+            <div className="text-sm text-zinc-700">予定を作成しています…</div>
           </div>
         </div>
       )}
@@ -716,9 +819,10 @@ export default function ReservePage() {
       <CompletionModal
         createdInfo={createdInfo}
         contactMethod={contactMethod as "meet" | "discord" | "slack" | "other"}
-        details={{ year, month, day, weekday: weekdayText, startHour, startMin, endHour, endMin, name, purpose, email, discordName, slackName, otherNote }}
+        details={completedDetails ?? { year, month, day, weekday: weekdayText, startHour, startMin, endHour, endMin, name, purpose, email, discordName, slackName, otherNote, meetingNote }}
         onClose={() => {
                     setCreatedInfo(null);
+                    setCompletedDetails(null);
                     if (typeof window !== "undefined") window.location.reload();
                   }}
       />

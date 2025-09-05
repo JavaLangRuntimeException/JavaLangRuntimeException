@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "../shared/lib/cn";
+import Image from "next/image";
 
 export function Header() {
   const pathname = usePathname();
@@ -23,35 +24,62 @@ export function Header() {
           <Link
             href="/"
             className={cn(
-              "rounded-md px-3 py-1.5 text-sm transition-colors",
+              "relative group overflow-hidden rounded-md px-3 py-1.5 text-sm transition-colors",
               isActive("/")
                 ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
                 : "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
             )}
           >
-            Home
+            <span className="relative z-20">Home</span>
+            {isActive("/") ? (
+              <span className="pointer-events-none absolute top-1/2 right-0 -translate-y-1/2 translate-x-full opacity-0 transition-transform duration-300 ease-out group-hover:translate-x-1/2 group-hover:opacity-100 z-10" aria-hidden="true">
+                <Image src="/gopher.png" alt="Gopher" width={30} height={30} className="h-[30px] w-[30px] -rotate-45" />
+              </span>
+            ) : (
+              <span className="pointer-events-none absolute top-1/2 left-0 -translate-y-1/2 -translate-x-full opacity-0 transition-transform duration-300 ease-out group-hover:-translate-x-1/2 group-hover:opacity-100 z-10" aria-hidden="true">
+                <Image src="/qiitan.png" alt="Qiitan" width={30} height={30} className="h-[30px] w-[30px] rotate-45" />
+              </span>
+            )}
           </Link>
           <Link
             href="/link"
             className={cn(
-              "rounded-md px-3 py-1.5 text-sm transition-colors",
+              "relative group overflow-hidden rounded-md px-3 py-1.5 text-sm transition-colors",
               isActive("/link")
                 ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
                 : "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
             )}
           >
-            Links/Contact
+            <span className="relative z-20">Links/Contact</span>
+            {isActive("/link") ? (
+              <span className="pointer-events-none absolute top-1/2 right-0 -translate-y-1/2 translate-x-full opacity-0 transition-transform duration-300 ease-out group-hover:translate-x-1/2 group-hover:opacity-100 z-10" aria-hidden="true">
+                <Image src="/gopher.png" alt="Gopher" width={30} height={30} className="h-[30px] w-[30px] -rotate-45" />
+              </span>
+            ) : (
+              <span className="pointer-events-none absolute top-1/2 left-0 -translate-y-1/2 -translate-x-full opacity-0 transition-transform duration-300 ease-out group-hover:-translate-x-1/2 group-hover:opacity-100 z-10" aria-hidden="true">
+                <Image src="/qiitan.png" alt="Qiitan" width={30} height={30} className="h-[30px] w-[30px] rotate-45" />
+              </span>
+            )}
           </Link>
           <Link
             href="/reserve"
             className={cn(
-              "rounded-md px-3 py-1.5 text-sm transition-colors",
+              "relative group overflow-hidden rounded-md px-3 py-1.5 text-sm transition-colors",
               isActive("/reserve")
                 ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
                 : "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
             )}
           >
-            Reserve
+            <span className="relative z-20">Reserve</span>
+            {isActive("/reserve") ? (
+              <span className="pointer-events-none absolute top-1/2 right-0 -translate-y-1/2 translate-x-full opacity-0 transition-transform duration-300 ease-out group-hover:translate-x-1/2 group-hover:opacity-100 z-10" aria-hidden="true">
+                <Image src="/gopher.png" alt="Gopher" width={30} height={30} className="h-[30px] w-[30px] -rotate-45" />
+              </span>
+            ) : (
+              <span className="pointer-events-none absolute top-1/2 left-0 -translate-y-1/2 -translate-x-full opacity-0 transition-transform duration-300 ease-out group-hover:-translate-x-1/2 group-hover:opacity-100 z-10" aria-hidden="true">
+                <Image src="/qiitan.png" alt="Qiitan" width={30} height={30} className="h-[30px] w-[30px] rotate-45" />
+              </span>
+            )}
           </Link>
         </nav>
       </div>
@@ -78,8 +106,8 @@ function HeaderMarquee() {
   }, []);
 
   const text = slots.length > 0
-    ? `直近予約: ${slots.join(" / ")}`
-    : "直近予約: 取得中…";
+    ? `直近相談予約可能時間: ${slots.join(" / ")}`
+    : "直近相談予約可能時間: 取得中…";
 
   const message = `${text} | Links/Contact ではプロフィール・SNS・連絡先を掲載中。Reserve では面談予約が可能です。面談の変更・取消は EventID を添えてお問い合わせください。`;
 
@@ -95,6 +123,7 @@ function HeaderMarquee() {
           white-space: nowrap;
           will-change: transform;
           animation: marquee 60s linear infinite;
+          padding-left: 50%;
         }
         .marquee-item { padding-right: 3rem; }
         @keyframes marquee {

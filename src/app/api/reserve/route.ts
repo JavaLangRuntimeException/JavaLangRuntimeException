@@ -69,11 +69,11 @@ export async function POST(req: Request) {
 
         const wantMeet = String(body.contactMethod || "").toLowerCase() === "meet";
         const descriptionLines: string[] = [
-          `目的: ${body.purpose}`,
+          `ご相談内容: ${body.purpose}`,
         ];
         if (body.meetingNote) descriptionLines.push(`ご相談詳細(任意): ${body.meetingNote}`);
         const contactMethod = String(body.contactMethod || "");
-        if (contactMethod) descriptionLines.push(`連絡手段: ${contactMethod}`);
+        if (contactMethod) descriptionLines.push(`ご連絡手段（ミーティング媒体）: ${contactMethod}`);
         if (body.discordName) descriptionLines.push(`Discord名: ${body.discordName}`);
         if (body.discordServer) descriptionLines.push(`Discordサーバー: ${body.discordServer}`);
         if (body.slackName) descriptionLines.push(`Slack名: ${body.slackName}`);
@@ -259,9 +259,9 @@ export async function POST(req: Request) {
         ownerEmail: "tanahashishuta@gmail.com",
         summary: summaryTitleWebhook,
         description: [
-          `目的: ${body.purpose}`,
+          `ご相談内容: ${body.purpose}`,
           body.meetingNote ? `ご相談詳細(任意): ${body.meetingNote}` : undefined,
-          body.contactMethod ? `連絡手段: ${body.contactMethod}` : undefined,
+          body.contactMethod ? `ご連絡手段（ミーティング媒体）: ${body.contactMethod}` : undefined,
           body.discordName ? `Discord名: ${body.discordName}` : undefined,
           body.slackName ? `Slack名: ${body.slackName}` : undefined,
           body.otherNote ? `備考: ${body.otherNote}` : undefined,

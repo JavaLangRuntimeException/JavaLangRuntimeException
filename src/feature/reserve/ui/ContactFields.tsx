@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { Mails, MessageSquare, HashIcon, Slack, Link as LinkIcon } from "lucide-react";
 
 type ContactMethod = "" | "meet" | "discord" | "slack" | "other";
 
@@ -48,10 +49,10 @@ export function ContactFields({
   return (
     <>
       {renderEmail && (
-        <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm sm:col-span-2">
-          <h2 className="mb-3 text-sm font-semibold text-zinc-700">メールアドレス</h2>
+        <div className="rounded-2xl border border-white/20 bg-white/90 p-6 shadow-lg backdrop-blur sm:col-span-2">
+          <h2 className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-zinc-700"><Mails className="h-4 w-4 text-zinc-500" /> メールアドレス</h2>
           <input
-            className="w-full rounded-md border border-zinc-300 bg-white p-2 text-zinc-900 placeholder-zinc-400"
+            className="w-full rounded-md border border-zinc-300 bg-white p-2 text-zinc-900 placeholder-zinc-400 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
             type="email"
             placeholder="your.name@example.com"
             value={email}
@@ -71,16 +72,16 @@ export function ContactFields({
         </div>
       )}
 
-      <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm sm:col-span-2">
-        <h2 className="mb-3 text-sm font-semibold text-zinc-700">ご連絡手段（ミーティング媒体）</h2>
+      <div className="rounded-2xl border border-white/20 bg-white/90 p-6 shadow-lg backdrop-blur sm:col-span-2">
+        <h2 className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-zinc-700"><MessageSquare className="h-4 w-4 text-zinc-500" /> ご連絡手段（ミーティング媒体）</h2>
         <div className="grid gap-3 sm:grid-cols-3">
           <select
-            className="rounded-md border border-zinc-300 bg-white p-2 text-zinc-900"
+            className="rounded-md border border-zinc-300 bg-white p-2 text-zinc-900 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
             value={contactMethod || ""}
             onChange={(e) => setContactMethod(e.target.value as ContactMethod)}
           >
             <option value="" disabled>---選択してください---</option>
-            <option value="meet">Google Meet</option>
+            <option value="meet">GoogleMeet</option>
             <option value="discord">Discord</option>
             <option value="slack">Slack</option>
             <option value="other">その他 (Zoom等)</option>
@@ -90,9 +91,9 @@ export function ContactFields({
           {contactMethod === "discord" && (
             <>
               <div className="flex flex-col">
-                <span className="mb-1 text-xs text-zinc-600">Discordサーバー名</span>
+                <span className="mb-1 inline-flex items-center gap-1 text-xs text-zinc-600"><HashIcon className="h-3 w-3" /> Discordサーバー名</span>
                 <input
-                  className="rounded-md border border-zinc-300 bg-white p-2 text-zinc-900 placeholder-zinc-400"
+                  className="rounded-md border border-zinc-300 bg-white p-2 text-zinc-900 placeholder-zinc-400 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                   placeholder="Discordサーバー名"
                   value={discordServer}
                   onChange={(e) => setDiscordServer(e.target.value)}
@@ -101,9 +102,9 @@ export function ContactFields({
                 {(!discordServer || !discordServer.trim()) && <span className="mt-1 text-xs text-red-600">入力必須です</span>}
               </div>
               <div className="flex flex-col">
-                <span className="mb-1 text-xs text-zinc-600">Discord表示名</span>
+                <span className="mb-1 inline-flex items-center gap-1 text-xs text-zinc-600"><HashIcon className="h-3 w-3" /> Discord表示名</span>
                 <input
-                  className="rounded-md border border-zinc-300 bg-white p-2 text-zinc-900 placeholder-zinc-400"
+                  className="rounded-md border border-zinc-300 bg-white p-2 text-zinc-900 placeholder-zinc-400 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                   placeholder="Discord表示名"
                   value={discordName}
                   onChange={(e) => setDiscordName(e.target.value)}
@@ -116,9 +117,9 @@ export function ContactFields({
           {contactMethod === "slack" && (
             <>
               <div className="flex flex-col">
-                <span className="mb-1 text-xs text-zinc-600">Slackワークスペース名</span>
+                <span className="mb-1 inline-flex items-center gap-1 text-xs text-zinc-600"><Slack className="h-3 w-3" /> Slackワークスペース名</span>
                 <input
-                  className="rounded-md border border-zinc-300 bg-white p-2 text-zinc-900 placeholder-zinc-400"
+                  className="rounded-md border border-zinc-300 bg-white p-2 text-zinc-900 placeholder-zinc-400 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                   placeholder="面談するSlackワークスペース名"
                   value={slackWorkspace}
                   onChange={(e) => setSlackWorkspace(e.target.value)}
@@ -126,9 +127,9 @@ export function ContactFields({
                 {(!slackWorkspace || !slackWorkspace.trim()) && <span className="mt-1 text-xs text-red-600">入力必須です</span>}
               </div>
               <div className="flex flex-col">
-                <span className="mb-1 text-xs text-zinc-600">Slack表示名</span>
+                <span className="mb-1 inline-flex items-center gap-1 text-xs text-zinc-600"><Slack className="h-3 w-3" /> Slack表示名</span>
                 <input
-                  className="rounded-md border border-zinc-300 bg-white p-2 text-zinc-900 placeholder-zinc-400"
+                  className="rounded-md border border-zinc-300 bg-white p-2 text-zinc-900 placeholder-zinc-400 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                   placeholder="Slack表示名"
                   value={slackName}
                   onChange={(e) => setSlackName(e.target.value)}
@@ -139,12 +140,15 @@ export function ContactFields({
           )}
 
           {contactMethod === "other" && (
-            <input
-              className="rounded-md border border-zinc-300 bg-white p-2 text-zinc-900 placeholder-zinc-400"
-              placeholder="備考（任意：Zoomリンク等）"
-              value={otherNote}
-              onChange={(e) => setOtherNote(e.target.value)}
-            />
+            <div className="flex flex-col">
+              <span className="mb-1 inline-flex items-center gap-1 text-xs text-zinc-600"><LinkIcon className="h-3 w-3" /> 備考・リンク</span>
+              <input
+                className="rounded-md border border-zinc-300 bg-white p-2 text-zinc-900 placeholder-zinc-400 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                placeholder="備考（任意：Zoomリンク等）"
+                value={otherNote}
+                onChange={(e) => setOtherNote(e.target.value)}
+              />
+            </div>
           )}
         </div>
       </div>

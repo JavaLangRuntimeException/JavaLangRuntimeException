@@ -1,11 +1,12 @@
 "use client";
 
 import React from "react";
+import { CalendarClock, Clock } from "lucide-react";
 
 function UnderLabelSelect({ value, setValue, options, underLabel }: { value: number | null; setValue: (n: number) => void; options: number[]; underLabel: string }) {
   return (
     <div className="flex flex-col items-center">
-      <select className="w-full rounded-md border border-zinc-300 bg-white p-2 text-center text-zinc-900" value={value ?? ""} onChange={(e) => setValue(Number(e.target.value))}>
+      <select className="w-full rounded-md border border-zinc-300 bg-white p-2 text-center text-zinc-900 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50" value={value ?? ""} onChange={(e) => setValue(Number(e.target.value))}>
         <option value="" disabled hidden>
           --
         </option>
@@ -113,8 +114,8 @@ export function DateTimeFields({
 
   return (
     <section className="mt-6 grid gap-4 sm:grid-cols-2">
-      <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-        <h2 className="mb-3 text-sm font-semibold text-zinc-700">日付</h2>
+      <div className="rounded-2xl border border-white/20 bg-white/90 p-6 shadow-lg backdrop-blur">
+        <h2 className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-zinc-700"><CalendarClock className="h-4 w-4 text-zinc-500" /> 日付</h2>
         <div className="grid grid-cols-4 gap-3">
           <UnderLabelSelect value={year} setValue={setYear} options={yearOptions} underLabel="年" />
           <UnderLabelSelect value={month} setValue={setMonth} options={monthOptions} underLabel="月" />
@@ -134,8 +135,8 @@ export function DateTimeFields({
           <p className="mt-1 text-xs text-red-600">1ヶ月以降先は選択できません</p>
         )}
       </div>
-      <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
-        <h2 className="mb-3 text-sm font-semibold text-zinc-700">時間</h2>
+      <div className="rounded-2xl border border-white/20 bg-white/90 p-6 shadow-lg backdrop-blur">
+        <h2 className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-zinc-700"><Clock className="h-4 w-4 text-zinc-500" /> 時間</h2>
         <div className="flex flex-wrap items-end gap-3 text-zinc-900">
           <UnderLabelSelect value={startHour} setValue={handleSetStartHour} options={hours} underLabel="時" />
           <div className="pb-4 text-lg text-zinc-500">:</div>
