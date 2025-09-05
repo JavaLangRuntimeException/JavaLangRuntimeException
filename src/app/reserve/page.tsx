@@ -12,8 +12,9 @@ import { DateTimeFields } from "../../feature/reserve/ui/DateTimeFields";
 import { MeetingNoteField } from "../../feature/reserve/ui/MeetingNoteField";
 import { WeekGrid as WeekGridComponent } from "../../feature/reserve/ui/WeekGrid";
 import { CompletionModal } from "../../feature/reserve/ui/CompletionModal";
+import { ConfirmModal } from "../../feature/reserve/ui/ConfirmModal";
 import { useAtom } from "jotai";
-import { Info, ChevronLeft, ChevronRight, CalendarClock, NotebookText } from "lucide-react";
+import { Info, ChevronLeft, ChevronRight, CalendarClock } from "lucide-react";
 import {
   emailAtom,
   contactMethodAtom,
@@ -684,7 +685,10 @@ export default function ReservePage() {
       {/* 週カレンダー（灰色でbusy埋め） */}
       <section className="relative mt-6 rounded-2xl border border-white/20 bg-white/90 p-6 shadow-lg backdrop-blur animate-in fade-in-50">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-700"><CalendarClock className="h-4 w-4 text-zinc-500" /> カレンダー</h2>
+          <h2 className="inline-flex items-center gap-2 text-sm font-semibold text-zinc-700">
+            <CalendarClock className="h-4 w-4 text-zinc-500" />
+            <span className="whitespace-nowrap">カレンダー</span>
+          </h2>
           <div className="flex items-center gap-2">
             <button
               className="inline-flex items-center gap-1 rounded-md border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-900 transition hover:bg-zinc-50 disabled:opacity-50"
@@ -759,67 +763,28 @@ export default function ReservePage() {
 
       {/* 確認モーダル（簡易） */}
       {confirmOpen && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-3">
-          <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl max-h-[85vh]">
-            <div className="flex items-center gap-2 border-b border-zinc-200 bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-3">
-              <NotebookText className="h-5 w-5 text-white" aria-hidden="true" />
-              <h3 className="text-base font-semibold text-white">最終確認</h3>
-            </div>
-            <div className="p-5 overflow-y-auto">
-              <div className="grid gap-3 text-sm text-zinc-900 sm:grid-cols-2">
-                <div className="rounded-lg bg-zinc-50 p-3">
-                  <div className="text-xs text-zinc-500">日付</div>
-                  <div className="mt-1 font-medium">{`${year ?? "XXXX"}年${padOrXX(month)}月${padOrXX(day)}日(${weekdayText || "X"})`}</div>
-                </div>
-                <div className="rounded-lg bg-zinc-50 p-3">
-                  <div className="text-xs text-zinc-500">時間</div>
-                  <div className="mt-1 font-medium">{formatTimeRange(startHour, startMin, endHour, endMin)}</div>
-                </div>
-                <div className="rounded-lg bg-zinc-50 p-3">
-                  <div className="text-xs text-zinc-500">お名前(本名)</div>
-                  <div className="mt-1 font-medium">{name || "(未入力)"}</div>
-                </div>
-                <div className="rounded-lg bg-zinc-50 p-3">
-                  <div className="text-xs text-zinc-500">ご相談内容</div>
-                  <div className="mt-1 font-medium">{purpose}</div>
-                </div>
-                <div className="rounded-lg bg-zinc-50 p-3 sm:col-span-2">
-                  <div className="text-xs text-zinc-500">ご連絡手段（ミーティング媒体）</div>
-                  <div className="mt-1 font-medium">
-                    {contactMethod === "meet" ? "GoogleMeet" : contactMethod}
-                    {contactMethod === "discord" && (
-                      <span className="ml-2 inline-flex items-center rounded-full bg-zinc-200 px-2 py-0.5 text-xs text-zinc-700">Discord名: {discordName || "(必須)"}</span>
-                    )}
-                    {contactMethod === "slack" && (
-                      <span className="ml-2 inline-flex items-center rounded-full bg-zinc-200 px-2 py-0.5 text-xs text-zinc-700">Slack名: {slackName || "(必須)"}</span>
-                    )}
-                    {contactMethod === "other" && otherNote && (
-                      <span className="ml-2 inline-flex items-center rounded-full bg-zinc-200 px-2 py-0.5 text-xs text-zinc-700">備考: {otherNote}</span>
-                    )}
-                  </div>
-                </div>
-                <div className="rounded-lg bg-zinc-50 p-3 sm:col-span-2">
-                  <div className="text-xs text-zinc-500">メール</div>
-                  <div className="mt-1 font-medium">{email || "(メール未入力)"}</div>
-                </div>
-                {meetingNote && (
-                  <div className="rounded-lg bg-zinc-50 p-3 sm:col-span-2">
-                    <div className="text-xs text-zinc-500">ご相談詳細</div>
-                    <div className="mt-1 whitespace-pre-wrap text-[13px] leading-relaxed text-zinc-800">{meetingNote}</div>
-                  </div>
-                )}
-              </div>
-              <div className="mt-5 flex justify-end gap-2">
-                <button className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 hover:bg-zinc-50" onClick={() => setConfirmOpen(false)}>
-                  キャンセル
-                </button>
-                <button className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-500" onClick={handleSubmit}>
-                  送信する
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+        <ConfirmModal
+          onClose={() => setConfirmOpen(false)}
+          onSubmit={handleSubmit}
+          details={{
+            year,
+            month,
+            day,
+            weekday: weekdayText,
+            startHour,
+            startMin,
+            endHour,
+            endMin,
+            name,
+            purpose,
+            contactMethod: (contactMethod || "") as "meet" | "discord" | "slack" | "other" | "",
+            discordName,
+            slackName,
+            otherNote,
+            email,
+            meetingNote,
+          }}
+        />
       )}
 
       {/* 作成中モーダル */}
@@ -881,15 +846,7 @@ function isOverlappingBusy(start: Date, end: Date, busy: { start: string; end: s
 
 // WeekGrid moved to feature/reserve/ui/WeekGrid
 
-function padOrXX(n: number | null): string {
-  if (n == null) return "XX";
-  return pad(n);
-}
-
-function formatTimeRange(sh: number | null, sm: number | null, eh: number | null, em: number | null): string {
-  if (sh == null || sm == null || eh == null || em == null) return "XX : XX ~ XX : XX";
-  return `${pad(sh)} : ${pad(sm)} ~ ${pad(eh)} : ${pad(em)}`;
-}
+//
 
 // moved to Zod schema validation
 
