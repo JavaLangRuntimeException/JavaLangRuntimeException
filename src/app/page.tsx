@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ProfileHeader } from "../feature/profile/ui/profile-header";
 import { AffiliationBadges } from "../feature/affiliations/ui/badges";
+import { FullScreenLoading } from "../components/FullScreenLoading";
 
 /**
  * マウスホバーでカードが回転し、背景にパララックス効果をかけるサンプル。
@@ -29,9 +30,17 @@ export default function PortfolioLinks() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Intro animation once on first visit
+  // Intro animation only on first visit per session
   useEffect(() => {
-    const timer = setTimeout(() => setShowIntro(false), 1200);
+    const flag = sessionStorage.getItem("intro_shown");
+    if (flag === "1") {
+      setShowIntro(false);
+      return;
+    }
+    const timer = setTimeout(() => {
+      setShowIntro(false);
+      sessionStorage.setItem("intro_shown", "1");
+    }, 1200);
     return () => clearTimeout(timer);
   }, []);
 
@@ -65,16 +74,7 @@ export default function PortfolioLinks() {
           </AnimatePresence>
         </div>
         {/* Intro Overlay */}
-        <AnimatePresence>
-          {showIntro && (
-            <motion.div className="fixed inset-0 z-50 grid place-items-center bg-black" initial={{ opacity: 1 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.6 }}>
-              <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 1.05, opacity: 0 }} transition={{ duration: 0.6, ease: "easeOut" }} className="text-center">
-                <div className="text-2xl font-semibold tracking-wide text-white">taramanji</div>
-                <div className="mt-2 text-sm text-zinc-300">Loading...</div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <AnimatePresence>{showIntro && <FullScreenLoading title="taramanji" subtitle="Welcome" />}</AnimatePresence>
         {/* パララックス用のダークオーバーレイ */}
         <div
             className="pointer-events-none absolute inset-0"

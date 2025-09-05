@@ -7,7 +7,6 @@ import { linkCards } from "../../feature/links/model";
 
 export default function LinksPage() {
   const [scrollY, setScrollY] = useState(0);
-  const [showIntro, setShowIntro] = useState(true);
   const bgImages = ["/image.png", "/image2.png", "/image3.png"];
   const [bgIndex, setBgIndex] = useState(0);
 
@@ -17,11 +16,6 @@ export default function LinksPage() {
     }
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setShowIntro(false), 800);
-    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -50,22 +44,7 @@ export default function LinksPage() {
           />
         </AnimatePresence>
       </div>
-      <AnimatePresence>
-        {showIntro && (
-          <motion.div
-            className="fixed inset-0 z-50 grid place-items-center bg-black"
-            initial={{ opacity: 1 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="text-center">
-              <div className="text-2xl font-semibold tracking-wide text-white">Links/Contact</div>
-              <div className="mt-2 text-sm text-zinc-300">Loading...</div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Links/Contact: 初回オーバーレイは無し */}
       <div
         className="pointer-events-none absolute inset-0"
         style={{
