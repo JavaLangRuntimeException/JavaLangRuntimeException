@@ -199,7 +199,6 @@ export default function ReservePage() {
   }, [hasDate, year, month, day]);
 
   const nextAvailableSlotText = React.useMemo(() => {
-    // Search next available 30-min slot within 9:00-24:00 windows, starting from now+2h
     const now2h = new Date(Date.now() + 2 * 60 * 60 * 1000);
     const step = 30 * 60 * 1000;
     const dayStart = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 9, 0, 0, 0);
@@ -547,13 +546,13 @@ export default function ReservePage() {
             <div className="absolute inset-y-0 left-0 w-1.5 bg-gradient-to-b from-blue-400 to-indigo-500" />
             <div className="ml-3 flex items-center justify-between gap-3">
               <Info className="mt-0.5 h-5 w-5 text-blue-300" aria-hidden="true" />
-              <p className="m-0 flex-1 text-sm text-white/90">直近で予約できる30分枠: <span className="font-semibold text-white">{nextAvailableSlotText}</span></p>
+              <p className="m-0 flex-1 text-sm text-white/90">最速相談予約可能な30分枠: <span className="font-semibold text-white">{nextAvailableSlotText}</span></p>
               <button
                 type="button"
                 onClick={applyNextAvailableSlot}
                 className="shrink-0 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
               >
-                直近で予約できる30分枠で時間指定
+                最短での時間指定(30分MTG)
               </button>
             </div>
           </div>

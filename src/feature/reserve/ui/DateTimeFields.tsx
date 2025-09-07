@@ -16,7 +16,7 @@ function UnderLabelSelect({ value, setValue, options, underLabel }: { value: num
           </option>
         ))}
       </select>
-      <div className="mt-1 text-xs text-zinc-500">{underLabel}</div>
+      <div className="mt-0.5 text-xs text-zinc-500">{underLabel}</div>
     </div>
   );
 }
@@ -137,7 +137,7 @@ export function DateTimeFields({
       </div>
       <div className="rounded-2xl border border-white/20 bg-white/90 p-6 shadow-lg backdrop-blur">
         <h2 className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-zinc-700"><Clock className="h-4 w-4 text-zinc-500" /> 時間</h2>
-        <div className="flex flex-wrap items-end gap-3 text-zinc-900 whitespace-nowrap">
+        <div className="flex flex-wrap items-end gap-2 text-zinc-900 whitespace-nowrap">
           <UnderLabelSelect value={startHour} setValue={handleSetStartHour} options={hours} underLabel="時" />
           <div className="pb-4 text-lg text-zinc-500">:</div>
           <UnderLabelSelect value={startMin} setValue={setStartMin} options={startMinuteOptions} underLabel="分" />
