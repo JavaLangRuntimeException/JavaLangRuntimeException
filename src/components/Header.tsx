@@ -70,7 +70,7 @@ export function Header() {
                 : "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
             )}
           >
-            <span className="relative z-20">Reserve</span>
+            <span className="relative z-20">Ask Me</span>
             {isActive("/reserve") ? (
               <span className="pointer-events-none absolute top-1/2 right-0 -translate-y-1/2 translate-x-full opacity-0 transition-transform duration-300 ease-out md:group-hover:translate-x-1/2 md:group-hover:opacity-100 group-active:translate-x-1/2 group-active:opacity-100 z-10" aria-hidden="true">
                 <Image src="/gopher.png" alt="Gopher" width={30} height={30} className="h-[30px] w-[30px] -rotate-45" />

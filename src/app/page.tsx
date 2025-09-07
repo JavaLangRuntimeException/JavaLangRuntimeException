@@ -38,11 +38,11 @@ export default function PortfolioLinks() {
         {/* Intro to key pages */}
         <div className="mt-10 grid gap-4 sm:grid-cols-2 max-w-4xl mx-auto">
           <a href="/link" className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur hover:bg-white/10 transition">
-            <h3 className="text-base font-semibold">Links/Contact</h3>
+            <h3 className="text-base font-semibold">Contact</h3>
             <p className="mt-1 text-sm text-zinc-200/90">プロフィール・SNS・連絡先のリンク一覧。お問い合わせはこちらから。</p>
           </a>
           <a href="/reserve" className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur hover:bg-white/10 transition">
-            <h3 className="text-base font-semibold">Reserve</h3>
+            <h3 className="text-base font-semibold">Ask Me</h3>
             <p className="mt-1 text-sm text-zinc-200/90">ご相談・面談予約ページ。ご希望の日時を選択してください。</p>
           </a>
         </div>

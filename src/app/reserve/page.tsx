@@ -199,7 +199,6 @@ export default function ReservePage() {
   }, [hasDate, year, month, day]);
 
   const nextAvailableSlotText = React.useMemo(() => {
-    if (busyLoading) return "";
     // Search next available 30-min slot within 9:00-24:00 windows, starting from now+2h
     const now2h = new Date(Date.now() + 2 * 60 * 60 * 1000);
     const step = 30 * 60 * 1000;
@@ -234,7 +233,7 @@ export default function ReservePage() {
       guard += 1;
     }
     return "";
-  }, [busy, busyLoading]);
+  }, [busy]);
 
   // Quick-apply the next available 30-min slot to the selection
   const applyNextAvailableSlot = React.useCallback(() => {
@@ -505,9 +504,37 @@ export default function ReservePage() {
       <motion.h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent drop-shadow" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
         お打ち合わせ予約
       </motion.h1>
-      <p className="mt-3 text-sm text-white/80">
-        お問い合わせはメール(<a className="underline" href="mailto:tanahashishuta@gmail.com">tanahashishuta@gmail.com</a>)またはX(<a className="underline" href="https://x.com/JavaLangRuntime" target="_blank" rel="noreferrer">@JavaLangRuntime</a>)でも承っております
-      </p>
+      <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-white/80 flex-1">
+          お問い合わせはメール(<a className="underline" href="mailto:tanahashishuta@gmail.com">tanahashishuta@gmail.com</a>)またはX(<a className="underline" href="https://x.com/JavaLangRuntime" target="_blank" rel="noreferrer">@JavaLangRuntime</a>)でも承っております
+        </p>
+        <div className="flex flex-col items-end">
+          <div className={`relative inline-block ${canSubmit ? "group" : ""}`}>
+            {canSubmit && (
+              <>
+                {/* Left-top peeking mascot (Qiitan) */}
+                <div className="pointer-events-none absolute -top-1 -left-2 opacity-0 translate-x-4 translate-y-2 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:-translate-x-1 group-hover:-translate-y-4 group-hover:z-10" aria-hidden="true">
+                  <Image src="/qiitan.png" alt="Qiitan" width={100} height={100} className="h-10 w-10 -rotate-45" />
+                </div>
+                {/* Right-top peeking mascot (Gopher) */}
+                <div className="pointer-events-none absolute -top-1 -right-2 opacity-0 -translate-x-4 translate-y-2 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:translate-x-1 group-hover:-translate-y-4 group-hover:z-10" aria-hidden="true">
+                  <Image src="/gopher.png" alt="Gopher" width={100} height={100} className="h-10 w-10 rotate-45" />
+                </div>
+              </>
+            )}
+            <button
+              className={`relative z-10 rounded-xl px-8 py-3 text-lg font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent ${canSubmit ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25 hover:from-blue-500 hover:to-indigo-500" : "bg-zinc-300 text-zinc-500 cursor-not-allowed"}`}
+              disabled={!canSubmit}
+              onClick={() => setConfirmOpen(true)}
+            >
+              決定
+            </button>
+          </div>
+          {!canSubmit && submitBlockMessage && (
+            <p className="mt-1 text-xs text-red-600">{submitBlockMessage}</p>
+          )}
+        </div>
+      </div>
 
       {/* 入力保持の案内 */}
       <p className="mt-3 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-[11px] text-white/80 backdrop-blur">
@@ -526,7 +553,7 @@ export default function ReservePage() {
                 onClick={applyNextAvailableSlot}
                 className="shrink-0 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
               >
-                この時間で予約
+                直近で予約できる30分枠で時間指定
               </button>
             </div>
           </div>
@@ -654,33 +681,7 @@ export default function ReservePage() {
         timeError={formErrors.time || zodDirectErrors.time}
       />
 
-      {/* 決定ボタン（カレンダーの上） */}
-      <div className="mt-8 flex flex-col items-center justify-center">
-        <div className={`relative inline-block ${canSubmit ? "group" : ""}`}>
-          {canSubmit && (
-            <>
-              {/* Left-top peeking mascot (Qiitan) */}
-              <div className="pointer-events-none absolute -top-1 -left-2 opacity-0 translate-x-4 translate-y-2 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:-translate-x-1 group-hover:-translate-y-4 group-hover:z-10" aria-hidden="true">
-                <Image src="/qiitan.png" alt="Qiitan" width={100} height={100} className="h-10 w-10 -rotate-45" />
-              </div>
-              {/* Right-top peeking mascot (Gopher) */}
-              <div className="pointer-events-none absolute -top-1 -right-2 opacity-0 -translate-x-4 translate-y-2 transition-all duration-300 ease-out group-hover:opacity-100 group-hover:translate-x-1 group-hover:-translate-y-4 group-hover:z-10" aria-hidden="true">
-                <Image src="/gopher.png" alt="Gopher" width={100} height={100} className="h-10 w-10 rotate-45" />
-              </div>
-            </>
-          )}
-          <button
-            className={`relative z-10 rounded-xl px-8 py-3 text-lg font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent ${canSubmit ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25 hover:from-blue-500 hover:to-indigo-500" : "bg-zinc-300 text-zinc-500 cursor-not-allowed"}`}
-            disabled={!canSubmit}
-            onClick={() => setConfirmOpen(true)}
-          >
-            決定
-          </button>
-        </div>
-        {!canSubmit && submitBlockMessage && (
-          <p className="mt-2 text-xs text-red-600">{submitBlockMessage}</p>
-        )}
-      </div>
+
 
       {/* 週カレンダー（灰色でbusy埋め） */}
       <section className="relative mt-6 rounded-2xl border border-white/20 bg-white/90 p-6 shadow-lg backdrop-blur animate-in fade-in-50">
