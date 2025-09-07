@@ -2,10 +2,10 @@
 
 import { motion } from "framer-motion";
 
-export function FullScreenLoading({ title, subtitle = "Loading..." }: { title?: string; subtitle?: string }) {
+export function FullScreenLoading({ title, subtitle = "Loading...", variant = "overlay" }: { title?: string; subtitle?: string; variant?: "overlay" | "page" }) {
   const letters = Array.from(title || "");
   return (
-    <div className="fixed inset-0 z-[9999] grid place-items-center bg-black overscroll-none">
+    <div className={variant === "overlay" ? "fixed inset-0 z-[9999] grid place-items-center bg-black overscroll-none" : "min-h-screen w-full grid place-items-center bg-black"}>
       {/* Ambient gradients */}
       <div className="pointer-events-none absolute -top-1/3 -left-1/3 h-[80vh] w-[80vh] rounded-full blur-3xl opacity-60" style={{ background: "radial-gradient(circle at center, rgba(59,130,246,0.35), transparent 60%)" }} />
       <div className="pointer-events-none absolute -bottom-1/3 -right-1/3 h-[80vh] w-[80vh] rounded-full blur-3xl opacity-60" style={{ background: "radial-gradient(circle at center, rgba(16,185,129,0.35), transparent 60%)" }} />

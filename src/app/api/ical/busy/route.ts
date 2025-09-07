@@ -33,7 +33,7 @@ export async function POST(req: Request) {
     urls = urls.map((u) => u.replace(/^webcal:\/\//i, "https://"));
     const results = await Promise.all(urls.map((u) => safeFetchText(u)));
     const texts = results.map((r) => r.text);
-    const intervals = texts.flatMap((t) => parseIcsBusyIntervals(t));
+    const intervals = texts.flatMap((t) => parseIcsBusyIntervals(t, { windowStart: weekStart, windowEnd: weekEnd }));
 
     // Add 30-minute buffer before/after each busy interval, clip to the requested week, then merge overlaps
     const bufferMs = 30 * 60 * 1000;
@@ -88,25 +88,145 @@ async function safeFetchText(url: string): Promise<{ ok: boolean; status: number
   }
 }
 
-function parseIcsBusyIntervals(ics: string): { start: string; end: string }[] {
+function parseIcsBusyIntervals(
+  ics: string,
+  opts?: { windowStart?: Date; windowEnd?: Date }
+): { start: string; end: string }[] {
   if (!ics) return [];
-  const lines = ics.split(/\r?\n/);
-  const events: { dtstart?: string; dtend?: string }[] = [];
-  let current: { dtstart?: string; dtend?: string } | null = null;
+  // Unfold lines: lines beginning with space or tab are continuations
+  const rawLines = ics.split(/\r?\n/);
+  const lines: string[] = [];
+  for (const raw of rawLines) {
+    if (!raw) continue;
+    if (/^[ \t]/.test(raw) && lines.length > 0) {
+      lines[lines.length - 1] += raw.replace(/^[ \t]/, "");
+    } else {
+      lines.push(raw);
+    }
+  }
+
+  type EventAcc = {
+    dtstart?: string;
+    dtend?: string;
+    duration?: string;
+    rrule?: string;
+    exdate?: string[];
+  };
+  const events: EventAcc[] = [];
+  let current: EventAcc | null = null;
   for (const raw of lines) {
     const line = raw.trim();
-    if (line === "BEGIN:VEVENT") current = {};
-    else if (line === "END:VEVENT") {
-      if (current?.dtstart && current?.dtend) events.push({ dtstart: current.dtstart, dtend: current.dtend });
+    if (line === "BEGIN:VEVENT") {
+      current = {};
+    } else if (line === "END:VEVENT") {
+      if (current?.dtstart) {
+        // If DTEND is missing but DURATION exists, synthesize DTEND
+        if (!current.dtend && current.duration) {
+          const startIso = icsToISO(current.dtstart);
+          const durMs = parseIcsDurationToMs(current.duration);
+          if (startIso && durMs > 0) {
+            const endIso = new Date(new Date(startIso).getTime() + durMs).toISOString();
+            events.push({ dtstart: startIso, dtend: endIso, rrule: current.rrule, exdate: current.exdate });
+          } else if (startIso) {
+            // Fallback: treat as 30-min event if duration unparseable
+            const endIso = new Date(new Date(startIso).getTime() + 30 * 60 * 1000).toISOString();
+            events.push({ dtstart: startIso, dtend: endIso, rrule: current.rrule, exdate: current.exdate });
+          }
+        } else if (current.dtend) {
+          events.push({ dtstart: current.dtstart, dtend: current.dtend, rrule: current.rrule, exdate: current.exdate });
+        }
+      }
       current = null;
     } else if (current) {
       if (line.startsWith("DTSTART")) current.dtstart = extractDateValue(line);
       if (line.startsWith("DTEND")) current.dtend = extractDateValue(line);
+      if (line.startsWith("DURATION")) current.duration = extractDateValue(line);
+      if (line.startsWith("RRULE")) current.rrule = extractDateValue(line);
+      if (line.startsWith("EXDATE")) {
+        const v = extractDateValue(line);
+        if (v) {
+          if (!current.exdate) current.exdate = [];
+          for (const part of v.split(",")) current.exdate.push(part);
+        }
+      }
     }
   }
-  return events
-    .map((e) => ({ start: icsToISO(e.dtstart!), end: icsToISO(e.dtend!) }))
-    .filter((e) => e.start && e.end && new Date(e.end) > new Date(e.start));
+
+  const normalized: { start: string; end: string }[] = [];
+  const windowStart = opts?.windowStart ? new Date(opts.windowStart) : undefined;
+  const windowEnd = opts?.windowEnd ? new Date(opts.windowEnd) : undefined;
+
+  for (const e of events) {
+    if (!e.dtstart || !e.dtend) continue;
+    const baseStartIso = normalizeToIso(e.dtstart);
+    const baseEndIso = normalizeToIso(e.dtend);
+    if (!baseStartIso || !baseEndIso) continue;
+    const durationMs = new Date(baseEndIso).getTime() - new Date(baseStartIso).getTime();
+    if (!e.rrule) {
+      if (new Date(baseEndIso) > new Date(baseStartIso)) normalized.push({ start: baseStartIso, end: baseEndIso });
+      continue;
+    }
+
+    // Minimal RRULE support (WEEKLY with optional BYDAY, UNTIL, INTERVAL)
+    const r = parseRRule(e.rrule);
+    if (r.freq !== "WEEKLY") {
+      // Fallback: treat as single event if unsupported frequency
+      normalized.push({ start: baseStartIso, end: baseEndIso });
+      continue;
+    }
+
+    const exdates = new Set<string>((e.exdate || []).map((d) => normalizeToIso(d)).filter(Boolean) as string[]);
+    const interval = Math.max(1, r.interval || 1);
+    const until = r.until ? new Date(normalizeToIso(r.until) || "") : undefined;
+
+    // Determine which weekdays are active
+    const activeWeekdays = r.byday && r.byday.length > 0 ? new Set(r.byday) : undefined;
+    const baseStart = new Date(baseStartIso);
+
+    // Compute iteration start within the window
+    let iter = new Date(baseStart);
+    if (windowStart) {
+      // Fast-forward in steps of 'interval' weeks to on/after windowStart
+      const msPerWeek = 7 * 24 * 60 * 60 * 1000;
+      const diffWeeks = Math.floor((windowStart.getTime() - iter.getTime()) / (msPerWeek * interval));
+      if (diffWeeks > 0) iter = new Date(iter.getTime() + diffWeeks * msPerWeek * interval);
+    }
+
+    // Iterate occurrences within window
+    const endGuard = windowEnd ? windowEnd.getTime() + durationMs : Number.POSITIVE_INFINITY;
+    const weekdayMap = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"] as const;
+
+    const pushIfActive = (start: Date) => {
+      if (until && start.getTime() > until.getTime()) return;
+      const key = start.toISOString();
+      if (exdates.has(key)) return;
+      const end = new Date(start.getTime() + durationMs);
+      if (windowStart && end <= windowStart) return;
+      if (windowEnd && start >= windowEnd) return;
+      normalized.push({ start: start.toISOString(), end: end.toISOString() });
+    };
+
+    while (iter.getTime() < endGuard) {
+      if (!activeWeekdays) {
+        pushIfActive(iter);
+      } else {
+        // Generate occurrences in the iter-week for specified BYDAYs, preserving time-of-day from baseStart
+        const startOfWeek = startOfWeekFrom(iter);
+        for (let i = 0; i < 7; i++) {
+          const d = new Date(startOfWeek.getTime() + i * 86400000);
+          const code = weekdayMap[d.getDay()];
+          if (activeWeekdays.has(code)) {
+            const oc = new Date(d);
+            oc.setHours(baseStart.getHours(), baseStart.getMinutes(), baseStart.getSeconds(), baseStart.getMilliseconds());
+            pushIfActive(oc);
+          }
+        }
+      }
+      // jump by interval weeks
+      iter = new Date(iter.getTime() + interval * 7 * 24 * 60 * 60 * 1000);
+    }
+  }
+  return normalized;
 }
 
 function extractDateValue(line: string): string {
@@ -147,6 +267,27 @@ function icsToISO(v: string): string {
   return "";
 }
 
+function parseIcsDurationToMs(v: string): number {
+  // RFC5545 duration (e.g., P1D, PT1H, PT30M, PT1H30M)
+  // Simple parser covering common patterns we expect for meetings
+  const m = v.match(/^P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/);
+  if (!m) return 0;
+  const days = Number(m[1] || 0);
+  const hours = Number(m[2] || 0);
+  const minutes = Number(m[3] || 0);
+  const seconds = Number(m[4] || 0);
+  return (((days * 24 + hours) * 60 + minutes) * 60 + seconds) * 1000;
+}
+
+function normalizeToIso(v: string): string {
+  if (!v) return "";
+  // Already ISO-like
+  if (/^\d{4}-\d{2}-\d{2}T/.test(v)) return v;
+  // ICS basic timestamp or date
+  if (/^\d{8}T\d{6}Z?$/.test(v) || /^\d{8}$/.test(v)) return icsToISO(v);
+  return "";
+}
+
 function mergeIntervals(list: { start: Date; end: Date }[]): { start: Date; end: Date }[] {
   const arr = list.slice().sort((a, b) => a.start.getTime() - b.start.getTime());
   const out: { start: Date; end: Date }[] = [];
@@ -157,5 +298,37 @@ function mergeIntervals(list: { start: Date; end: Date }[]): { start: Date; end:
   }
   return out;
 }
+
+type RRule = {
+  freq?: string;
+  interval?: number;
+  until?: string;
+  byday?: string[];
+};
+
+function parseRRule(v: string): RRule {
+  const out: RRule = {};
+  const parts = v.split(";").map((s) => s.trim());
+  for (const p of parts) {
+    const [k, val] = p.split("=");
+    if (!k || !val) continue;
+    const key = k.toUpperCase();
+    if (key === "FREQ") out.freq = val.toUpperCase();
+    else if (key === "INTERVAL") out.interval = Number(val) || 1;
+    else if (key === "UNTIL") out.until = val;
+    else if (key === "BYDAY") out.byday = val.split(",").map((d) => d.toUpperCase());
+  }
+  return out;
+}
+
+function startOfWeekFrom(d: Date): Date {
+  const date = new Date(d);
+  const day = date.getDay();
+  const diff = (day === 0 ? -6 : 1) - day; // Monday as start
+  date.setDate(date.getDate() + diff);
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
 
 
