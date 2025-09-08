@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { ProfileHeader } from "../feature/profile/ui/profile-header";
 import { AffiliationBadges } from "../feature/affiliations/ui/badges";
 import { HeroBackground } from "../shared/ui/HeroBackground";
+import { SkillBadges } from "../feature/skills/ui/SkillBadges";
 
 
 export default function PortfolioLinks() {
@@ -33,6 +34,10 @@ export default function PortfolioLinks() {
         <div className="mx-auto max-w-4xl">
           <ProfileHeader />
           <AffiliationBadges />
+        </div>
+
+        <div className="max-w-4xl mx-auto">
+          <SkillBadges />
         </div>
 
         {/* Intro to key pages */}
