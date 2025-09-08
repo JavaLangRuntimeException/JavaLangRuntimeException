@@ -13,7 +13,7 @@ export const skills: Skill[] = [
     description:
       "Go・Python・Ruby・TypeScriptによるAPI/Batch開発。Clean Architecture、REST/gRPC/WebSocket、エラーハンドリング設計、ログ/メトリクス/トレース対応。",
     color: "bg-cyan-700",
-    tags: ["Go", "Echo", "Python", "Flask", "FastAPI", "Django", "Ruby", "Rails", "TypeScript", "Hono.js", "gRPC", "WebSocket", "Clean Architecture", "OpenTelemetry", "DDD"],
+    tags: ["Go", "Echo", "Python", "Flask", "FastAPI", "Django", "Ruby", "Rails", "TypeScript", "Hono.js", "Google Apps Script", "gRPC", "WebSocket", "Clean Architecture", "OpenTelemetry", "DDD"],
   },
   {
     title: "Frontend / Web",
