@@ -61,6 +61,7 @@ export default function ReservePage() {
   const [formErrors, setFormErrors] = React.useState<Record<string, string>>({});
   const [purpose, setPurpose] = useAtom(purposeAtom);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
+  const [decisionLocked, setDecisionLocked] = React.useState(false);
   const [creating, setCreating] = React.useState(false);
   const [createdInfo, setCreatedInfo] = React.useState<{ ok: boolean; eventId?: string; htmlLink?: string; meetLink?: string } | null>(null);
   const [contactMethod, setContactMethod] = useAtom(contactMethodAtom);
@@ -339,10 +340,15 @@ export default function ReservePage() {
     }
   }, [month, monthOptions, setMonth]);
 
+  const submitLockRef = React.useRef(false);
+
   async function handleSubmit() {
+    if (submitLockRef.current) return;
+    submitLockRef.current = true;
     // validation: start < end
     if (!hasDate || !hasTime) {
       alert("日付と時間を選択してください");
+      submitLockRef.current = false;
       return;
     }
     // 過去は不可
@@ -350,7 +356,7 @@ export default function ReservePage() {
     // 2時間以内は不可
     const minStartTs = nowTs + 2 * 60 * 60 * 1000;
     const ok = await trigger();
-    if (!ok) return;
+    if (!ok) { submitLockRef.current = false; return; }
     const startDate = new Date(year as number, (month as number) - 1, day as number, startHour as number, startMin as number);
     const endDate = new Date(year as number, (month as number) - 1, day as number, endHour as number, endMin as number);
     if (startDate.getTime() <= nowTs) {
@@ -378,12 +384,14 @@ export default function ReservePage() {
         alert("直前に同時間帯の予約が入りました。別の時間をお選びください");
         // refresh current busy state for UI feedback
         setBusy(latestBusy);
+        submitLockRef.current = false;
         return;
       }
     } catch {}
     // Local cached check as fallback
     if (isOverlappingBusy(startDate, endDate, busy)) {
       alert("選択した時間帯は不可です");
+      submitLockRef.current = false;
       return;
     }
     setConfirmOpen(false);
@@ -484,6 +492,7 @@ export default function ReservePage() {
       setCreatedInfo({ ok: false });
     } finally {
       setCreating(false);
+      submitLockRef.current = false;
     }
   }
 
@@ -508,7 +517,7 @@ export default function ReservePage() {
           お問い合わせはメール(<a className="underline" href="mailto:tanahashishuta@gmail.com">tanahashishuta@gmail.com</a>)またはX(<a className="underline" href="https://x.com/JavaLangRuntime" target="_blank" rel="noreferrer">@JavaLangRuntime</a>)でも承っております
         </p>
         <div className="flex flex-col items-end">
-          <div className={`relative inline-block ${canSubmit ? "group" : ""}`}>
+          <div className={`relative inline-block ${canSubmit ? "sm:group" : ""}`}>
             {canSubmit && (
               <>
                 {/* Left-top peeking mascot (Qiitan) */}
@@ -523,8 +532,13 @@ export default function ReservePage() {
             )}
             <button
               className={`relative z-10 rounded-xl px-8 py-3 text-lg font-semibold transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent ${canSubmit ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25 hover:from-blue-500 hover:to-indigo-500" : "bg-zinc-300 text-zinc-500 cursor-not-allowed"}`}
-              disabled={!canSubmit}
-              onClick={() => setConfirmOpen(true)}
+              disabled={!canSubmit || decisionLocked || confirmOpen}
+              onClick={() => {
+                if (!canSubmit || decisionLocked || confirmOpen) return;
+                setDecisionLocked(true);
+                setConfirmOpen(true);
+                setTimeout(() => setDecisionLocked(false), 400);
+              }}
             >
               決定
             </button>
@@ -546,13 +560,13 @@ export default function ReservePage() {
             <div className="absolute inset-y-0 left-0 w-1.5 bg-gradient-to-b from-blue-400 to-indigo-500" />
             <div className="ml-3 flex items-center justify-between gap-3">
               <Info className="mt-0.5 h-5 w-5 text-blue-300" aria-hidden="true" />
-              <p className="m-0 flex-1 text-sm text-white/90">最速相談予約可能な30分枠: <span className="font-semibold text-white">{nextAvailableSlotText}</span></p>
+              <p className="m-0 flex-1 text-sm text-white/90">最短予約可能時間(30分枠): <span className="font-semibold text-white">{nextAvailableSlotText}</span></p>
               <button
                 type="button"
                 onClick={applyNextAvailableSlot}
                 className="shrink-0 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
               >
-                最短での時間指定(30分MTG)
+                最短での時間指定(30分枠)
               </button>
             </div>
           </div>
@@ -766,6 +780,7 @@ export default function ReservePage() {
         <ConfirmModal
           onClose={() => setConfirmOpen(false)}
           onSubmit={handleSubmit}
+          submitting={creating}
           details={{
             year,
             month,
@@ -809,7 +824,6 @@ export default function ReservePage() {
                   }}
       />
 
-      {/* 取消機能は廃止 */}
     </main>
     </HeroBackground>
   );
@@ -844,10 +858,5 @@ function isOverlappingBusy(start: Date, end: Date, busy: { start: string; end: s
   });
 }
 
-// WeekGrid moved to feature/reserve/ui/WeekGrid
-
-//
-
-// moved to Zod schema validation
 
 

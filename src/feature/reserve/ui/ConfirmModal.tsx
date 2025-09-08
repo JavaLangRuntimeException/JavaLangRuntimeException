@@ -6,10 +6,12 @@ import { NotebookText } from "lucide-react";
 export function ConfirmModal({
   onClose,
   onSubmit,
+  submitting = false,
   details,
 }: {
   onClose: () => void;
   onSubmit: () => void;
+  submitting?: boolean;
   details: {
     year: number | null;
     month: number | null;
@@ -84,7 +86,7 @@ export function ConfirmModal({
             <button className="rounded-md border border-zinc-300 bg-white px-4 py-2 text-sm text-zinc-900 hover:bg-zinc-50" onClick={onClose}>
               キャンセル
             </button>
-            <button className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-500" onClick={onSubmit}>
+            <button className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-500 disabled:opacity-60" onClick={onSubmit} disabled={submitting}>
               送信する
             </button>
           </div>

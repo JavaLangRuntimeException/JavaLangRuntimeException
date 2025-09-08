@@ -12,10 +12,10 @@ export function ProfileHeader() {
         </div>
       </motion.div>
       <motion.h1 className="mt-5 text-3xl font-bold" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1, duration: 0.5 }}>
-        棚橋 柊太（たなはし しゅうた）
+        Shuta Tanahashi
       </motion.h1>
       <motion.p className="mt-1 text-zinc-300" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, duration: 0.5 }}>
-        サーバーサイドエンジニア・コミュニティマネージャー
+        サーバーサイドエンジニア<br />XRエンジニア<br />コミュニティディレクター
       </motion.p>
     </section>
   );
