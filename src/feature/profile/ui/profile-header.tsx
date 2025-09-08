@@ -15,7 +15,7 @@ export function ProfileHeader() {
         Shuta Tanahashi
       </motion.h1>
       <motion.p className="mt-1 text-zinc-300" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, duration: 0.5 }}>
-        サーバーサイドエンジニア<br />XRエンジニア<br />コミュニティディレクター
+      ソフトウェアエンジニア<br />サーバーサイドエンジニア<br />XRエンジニア<br />コミュニティディレクター
       </motion.p>
     </section>
   );
