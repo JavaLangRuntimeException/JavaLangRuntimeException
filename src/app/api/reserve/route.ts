@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
-// NOTE: Use external webhook (e.g., Google Apps Script) to create Google Calendar events
+export const dynamic = "force-dynamic";
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -26,13 +27,10 @@ export async function POST(req: Request) {
         }
       } catch {}
     }
-    // Note: GCAL_SA_CLIENT_EMAIL / GCAL_SA_PRIVATE_KEY fallback removed by request.
-    // Fallback to user OAuth token (cookie / refresh token)
     if (!accessToken) {
       accessToken = await getAccessTokenFromRequest(req);
     }
     if (accessToken) {
-        // Enforce 2-hour lead time on server
         try {
           const startDate = new Date(
             body.year,
