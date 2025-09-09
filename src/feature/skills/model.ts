@@ -52,9 +52,9 @@ export const skills: Skill[] = [
     title: "Infrastructure / Public Cloud",
     short: "Amazon Web Services / Google Cloud, IaC",
     description:
-      "AWS/GCP、TerraformでのIaC、水平スケール設計、監視基盤構築。",
+      "AWS/Google Cloud、TerraformでのIaC、水平スケール設計、監視基盤構築。",
     color: "bg-amber-700",
-    tags: ["AWS", "GCP", "Terraform", "Cloud Run", "GKE", "ECS", "Fargate", "Lambda", "Cloudflare", "Vercel", "Firebase", "Supabase"],
+    tags: ["AWS", "Google Cloud", "Terraform", "Cloud Run", "GKE", "ECS", "Fargate", "Lambda", "Cloudflare", "Vercel", "Firebase", "Supabase"],
   },
   {
     title: "Infrastructure / DevOps ・ SRE",
