@@ -21,6 +21,6 @@ module.exports = {
                },
           ],
      },
-     // 'export'の設定を削除するか、以下のように変更する
-     // output: 'standalone',
+     // Use standalone output for deployment with API routes
+     output: 'standalone',
 };
