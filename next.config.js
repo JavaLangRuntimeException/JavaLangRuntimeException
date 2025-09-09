@@ -21,6 +21,4 @@ module.exports = {
                },
           ],
      },
-     // Use standalone output for deployment with API routes
-     output: 'standalone',
 };
