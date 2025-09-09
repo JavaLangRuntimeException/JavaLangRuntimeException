@@ -8,8 +8,13 @@ import { Header } from "../widgets/header";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "taramanji (JavaLangRuntimeException) ポートフォリオリンク集",
-  description: "taramanjiのポートフォリオ、プロジェクト、記事へのリンク集",
+  title: "taramanji",
+  description: "エンジニア・コミュニティディレクター taramanji のポートフォリオ。プロフィール・実績・記事・登壇・SNSリンクと打ち合わせ予約情報を掲載。",
+  icons: {
+    icon: "/image.png",
+    shortcut: "/image.png",
+    apple: "/image.png",
+  },
 };
 
 export default function RootLayout({
@@ -21,7 +26,7 @@ export default function RootLayout({
     <html lang="ja">
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/image.png" />
+        <link rel="icon" type="image/png" href="/image.png" />
       </head>
       <body className={`${inter.className} min-h-screen w-full`}>
         <ClientWrapper>

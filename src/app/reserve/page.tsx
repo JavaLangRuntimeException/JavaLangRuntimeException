@@ -227,7 +227,10 @@ export default function ReservePage() {
         continue;
       }
       if (!isOverlappingBusy(t, end, busy)) {
-        return `${t.getFullYear()}/${pad(t.getMonth() + 1)}/${pad(t.getDate())}(${weekdayName(t)}) ${pad(t.getHours())}:${pad(t.getMinutes())}〜${pad(end.getHours())}:${pad(end.getMinutes())}`;
+        const endIsMidnightOfNextDay = end.getHours() === 0 && end.getDate() !== t.getDate();
+        const endHourDisplay = endIsMidnightOfNextDay ? "24" : pad(end.getHours());
+        const endMinuteDisplay = endIsMidnightOfNextDay ? "00" : pad(end.getMinutes());
+        return `${t.getFullYear()}/${pad(t.getMonth() + 1)}/${pad(t.getDate())}(${weekdayName(t)}) ${pad(t.getHours())}:${pad(t.getMinutes())}〜${endHourDisplay}:${endMinuteDisplay}`;
       }
       t = end;
       guard += 1;
@@ -246,15 +249,16 @@ export default function ReservePage() {
     const d = Number(m[3]);
     const sh = Number(m[4]);
     const sm = Number(m[5]);
-    const eh = Number(m[6]);
+    const ehRaw = Number(m[6]);
     const em = Number(m[7]);
+    const eh = ehRaw === 0 ? 24 : ehRaw;
     setYear(y);
     setMonth(mo);
     setDay(d);
     setStartHour(sh);
     setStartMin(sm);
     setEndHour(eh);
-    setEndMin(em);
+    setEndMin(eh === 24 ? 0 : em);
     // Align week view to the selected date
     const selectedDate = new Date(y, mo - 1, d);
     setWeekStart(getMonday(selectedDate));
