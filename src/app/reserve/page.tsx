@@ -699,7 +699,6 @@ export default function ReservePage() {
       />
 
 
-
       {/* 週カレンダー（灰色でbusy埋め） */}
       <section className="relative mt-6 rounded-2xl border border-white/20 bg-white/90 p-6 shadow-lg backdrop-blur animate-in fade-in-50">
         <div className="mb-3 flex items-center justify-between">
@@ -776,6 +775,21 @@ export default function ReservePage() {
             setEndMin(endHourForUI === 24 ? 0 : slotEnd.getMinutes());
           }}
         />
+        </div>
+      </section>
+
+      {/* カレンダーの仕様（カレンダーの下に詳細説明） */}
+      <section className="mt-2">
+        <div className="rounded-2xl border border-white/20 bg-white/90 p-4 shadow-lg backdrop-blur animate-in fade-in-50">
+          <h3 className="mb-2 text-sm font-semibold text-zinc-700">カレンダーの仕様</h3>
+          <ul className="list-disc space-y-1 pl-5 text-xs text-zinc-600">
+            <li>週表示（前の週/次の週で移動、最大1ヶ月先まで）</li>
+            <li>9:00〜24:00の30分単位で選択できます</li>
+            <li>現在時刻から2時間以内と過去、埋まっている時間は選択不可です</li>
+            <li>30分枠をクリックで選択、同日の隣接枠をクリックすると面談時間を延長できます</li>
+            <li>選択中の枠は青色表示、選択不可の枠はグレー表示になります</li>
+            <li>24:00は翌日0:00を指し、分は00固定になります</li>
+          </ul>
         </div>
       </section>
 
