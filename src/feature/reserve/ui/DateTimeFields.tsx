@@ -137,7 +137,7 @@ export function DateTimeFields({
         {(!year || !month || !day) && (
           <p className="mt-1 text-xs text-red-600">日付の入力は必須です</p>
         )}
-        <p className="mt-1 text-xs text-zinc-600">カレンダーの時間枠を選択することで日付と時間を入力できます</p>
+        <p className="mt-1 text-xs text-zinc-600">※下のカレンダー時間枠を選択することでも日付と時間を入力できます</p>
         {year != null && month != null && day != null && isPastDate && (
           <p className="mt-1 text-xs text-red-600">過去の日付は選択できません</p>
         )}
