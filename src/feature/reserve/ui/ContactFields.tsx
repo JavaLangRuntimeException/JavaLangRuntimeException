@@ -90,7 +90,7 @@ export function ContactFields({
 
           {contactMethod === "meet" && (
             <p className="sm:col-span-3 mt-1 text-xs text-zinc-600">
-              ご連絡手段（ミーティング媒体）の下にGoogle Meetの場合はミーティングURLが発行されますので、ミーティングの際はそのリンクからご参加くださいますようお願いいたします。
+              Google Meetの場合は予約完了後ミーティングURLが発行されますので、ミーティングの際はそのリンクからご参加くださいますようお願いいたします。
             </p>
           )}
 
