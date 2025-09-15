@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { CalendarClock, Clock } from "lucide-react";
+import { CalendarClock, Clock, Info } from "lucide-react";
 
 function UnderLabelSelect({ value, setValue, options, underLabel }: { value: number | null; setValue: (n: number) => void; options: number[]; underLabel: string }) {
   return (
@@ -114,6 +114,15 @@ export function DateTimeFields({
 
   return (
     <section className="mt-6 grid gap-4 sm:grid-cols-2">
+      <div className="sm:col-span-2 -mb-2">
+        <div className="relative overflow-hidden rounded-2xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur animate-in fade-in-50">
+          <div className="absolute inset-y-0 left-0 w-1.5 bg-gradient-to-b from-blue-400 to-indigo-500" />
+          <div className="ml-3 flex items-center gap-3">
+            <Info className="mt-0.5 h-5 w-5 text-blue-300" aria-hidden="true" />
+            <p className="m-0 text-xs text-white/90">カレンダーを押して日付と時間の指定ができます</p>
+          </div>
+        </div>
+      </div>
       <div className="rounded-2xl border border-white/20 bg-white/90 p-6 shadow-lg backdrop-blur">
         <h2 className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-zinc-700"><CalendarClock className="h-4 w-4 text-zinc-500" /> 日付</h2>
         <div className="grid grid-cols-4 gap-3">
@@ -128,6 +137,7 @@ export function DateTimeFields({
         {(!year || !month || !day) && (
           <p className="mt-1 text-xs text-red-600">日付の入力は必須です</p>
         )}
+        <p className="mt-1 text-xs text-zinc-600">カレンダーの時間枠を選択することで日付と時間を入力できます</p>
         {year != null && month != null && day != null && isPastDate && (
           <p className="mt-1 text-xs text-red-600">過去の日付は選択できません</p>
         )}

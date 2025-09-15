@@ -88,6 +88,12 @@ export function ContactFields({
           </select>
           {errors.contactMethod && <span className="text-xs text-red-600">{errors.contactMethod}</span>}
 
+          {contactMethod === "meet" && (
+            <p className="sm:col-span-3 mt-1 text-xs text-zinc-600">
+              ご連絡手段（ミーティング媒体）の下にGoogle Meetの場合はミーティングURLが発行されますので、ミーティングの際はそのリンクからご参加くださいますようお願いいたします。
+            </p>
+          )}
+
           {contactMethod === "discord" && (
             <>
               <div className="flex flex-col">
