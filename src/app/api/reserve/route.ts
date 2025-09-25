@@ -75,6 +75,11 @@ export async function POST(req: Request) {
         if (body.slackName) descriptionLines.push(`Slack名: ${body.slackName}`);
         if (body.slackWorkspace) descriptionLines.push(`Slackワークスペース: ${body.slackWorkspace}`);
         if (body.otherNote) descriptionLines.push(`備考: ${body.otherNote}`);
+        if (contactMethod.toLowerCase() === "offline") {
+          if (body.offlinePlaceLink) descriptionLines.push(`Googleマップ共有リンク: ${body.offlinePlaceLink}`);
+          if (body.offlinePlaceName) descriptionLines.push(`場所の名称(自動入力): ${body.offlinePlaceName}`);
+          if (body.offlinePlaceDetail) descriptionLines.push(`場所の詳細(任意): ${body.offlinePlaceDetail}`);
+        }
 
         const summaryTitle = String(body.purpose) === "STECH" ? `STECH面談_${body.name || "ゲスト"}さん` : `TS+面談_${body.name || "ゲスト"}さん`;
         const baseEvent: GEvent = {
@@ -245,12 +250,13 @@ export async function POST(req: Request) {
         purpose === "STECH"      ? `STECHご相談_${baseName}さんx棚橋(taramanji)` :
         purpose === "RM2C"       ? `RM2Cご相談_${baseName}さんx棚橋(taramanji)` :
         purpose === "JINEN"      ? `コミュニティやイベントに関するご相談(JINEN)_${baseName}さんx棚橋(taramanji)` :
-        purpose === "NxTEND"     ? `NxTENDご相談_${baseName}さんx棚橋(taramanji)` :
+        purpose === "NxTEND_Event"     ? `NxTEND_Eventご相談_${baseName}さんx棚橋(taramanji)` :
+        purpose === "NxTEND_Organize"     ? `NxTEND_Organizeご相談_${baseName}さんx棚橋(taramanji)` :
         purpose === "RCC"        ? `RCCご相談_${baseName}さんx棚橋(taramanji)` :
         purpose === "その他"        ? `ご相談_${baseName}さんx棚橋(taramanji)` :
         `ご相談_${baseName}さん`;
 
-      const payload = {
+        const payload = {
         calendarId,
         ownerEmail: "tanahashishuta@gmail.com",
         summary: summaryTitleWebhook,
@@ -261,6 +267,9 @@ export async function POST(req: Request) {
           body.discordName ? `Discord名: ${body.discordName}` : undefined,
           body.slackName ? `Slack名: ${body.slackName}` : undefined,
           body.otherNote ? `備考: ${body.otherNote}` : undefined,
+            String(body.contactMethod || '').toLowerCase() === 'offline' && body.offlinePlaceLink ? `Googleマップ共有リンク: ${body.offlinePlaceLink}` : undefined,
+            String(body.contactMethod || '').toLowerCase() === 'offline' && body.offlinePlaceName ? `場所の名称(自動入力): ${body.offlinePlaceName}` : undefined,
+            String(body.contactMethod || '').toLowerCase() === 'offline' && body.offlinePlaceDetail ? `場所の詳細(任意): ${body.offlinePlaceDetail}` : undefined,
         ].filter(Boolean).join("\n"),
         start: { dateTime: startLocal, timeZone: "Asia/Tokyo" },
         end: { dateTime: endLocal, timeZone: "Asia/Tokyo" },

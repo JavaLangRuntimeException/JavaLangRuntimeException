@@ -2,6 +2,7 @@
 
 import React from "react";
 import { NotebookText } from "lucide-react";
+import { PURPOSES } from "../../../shared/config/purposes";
 
 export function ConfirmModal({
   onClose,
@@ -23,11 +24,14 @@ export function ConfirmModal({
     endMin: number | null;
     name: string;
     purpose: string;
-    contactMethod: "meet" | "discord" | "slack" | "other" | "";
+    contactMethod: "meet" | "discord" | "slack" | "other" | "offline" | "";
     discordName: string;
     slackName: string;
     otherNote: string;
     email: string;
+    offlinePlaceLink?: string;
+    offlinePlaceName?: string;
+    offlinePlaceDetail?: string;
     meetingNote?: string;
   };
 }) {
@@ -54,12 +58,12 @@ export function ConfirmModal({
             </div>
             <div className="rounded-lg bg-zinc-50 p-3">
               <div className="text-xs text-zinc-500">ご相談内容</div>
-              <div className="mt-1 font-medium">{details.purpose}</div>
+              <div className="mt-1 font-medium">{PURPOSES.find((p) => p.value === details.purpose)?.label || details.purpose}</div>
             </div>
             <div className="rounded-lg bg-zinc-50 p-3 sm:col-span-2">
               <div className="text-xs text-zinc-500">ご連絡手段（ミーティング媒体）</div>
               <div className="mt-1 font-medium">
-                {details.contactMethod === "meet" ? "GoogleMeet" : details.contactMethod}
+                {details.contactMethod === "meet" ? "GoogleMeet" : details.contactMethod === "offline" ? "オフライン" : details.contactMethod}
                 {details.contactMethod === "discord" && (
                   <span className="ml-2 inline-flex items-center rounded-full bg-zinc-200 px-2 py-0.5 text-xs text-zinc-700">Discord名: {details.discordName || "(必須)"}</span>
                 )}
@@ -75,6 +79,24 @@ export function ConfirmModal({
               <div className="text-xs text-zinc-500">メール</div>
               <div className="mt-1 font-medium">{details.email || "(メール未入力)"}</div>
             </div>
+            {details.contactMethod === "offline" && (
+              <>
+                <div className="rounded-lg bg-zinc-50 p-3 sm:col-span-2">
+                  <div className="text-xs text-zinc-500">Googleマップ共有リンク</div>
+                  <div className="mt-1 font-medium break-all">{details.offlinePlaceLink || "(未入力)"}</div>
+                </div>
+                <div className="rounded-lg bg-zinc-50 p-3">
+                  <div className="text-xs text-zinc-500">場所の名称(自動入力)</div>
+                  <div className="mt-1 font-medium">{details.offlinePlaceName || "(取得できませんでした)"}</div>
+                </div>
+                {details.offlinePlaceDetail && (
+                  <div className="rounded-lg bg-zinc-50 p-3 sm:col-span-2">
+                    <div className="text-xs text-zinc-500">場所の詳細</div>
+                    <div className="mt-1 whitespace-pre-wrap text-[13px] leading-relaxed text-zinc-800">{details.offlinePlaceDetail}</div>
+                  </div>
+                )}
+              </>
+            )}
             {details.meetingNote && (
               <div className="rounded-lg bg-zinc-50 p-3 sm:col-span-2">
                 <div className="text-xs text-zinc-500">ご相談詳細</div>

@@ -23,6 +23,9 @@ import {
   slackWorkspaceAtom,
   slackNameAtom,
   otherNoteAtom,
+  offlinePlaceLinkAtom,
+  offlinePlaceNameAtom,
+  offlinePlaceDetailAtom,
   nameAtom,
   purposeAtom,
   yearAtom,
@@ -68,10 +71,14 @@ export default function ReservePage() {
   const [discordName, setDiscordName] = useAtom(discordNameAtom);
   const [slackName, setSlackName] = useAtom(slackNameAtom);
   const [otherNote, setOtherNote] = useAtom(otherNoteAtom);
+  const [offlinePlaceLink, setOfflinePlaceLink] = useAtom(offlinePlaceLinkAtom);
+  const [offlinePlaceName, setOfflinePlaceName] = useAtom(offlinePlaceNameAtom);
+  const [offlinePlaceDetail, setOfflinePlaceDetail] = useAtom(offlinePlaceDetailAtom);
   const [discordServer, setDiscordServer] = useAtom(discordServerAtom);
   const [discordServerTouched, setDiscordServerTouched] = React.useState(false);
   const [slackWorkspace, setSlackWorkspace] = useAtom(slackWorkspaceAtom);
   const [meetingNote, setMeetingNote] = useAtom(meetingNoteAtom);
+  const [isResolvingPlace, setIsResolvingPlace] = React.useState(false);
   const [busy, setBusy] = React.useState<{ start: string; end: string }[]>([]);
   const [busyLoading, setBusyLoading] = React.useState(true);
   const [notify, setNotify] = React.useState<string>("");
@@ -90,6 +97,9 @@ export default function ReservePage() {
     discordName: string;
     slackName: string;
     otherNote: string;
+    offlinePlaceLink?: string;
+    offlinePlaceName?: string;
+    offlinePlaceDetail?: string;
     meetingNote?: string;
   } | null>(null);
 
@@ -127,6 +137,9 @@ export default function ReservePage() {
       slackWorkspace,
       slackName,
       otherNote,
+      offlinePlaceLink,
+      offlinePlaceName,
+      offlinePlaceDetail,
     });
     const errs: Record<string, string> = {};
     if (!result.success) {
@@ -143,7 +156,7 @@ export default function ReservePage() {
       }
     }
     return errs;
-  }, [name, email, purpose, contactMethod, discordServer, discordName, slackWorkspace, slackName, otherNote, hasDate, hasTime, year, month, day, startHour, startMin, endHour, endMin]);
+  }, [name, email, purpose, contactMethod, discordServer, discordName, slackWorkspace, slackName, otherNote, offlinePlaceLink, offlinePlaceName, offlinePlaceDetail, hasDate, hasTime, year, month, day, startHour, startMin, endHour, endMin]);
 
   const canSubmit = React.useMemo(() => {
     if (hasDate && hasTime && selectionInvalid) return false;
@@ -286,13 +299,16 @@ export default function ReservePage() {
       slackWorkspace,
       slackName,
       otherNote,
+      offlinePlaceLink,
+      offlinePlaceName,
+      offlinePlaceDetail,
     },
   });
 
   const watchedName = watch("name");
 
   React.useEffect(() => {
-    const sub = watch((v) => {
+    const sub = watch((v: Partial<ContactForm>) => {
       if (!v) return;
       if (typeof v.name === "string") setName(v.name);
       if (typeof v.email === "string") setEmail(v.email);
@@ -302,9 +318,13 @@ export default function ReservePage() {
       if (typeof v.slackWorkspace === "string") setSlackWorkspace(v.slackWorkspace);
       if (typeof v.slackName === "string") setSlackName(v.slackName);
       if (typeof v.otherNote === "string") setOtherNote(v.otherNote);
+      const vv = v as Partial<ContactForm> & { offlinePlaceLink?: string; offlinePlaceName?: string; offlinePlaceDetail?: string };
+      if (typeof vv.offlinePlaceLink === "string") setOfflinePlaceLink(vv.offlinePlaceLink);
+      if (typeof vv.offlinePlaceName === "string") setOfflinePlaceName(vv.offlinePlaceName);
+      if (typeof vv.offlinePlaceDetail === "string") setOfflinePlaceDetail(vv.offlinePlaceDetail);
     });
     return () => sub.unsubscribe();
-  }, [watch, setName, setEmail, setContactMethod, setDiscordServer, setDiscordName, setSlackWorkspace, setSlackName, setOtherNote]);
+  }, [watch, setName, setEmail, setContactMethod, setDiscordServer, setDiscordName, setSlackWorkspace, setSlackName, setOtherNote, setOfflinePlaceLink, setOfflinePlaceName, setOfflinePlaceDetail]);
 
   React.useEffect(() => { setValue("name", name, { shouldValidate: true }); }, [name, setValue]);
   React.useEffect(() => { trigger("name"); }, [name, trigger]);
@@ -319,6 +339,33 @@ export default function ReservePage() {
   React.useEffect(() => { setValue("slackWorkspace", slackWorkspace, { shouldValidate: false }); }, [slackWorkspace, setValue]);
   React.useEffect(() => { setValue("slackName", slackName, { shouldValidate: false }); }, [slackName, setValue]);
   React.useEffect(() => { setValue("otherNote", otherNote, { shouldValidate: false }); }, [otherNote, setValue]);
+  React.useEffect(() => { setValue("offlinePlaceLink", offlinePlaceLink, { shouldValidate: contactMethod === "offline" }); }, [offlinePlaceLink, contactMethod, setValue]);
+  React.useEffect(() => { setValue("offlinePlaceName", offlinePlaceName, { shouldValidate: contactMethod === "offline" }); }, [offlinePlaceName, contactMethod, setValue]);
+  React.useEffect(() => { setValue("offlinePlaceDetail", offlinePlaceDetail, { shouldValidate: false }); }, [offlinePlaceDetail, setValue, setOfflinePlaceDetail]);
+
+  // Auto-fill place name from Google Maps link (editable by user)
+  React.useEffect(() => {
+    if (contactMethod !== "offline") return;
+    const link = (offlinePlaceLink || "").trim();
+    if (!link) return;
+    // Resolve server-side to follow short links and parse title/meta
+    setIsResolvingPlace(true);
+    fetch("/api/maps/resolve", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: link })
+    })
+      .then((r) => r.json())
+      .then((d) => {
+        if (!d) return;
+        const inferred: string | undefined = d.name || undefined;
+        if (inferred && (!offlinePlaceName || offlinePlaceName.trim() === "")) {
+          setOfflinePlaceName(inferred);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setIsResolvingPlace(false));
+  }, [contactMethod, offlinePlaceLink, offlinePlaceName, setOfflinePlaceName]);
 
   React.useEffect(() => {
     setFormErrors(zodDirectErrors);
@@ -416,6 +463,9 @@ export default function ReservePage() {
       slackName: contactMethod === "slack" ? slackName.trim() : undefined,
       slackWorkspace: contactMethod === "slack" ? slackWorkspace.trim() : undefined,
       otherNote: contactMethod === "other" ? otherNote.trim() : undefined,
+      offlinePlaceLink: contactMethod === "offline" ? (offlinePlaceLink || "").trim() : undefined,
+      offlinePlaceName: contactMethod === "offline" ? (offlinePlaceName || "").trim() : undefined,
+      offlinePlaceDetail: contactMethod === "offline" ? (offlinePlaceDetail || "").trim() : undefined,
       meetingNote: meetingNote.trim() || undefined,
     };
     try {
@@ -443,6 +493,9 @@ export default function ReservePage() {
           discordName,
           slackName,
           otherNote,
+          offlinePlaceLink,
+          offlinePlaceName,
+          offlinePlaceDetail,
           meetingNote,
         });
       }
@@ -513,6 +566,9 @@ export default function ReservePage() {
       <input type="hidden" {...register("slackWorkspace")} value={slackWorkspace} readOnly />
       <input type="hidden" {...register("slackName")} value={slackName} readOnly />
       <input type="hidden" {...register("otherNote")} value={otherNote} readOnly />
+      <input type="hidden" {...register("offlinePlaceLink")} value={offlinePlaceLink} readOnly />
+      <input type="hidden" {...register("offlinePlaceName")} value={offlinePlaceName} readOnly />
+      <input type="hidden" {...register("offlinePlaceDetail")} value={offlinePlaceDetail} readOnly />
       <motion.h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight bg-gradient-to-r from-white via-zinc-200 to-zinc-400 bg-clip-text text-transparent drop-shadow" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
         お打ち合わせ予約
       </motion.h1>
@@ -564,7 +620,7 @@ export default function ReservePage() {
             <div className="absolute inset-y-0 left-0 w-1.5 bg-gradient-to-b from-blue-400 to-indigo-500" />
             <div className="ml-3 flex items-center justify-between gap-3">
               <Info className="mt-0.5 h-5 w-5 text-blue-300" aria-hidden="true" />
-              <p className="m-0 flex-1 text-sm text-white/90">最短予約可能時間(30分枠): <span className="font-semibold text-white">{nextAvailableSlotText}</span></p>
+              <p className="m-0 flex-1 text-sm text-white/90">直近相談予約可能時間(30分枠): <span className="font-semibold text-white">{nextAvailableSlotText}</span></p>
               <button
                 type="button"
                 onClick={applyNextAvailableSlot}
@@ -662,6 +718,13 @@ export default function ReservePage() {
           setSlackName={setSlackName}
           otherNote={otherNote}
           setOtherNote={setOtherNote}
+          offlinePlaceLink={offlinePlaceLink}
+          setOfflinePlaceLink={setOfflinePlaceLink}
+          offlinePlaceName={offlinePlaceName}
+          setOfflinePlaceName={setOfflinePlaceName}
+          offlinePlaceDetail={offlinePlaceDetail}
+          setOfflinePlaceDetail={setOfflinePlaceDetail}
+          isResolvingPlace={isResolvingPlace}
           errors={{
             contactMethod: formErrors.contactMethod,
             discordServer: formErrors.discordServer,
@@ -669,6 +732,8 @@ export default function ReservePage() {
             slackWorkspace: formErrors.slackWorkspace,
             slackName: formErrors.slackName,
             email: formErrors.email,
+            offlinePlaceLink: formErrors.offlinePlaceLink,
+            offlinePlaceName: formErrors.offlinePlaceName,
           }}
           renderEmail={false}
         />
@@ -810,11 +875,14 @@ export default function ReservePage() {
             endMin,
             name,
             purpose,
-            contactMethod: (contactMethod || "") as "meet" | "discord" | "slack" | "other" | "",
+            contactMethod: (contactMethod || "") as "meet" | "discord" | "slack" | "other" | "offline" | "",
             discordName,
             slackName,
             otherNote,
             email,
+            offlinePlaceLink,
+            offlinePlaceName,
+            offlinePlaceDetail,
             meetingNote,
           }}
         />
@@ -833,8 +901,8 @@ export default function ReservePage() {
       {/* 作成完了モーダル */}
       <CompletionModal
         createdInfo={createdInfo}
-        contactMethod={contactMethod as "meet" | "discord" | "slack" | "other"}
-        details={completedDetails ?? { year, month, day, weekday: weekdayText, startHour, startMin, endHour, endMin, name, purpose, email, discordName, slackName, otherNote, meetingNote }}
+        contactMethod={contactMethod as "meet" | "discord" | "slack" | "other" | "offline"}
+        details={completedDetails ?? { year, month, day, weekday: weekdayText, startHour, startMin, endHour, endMin, name, purpose, email, discordName, slackName, otherNote, offlinePlaceLink, offlinePlaceName, offlinePlaceDetail, meetingNote }}
         onClose={() => {
                     setCreatedInfo(null);
                     setCompletedDetails(null);

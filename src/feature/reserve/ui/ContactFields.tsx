@@ -1,9 +1,9 @@
 "use client";
 
 import React from "react";
-import { Mails, MessageSquare, HashIcon, Slack, Link as LinkIcon } from "lucide-react";
+import { Mails, MessageSquare, HashIcon, Slack, Link as LinkIcon, MapPin } from "lucide-react";
 
-type ContactMethod = "" | "meet" | "discord" | "slack" | "other";
+type ContactMethod = "" | "meet" | "discord" | "slack" | "other" | "offline";
 
 export function ContactFields({
   contactMethod,
@@ -21,6 +21,13 @@ export function ContactFields({
   setSlackName,
   otherNote,
   setOtherNote,
+  offlinePlaceLink,
+  setOfflinePlaceLink,
+  offlinePlaceName,
+  setOfflinePlaceName,
+  isResolvingPlace,
+  offlinePlaceDetail,
+  setOfflinePlaceDetail,
   errors,
   renderEmail = true,
 }: {
@@ -39,9 +46,17 @@ export function ContactFields({
   setSlackName: (v: string) => void;
   otherNote: string;
   setOtherNote: (v: string) => void;
+  offlinePlaceLink: string;
+  setOfflinePlaceLink: (v: string) => void;
+  offlinePlaceName: string;
+  setOfflinePlaceName: (v: string) => void;
+  isResolvingPlace?: boolean;
+  offlinePlaceDetail: string;
+  setOfflinePlaceDetail: (v: string) => void;
   errors: Record<string, string>;
   renderEmail?: boolean;
 }) {
+  const [linkTouched, setLinkTouched] = React.useState(false);
   const emailTrim = (email || "").trim();
   const emailBlank = emailTrim.length === 0;
   const emailRegexOk = /^\S+@\S+\.[\w\-]+$/.test(emailTrim);
@@ -85,6 +100,7 @@ export function ContactFields({
             <option value="discord">Discord</option>
             <option value="slack">Slack</option>
             <option value="other">その他 (Zoom等)</option>
+            <option value="offline">オフライン（対面）</option>
           </select>
           {errors.contactMethod && <span className="text-xs text-red-600">{errors.contactMethod}</span>}
 
@@ -155,6 +171,64 @@ export function ContactFields({
                 onChange={(e) => setOtherNote(e.target.value)}
               />
             </div>
+          )}
+
+          {contactMethod === "offline" && (
+            <>
+              <div className="flex flex-col sm:col-span-2">
+                <span className="mb-1 inline-flex items-center gap-1 text-xs text-zinc-600"><MapPin className="h-3 w-3" /> Googleマップの共有リンク</span>
+                <textarea
+                  className="rounded-md border border-zinc-300 bg-white p-2 text-zinc-900 placeholder-zinc-400 min-h-[80px] transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                  placeholder="Googleマップの『共有』で取得できるリンクを貼り付けてください"
+                  value={offlinePlaceLink}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setOfflinePlaceLink(v);
+                    if (!linkTouched) setLinkTouched(true);
+                  }}
+                />
+                {isResolvingPlace && (
+                  <div className="mt-1 inline-flex items-center gap-2 text-xs text-zinc-600">
+                    <span className="inline-block h-3 w-3 animate-spin rounded-full border-2 border-zinc-300 border-t-blue-600" /> 場所名を取得中…
+                  </div>
+                )}
+                {(() => {
+                  if (contactMethod !== "offline") return null;
+                  const looksLikeUrl = /^(https?:\/\/)?[\w.-]+\.[a-z]{2,}[^\s]*$/i.test((offlinePlaceLink || "").trim());
+                  if (linkTouched && !looksLikeUrl) {
+                    return <span className="mt-1 text-xs text-red-600">Googleマップの共有リンクを入力してください</span>;
+                  }
+                  return null;
+                })()}
+              </div>
+              <div className="flex flex-col">
+                <span className="mb-1 inline-flex items-center gap-1 text-xs text-zinc-600"><MapPin className="h-3 w-3" /> 場所の名称(自動入力)</span>
+                <input
+                  className="rounded-md border border-zinc-300 bg-white p-2 text-zinc-900 placeholder-zinc-400 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 disabled:opacity-50"
+                  placeholder={
+                    offlinePlaceName && offlinePlaceName.trim() !== ""
+                      ? ""
+                      : linkTouched
+                        ? "取得できませんでした"
+                        : "リンクを入力してください"
+                  }
+                  value={offlinePlaceName}
+                  onChange={(e) => setOfflinePlaceName(e.target.value)}
+                  // ずっと入力不可（自動入力のみ）
+                  disabled
+                />
+                {/* 場所の名称はエラー表示なし */}
+              </div>
+              <div className="flex flex-col sm:col-span-2">
+                <span className="mb-1 inline-flex items-center gap-1 text-xs text-zinc-600"><MapPin className="h-3 w-3" /> 場所の詳細（任意）</span>
+                <textarea
+                  className="rounded-md border border-zinc-300 bg-white p-2 text-zinc-900 placeholder-zinc-400 min-h-[80px] transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                  placeholder="集合場所の目印・フロア・席番号などがあればご記入ください（任意）"
+                  value={offlinePlaceDetail}
+                  onChange={(e) => setOfflinePlaceDetail(e.target.value)}
+                />
+              </div>
+            </>
           )}
         </div>
       </div>
