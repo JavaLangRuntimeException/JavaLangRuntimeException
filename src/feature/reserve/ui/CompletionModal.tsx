@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { PURPOSES } from "../../../shared/config/purposes";
 
 export type CreatedInfo = { ok: boolean; eventId?: string; htmlLink?: string; meetLink?: string } | null;
 
@@ -11,7 +12,7 @@ export function CompletionModal({
   onClose,
 }: {
   createdInfo: CreatedInfo;
-  contactMethod: "meet" | "discord" | "slack" | "other";
+  contactMethod: "meet" | "discord" | "slack" | "other" | "offline";
   details: {
     year: number | null;
     month: number | null;
@@ -27,6 +28,9 @@ export function CompletionModal({
     discordName: string;
     slackName: string;
     otherNote: string;
+    offlinePlaceLink?: string;
+    offlinePlaceName?: string;
+    offlinePlaceDetail?: string;
     meetingNote?: string;
   };
   onClose: () => void;
@@ -103,13 +107,13 @@ export function CompletionModal({
                     <div className="mt-1 font-medium">{details.name || "(未入力)"}</div>
                   </div>
                   <div className="rounded-lg bg-zinc-50 p-3">
-                    <div className="text-xs text-zinc-500">ご相談内容</div>
-                    <div className="mt-1 font-medium">{details.purpose}</div>
+                  <div className="text-xs text-zinc-500">ご相談内容</div>
+                  <div className="mt-1 font-medium">{PURPOSES.find((p) => p.value === details.purpose)?.label || details.purpose}</div>
                   </div>
                   <div className="rounded-lg bg-zinc-50 p-3 sm:col-span-2">
                     <div className="text-xs text-zinc-500">ご連絡手段（ミーティング媒体）</div>
                     <div className="mt-1 font-medium">
-                      {contactMethod === "meet" ? "GoogleMeet" : contactMethod}
+                      {contactMethod === "meet" ? "GoogleMeet" : contactMethod === "offline" ? "オフライン" : contactMethod}
                       {contactMethod === "discord" && (
                         <span className="ml-2 inline-flex items-center rounded-full bg-zinc-200 px-2 py-0.5 text-xs text-zinc-700">Discord名: {details.discordName || "(未入力)"}</span>
                       )}
@@ -119,12 +123,33 @@ export function CompletionModal({
                       {contactMethod === "other" && details.otherNote && (
                         <span className="ml-2 inline-flex items-center rounded-full bg-zinc-200 px-2 py-0.5 text-xs text-zinc-700">備考: {details.otherNote}</span>
                       )}
+                      {contactMethod === "offline" && (
+                        <span className="ml-2 inline-flex items-center rounded-full bg-zinc-200 px-2 py-0.5 text-xs text-zinc-700">オフライン</span>
+                      )}
                     </div>
                   </div>
                   <div className="rounded-lg bg-zinc-50 p-3 sm:col-span-2">
                     <div className="text-xs text-zinc-500">メール</div>
                     <div className="mt-1 font-medium">{details.email || "(メール未入力)"}</div>
                   </div>
+                  {contactMethod === "offline" && (
+                    <>
+                      <div className="rounded-lg bg-zinc-50 p-3 sm:col-span-2">
+                        <div className="text-xs text-zinc-500">Googleマップ共有リンク</div>
+                        <div className="mt-1 font-medium break-all">{details.offlinePlaceLink ?? "(未入力)"}</div>
+                      </div>
+                      <div className="rounded-lg bg-zinc-50 p-3">
+                        <div className="text-xs text-zinc-500">場所の名称(自動入力)</div>
+                        <div className="mt-1 font-medium">{details.offlinePlaceName ?? "(取得できませんでした)"}</div>
+                      </div>
+                      {details.offlinePlaceDetail ? (
+                        <div className="rounded-lg bg-zinc-50 p-3 sm:col-span-2">
+                          <div className="text-xs text-zinc-500">場所の詳細</div>
+                          <div className="mt-1 whitespace-pre-wrap text-[13px] leading-relaxed text-zinc-800">{details.offlinePlaceDetail}</div>
+                        </div>
+                      ) : null}
+                    </>
+                  )}
                   {details.meetingNote && (
                     <div className="rounded-lg bg-zinc-50 p-3 sm:col-span-2">
                       <div className="text-xs text-zinc-500">ご相談詳細(任意)</div>
