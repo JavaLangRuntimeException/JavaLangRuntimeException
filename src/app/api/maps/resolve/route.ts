@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ name: placeName || null, finalUrl });
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: "failed to resolve" }, { status: 500 });
   }
 }
