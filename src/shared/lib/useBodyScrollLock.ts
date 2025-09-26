@@ -11,8 +11,8 @@ let savedBodyStyles: {
   right?: string;
   width?: string;
   overflowY?: string;
-  touchAction?: string;
 } | null = null;
+let savedTouchAction: string = "";
 let savedHtmlOverscrollY: string | null = null;
 
 export function useBodyScrollLock(locked: boolean = true) {
@@ -31,9 +31,9 @@ export function useBodyScrollLock(locked: boolean = true) {
         right: body.style.right,
         width: body.style.width,
         overflowY: body.style.overflowY,
-        touchAction: (body.style as any).touchAction,
       };
-      savedHtmlOverscrollY = (html.style as any).overscrollBehaviorY || "";
+      savedTouchAction = body.style.getPropertyValue("touch-action");
+      savedHtmlOverscrollY = html.style.getPropertyValue("overscroll-behavior-y") || "";
 
       body.style.position = "fixed";
       body.style.top = `-${savedScrollY}px`;
@@ -41,8 +41,8 @@ export function useBodyScrollLock(locked: boolean = true) {
       body.style.right = "0";
       body.style.width = "100%";
       body.style.overflowY = "scroll";
-      (body.style as any).touchAction = "none";
-      (html.style as any).overscrollBehaviorY = "contain";
+      body.style.setProperty("touch-action", "none");
+      html.style.setProperty("overscroll-behavior-y", "contain");
     }
 
     lockCount++;
@@ -57,10 +57,18 @@ export function useBodyScrollLock(locked: boolean = true) {
           body.style.right = savedBodyStyles.right || "";
           body.style.width = savedBodyStyles.width || "";
           body.style.overflowY = savedBodyStyles.overflowY || "";
-          (body.style as any).touchAction = savedBodyStyles.touchAction || "";
+          if (savedTouchAction) {
+            body.style.setProperty("touch-action", savedTouchAction);
+          } else {
+            body.style.removeProperty("touch-action");
+          }
         }
         if (savedHtmlOverscrollY != null) {
-          (html.style as any).overscrollBehaviorY = savedHtmlOverscrollY;
+          if (savedHtmlOverscrollY) {
+            html.style.setProperty("overscroll-behavior-y", savedHtmlOverscrollY);
+          } else {
+            html.style.removeProperty("overscroll-behavior-y");
+          }
         }
         window.scrollTo(0, savedScrollY);
         savedBodyStyles = null;
