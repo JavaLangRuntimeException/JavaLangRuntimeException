@@ -2,6 +2,7 @@
 
 import React from "react";
 import { PURPOSES } from "../../../shared/config/purposes";
+import { useBodyScrollLock } from "../../../shared/lib/useBodyScrollLock";
 
 export type CreatedInfo = { ok: boolean; eventId?: string; htmlLink?: string; meetLink?: string } | null;
 
@@ -36,17 +37,18 @@ export function CompletionModal({
   onClose: () => void;
 }) {
   const [copiedMeet, setCopiedMeet] = React.useState(false);
+  useBodyScrollLock(true);
 
   if (!createdInfo) return null;
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-3 overflow-y-auto">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-3 overflow-y-auto overscroll-none">
       <div className="w-full max-w-lg sm:max-w-xl md:max-w-2xl overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl max-h-[85vh]">
         <div className="flex items-center gap-2 border-b border-zinc-200 bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-3">
           <div className="text-lg">✅</div>
           <h3 className="text-base font-semibold text-white">予定を作成しました！</h3>
         </div>
-        <div className="p-5 overflow-y-auto">
+        <div className="p-5 overflow-y-auto overscroll-contain">
           {createdInfo.ok ? (
             <div className="space-y-3 text-sm text-zinc-800">
               <div className="rounded-lg bg-emerald-50 p-3 text-[13px] leading-relaxed text-emerald-900">
