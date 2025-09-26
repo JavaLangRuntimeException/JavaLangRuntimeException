@@ -24,7 +24,15 @@ export const contactSchema = z.object({
   }
   if (val.contactMethod === "offline") {
     const link = (val.offlinePlaceLink || "").trim();
-    if (!link) ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Googleマップの共有リンクを入力してください", path: ["offlinePlaceLink"] });
+    if (!link) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Googleマップの共有リンクを入力してください", path: ["offlinePlaceLink"] });
+    } else {
+      // Only allow https://maps.app.goo.gl/...
+      const ok = /^https:\/\/maps\.app\.goo\.gl\//i.test(link);
+      if (!ok) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "https://maps.app.goo.gl/から始まるリンクを記入してください", path: ["offlinePlaceLink"] });
+      }
+    }
   }
 });
 

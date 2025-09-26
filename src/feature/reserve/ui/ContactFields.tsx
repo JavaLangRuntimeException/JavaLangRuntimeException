@@ -88,7 +88,7 @@ export function ContactFields({
       )}
 
       <div className="rounded-2xl border border-white/20 bg-white/90 p-6 shadow-lg backdrop-blur sm:col-span-2">
-        <h2 className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-zinc-700"><MessageSquare className="h-4 w-4 text-zinc-500" /> ご連絡手段（ミーティング媒体）</h2>
+        <h2 className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-zinc-700"><MessageSquare className="h-4 w-4 text-zinc-500" /> ミーティング媒体</h2>
         <div className="grid gap-3 sm:grid-cols-3">
           <select
             className="rounded-md border border-zinc-300 bg-white p-2 text-zinc-900 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
@@ -194,10 +194,11 @@ export function ContactFields({
                 )}
                 {(() => {
                   if (contactMethod !== "offline") return null;
-                  const looksLikeUrl = /^(https?:\/\/)?[\w.-]+\.[a-z]{2,}[^\s]*$/i.test((offlinePlaceLink || "").trim());
-                  if (linkTouched && !looksLikeUrl) {
-                    return <span className="mt-1 text-xs text-red-600">Googleマップの共有リンクを入力してください</span>;
-                  }
+                  const trimmed = (offlinePlaceLink || "").trim();
+                  const looksLikeUrl = /^https:\/\/maps\.app\.goo\.gl\//i.test(trimmed);
+                  const zodErr = errors.offlinePlaceLink;
+                  if (zodErr) return <span className="mt-1 text-xs text-red-600">{zodErr === "Dynamic Link Not Found" ? "正しいリンクにしてください" : zodErr}</span>;
+                  if (linkTouched && !looksLikeUrl) return <span className="mt-1 text-xs text-red-600">https://maps.app.goo.gl/から始まるリンクを記入してください</span>;
                   return null;
                 })()}
               </div>

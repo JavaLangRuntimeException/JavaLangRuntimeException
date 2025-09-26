@@ -122,9 +122,20 @@ export default function ReservePage() {
     if (s.getTime() <= nowTs) return true;
     if (s.getTime() < leadCutoff) return true;
     if (s.getTime() > oneMonthLater.getTime()) return true;
+    // Offline business hours constraint (10:00 - 21:00) using UI values (24:00 supported)
+    if (contactMethod === "offline") {
+      const sh = startHour as number;
+      const sm = startMin as number;
+      const eh = endHour as number;
+      const em = endMin as number;
+      const sMinsUI = sh * 60 + sm;
+      const eMinsUI = (eh === 24 ? 24 * 60 : eh * 60 + em);
+      const allow = sMinsUI >= 10 * 60 && eMinsUI <= 21 * 60;
+      if (!allow) return true;
+    }
     if (isOverlappingBusy(s, e, busy)) return true;
     return false;
-  }, [hasDate, hasTime, year, month, day, startHour, startMin, endHour, endMin, busy, oneMonthLater]);
+  }, [hasDate, hasTime, year, month, day, startHour, startMin, endHour, endMin, busy, oneMonthLater, contactMethod]);
 
   const zodDirectErrors = React.useMemo(() => {
     const result = contactSchema.safeParse({
@@ -212,44 +223,94 @@ export default function ReservePage() {
     return weekdayName(new Date(year as number, (month as number) - 1, day as number));
   }, [hasDate, year, month, day]);
 
-  const nextAvailableSlotText = React.useMemo(() => {
-    const now2h = new Date(Date.now() + 2 * 60 * 60 * 1000);
-    const step = 30 * 60 * 1000;
-    const dayStart = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 9, 0, 0, 0);
-    const dayEnd = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 24, 0, 0, 0);
-    const align = (d: Date) => {
-      const t = new Date(d);
-      const m = t.getMinutes();
-      if (m > 0 && m <= 30) t.setMinutes(30, 0, 0);
-      else if (m > 30) { t.setHours(t.getHours() + 1, 0, 0, 0); } else { t.setSeconds(0, 0); }
-      return t;
-    };
-    let t = align(now2h);
-    if (t < dayStart(t)) t = dayStart(t);
-    if (t >= dayEnd(t)) {
-      const nd = new Date(t.getFullYear(), t.getMonth(), t.getDate() + 1);
-      t = dayStart(nd);
-    }
-    let guard = 0;
-    while (guard < 400) {
-      const end = new Date(t.getTime() + step);
-      if (end > dayEnd(t)) {
-        const nd = new Date(t.getFullYear(), t.getMonth(), t.getDate() + 1);
-        t = dayStart(nd);
-        guard += 1;
-        continue;
+  const [slotSuggestLoading, setSlotSuggestLoading] = React.useState(true);
+  const [nextAvailableSlotText, setNextAvailableSlotText] = React.useState("");
+
+  React.useEffect(() => {
+    let cancelled = false;
+    async function computeNextAvailable() {
+      try {
+        setSlotSuggestLoading(true);
+        setNextAvailableSlotText("");
+        // Ensure we use the same busy source as the calendar for the current week
+        if (busyLoading) {
+          return;
+        }
+        const cache = new Map<string, { start: string; end: string }[]>();
+        const stepMs = 30 * 60 * 1000;
+        const business = contactMethod === "offline" ? { start: 10, end: 21 } : { start: 9, end: 24 };
+        const dayStart = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), business.start, 0, 0, 0);
+        const dayEnd = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), business.end, 0, 0, 0);
+        const getMonday = (d: Date) => {
+          const date = new Date(d);
+          const day = date.getDay();
+          const diff = (day === 0 ? -6 : 1) - day;
+          date.setDate(date.getDate() + diff);
+          date.setHours(0, 0, 0, 0);
+          return date;
+        };
+        const align = (d: Date) => {
+          const t = new Date(d);
+          const m = t.getMinutes();
+          if (m > 0 && m <= 30) t.setMinutes(30, 0, 0);
+          else if (m > 30) { t.setHours(t.getHours() + 1, 0, 0, 0); } else { t.setSeconds(0, 0); }
+          return t;
+        };
+        const now2h = new Date(Date.now() + 2 * 60 * 60 * 1000);
+        let t = align(now2h);
+        if (t < dayStart(t)) t = dayStart(t);
+        if (t >= dayEnd(t)) t = dayStart(new Date(t.getFullYear(), t.getMonth(), t.getDate() + 1));
+
+        async function fetchBusyFor(date: Date) {
+          const monday = getMonday(date);
+          const key = monday.toISOString();
+          // Prefer already-loaded busy when same week as current calendar view
+          const currentWeekKey = getMonday(weekStart).toISOString();
+          if (key === currentWeekKey) return busy;
+          if (cache.has(key)) return cache.get(key)!;
+          const d = await fetch("/api/ical/busy", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ weekStartISO: key }),
+          }).then((r) => r.json()).catch(() => ({ busy: [] }));
+          const arr: { start: string; end: string }[] = d?.busy || [];
+          cache.set(key, arr);
+          return arr;
+        }
+
+        let guard = 0;
+        while (guard < 2000 && t.getTime() <= oneMonthLater.getTime()) {
+          // Clamp to business start (09:00) if before business hours
+          if (t < dayStart(t)) {
+            t = dayStart(t);
+            guard += 1;
+            continue;
+          }
+          const end = new Date(t.getTime() + stepMs);
+          if (end > dayEnd(t)) {
+            t = dayStart(new Date(t.getFullYear(), t.getMonth(), t.getDate() + 1));
+            guard += 1;
+            continue;
+          }
+          const weekBusy = await fetchBusyFor(t);
+          if (!isOverlappingBusy(t, end, weekBusy)) {
+            const endIsMidnightOfNextDay = end.getHours() === 0 && end.getDate() !== t.getDate();
+            const endHourDisplay = endIsMidnightOfNextDay ? "24" : pad(end.getHours());
+            const endMinuteDisplay = endIsMidnightOfNextDay ? "00" : pad(end.getMinutes());
+            const text = `${t.getFullYear()}/${pad(t.getMonth() + 1)}/${pad(t.getDate())}(${weekdayName(t)}) ${pad(t.getHours())}:${pad(t.getMinutes())}〜${endHourDisplay}:${endMinuteDisplay}`;
+            if (!cancelled) setNextAvailableSlotText(text);
+            break;
+          }
+          t = end;
+          guard += 1;
+        }
+      } finally {
+        if (!cancelled) setSlotSuggestLoading(false);
       }
-      if (!isOverlappingBusy(t, end, busy)) {
-        const endIsMidnightOfNextDay = end.getHours() === 0 && end.getDate() !== t.getDate();
-        const endHourDisplay = endIsMidnightOfNextDay ? "24" : pad(end.getHours());
-        const endMinuteDisplay = endIsMidnightOfNextDay ? "00" : pad(end.getMinutes());
-        return `${t.getFullYear()}/${pad(t.getMonth() + 1)}/${pad(t.getDate())}(${weekdayName(t)}) ${pad(t.getHours())}:${pad(t.getMinutes())}〜${endHourDisplay}:${endMinuteDisplay}`;
-      }
-      t = end;
-      guard += 1;
     }
-    return "";
-  }, [busy]);
+    computeNextAvailable();
+    return () => { cancelled = true; };
+  }, [oneMonthLater, weekStart, busy, busyLoading, contactMethod]);
 
   // Quick-apply the next available 30-min slot to the selection
   const applyNextAvailableSlot = React.useCallback(() => {
@@ -347,7 +408,11 @@ export default function ReservePage() {
   React.useEffect(() => {
     if (contactMethod !== "offline") return;
     const link = (offlinePlaceLink || "").trim();
-    if (!link) return;
+    if (!link) {
+      // Clear when link is empty
+      if (offlinePlaceName) setOfflinePlaceName("");
+      return;
+    }
     // Resolve server-side to follow short links and parse title/meta
     setIsResolvingPlace(true);
     fetch("/api/maps/resolve", {
@@ -357,13 +422,19 @@ export default function ReservePage() {
     })
       .then((r) => r.json())
       .then((d) => {
-        if (!d) return;
-        const inferred: string | undefined = d.name || undefined;
-        if (inferred && (!offlinePlaceName || offlinePlaceName.trim() === "")) {
-          setOfflinePlaceName(inferred);
+        // If failed or no name inferred, clear the field
+        if (!d || !d.name) {
+          if (offlinePlaceName) setOfflinePlaceName("");
+          return;
         }
+        const inferred: string = d.name;
+        // Always set inferred as this field is auto-filled only
+        setOfflinePlaceName(inferred);
       })
-      .catch(() => {})
+      .catch(() => {
+        // On network/resolve error, clear the field
+        if (offlinePlaceName) setOfflinePlaceName("");
+      })
       .finally(() => setIsResolvingPlace(false));
   }, [contactMethod, offlinePlaceLink, offlinePlaceName, setOfflinePlaceName]);
 
@@ -392,6 +463,19 @@ export default function ReservePage() {
   }, [month, monthOptions, setMonth]);
 
   const submitLockRef = React.useRef(false);
+  // Flag for offline-hours specific invalid state
+  const offlineHoursInvalid = React.useMemo(() => {
+    if (contactMethod !== "offline") return false;
+    if (!hasTime) return false;
+    const sh = startHour as number;
+    const sm = startMin as number;
+    const eh = endHour as number;
+    const em = endMin as number;
+    const sMins = sh * 60 + sm;
+    const eMins = (eh === 24 ? 24 * 60 : eh * 60 + em);
+    return !(sMins >= 10 * 60 && eMins <= 21 * 60 && eMins > sMins);
+  }, [contactMethod, hasTime, startHour, startMin, endHour, endMin]);
+
 
   async function handleSubmit() {
     if (submitLockRef.current) return;
@@ -614,26 +698,38 @@ export default function ReservePage() {
         <span className="h-2 w-2 rounded-full bg-emerald-400/80" /> 入力内容は10分間保持されます
       </p>
 
-      {nextAvailableSlotText && (
+      {slotSuggestLoading ? (
         <div className="mt-4 sm:mt-6">
           <div className="relative overflow-hidden rounded-2xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur animate-in fade-in-50">
             <div className="absolute inset-y-0 left-0 w-1.5 bg-gradient-to-b from-blue-400 to-indigo-500" />
             <div className="ml-3 flex items-center justify-between gap-3">
               <Info className="mt-0.5 h-5 w-5 text-blue-300" aria-hidden="true" />
-              <p className="m-0 flex-1 text-sm text-white/90">直近相談予約可能時間(30分枠): <span className="font-semibold text-white">{nextAvailableSlotText}</span></p>
-              <button
-                type="button"
-                onClick={applyNextAvailableSlot}
-                className="shrink-0 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-              >
-                最短での時間指定(30分枠)
-              </button>
+              <p className="m-0 flex-1 text-sm text-white/90">直近相談予約可能時間(30分枠): <span className="font-semibold text-white">読み込み中...</span></p>
             </div>
           </div>
-          {notify && (
-            <AlertBanner className="mt-2" message={notify} variant="success" />
-          )}
         </div>
+      ) : (
+        nextAvailableSlotText && (
+          <div className="mt-4 sm:mt-6">
+            <div className="relative overflow-hidden rounded-2xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur animate-in fade-in-50">
+              <div className="absolute inset-y-0 left-0 w-1.5 bg-gradient-to-b from-blue-400 to-indigo-500" />
+              <div className="ml-3 flex items-center justify-between gap-3">
+                <Info className="mt-0.5 h-5 w-5 text-blue-300" aria-hidden="true" />
+                <p className="m-0 flex-1 text-sm text-white/90">直近相談予約可能時間(30分枠): <span className="font-semibold text-white">{nextAvailableSlotText}</span></p>
+                <button
+                  type="button"
+                  onClick={applyNextAvailableSlot}
+                  className="shrink-0 rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                >
+                  最短での時間指定(30分枠)
+                </button>
+              </div>
+            </div>
+            {notify && (
+              <AlertBanner className="mt-2" message={notify} variant="success" />
+            )}
+          </div>
+        )
       )}
 
 
@@ -654,6 +750,11 @@ export default function ReservePage() {
             ))}
           </select>
           {formErrors.purpose && <div className="mt-1 text-xs text-red-600">{formErrors.purpose}</div>}
+          {contactMethod === "offline" && (
+            <div className="mt-2 rounded-md bg-amber-50 p-2 text-[12px] text-amber-900">
+              オフライン面談の予約可能時間は 10:00 - 21:00 です。
+            </div>
+          )}
         </div>
       </section>
 
@@ -700,7 +801,7 @@ export default function ReservePage() {
         </div>
       </section>
 
-      {/*ご連絡手段（ミーティング媒体）（ミーティング媒体）（ミーティング媒体）を横長で下に配置 */}
+      {/*ミーティング媒体（ミーティング媒体）（ミーティング媒体）を横長で下に配置 */}
       <section className="mt-4 grid gap-4 sm:grid-cols-2">
         <ContactFields
           contactMethod={contactMethod}
@@ -737,6 +838,13 @@ export default function ReservePage() {
           }}
           renderEmail={false}
         />
+        {contactMethod === "offline" && (
+          <div className="sm:col-span-2">
+            <div className="rounded-md bg-amber-50 p-2 text-[12px] text-amber-900">
+              オフライン面談の予約可能時間は 10:00 - 21:00 です。
+            </div>
+          </div>
+        )}
       </section>
 
       <DateTimeFields
@@ -761,6 +869,8 @@ export default function ReservePage() {
         monthOptions={monthOptions}
         selectionInvalid={hasDate && hasTime && selectionInvalid}
         timeError={formErrors.time || zodDirectErrors.time}
+        disabled={busyLoading}
+        offlineHoursInvalid={offlineHoursInvalid}
       />
 
 
@@ -803,6 +913,7 @@ export default function ReservePage() {
           focusDate={weekStart}
           selectedStart={selectedStart}
           selectedEnd={selectedEnd}
+          businessHours={contactMethod === "offline" ? { start: 10, end: 21 } : { start: 9, end: 24 }}
           onSelectSlot={(slotStart: Date, slotEnd: Date) => {
             setYear(slotStart.getFullYear());
             setMonth(slotStart.getMonth() + 1);
@@ -864,6 +975,7 @@ export default function ReservePage() {
           onClose={() => setConfirmOpen(false)}
           onSubmit={handleSubmit}
           submitting={creating}
+          calendarLoading={busyLoading}
           details={{
             year,
             month,
@@ -903,6 +1015,7 @@ export default function ReservePage() {
         createdInfo={createdInfo}
         contactMethod={contactMethod as "meet" | "discord" | "slack" | "other" | "offline"}
         details={completedDetails ?? { year, month, day, weekday: weekdayText, startHour, startMin, endHour, endMin, name, purpose, email, discordName, slackName, otherNote, offlinePlaceLink, offlinePlaceName, offlinePlaceDetail, meetingNote }}
+        calendarLoading={busyLoading}
         onClose={() => {
                     setCreatedInfo(null);
                     setCompletedDetails(null);

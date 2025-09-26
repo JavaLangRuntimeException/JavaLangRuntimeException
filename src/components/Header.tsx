@@ -93,10 +93,7 @@ function HeaderMarquee() {
     let active = true;
     (async () => {
       try {
-        const res = await fetch("/api/ical/busy", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ weekStartISO: getMonday(new Date()).toISOString() }) });
-        const data = await res.json().catch(() => ({ busy: [] }));
-        const busy: { start: string; end: string }[] = data?.busy || [];
-        const suggestions = computeNextFiveSlots(busy);
+        const suggestions = await computeNextFiveSlotsCrossWeek();
         if (active) setSlots(suggestions);
       } catch {
         if (active) setSlots([]);
@@ -161,36 +158,56 @@ function isOverlappingBusy(start: Date, end: Date, busy: { start: string; end: s
   });
 }
 
-function computeNextFiveSlots(busy: { start: string; end: string }[]): string[] {
+async function computeNextFiveSlotsCrossWeek(): Promise<string[]> {
   const results: string[] = [];
-  const now = new Date();
+  const cache = new Map<string, { start: string; end: string }[]>();
   const step = 30 * 60 * 1000;
+  const now = new Date();
+  const oneMonthLater = new Date(now);
+  oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
   const dayStart = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 9, 0, 0, 0);
   const dayEnd = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 24, 0, 0, 0);
-  const withinBusiness = (d: Date) => d.getHours() > 8 && d.getHours() < 24;
+  const align = (d: Date) => {
+    const t = new Date(d);
+    const m = t.getMinutes();
+    if (m > 0 && m <= 30) t.setMinutes(30, 0, 0);
+    else if (m > 30) { t.setHours(t.getHours() + 1, 0, 0, 0); } else { t.setSeconds(0, 0); }
+    return t;
+  };
+  let t = align(new Date(now.getTime() + 2 * 60 * 60 * 1000));
+  if (t < dayStart(t)) t = dayStart(t);
+  if (t >= dayEnd(t)) t = dayStart(new Date(t.getFullYear(), t.getMonth(), t.getDate() + 1));
 
-  // Start from now + 2h aligned to the next :00 or :30, but not before 9:00
-  const startCandidate = new Date(now.getTime() + 2 * 60 * 60 * 1000);
-  const mins = startCandidate.getMinutes();
-  if (mins > 0 && mins <= 30) startCandidate.setMinutes(30, 0, 0);
-  else if (mins > 30) { startCandidate.setHours(startCandidate.getHours() + 1, 0, 0, 0); } else { startCandidate.setSeconds(0, 0); }
-  let t = new Date(Math.max(startCandidate.getTime(), dayStart(now).getTime()));
-  if (t >= dayEnd(t)) {
-    const nextDay = new Date(t.getFullYear(), t.getMonth(), t.getDate() + 1);
-    t = dayStart(nextDay);
+  async function fetchBusyFor(date: Date) {
+    const monday = getMonday(date);
+    const key = monday.toISOString();
+    if (cache.has(key)) return cache.get(key)!;
+    const d = await fetch("/api/ical/busy", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ weekStartISO: key }),
+    }).then((r) => r.json()).catch(() => ({ busy: [] }));
+    const arr: { start: string; end: string }[] = d?.busy || [];
+    cache.set(key, arr);
+    return arr;
   }
 
-  let guard = 0; // avoid infinite loop
-  const maxChecks = 400; // ~200 hours window
-  while (results.length < 5 && guard < maxChecks) {
-    const end = new Date(t.getTime() + step);
-    if (end > dayEnd(t)) {
-      const nextDay = new Date(t.getFullYear(), t.getMonth(), t.getDate() + 1);
-      t = dayStart(nextDay);
+  let guard = 0;
+  while (results.length < 5 && guard < 2000 && t.getTime() <= oneMonthLater.getTime()) {
+    // Clamp to business start (09:00) if before business hours
+    if (t < dayStart(t)) {
+      t = dayStart(t);
       guard += 1;
       continue;
     }
-    if (withinBusiness(t) && withinBusiness(end) && !isOverlappingBusy(t, end, busy)) {
+    const end = new Date(t.getTime() + step);
+    if (end > dayEnd(t)) {
+      t = dayStart(new Date(t.getFullYear(), t.getMonth(), t.getDate() + 1));
+      guard += 1;
+      continue;
+    }
+    const weekBusy = await fetchBusyFor(t);
+    if (!isOverlappingBusy(t, end, weekBusy)) {
       results.push(`${t.getMonth() + 1}/${pad(t.getDate())}(${weekdayName(t)}) ${pad(t.getHours())}:${pad(t.getMinutes())}〜`);
     }
     t = end;
