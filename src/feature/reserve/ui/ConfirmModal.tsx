@@ -55,7 +55,7 @@ export function ConfirmModal({
           <div className="grid grid-cols-2 gap-3 text-sm text-zinc-900">
             <div className="rounded-lg bg-zinc-50 p-3">
               <div className="text-xs text-zinc-500">日付</div>
-              <div className="mt-1 font-medium">{calendarLoading ? "読み込み中..." : `${details.year ?? "XXXX"}年${padOrXX(details.month)}月${padOrXX(details.day)}日(${details.weekday || "X"})`}</div>
+              <div className="mt-1 font-medium">{calendarLoading ? "読み込み中..." : `${details.year ?? "XXXX"}/${padOrXX(details.month)}/${padOrXX(details.day)}(${details.weekday || "X"})`}</div>
             </div>
             <div className="rounded-lg bg-zinc-50 p-3">
               <div className="text-xs text-zinc-500">時間</div>
@@ -101,7 +101,7 @@ export function ConfirmModal({
             )}
             {details.contactMethod === "offline" && (
               <>
-                <div className="rounded-lg bg-zinc-50 p-3">
+                <div className="rounded-lg bg-zinc-50 p-3 col-span-2">
                   <div className="text-xs text-zinc-500">場所の名称(自動入力)</div>
                   <div className="mt-1 font-medium">{details.offlinePlaceName || "(取得できませんでした)"}</div>
                 </div>
@@ -127,7 +127,7 @@ export function ConfirmModal({
             {showDetail && details.meetingNote && (
               <div className="rounded-lg bg-zinc-50 p-3 col-span-2">
                 <div className="text-xs text-zinc-500">ご相談詳細</div>
-                <div className="mt-1 whitespace-pre-wrap text-[13px] leading-relaxed text-zinc-800 h-24 overflow-y-auto pr-1">{details.meetingNote}</div>
+                <div className="mt-1 whitespace-pre text-[13px] leading-relaxed text-zinc-800 h-24 w-[20ch] overflow-auto pr-1">{details.meetingNote}</div>
               </div>
             )}
           </div>
