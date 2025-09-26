@@ -3,6 +3,7 @@
 import React from "react";
 import { NotebookText } from "lucide-react";
 import { PURPOSES } from "../../../shared/config/purposes";
+import { useBodyScrollLock } from "../../../shared/lib/useBodyScrollLock";
 
 export function ConfirmModal({
   onClose,
@@ -35,14 +36,15 @@ export function ConfirmModal({
     meetingNote?: string;
   };
 }) {
+  useBodyScrollLock(true);
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-3 overflow-y-auto">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-3 overflow-y-auto overscroll-none">
       <div className="w-full max-w-lg overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl max-h-[85vh]">
         <div className="flex items-center gap-2 border-b border-zinc-200 bg-gradient-to-r from-blue-600 to-indigo-600 px-5 py-3">
           <NotebookText className="h-5 w-5 text-white" aria-hidden="true" />
           <h3 className="text-base font-semibold text-white">最終確認</h3>
         </div>
-        <div className="p-5 overflow-y-auto">
+        <div className="p-5 overflow-y-auto overscroll-contain">
           <div className="grid gap-3 text-sm text-zinc-900 sm:grid-cols-2">
             <div className="rounded-lg bg-zinc-50 p-3">
               <div className="text-xs text-zinc-500">日付</div>
