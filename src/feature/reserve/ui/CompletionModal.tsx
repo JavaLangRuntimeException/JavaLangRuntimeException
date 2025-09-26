@@ -40,7 +40,7 @@ export function CompletionModal({
   if (!createdInfo) return null;
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-3">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-3 overflow-y-auto">
       <div className="w-full max-w-lg sm:max-w-xl md:max-w-2xl overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl max-h-[85vh]">
         <div className="flex items-center gap-2 border-b border-zinc-200 bg-gradient-to-r from-emerald-600 to-teal-600 px-5 py-3">
           <div className="text-lg">✅</div>
