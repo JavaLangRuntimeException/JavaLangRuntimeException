@@ -37,7 +37,7 @@ export function CompletionModal({
   onClose: () => void;
 }) {
   const [copiedMeet, setCopiedMeet] = React.useState(false);
-  useBodyScrollLock(true);
+  useBodyScrollLock(!!createdInfo);
 
   if (!createdInfo) return null;
 
