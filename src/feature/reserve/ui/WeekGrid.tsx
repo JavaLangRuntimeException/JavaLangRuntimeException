@@ -32,12 +32,14 @@ export function WeekGrid({
   selectedStart,
   selectedEnd,
   onSelectSlot,
+  businessHours = { start: 9, end: 24 },
 }: {
   busy: { start: string; end: string }[];
   focusDate: Date;
   selectedStart: Date;
   selectedEnd: Date;
   onSelectSlot: (slotStart: Date, slotEnd: Date) => void;
+  businessHours?: { start: number; end: number };
 }) {
   const monday = getMonday(focusDate);
   const days = Array.from({ length: 7 }, (_, i) => new Date(monday.getTime() + i * 86400000));
@@ -70,24 +72,31 @@ export function WeekGrid({
                 const beyondOneMonth = cellStart.getTime() > oneMonthLater.getTime();
                 const blocked = isOverlappingBusy(cellStart, cellEnd, busy);
                 const withinSelection = cellEnd > selectedStart && cellStart < selectedEnd;
+                // Business hours constraint
+                const startMinutes = cellStart.getHours() * 60 + cellStart.getMinutes();
+                let endMinutes = cellEnd.getHours() * 60 + cellEnd.getMinutes();
+                if (cellEnd.getDate() !== cellStart.getDate() && cellEnd.getHours() === 0) endMinutes = 24 * 60; // treat midnight as 24:00
+                const allowStartMinutes = businessHours.start * 60;
+                const allowEndMinutes = businessHours.end * 60;
+                const outsideBusiness = startMinutes < allowStartMinutes || endMinutes > allowEndMinutes;
                 return (
                   <button
                     type="button"
                     key={`${d.toDateString()}-${hour}-${min}`}
                     className={`border-t border-l border-zinc-200 p-2 text-center text-xs transition-colors focus:z-10 focus:outline-none focus:ring-2 focus:ring-blue-500/40 ${
-                      blocked || isPast || withinLead || beyondOneMonth
+                      blocked || isPast || withinLead || beyondOneMonth || outsideBusiness
                         ? "cursor-not-allowed bg-zinc-100 text-zinc-400"
                         : withinSelection
                         ? "bg-blue-50 text-blue-700 hover:bg-blue-100"
                         : "bg-white hover:bg-zinc-50"
                     }`}
-                    disabled={blocked || isPast || withinLead || beyondOneMonth}
+                    disabled={blocked || isPast || withinLead || beyondOneMonth || outsideBusiness}
                     onClick={() => {
-                      if (isPast || withinLead || beyondOneMonth) return;
+                      if (isPast || withinLead || beyondOneMonth || outsideBusiness) return;
                       onSelectSlot(cellStart, cellEnd);
                     }}
                   >
-                    {isPast ? "過去" : withinLead || beyondOneMonth ? "不可" : blocked ? "不可" : withinSelection ? "選択中" : "可"}
+                    {isPast ? "過去" : withinLead || beyondOneMonth || outsideBusiness ? "不可" : blocked ? "不可" : withinSelection ? "選択中" : "可"}
                   </button>
                 );
               })}

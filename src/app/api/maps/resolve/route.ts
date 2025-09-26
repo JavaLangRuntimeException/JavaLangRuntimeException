@@ -43,6 +43,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Treat known error pages as unresolved
+    if (placeName && /dynamic\s+link\s+not\s+found/i.test(placeName)) {
+      placeName = null;
+    }
+
     return NextResponse.json({ name: placeName || null, finalUrl });
   } catch {
     return NextResponse.json({ error: "failed to resolve" }, { status: 500 });

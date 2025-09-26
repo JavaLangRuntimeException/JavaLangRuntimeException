@@ -3,10 +3,15 @@
 import React from "react";
 import { CalendarClock, Clock, Info } from "lucide-react";
 
-function UnderLabelSelect({ value, setValue, options, underLabel }: { value: number | null; setValue: (n: number) => void; options: number[]; underLabel: string }) {
+function UnderLabelSelect({ value, setValue, options, underLabel, disabled }: { value: number | null; setValue: (n: number) => void; options: number[]; underLabel: string; disabled?: boolean }) {
   return (
     <div className="flex flex-col items-center">
-      <select className="w-full rounded-md border border-zinc-300 bg-white p-2 text-center text-zinc-900 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50" value={value ?? ""} onChange={(e) => setValue(Number(e.target.value))}>
+      <select
+        className="w-full rounded-md border border-zinc-300 bg-white p-2 text-center text-zinc-900 transition focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/50 disabled:opacity-60 disabled:cursor-not-allowed"
+        value={value ?? ""}
+        onChange={(e) => setValue(Number(e.target.value))}
+        disabled={!!disabled}
+      >
         <option value="" disabled hidden>
           --
         </option>
@@ -43,6 +48,8 @@ export function DateTimeFields({
   monthOptions,
   selectionInvalid,
   timeError,
+  disabled,
+  offlineHoursInvalid,
 }: {
   year: number | null;
   month: number | null;
@@ -65,6 +72,8 @@ export function DateTimeFields({
   monthOptions: number[];
   selectionInvalid: boolean;
   timeError?: string;
+  disabled?: boolean;
+  offlineHoursInvalid?: boolean;
 }) {
   const startMinuteOptions = React.useMemo(() => (startHour === 24 ? [0] : minuteOptions), [startHour, minuteOptions]);
   const endMinuteOptions = React.useMemo(() => (endHour === 24 ? [0] : minuteOptions), [endHour, minuteOptions]);
@@ -126,9 +135,9 @@ export function DateTimeFields({
       <div className="rounded-2xl border border-white/20 bg-white/90 p-6 shadow-lg backdrop-blur">
         <h2 className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-zinc-700"><CalendarClock className="h-4 w-4 text-zinc-500" /> 日付</h2>
         <div className="grid grid-cols-4 gap-3">
-          <UnderLabelSelect value={year} setValue={setYear} options={yearOptions} underLabel="年" />
-          <UnderLabelSelect value={month} setValue={setMonth} options={monthOptions} underLabel="月" />
-          <UnderLabelSelect value={day} setValue={setDay} options={Array.from({ length: 31 }, (_, i) => i + 1)} underLabel="日" />
+          <UnderLabelSelect value={year} setValue={setYear} options={yearOptions} underLabel="年" disabled={disabled} />
+          <UnderLabelSelect value={month} setValue={setMonth} options={monthOptions} underLabel="月" disabled={disabled} />
+          <UnderLabelSelect value={day} setValue={setDay} options={Array.from({ length: 31 }, (_, i) => i + 1)} underLabel="日" disabled={disabled} />
           <div className="flex flex-col items-center justify-center">
             <div className="text-base font-semibold text-zinc-900">{weekday || "X"}</div>
             <div className="text-xs text-zinc-500">曜日</div>
@@ -148,13 +157,13 @@ export function DateTimeFields({
       <div className="rounded-2xl border border-white/20 bg-white/90 p-6 shadow-lg backdrop-blur">
         <h2 className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-zinc-700"><Clock className="h-4 w-4 text-zinc-500" /> 時間</h2>
         <div className="flex flex-wrap items-end gap-2 text-zinc-900 whitespace-nowrap">
-          <UnderLabelSelect value={startHour} setValue={handleSetStartHour} options={hours} underLabel="時" />
+          <UnderLabelSelect value={startHour} setValue={handleSetStartHour} options={hours} underLabel="時" disabled={disabled} />
           <div className="pb-4 text-lg text-zinc-500">:</div>
-          <UnderLabelSelect value={startMin} setValue={setStartMin} options={startMinuteOptions} underLabel="分" />
+          <UnderLabelSelect value={startMin} setValue={setStartMin} options={startMinuteOptions} underLabel="分" disabled={disabled} />
           <div className="pb-4 text-lg text-zinc-400">~</div>
-          <UnderLabelSelect value={endHour} setValue={handleSetEndHour} options={hours} underLabel="時" />
+          <UnderLabelSelect value={endHour} setValue={handleSetEndHour} options={hours} underLabel="時" disabled={disabled} />
           <div className="pb-4 text-lg text-zinc-500">:</div>
-          <UnderLabelSelect value={endMin} setValue={setEndMin} options={endMinuteOptions} underLabel="分" />
+          <UnderLabelSelect value={endMin} setValue={setEndMin} options={endMinuteOptions} underLabel="分" disabled={disabled} />
         </div>
         {(startHour == null || startMin == null || endHour == null || endMin == null) && (
           <p className="mt-2 text-xs text-red-600">時間の入力は必須です</p>
@@ -163,7 +172,7 @@ export function DateTimeFields({
         {(timeError || endBeforeOrEqualStart) ? (
           <p className="mt-2 text-xs text-red-600">{timeError || "終了は開始より後にしてください"}</p>
         ) : selectionInvalid ? (
-          <p className="mt-2 text-xs text-red-600">ご指定の時間では予約できません</p>
+          <p className="mt-2 text-xs text-red-600">{offlineHoursInvalid ? "オフラインの際その時間帯は選択できません" : "ご指定の時間では予約できません"}</p>
         ) : null}
       </div>
     </section>
