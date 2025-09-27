@@ -115,9 +115,9 @@ export function CompletionModal({
                     <div className="text-xs text-zinc-500">お名前(本名)</div>
                     <div className="mt-1 font-medium">{details.name || "(未入力)"}</div>
                   </div>
-                  <div className="rounded-lg bg-zinc-50 p-3">
+                  <div className="rounded-lg bg-zinc-50 p-3 col-span-2">
                   <div className="text-xs text-zinc-500">ご相談内容</div>
-                  <div className="mt-1 font-medium">{PURPOSES.find((p) => p.value === details.purpose)?.label || details.purpose}</div>
+                    <div className="mt-1 font-medium whitespace-pre-wrap break-all text-[13px] leading-relaxed text-zinc-800 h-[1.75rem] overflow-y-auto pr-1">{PURPOSES.find((p) => p.value === details.purpose)?.label || details.purpose}</div>
                   </div>
                   <div className="rounded-lg bg-zinc-50 p-3 col-span-2">
                     <div className="text-xs text-zinc-500">ミーティング媒体</div>

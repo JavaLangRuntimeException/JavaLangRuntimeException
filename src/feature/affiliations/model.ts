@@ -16,7 +16,7 @@ export const affiliations: Affiliation[] = [
   // コミュニティ
   { label: "学術部公認団体 立命館コンピュータクラブ(RCC)", color: "bg-red-600", href: "http://www.rcc.ritsumei.ac.jp/", category: "コミュニティ" },
   { label: "学生エンジニアコミュニティSTECH Manager", color: "bg-sky-600", href: "https://stech.jinnen.co.jp/", category: "コミュニティ" },
-  { label: "CATechLounge", color: "bg-cyan-600", href: "https://www.cyberagent.co.jp/careers/special/students/tech_lounge/", category: "コミュニティ" },
+  { label: "CATechLounge", color: "bg-cyan-200", href: "https://www.cyberagent.co.jp/careers/special/students/tech_lounge/", category: "コミュニティ" },
 
   // エンジニア
   { label: "株式会社サイバーエージェント 2028 Engineer", color: "bg-lime-600", href: "https://www.cyberagent.co.jp/", category: "エンジニア" },
@@ -30,6 +30,7 @@ export const affiliations: Affiliation[] = [
   { label: "GoConference Staff", color: "bg-sky-600", href: "https://gocon.jp/", category: "イベント運営" },
   { label: "GoWorkshopConference Staff", color: "bg-fuchsia-600", href: "https://gwc.gocon.jp/", category: "イベント運営" },
   { label: "kyoto.go Organizer", color: "bg-violet-600", href: "https://x.com/kyotogolang", category: "イベント運営" },
+  { label: "biwako.go Organizer", color: "bg-amber-800", href: "https://x.com/biwakogolang", category: "イベント運営" },
 
   // 技術メンター
   { label: "株式会社ローカルイノベーション(TechSelect+ 技術メンター)", color: "bg-lime-600", href: "https://local-innovation.com/", category: "技術メンター" },
