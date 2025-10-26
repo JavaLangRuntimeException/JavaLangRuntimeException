@@ -1,0 +1,346 @@
+/* Page Transition Styles */
+
+/* Animsition Loading Styles */
+.animsition-loading {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(10px);
+}
+
+.loading-spinner {
+  text-align: center;
+  color: white;
+}
+
+.spinner {
+  width: 60px;
+  height: 60px;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  border-top: 3px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading-spinner p {
+  font-size: 16px;
+  font-weight: 300;
+  letter-spacing: 2px;
+  animation: pulse 2s ease-in-out infinite;
+  margin-bottom: 20px;
+}
+
+/* Loading Particles */
+.loading-particles {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  margin: 20px auto;
+}
+
+.loading-particles .particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: #3b82f6;
+  border-radius: 50%;
+  animation: particleFloat 3s ease-in-out infinite;
+}
+
+.loading-particles .particle:nth-child(1) {
+  top: 50%;
+  left: 0;
+  animation-delay: 0s;
+}
+
+.loading-particles .particle:nth-child(2) {
+  top: 20%;
+  left: 20%;
+  animation-delay: 0.4s;
+}
+
+.loading-particles .particle:nth-child(3) {
+  top: 0;
+  left: 50%;
+  animation-delay: 0.8s;
+}
+
+.loading-particles .particle:nth-child(4) {
+  top: 20%;
+  right: 20%;
+  animation-delay: 1.2s;
+}
+
+.loading-particles .particle:nth-child(5) {
+  top: 50%;
+  right: 0;
+  animation-delay: 1.6s;
+}
+
+.loading-particles .particle:nth-child(6) {
+  bottom: 20%;
+  right: 20%;
+  animation-delay: 2s;
+}
+
+.loading-particles .particle:nth-child(7) {
+  bottom: 0;
+  left: 50%;
+  animation-delay: 2.4s;
+}
+
+.loading-particles .particle:nth-child(8) {
+  bottom: 20%;
+  left: 20%;
+  animation-delay: 2.8s;
+}
+
+@keyframes particleFloat {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateY(-20px) scale(1.5);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* Animsition Overlay */
+.animsition-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  z-index: 9998;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+/* Fade In Animation */
+.animsition.fade-in {
+  animation: fadeIn 0.8s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Fade Out Animation */
+.animsition.fade-out {
+  animation: fadeOut 0.5s ease-in forwards;
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.05);
+  }
+}
+
+/* Slide In Animation */
+.animsition.slide-in {
+  animation: slideIn 0.8s ease-out forwards;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-100px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Slide Out Animation */
+.animsition.slide-out {
+  animation: slideOut 0.5s ease-in forwards;
+}
+
+@keyframes slideOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+}
+
+/* Zoom In Animation */
+.animsition.zoom-in {
+  animation: zoomIn 0.8s ease-out forwards;
+}
+
+@keyframes zoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.8) rotateY(-15deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotateY(0deg);
+  }
+}
+
+/* Zoom Out Animation */
+.animsition.zoom-out {
+  animation: zoomOut 0.5s ease-in forwards;
+}
+
+@keyframes zoomOut {
+  from {
+    opacity: 1;
+    transform: scale(1) rotateY(0deg);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.2) rotateY(15deg);
+  }
+}
+
+/* Flip Animation */
+.animsition.flip-in {
+  animation: flipIn 0.8s ease-out forwards;
+}
+
+@keyframes flipIn {
+  from {
+    opacity: 0;
+    transform: rotateY(90deg);
+  }
+  to {
+    opacity: 1;
+    transform: rotateY(0deg);
+  }
+}
+
+.animsition.flip-out {
+  animation: flipOut 0.5s ease-in forwards;
+}
+
+@keyframes flipOut {
+  from {
+    opacity: 1;
+    transform: rotateY(0deg);
+  }
+  to {
+    opacity: 0;
+    transform: rotateY(-90deg);
+  }
+}
+
+/* Glitch Effect */
+.animsition.glitch-in {
+  animation: glitchIn 0.8s ease-out forwards;
+}
+
+@keyframes glitchIn {
+  0% {
+    opacity: 0;
+    transform: translateX(-10px);
+    filter: hue-rotate(0deg);
+  }
+  20% {
+    transform: translateX(10px);
+    filter: hue-rotate(90deg);
+  }
+  40% {
+    transform: translateX(-5px);
+    filter: hue-rotate(180deg);
+  }
+  60% {
+    transform: translateX(5px);
+    filter: hue-rotate(270deg);
+  }
+  80% {
+    transform: translateX(-2px);
+    filter: hue-rotate(360deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+    filter: hue-rotate(0deg);
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border-width: 2px;
+  }
+
+  .loading-spinner p {
+    font-size: 14px;
+  }
+}
+
+/* Simple Loader Styles */
+.simple-loader {
+  text-align: center;
+  color: white;
+}
+
+.simple-loader .spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  border-top: 3px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+.simple-loader p {
+  font-size: 16px;
+  font-weight: 300;
+  letter-spacing: 1px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .animsition-loading {
+    background: rgba(0, 0, 0, 0.9);
+  }
+
+  .animsition-overlay {
+    background: rgba(0, 0, 0, 0.5);
+  }
+}
