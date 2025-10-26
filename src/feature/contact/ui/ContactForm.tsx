@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { CONTACT_PURPOSES } from "../../../shared/config/purposes";
 import { NotebookText } from "lucide-react";
-import { GlassCard } from "../../../shared/ui/GlassCard";
 import { InfoBadge } from "../../../shared/ui/InfoBadge";
 import { z } from "zod";
 import { useAtom } from "jotai";

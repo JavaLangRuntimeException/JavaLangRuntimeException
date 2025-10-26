@@ -44,8 +44,8 @@ export function WeekGrid({
   const monday = getMonday(focusDate);
   const days = Array.from({ length: 7 }, (_, i) => new Date(monday.getTime() + i * 86400000));
   const rows = Array.from({ length: 30 }, (_, i) => ({ hour: 9 + Math.floor(i / 2), min: i % 2 === 0 ? 0 : 30 }));
-  const now = new Date();
-  const today = React.useMemo(() => new Date(now.getFullYear(), now.getMonth(), now.getDate()), []);
+  const now = React.useMemo(() => new Date(), []);
+  const today = React.useMemo(() => new Date(now.getFullYear(), now.getMonth(), now.getDate()), [now]);
   const leadMs = 2 * 60 * 60 * 1000;
   const leadCutoff = React.useMemo(() => new Date(now.getTime() + leadMs), [now, leadMs]);
   const oneMonthLater = React.useMemo(() => {
@@ -57,7 +57,6 @@ export function WeekGrid({
   // 予約不可日付の判定関数
   const isDateUnavailable = React.useCallback((date: Date) => {
     const dateStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0);
-    const dateEnd = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59);
 
     // 過去の日付は予約不可
     if (dateStart.getTime() < today.getTime()) {
@@ -142,11 +141,8 @@ export function WeekGrid({
       return !isBlocked;
     });
 
-    // 残り時間が少ない場合の判定（全体の25%以下）
-    const totalSlots = slots.length;
+    // 利用可能な時間帯が3時間以下（3スロット）の場合
     const availableCount = availableSlots.length;
-
-    // 利用可能な時間帯が25%以下の場合、または利用可能な時間帯が3時間以下（3スロット）の場合
     return availableCount <= 3;
   }, [busy, today, oneMonthLater, leadCutoff, businessHours]);
   return (

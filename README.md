@@ -8,8 +8,7 @@
 ## <img src="https://media.giphy.com/media/hvRJCLFzcasrR4ia7z/giphy.gif" width="28"> Hi there
 
 - 🧑‍💻 I'm a backend engineer.
-- 🌱 I’m currently learning go!
-- 📫 How to reach me: [Twitter - @JavaLangRuntime](https://twitter.com/JavaLangRuntime)
+- 📫 How to reach me: [taramanji.com](https://taramanji.com)
 <br>
 
 
@@ -17,7 +16,7 @@
 <!-- ライトモート：theme=light, ダークモート：theme=dark -->
 <!-- アイコンの選択肢一覧：https://arc.net/l/quote/zizyykfh -->
 ## 🌱 Skills
-<img alt="my skills" src="https://skillicons.dev/icons?theme=dark&perline=7&i=html,css,js,ts,react,next,python,java,unity,go,docker,aws,gcp" />
+<img alt="my skills" src="https://skillicons.dev/icons?theme=dark&perline=7&i=html,css,js,ts,react,next,vue,nuxt,kotlin,python,java,unity,go,docker,kubernetes,aws,gcp" />
 <br>
 
 
