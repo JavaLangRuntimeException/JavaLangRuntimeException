@@ -1,0 +1,286 @@
+"use client";
+
+import React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { cn } from "../shared/lib/cn";
+import Image from "next/image";
+import { useLoading } from "../shared/contexts/LoadingContext";
+
+export function Header() {
+  const pathname = usePathname();
+  const [hasSlots, setHasSlots] = React.useState<boolean | null>(null);
+  const { isReserveLoading, isContactLoading } = useLoading();
+
+  const isActive = (href: string) => pathname === href;
+  const isAnyLoading = isReserveLoading || isContactLoading;
+
+  // デバッグ用：hasSlotsの状態変化をログ出力
+  React.useEffect(() => {
+    console.log('Header hasSlots state:', hasSlots);
+  }, [hasSlots]);
+
+  return (
+    <header className="sticky top-0 z-50 w-full backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-zinc-900/60 border-b border-zinc-200/60 dark:border-zinc-800/60">
+      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
+        <Link href="/" className="font-semibold tracking-tight whitespace-nowrap">
+          taramanji
+        </Link>
+        <div className="mx-4 flex-1 overflow-hidden hidden sm:block">
+          <HeaderMarquee onSlotsChange={setHasSlots} />
+        </div>
+        <nav className="flex items-center gap-1 whitespace-nowrap">
+          <Link
+            href="/"
+            onClick={() => {
+              // Homeボタンがクリックされた時にフラグを設定
+              sessionStorage.setItem('from_home', 'true');
+            }}
+            className={cn(
+              "relative group overflow-hidden rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
+              isActive("/")
+                ? "bg-gradient-to-r from-red-600 to-pink-600 text-white shadow-lg shadow-red-500/25"
+                : isAnyLoading
+                ? "text-zinc-400 cursor-not-allowed"
+                : "text-zinc-700 hover:bg-gradient-to-r hover:from-zinc-100 hover:to-zinc-200 dark:text-zinc-300 dark:hover:from-zinc-800 dark:hover:to-zinc-700"
+            )}
+            style={{ pointerEvents: isAnyLoading ? 'none' : 'auto' }}
+          >
+            <span className="relative z-20">Home</span>
+            <span className="pointer-events-none absolute top-1/2 right-0 -translate-y-1/2 translate-x-full opacity-0 transition-transform duration-300 ease-out group-hover:translate-x-1/2 group-hover:opacity-100 group-active:translate-x-1/2 group-active:opacity-100 z-10" aria-hidden="true">
+              <Image src="/gopher.png" alt="Gopher" width={30} height={30} className="h-[30px] w-[30px] -rotate-45" />
+            </span>
+          </Link>
+          <Link
+            href="/link"
+            className={cn(
+              "relative group overflow-hidden rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
+              isActive("/link")
+                ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/25"
+                : isAnyLoading
+                ? "text-zinc-400 cursor-not-allowed"
+                : "text-zinc-700 hover:bg-gradient-to-r hover:from-zinc-100 hover:to-zinc-200 dark:text-zinc-300 dark:hover:from-zinc-800 dark:hover:to-zinc-700"
+            )}
+            style={{ pointerEvents: isAnyLoading ? 'none' : 'auto' }}
+          >
+            <span className="relative z-20">Links</span>
+            {isActive("/link") ? (
+              <span className="pointer-events-none absolute top-1/2 right-0 -translate-y-1/2 translate-x-full opacity-0 transition-transform duration-300 ease-out group-hover:translate-x-1/2 group-hover:opacity-100 group-active:translate-x-1/2 group-active:opacity-100 z-10" aria-hidden="true">
+                <Image src="/gopher.png" alt="Gopher" width={30} height={30} className="h-[30px] w-[30px] -rotate-45" />
+              </span>
+            ) : (
+              <span className="pointer-events-none absolute top-1/2 left-0 -translate-y-1/2 -translate-x-full opacity-0 transition-transform duration-300 ease-out group-hover:-translate-x-1/2 group-hover:opacity-100 group-active:-translate-x-1/2 group-active:opacity-100 z-10" aria-hidden="true">
+                <Image src="/qiitan.png" alt="Qiitan" width={30} height={30} className="h-[30px] w-[30px] rotate-45" />
+              </span>
+            )}
+          </Link>
+          <Link
+            href="/contact"
+            className={cn(
+              "relative group overflow-hidden rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
+              isActive("/contact")
+                ? "bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg shadow-green-500/25"
+                : isAnyLoading
+                ? "text-zinc-400 cursor-not-allowed"
+                : "text-zinc-700 hover:bg-gradient-to-r hover:from-zinc-100 hover:to-zinc-200 dark:text-zinc-300 dark:hover:from-zinc-800 dark:hover:to-zinc-700"
+            )}
+            style={{ pointerEvents: isAnyLoading ? 'none' : 'auto' }}
+          >
+            <span className="relative z-20">Contact</span>
+            {isActive("/contact") ? (
+              <span className="pointer-events-none absolute top-1/2 right-0 -translate-y-1/2 translate-x-full opacity-0 transition-transform duration-300 ease-out group-hover:translate-x-1/2 group-hover:opacity-100 group-active:translate-x-1/2 group-active:opacity-100 z-10" aria-hidden="true">
+                <Image src="/gopher.png" alt="Gopher" width={30} height={30} className="h-[30px] w-[30px] -rotate-45" />
+              </span>
+            ) : (
+              <span className="pointer-events-none absolute top-1/2 left-0 -translate-y-1/2 -translate-x-full opacity-0 transition-transform duration-300 ease-out group-hover:-translate-x-1/2 group-hover:opacity-100 group-active:-translate-x-1/2 group-active:opacity-100 z-10" aria-hidden="true">
+                <Image src="/qiitan.png" alt="Qiitan" width={30} height={30} className="h-[30px] w-[30px] rotate-45" />
+              </span>
+            )}
+          </Link>
+          <Link
+            href="/reserve"
+            className={cn(
+              "relative group overflow-hidden rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
+              isActive("/reserve")
+                ? "bg-gradient-to-r from-purple-600 to-violet-600 text-white shadow-lg shadow-purple-500/25"
+                : isAnyLoading
+                ? "text-zinc-400 cursor-not-allowed"
+                : "text-zinc-700 hover:bg-gradient-to-r hover:from-zinc-100 hover:to-zinc-200 dark:text-zinc-300 dark:hover:from-zinc-800 dark:hover:to-zinc-700"
+            )}
+            style={{ pointerEvents: isAnyLoading ? 'none' : 'auto' }}
+          >
+            <span className="relative z-20">Ask Me</span>
+            {isActive("/reserve") ? (
+              <span className="pointer-events-none absolute top-1/2 right-0 -translate-y-1/2 translate-x-full opacity-0 transition-transform duration-300 ease-out group-hover:translate-x-1/2 group-hover:opacity-100 group-active:translate-x-1/2 group-active:opacity-100 z-10" aria-hidden="true">
+                <Image src="/gopher.png" alt="Gopher" width={30} height={30} className="h-[30px] w-[30px] -rotate-45" />
+              </span>
+            ) : (
+              <span className="pointer-events-none absolute top-1/2 left-0 -translate-y-1/2 -translate-x-full opacity-0 transition-transform duration-300 ease-out group-hover:-translate-x-1/2 group-hover:opacity-100 group-active:-translate-x-1/2 group-active:opacity-100 z-10" aria-hidden="true">
+                <Image src="/qiitan.png" alt="Qiitan" width={30} height={30} className="h-[30px] w-[30px] rotate-45" />
+              </span>
+            )}
+          </Link>
+        </nav>
+      </div>
+      {/* スマホ用マーキー領域 - スマホでは常に表示 */}
+      <div className="sm:hidden border-t border-zinc-200/60 dark:border-zinc-800/60">
+        <div className="h-8 overflow-hidden">
+          <HeaderMarquee onSlotsChange={setHasSlots} />
+        </div>
+      </div>
+    </header>
+  );
+}
+
+interface HeaderMarqueeProps {
+  onSlotsChange?: (hasSlots: boolean) => void;
+}
+
+function HeaderMarquee({ onSlotsChange }: HeaderMarqueeProps) {
+  const [slots, setSlots] = React.useState<string[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        setIsLoading(true);
+        const suggestions = await computeNextFiveSlotsCrossWeek();
+        if (active) {
+          setSlots(suggestions);
+          setIsLoading(false);
+          // スロットが取得できた場合はtrue、取得できなかった場合はfalse
+          const hasValidSlots = suggestions.length > 0;
+          console.log('HeaderMarquee: slots loaded', suggestions.length, 'hasValidSlots:', hasValidSlots);
+          onSlotsChange?.(hasValidSlots);
+        }
+      } catch (error) {
+        if (active) {
+          setSlots([]);
+          setIsLoading(false);
+          // エラーが発生した場合はfalse（下の領域を表示）
+          console.log('HeaderMarquee: error occurred', error);
+          onSlotsChange?.(false);
+        }
+      }
+    })();
+    return () => { active = false; };
+  }, [onSlotsChange]);
+
+  const text = slots.length > 0
+    ? `直近相談予約可能時間: ${slots.join(" / ")}`
+    : isLoading
+      ? "直近相談予約可能時間: 取得中…"
+      : "直近相談予約可能時間: 取得できませんでした";
+
+  const message = `${text} | Links ではプロフィール・SNS・連絡先を掲載中。Contact ではお問い合わせが可能です。Ask Meでは面談予約が可能です。面談の変更・取消は EventID を添えてお問い合わせください。`;
+
+  return (
+    <div className="relative overflow-hidden">
+      <div className="marquee-track text-xs text-zinc-600 dark:text-zinc-300">
+        <span className="marquee-item">{message}</span>
+        <span className="marquee-item" aria-hidden="true">{message}</span>
+      </div>
+      <style jsx>{`
+        .marquee-track {
+          display: inline-flex;
+          white-space: nowrap;
+          will-change: transform;
+          animation: marquee 60s linear infinite;
+          padding-left: 50%;
+        }
+        .marquee-item { padding-right: 3rem; }
+        @keyframes marquee {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+function pad(n: number) {
+  return String(n).padStart(2, "0");
+}
+function weekdayName(d: Date) {
+  return ["日", "月", "火", "水", "木", "金", "土"][d.getDay()];
+}
+
+function getMonday(d: Date) {
+  const date = new Date(d);
+  const day = date.getDay();
+  const diff = (day === 0 ? -6 : 1) - day;
+  date.setDate(date.getDate() + diff);
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+function isOverlappingBusy(start: Date, end: Date, busy: { start: string; end: string }[]): boolean {
+  const s = start.getTime();
+  const e = end.getTime();
+  return busy.some((b) => {
+    const bs = new Date(b.start).getTime();
+    const be = new Date(b.end).getTime();
+    return Math.max(s, bs) < Math.min(e, be);
+  });
+}
+
+async function computeNextFiveSlotsCrossWeek(): Promise<string[]> {
+  const results: string[] = [];
+  const cache = new Map<string, { start: string; end: string }[]>();
+  const step = 30 * 60 * 1000;
+  const now = new Date();
+  const oneMonthLater = new Date(now);
+  oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
+  const dayStart = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 9, 0, 0, 0);
+  const dayEnd = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 24, 0, 0, 0);
+  const align = (d: Date) => {
+    const t = new Date(d);
+    const m = t.getMinutes();
+    if (m > 0 && m <= 30) t.setMinutes(30, 0, 0);
+    else if (m > 30) { t.setHours(t.getHours() + 1, 0, 0, 0); } else { t.setSeconds(0, 0); }
+    return t;
+  };
+  let t = align(new Date(now.getTime() + 2 * 60 * 60 * 1000));
+  if (t < dayStart(t)) t = dayStart(t);
+  if (t >= dayEnd(t)) t = dayStart(new Date(t.getFullYear(), t.getMonth(), t.getDate() + 1));
+
+  async function fetchBusyFor(date: Date) {
+    const monday = getMonday(date);
+    const key = monday.toISOString();
+    if (cache.has(key)) return cache.get(key)!;
+    const d = await fetch("/api/ical/busy", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ weekStartISO: key }),
+    }).then((r) => r.json()).catch(() => ({ busy: [] }));
+    const arr: { start: string; end: string }[] = d?.busy || [];
+    cache.set(key, arr);
+    return arr;
+  }
+
+  let guard = 0;
+  while (results.length < 5 && guard < 2000 && t.getTime() <= oneMonthLater.getTime()) {
+    // Clamp to business start (09:00) if before business hours
+    if (t < dayStart(t)) {
+      t = dayStart(t);
+      guard += 1;
+      continue;
+    }
+    const end = new Date(t.getTime() + step);
+    if (end > dayEnd(t)) {
+      t = dayStart(new Date(t.getFullYear(), t.getMonth(), t.getDate() + 1));
+      guard += 1;
+      continue;
+    }
+    const weekBusy = await fetchBusyFor(t);
+    if (!isOverlappingBusy(t, end, weekBusy)) {
+      results.push(`${t.getMonth() + 1}/${pad(t.getDate())}(${weekdayName(t)}) ${pad(t.getHours())}:${pad(t.getMinutes())}〜`);
+    }
+    t = end;
+    guard += 1;
+  }
+  return results;
+}
+
+

@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>taramanji(JavaLangRuntimeException) ポートフォリオリンク集</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="/image.png">
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            background: url('https://via.placeholder.com/1920x1080/302b63/ffffff?text=背景画像') fixed no-repeat center center / cover;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        .parallax {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: inherit;
+            background-attachment: fixed;
+            transform: translateZ(-1px) scale(2);
+            z-index: -1;
+        }
+
+        h1, h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            opacity: 0;
+            transform: translateY(50px);
+            animation: fadeInUp 1s forwards;
+        }
+
+        h1 {
+            animation-delay: 0.2s;
+        }
+
+        h2 {
+            animation-delay: 0.4s;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            perspective: 1000px;
+            position: relative;
+            opacity: 0;
+            transform: translateY(50px);
+            animation: fadeInUp 1s forwards;
+            text-decoration: none;
+            height: 340px;
+        }
+
+        .card:nth-child(odd) {
+            animation-delay: 0.6s;
+        }
+
+        .card:nth-child(even) {
+            animation-delay: 0.8s;
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.8s;
+            transform-style: preserve-3d;
+        }
+
+        .card:hover .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .card-front {
+            background-color: rgba(255, 255, 255, 0.9);
+            color: #000;
+        }
+
+        .card-back {
+            background-color: rgba(30, 30, 30, 0.9);
+            color: #fff;
+            transform: rotateY(180deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .card-front img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            transition: transform 0.3s;
+        }
+
+        .card:hover .card-front img {
+            transform: scale(1.1);
+        }
+
+        .card-content {
+            padding: 15px;
+        }
+
+        .card-content h3 {
+            margin-bottom: 10px;
+            font-size: 1.5em;
+        }
+
+        .card-content p {
+            font-size: 1em;
+            line-height: 1.4;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media screen and (max-width: 600px) {
+            h1 {
+                font-size: 1.8em;
+            }
+            .card-content h3 {
+                font-size: 1.3em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="parallax"></div>
+    <div class="container">
+        <h1>taramanji (JavaLangRuntimeException)</h1>
+        <h2>ポートフォリオリンク集</h2>
+        <div class="grid">
+            <!-- カード要素 -->
+            <!-- Portfolio -->
+            <a class="card" href="https://javalangruntimeexception.github.io/" target="_blank">
+                <div class="card-inner">
+                    <div class="card-front">
+                        <img src="https://via.placeholder.com/400x180/FFFFFF/000000?text=Portfolio" alt="Portfolio">
+                        <div class="card-content">
+                            <h3>ポートフォリオ</h3>
+                            <p>今は開発中なので同じページが開きます(ごめんね)</p>
+                        </div>
+                    </div>
+                    <div class="card-back">
+                        <p>よくぞエラーの名のユーザーのページを見つけました！JavaLangRuntimeExceptionの対処法を調べたユーザーはいますか？</p>
+                    </div>
+                </div>
+            </a>
+            <!-- Twitter -->
+            <a class="card" href="https://twitter.com/javalangruntime" target="_blank">
+                <div class="card-inner">
+                    <div class="card-front">
+                        <img src="https://via.placeholder.com/400x180/1DA1F2/FFFFFF?text=Twitter" alt="Twitter">
+                        <div class="card-content">
+                            <h3>X (Twitter)</h3>
+                            <p>@JavaLangRuntime</p>
+                        </div>
+                    </div>
+                    <div class="card-back">
+                        <p>なぜJavaの実行時のエラーにしたか?</p>
+                    </div>
+                </div>
+            </a>
+            <!-- MiXi2 -->
+            <a class="card" href="https://mixi.social/@JavaLangRuntime" target="_blank">
+                <div class="card-inner">
+                    <div class="card-front">
+                        <img src="https://via.placeholder.com/400x180/ff4500/FFFFFF?text=MiXi2" alt="MiXi2">
+                        <div class="card-content">
+                            <h3>MiXi2</h3>
+                            <p>@JavaLangRuntime</p>
+                        </div>
+                    </div>
+                    <div class="card-back">
+                        <p>それは私が一番みたエラーだからです(本音はJavaLangRuntimeExceptionを調べたエンジニアがこのサイトに来る誘導...?)</p>
+                    </div>
+                </div>
+            </a>
+            <!-- GitHub -->
+            <a class="card" href="https://github.com/javalangruntimeexception" target="_blank">
+                <div class="card-inner">
+                    <div class="card-front">
+                        <img src="https://via.placeholder.com/400x180/666666/FFFFFF?text=GitHub" alt="GitHub">
+                        <div class="card-content">
+                            <h3>GitHub</h3>
+                            <p>@JavaLangRuntimeException</p>
+                        </div>
+                    </div>
+                    <div class="card-back">
+                        <p>実はJavaLangRuntimeExceptionは結構な種類があるよ！</p>
+                    </div>
+                </div>
+            </a>
+            <!-- AtCoder -->
+            <a class="card" href="https://atcoder.jp/users/javalangruntimee" target="_blank">
+                <div class="card-inner">
+                    <div class="card-front">
+                        <img src="https://via.placeholder.com/400x180/000000/FFFFFF?text=AtCoder" alt="AtCoder">
+                        <div class="card-content">
+                            <h3>AtCoder</h3>
+                            <p>@javalangruntimee</p>
+                        </div>
+                    </div>
+                    <div class="card-back">
+                        <p>有名なものだとjava.lang.ArithmeticExceptionとか!</p>
+                    </div>
+                </div>
+            </a>
+            <!-- Qiita -->
+            <a class="card" href="https://qiita.com/javalangruntimeexception" target="_blank">
+                <div class="card-inner">
+                    <div class="card-front">
+                        <img src="https://via.placeholder.com/400x180/55C500/FFFFFF?text=Qiita" alt="Qiita">
+                        <div class="card-content">
+                            <h3>Qiita</h3>
+                            <p>@JavaLangRuntimeException</p>
+                        </div>
+                    </div>
+                    <div class="card-back">
+                        <p>java.lang.ArithmeticExceptionは0除算の時にスローされるクラスです</p>
+                    </div>
+                </div>
+            </a>
+            <!-- SpeakerDeck -->
+            <a class="card" href="https://speakerdeck.com/javalangruntimeexception" target="_blank">
+                <div class="card-inner">
+                    <div class="card-front">
+                        <img src="https://via.placeholder.com/400x180/008b8b/FFFFFF?text=SpeakerDeck" alt="SpeakerDeck">
+                        <div class="card-content">
+                            <h3>Speaker Deck</h3>
+                            <p>@JavaLangRuntimeException</p>
+                        </div>
+                    </div>
+                    <div class="card-back">
+                        <p>本来であればもっと有名なjava.lang.NullPointerExceptionにしたかったです...</p>
+                    </div>
+                </div>
+            </a>
+            <!-- Teratail -->
+            <a class="card" href="https://teratail.com/users/JavaLangRuntime" target="_blank">
+                <div class="card-inner">
+                    <div class="card-front">
+                        <img src="https://via.placeholder.com/400x180/c0c0c0/000000?text=Teratail" alt="Teratail">
+                        <div class="card-content">
+                            <h3>Teratail</h3>
+                            <p>@JavaLangRuntime</p>
+                        </div>
+                    </div>
+                    <div class="card-back">
+                        <p>もう使われていたユーザであったことや長すぎて入らなかったので没にしました</p>
+                    </div>
+                </div>
+            </a>
+            <!-- Stackoverflow -->
+            <a class="card" href="https://stackoverflow.com/users/26359061/javalangruntimeexception" target="_blank">
+                <div class="card-inner">
+                    <div class="card-front">
+                        <img src="https://via.placeholder.com/400x180/ffa500/FFFFFF?text=StackOverflow" alt="StackOverflow">
+                        <div class="card-content">
+                            <h3>Stack Overflow</h3>
+                            <p>@JavaLangRuntimeException</p>
+                        </div>
+                    </div>
+                    <div class="card-back">
+                        <p>某T〇〇TT〇〇の文字数制限許すまじ</p>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Email -->
+            <a class="card" href="mailto:" target="_blank">
+                <div class="card-inner">
+                    <div class="card-front">
+                        <img src="https://via.placeholder.com/400x180/E4405F/FFFFFF?text=Email" alt="Email">
+                        <div class="card-content">
+                            <h3>Email</h3>
+                            <p></p>
+                        </div>
+                    </div>
+                    <div class="card-back">
+                        <p>ここまで読んでくれてありがとう！つまり言いたいことはエラーはお友達ということです！これであなたも私とお友達です!!!(スパムはやめてね)</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <script>
+        window.addEventListener('scroll', function() {
+            let scrollPosition = window.pageYOffset;
+            let parallax = document.querySelector('.parallax');
+            parallax.style.transform = 'translateY(' + scrollPosition * 0.5 + 'px)';
+        });
+    </script>
+</body>
+</html>
