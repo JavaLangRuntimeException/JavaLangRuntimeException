@@ -47,7 +47,6 @@ export async function POST(req: Request) {
         } catch {}
         const formatLocalDateTime = (y: number, m1: number, d: number, h: number, mi: number) => {
           const pad = (n: number) => String(n).padStart(2, "0");
-          // Handle 24:00 as next day 00:00
           const date = new Date(y, m1, d, h, mi, 0, 0);
           const year = date.getFullYear();
           const month = date.getMonth() + 1;
@@ -269,7 +268,6 @@ export async function POST(req: Request) {
     } else if (process.env.GCAL_WEBHOOK_URL) {
       const webhook = process.env.GCAL_WEBHOOK_URL;
       const pad = (n: number) => String(n).padStart(2, "0");
-      // Handle 24:00 as next day 00:00
       const startDate = new Date(body.year, body.month - 1, body.day, body.start.hour, body.start.minute, 0, 0);
       const endDate = new Date(body.year, body.month - 1, body.day, body.end.hour, body.end.minute, 0, 0);
       const startLocal = `${startDate.getFullYear()}-${pad(startDate.getMonth() + 1)}-${pad(startDate.getDate())}T${pad(startDate.getHours())}:${pad(startDate.getMinutes())}:00`;

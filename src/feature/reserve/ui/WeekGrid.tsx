@@ -32,7 +32,7 @@ export function WeekGrid({
   selectedStart,
   selectedEnd,
   onSelectSlot,
-  businessHours = { start: 9, end: 24 },
+  businessHours = { start: 9, end: 23 },
 }: {
   busy: { start: string; end: string }[];
   focusDate: Date;
@@ -43,7 +43,7 @@ export function WeekGrid({
 }) {
   const monday = getMonday(focusDate);
   const days = Array.from({ length: 7 }, (_, i) => new Date(monday.getTime() + i * 86400000));
-  const rows = Array.from({ length: 30 }, (_, i) => ({ hour: 9 + Math.floor(i / 2), min: i % 2 === 0 ? 0 : 30 }));
+  const rows = Array.from({ length: 28 }, (_, i) => ({ hour: 9 + Math.floor(i / 2), min: i % 2 === 0 ? 0 : 30 }));
   const now = React.useMemo(() => new Date(), []);
   const today = React.useMemo(() => new Date(now.getFullYear(), now.getMonth(), now.getDate()), [now]);
   const leadMs = 2 * 60 * 60 * 1000;
@@ -186,8 +186,7 @@ export function WeekGrid({
                 const withinSelection = cellEnd > selectedStart && cellStart < selectedEnd;
                 // Business hours constraint
                 const startMinutes = cellStart.getHours() * 60 + cellStart.getMinutes();
-                let endMinutes = cellEnd.getHours() * 60 + cellEnd.getMinutes();
-                if (cellEnd.getDate() !== cellStart.getDate() && cellEnd.getHours() === 0) endMinutes = 24 * 60; // treat midnight as 24:00
+                const endMinutes = cellEnd.getHours() * 60 + cellEnd.getMinutes();
                 const allowStartMinutes = businessHours.start * 60;
                 const allowEndMinutes = businessHours.end * 60;
                 const outsideBusiness = startMinutes < allowStartMinutes || endMinutes > allowEndMinutes;
