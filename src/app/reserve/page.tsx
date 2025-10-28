@@ -129,14 +129,14 @@ export default function ReservePage() {
     if (s.getTime() <= nowTs) return true;
     if (s.getTime() < leadCutoff) return true;
     if (s.getTime() > oneMonthLater.getTime()) return true;
-    // Offline business hours constraint (10:00 - 21:00) using UI values (24:00 supported)
+    // Offline business hours constraint (10:00 - 21:00)
     if (contactMethod === "offline") {
       const sh = startHour as number;
       const sm = startMin as number;
       const eh = endHour as number;
       const em = endMin as number;
       const sMinsUI = sh * 60 + sm;
-      const eMinsUI = (eh === 24 ? 24 * 60 : eh * 60 + em);
+      const eMinsUI = eh * 60 + em;
       const allow = sMinsUI >= 10 * 60 && eMinsUI <= 21 * 60;
       if (!allow) return true;
     }
@@ -250,7 +250,7 @@ export default function ReservePage() {
         }
         const cache = new Map<string, { start: string; end: string }[]>();
         const stepMs = 30 * 60 * 1000;
-        const business = contactMethod === "offline" ? { start: 10, end: 21 } : { start: 9, end: 24 };
+        const business = contactMethod === "offline" ? { start: 10, end: 21 } : { start: 9, end: 23 };
         const dayStart = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), business.start, 0, 0, 0);
         const dayEnd = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), business.end, 0, 0, 0);
         const getMonday = (d: Date) => {
@@ -306,10 +306,7 @@ export default function ReservePage() {
           }
           const weekBusy = await fetchBusyFor(t);
           if (!isOverlappingBusy(t, end, weekBusy)) {
-            const endIsMidnightOfNextDay = end.getHours() === 0 && end.getDate() !== t.getDate();
-            const endHourDisplay = endIsMidnightOfNextDay ? "24" : pad(end.getHours());
-            const endMinuteDisplay = endIsMidnightOfNextDay ? "00" : pad(end.getMinutes());
-            const text = `${t.getFullYear()}/${pad(t.getMonth() + 1)}/${pad(t.getDate())}(${weekdayName(t)}) ${pad(t.getHours())}:${pad(t.getMinutes())}〜${endHourDisplay}:${endMinuteDisplay}`;
+            const text = `${t.getFullYear()}/${pad(t.getMonth() + 1)}/${pad(t.getDate())}(${weekdayName(t)}) ${pad(t.getHours())}:${pad(t.getMinutes())}〜${pad(end.getHours())}:${pad(end.getMinutes())}`;
             if (!cancelled) {
               // 初回の値を保持（一度設定したら変更しない）
               if (!preservedSlotTextRef.current) {
@@ -344,14 +341,14 @@ export default function ReservePage() {
     const sm = Number(m[5]);
     const ehRaw = Number(m[6]);
     const em = Number(m[7]);
-    const eh = ehRaw === 0 ? 24 : ehRaw;
+    const eh = ehRaw;
     setYear(y);
     setMonth(mo);
     setDay(d);
     setStartHour(sh);
     setStartMin(sm);
     setEndHour(eh);
-    setEndMin(eh === 24 ? 0 : em);
+    setEndMin(em);
     // Align week view to the selected date
     const selectedDate = new Date(y, mo - 1, d);
     setWeekStart(getMonday(selectedDate));
@@ -468,7 +465,7 @@ export default function ReservePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contactMethod, purpose]);
 
-  const hours = React.useMemo(() => Array.from({ length: 16 }, (_, i) => 9 + i), []); // 9-24
+  const hours = React.useMemo(() => Array.from({ length: 15 }, (_, i) => 9 + i), []); // 9-23
   const minuteOptions = React.useMemo(() => [0, 30], []);
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1;
@@ -491,7 +488,7 @@ export default function ReservePage() {
     const eh = endHour as number;
     const em = endMin as number;
     const sMins = sh * 60 + sm;
-    const eMins = (eh === 24 ? 24 * 60 : eh * 60 + em);
+    const eMins = eh * 60 + em;
     return !(sMins >= 10 * 60 && eMins <= 21 * 60 && eMins > sMins);
   }, [contactMethod, hasTime, startHour, startMin, endHour, endMin]);
 
@@ -966,7 +963,7 @@ export default function ReservePage() {
           focusDate={weekStart}
           selectedStart={selectedStart}
           selectedEnd={selectedEnd}
-          businessHours={contactMethod === "offline" ? { start: 10, end: 21 } : { start: 9, end: 24 }}
+          businessHours={contactMethod === "offline" ? { start: 10, end: 21 } : { start: 9, end: 23 }}
           onSelectSlot={(slotStart: Date, slotEnd: Date) => {
             setYear(slotStart.getFullYear());
             setMonth(slotStart.getMonth() + 1);
@@ -983,9 +980,8 @@ export default function ReservePage() {
                 const adjacentToEnd = Math.abs(slotStart.getTime() - curEnd.getTime()) === 0;
                 const adjacentToStart = Math.abs(slotEnd.getTime() - curStart.getTime()) === 0;
                 if (adjacentToEnd) {
-                  const endHourForUI = (slotEnd.getHours() === 0 && slotEnd.getDate() !== slotStart.getDate()) ? 24 : slotEnd.getHours();
-                  setEndHour(endHourForUI);
-                  setEndMin(endHourForUI === 24 ? 0 : slotEnd.getMinutes());
+                  setEndHour(slotEnd.getHours());
+                  setEndMin(slotEnd.getMinutes());
                   return;
                 }
                 if (adjacentToStart) {
@@ -999,9 +995,8 @@ export default function ReservePage() {
             // Otherwise, set selection to exactly this slot
             setStartHour(slotStart.getHours());
             setStartMin(slotStart.getMinutes());
-            const endHourForUI = (slotEnd.getHours() === 0 && slotEnd.getDate() !== slotStart.getDate()) ? 24 : slotEnd.getHours();
-            setEndHour(endHourForUI);
-            setEndMin(endHourForUI === 24 ? 0 : slotEnd.getMinutes());
+            setEndHour(slotEnd.getHours());
+            setEndMin(slotEnd.getMinutes());
           }}
         />
         </div>

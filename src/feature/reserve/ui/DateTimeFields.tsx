@@ -75,26 +75,18 @@ export function DateTimeFields({
   disabled?: boolean;
   offlineHoursInvalid?: boolean;
 }) {
-  const startMinuteOptions = React.useMemo(() => (startHour === 24 ? [0] : minuteOptions), [startHour, minuteOptions]);
-  const endMinuteOptions = React.useMemo(() => (endHour === 24 ? [0] : minuteOptions), [endHour, minuteOptions]);
+  const startMinuteOptions = React.useMemo(() => minuteOptions, [minuteOptions]);
+  const endMinuteOptions = React.useMemo(() => minuteOptions, [minuteOptions]);
 
   const handleSetStartHour = React.useCallback((h: number) => {
     setStartHour(h);
-    if (h === 24 && startMin === 30) setStartMin(0);
-  }, [setStartHour, startMin, setStartMin]);
+  }, [setStartHour]);
 
   const handleSetEndHour = React.useCallback((h: number) => {
     setEndHour(h);
-    if (h === 24 && endMin === 30) setEndMin(0);
-  }, [setEndHour, endMin, setEndMin]);
+  }, [setEndHour]);
 
-  React.useEffect(() => {
-    if (startHour === 24 && startMin === 30) setStartMin(0);
-  }, [startHour, startMin, setStartMin]);
-
-  React.useEffect(() => {
-    if (endHour === 24 && endMin === 30) setEndMin(0);
-  }, [endHour, endMin, setEndMin]);
+  React.useEffect(() => {}, []);
 
   const endBeforeOrEqualStart = React.useMemo(() => {
     if (startHour == null || startMin == null || endHour == null || endMin == null) return false;
@@ -168,7 +160,7 @@ export function DateTimeFields({
         {(startHour == null || startMin == null || endHour == null || endMin == null) && (
           <p className="mt-2 text-xs text-red-600">時間の入力は必須です</p>
         )}
-        <p className="mt-2 text-xs text-zinc-500">予約可能時間: 1ヶ月後までの月曜〜日曜 9:00 - 24:00</p>
+        <p className="mt-2 text-xs text-zinc-500">予約可能時間: 1ヶ月後までの月曜〜日曜 9:00 - 23:00</p>
         {(timeError || endBeforeOrEqualStart) ? (
           <p className="mt-2 text-xs text-red-600">{timeError || "終了は開始より後にしてください"}</p>
         ) : selectionInvalid ? (
