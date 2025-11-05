@@ -46,6 +46,7 @@ export const PublishedArticles: React.FC<{ showAnimations?: boolean; delay?: num
                 if (!cancelled) setArticles(articlesData);
             } catch (e) {
                 if (!cancelled) setArticles([]);
+                console.log(e);
             } finally {
                 if (!cancelled) setLoading(false);
             }
