@@ -9,7 +9,7 @@ export function SkillBadges() {
 
   return (
     <section className="mt-10">
-      <h2 className="text-lg font-semibold">スキルセット</h2>
+      <h2 className="text-lg font-semibold">Skill Set</h2>
       <div className="mt-3 flex flex-wrap gap-2">
         {skills.map((s, idx) => (
           <button

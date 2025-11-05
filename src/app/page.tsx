@@ -161,7 +161,7 @@ export default function PortfolioLinks() {
                 </h3>
               </motion.div>
               <p className="text-sm text-zinc-200/90 group-hover:text-white/90 transition-colors">
-                プロフィール・SNS・連絡先のリンク一覧
+                プロフィール・SNSのリンク一覧
               </p>
             </motion.a>
 
@@ -185,7 +185,7 @@ export default function PortfolioLinks() {
                 </h3>
               </motion.div>
               <p className="text-sm text-zinc-200/90 group-hover:text-white/90 transition-colors">
-                お問い合わせフォーム。ご質問・ご相談はこちらから
+                お問い合わせフォーム<br />ご質問・ご相談はこちらから
               </p>
             </motion.a>
 
@@ -209,7 +209,7 @@ export default function PortfolioLinks() {
                 </h3>
               </motion.div>
               <p className="text-sm text-zinc-200/90 group-hover:text-white/90 transition-colors">
-                ご相談・面談予約ページ。ご希望の日時を選択してください
+                ご相談・面談予約ページ<br />ご希望の日時を選択してください
               </p>
             </motion.a>
           </motion.div>
