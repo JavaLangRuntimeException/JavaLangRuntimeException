@@ -2,8 +2,7 @@
 
 import React, {useEffect, useState} from "react";
 import {motion} from "framer-motion";
-import {useAtom} from "jotai";
-import {connpassEventsAtom} from "../../../components/BackgroundFetcher";
+// キャッシュを使わず毎回取得
 
 interface ConnpassEvent {
     event_id: number;
@@ -29,33 +28,28 @@ export const ConnpassEventCards: React.FC<{ showAnimations?: boolean; delay?: nu
                                                                                                showAnimations = true,
                                                                                                delay = 0
                                                                                            }) => {
-    const [cachedEvents] = useAtom(connpassEventsAtom);
     const [events, setEvents] = useState<ConnpassEvent[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // キャッシュされたイベントがあれば即座に表示
-        if (cachedEvents && cachedEvents.length > 0) {
-            setEvents(cachedEvents);
-            setLoading(false);
-            console.log('[ConnpassEventCards] Using cached events:', cachedEvents.length);
-        } else {
-            // キャッシュがない場合のみAPIから取得
-            const fetchEvents = async () => {
-                try {
-                    const response = await fetch('/api/connpass');
-                    const data: ConnpassResponse = await response.json();
-                    setEvents(data.events || []);
-                } catch (error) {
-                    console.error('Failed to fetch Connpass events:', error);
-                } finally {
-                    setLoading(false);
-                }
-            };
+        let cancelled = false;
+        const fetchEvents = async () => {
+            try {
+                setLoading(true);
+                const response = await fetch('/api/connpass', { cache: 'no-store' });
+                const data: ConnpassResponse = await response.json();
+                if (!cancelled) setEvents(data.events || []);
+            } catch (error) {
+                console.error('Failed to fetch Connpass events:', error);
+                if (!cancelled) setEvents([]);
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        };
 
-            fetchEvents();
-        }
-    }, [cachedEvents]);
+        fetchEvents();
+        return () => { cancelled = true; };
+    }, []);
 
     // 見出しは常に表示するため、ここでは非表示にしない
 
