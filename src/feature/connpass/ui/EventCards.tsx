@@ -57,13 +57,7 @@ export const ConnpassEventCards: React.FC<{ showAnimations?: boolean; delay?: nu
         }
     }, [cachedEvents]);
 
-    if (loading) {
-        return null; // ローディング表示を削除してすぐに非表示
-    }
-
-    if (events.length === 0) {
-        return null;
-    }
+    // 見出しは常に表示するため、ここでは非表示にしない
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
@@ -84,7 +78,15 @@ export const ConnpassEventCards: React.FC<{ showAnimations?: boolean; delay?: nu
             transition={showAnimations ? {delay, duration: 0.6} : {duration: 0}}
         >
             <h2 className="text-lg font-semibold">📅 Organized Events</h2>
+            {loading && (
+                <p className="mt-2 text-sm text-zinc-400">イベントを取得中...</p>
+            )}
 
+            {!loading && events.length === 0 && (
+                <p className="mt-2 text-sm text-zinc-400">直近の主催イベントはありません</p>
+            )}
+
+            {!loading && events.length > 0 && (
             <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-2 mt-3">
                 {events.map((event, index) => (
                     <motion.a
@@ -153,6 +155,7 @@ export const ConnpassEventCards: React.FC<{ showAnimations?: boolean; delay?: nu
                     </motion.a>
                 ))}
             </div>
+            )}
         </motion.div>
     );
 };

@@ -49,16 +49,7 @@ export const PublishedArticles: React.FC<{ showAnimations?: boolean; delay?: num
         return () => clearTimeout(timer);
     }, [qiitaUrls, ogpCache]);
 
-    // ローディング中は何も表示しない
-    if (loading) {
-        return null;
-    }
-
-    // 記事が1件もない場合は表示しない
-    if (articles.length === 0) {
-        console.log('[PublishedArticles] No articles to display');
-        return null;
-    }
+    // 見出しは常に表示するため、ここでは非表示にしない
 
     return (
         <motion.div
@@ -68,7 +59,15 @@ export const PublishedArticles: React.FC<{ showAnimations?: boolean; delay?: num
             transition={showAnimations ? {delay, duration: 0.6} : {duration: 0}}
         >
             <h2 className="text-lg font-semibold">📝 Published Articles</h2>
+            {loading && (
+                <p className="mt-2 text-sm text-zinc-400">記事を取得中...</p>
+            )}
 
+            {!loading && articles.length === 0 && (
+                <p className="mt-2 text-sm text-zinc-400">記事がまだありません</p>
+            )}
+
+            {!loading && articles.length > 0 && (
             <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-2 mt-3">
                 {articles.map((article, index) => (
                     <motion.a
@@ -110,7 +109,9 @@ export const PublishedArticles: React.FC<{ showAnimations?: boolean; delay?: num
                     </motion.a>
                 ))}
             </div>
+            )}
 
+            {!loading && (
             <motion.div
                 className="mt-6 text-center"
                 initial={showAnimations ? {opacity: 0, y: 20} : {opacity: 1, y: 0}}
@@ -128,6 +129,7 @@ export const PublishedArticles: React.FC<{ showAnimations?: boolean; delay?: num
                     </svg>
                 </a>
             </motion.div>
+            )}
         </motion.div>
     );
 };
