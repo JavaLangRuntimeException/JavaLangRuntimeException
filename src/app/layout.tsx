@@ -12,7 +12,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "taramanji",
-  description: "エンジニア・コミュニティディレクター taramanji のポートフォリオ。プロフィール・実績・記事・登壇・SNSリンクと打ち合わせ予約情報を掲載。",
+  description: "エンジニア・コミュニティディレクター taramanji のホームページ",
   icons: {
     icon: "/image.ico",
     shortcut: "/image.ico",

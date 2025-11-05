@@ -5,23 +5,32 @@ import { affiliations } from "../model";
 
 export function AffiliationBadges() {
   const categoryOrder = [
-    "大学・研究室",
-    "コミュニティ",
-    "エンジニア",
-    "コミュニティ運営",
-    "イベント運営",
-    "技術メンター",
+    "university_research",
+    "community",
+    "engineer",
+    "community_event_management",
+    "conference_staff",
+    "technical_mentor",
   ] as const;
+
+  const categoryLabels: Record<string, string> = {
+    "university_research": "University & Research",
+    "community": "Community",
+    "engineer": "Engineer",
+    "community_event_management": "Community & Event Management",
+    "conference_staff": "Conference Staff",
+    "technical_mentor": "Technical Mentor",
+  };
 
   return (
     <section className="mt-8">
-      <h2 className="text-lg font-semibold">所属</h2>
+      <h2 className="text-lg font-semibold">Affiliation</h2>
       {categoryOrder.map((cat) => {
         const items = affiliations.filter((a) => a.category === cat);
         if (items.length === 0) return null;
         return (
           <div key={cat} className="mt-4">
-            <h3 className="text-sm font-medium text-zinc-300">{cat}</h3>
+            <h3 className="text-sm font-medium text-zinc-300">{categoryLabels[cat]}</h3>
             <div className="mt-2 flex flex-wrap gap-2">
               {items.map((a) => (
                 <Link key={a.label} href={a.href} target="_blank" rel="noreferrer" className="no-underline">
