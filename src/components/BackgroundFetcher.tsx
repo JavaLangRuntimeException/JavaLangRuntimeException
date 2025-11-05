@@ -1,15 +1,30 @@
 "use client";
 
 import React from "react";
-import { useAtom } from "jotai";
-import { atomWithStorage } from "jotai/utils";
-import { apiFetchQiita, apiFetchMultipleOgp } from "../shared/api/blogs";
+import {useAtom} from "jotai";
+import {atomWithStorage} from "jotai/utils";
+import {apiFetchMultipleOgp, apiFetchQiita} from "../shared/api/blogs";
 
 interface Ogp {
     title: string;
     description: string;
     url: string;
     images?: string[];
+}
+
+interface ConnpassEvent {
+    event_id: number;
+    title: string;
+    catch: string;
+    event_url: string;
+    started_at: string;
+    ended_at: string;
+    limit: number;
+    accepted: number;
+    waiting: number;
+    place: string;
+    address: string;
+    image_url?: string;
 }
 
 // Jotaiグローバル状態管理
@@ -19,6 +34,10 @@ export const lastFetchTimeAtom = atomWithStorage<number>('taramanji_last_fetch',
 export const currentPageAtom = atomWithStorage<number>('taramanji_current_page', 1);
 export const hasMoreAtom = atomWithStorage<boolean>('taramanji_has_more', true);
 export const isFetchingAtom = atomWithStorage<boolean>('taramanji_is_fetching', false);
+
+// Connpassイベント用のグローバルステート
+export const connpassEventsAtom = atomWithStorage<ConnpassEvent[]>('taramanji_connpass_events', []);
+export const connpassLastFetchAtom = atomWithStorage<number>('taramanji_connpass_last_fetch', 0);
 
 // バックグラウンドfetchの設定
 const FETCH_INTERVAL = 30000; // 30秒間隔
@@ -49,6 +68,26 @@ export const BackgroundFetcher: React.FC = () => {
     const [currentPage, setCurrentPage] = useAtom(currentPageAtom);
     const [hasMore, setHasMore] = useAtom(hasMoreAtom);
     const [isFetching, setIsFetching] = useAtom(isFetchingAtom);
+    const [connpassEvents, setConnpassEvents] = useAtom(connpassEventsAtom);
+    const [connpassLastFetch, setConnpassLastFetch] = useAtom(connpassLastFetchAtom);
+
+    // Connpassイベントを取得する関数
+    const fetchConnpassEvents = React.useCallback(async () => {
+        try {
+            console.log('[BackgroundFetcher] Fetching Connpass events...');
+            const response = await fetch('/api/connpass');
+            const data = await response.json();
+
+            if (data.events && data.events.length > 0) {
+                setConnpassEvents(data.events);
+                setConnpassLastFetch(Date.now());
+                setCookie('taramanji_connpass_events', JSON.stringify(data.events));
+                console.log(`[BackgroundFetcher] Cached ${data.events.length} Connpass events`);
+            }
+        } catch (error) {
+            console.error('[BackgroundFetcher] Connpass fetch error:', error);
+        }
+    }, [setConnpassEvents, setConnpassLastFetch]);
 
     const fetchNextBatch = React.useCallback(async () => {
         // ページ数の異常値チェックと修正
@@ -92,7 +131,7 @@ export const BackgroundFetcher: React.FC = () => {
 
             // OGP情報もバックグラウンドで取得
             const newOgpData = await apiFetchMultipleOgp(newUrls);
-            const updatedOgpCache = { ...ogpCache };
+            const updatedOgpCache = {...ogpCache};
 
             newUrls.forEach((url, index) => {
                 const ogpData = newOgpData[index];
@@ -128,6 +167,29 @@ export const BackgroundFetcher: React.FC = () => {
         // 初回ロード時のCookieからの復元
         const cookieUrls = getCookie('taramanji_qiita_urls');
         const cookieOgp = getCookie('taramanji_ogp_cache');
+        const cookieConnpass = getCookie('taramanji_connpass_events');
+
+        // Connpassイベントの復元
+        if (cookieConnpass && connpassEvents.length === 0) {
+            try {
+                const parsedEvents = JSON.parse(cookieConnpass);
+                setConnpassEvents(parsedEvents);
+                console.log(`[BackgroundFetcher] Restored ${parsedEvents.length} Connpass events from cookie`);
+            } catch (error) {
+                console.error('[BackgroundFetcher] Error parsing Connpass events from cookie:', error);
+            }
+        }
+
+        // Connpassイベントの初回フェッチ（1時間キャッシュ）
+        const shouldFetchConnpass = () => {
+            const now = Date.now();
+            const ONE_HOUR = 3600000;
+            return (now - connpassLastFetch) > ONE_HOUR;
+        };
+
+        if (shouldFetchConnpass()) {
+            fetchConnpassEvents();
+        }
 
         if (cookieUrls && qiitaUrls.length === 0) {
             try {
@@ -185,7 +247,7 @@ export const BackgroundFetcher: React.FC = () => {
         }
 
         return () => clearInterval(interval);
-    }, [fetchNextBatch, lastFetchTime, qiitaUrls.length, ogpCache, setQiitaUrls, setOgpCache, setCurrentPage, setHasMore]);
+    }, [fetchNextBatch, fetchConnpassEvents, lastFetchTime, connpassLastFetch, qiitaUrls.length, connpassEvents.length, ogpCache, setQiitaUrls, setOgpCache, setCurrentPage, setHasMore, setConnpassEvents]);
 
     // このコンポーネントは何もレンダリングしない（バックグラウンド処理のみ）
     return null;
