@@ -2,8 +2,6 @@
 
 import React, {useEffect, useState} from "react";
 import {motion} from "framer-motion";
-import {useAtom} from "jotai";
-import {ogpCacheAtom, qiitaUrlsAtom} from "../../../components/BackgroundFetcher";
 
 interface Ogp {
     title: string;
@@ -16,38 +14,45 @@ export const PublishedArticles: React.FC<{ showAnimations?: boolean; delay?: num
                                                                                               showAnimations = true,
                                                                                               delay = 0
                                                                                           }) => {
-    const [qiitaUrls] = useAtom(qiitaUrlsAtom);
-    const [ogpCache] = useAtom(ogpCacheAtom);
     const [articles, setArticles] = useState<Ogp[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        console.log('[PublishedArticles] qiitaUrls:', qiitaUrls.length);
-        console.log('[PublishedArticles] ogpCache:', Object.keys(ogpCache).length);
-
-        // 少し遅延を入れてデータが読み込まれるのを待つ
-        const timer = setTimeout(() => {
-            if (qiitaUrls.length > 0) {
-                // 最新6記事を取得
-                const latestUrls = qiitaUrls.slice(0, 6);
-                const articlesData = latestUrls.map(url => {
-                    const cached = ogpCache[url];
-                    return {
-                        title: cached?.title || "",
-                        description: cached?.description || "",
-                        url: url,
-                        images: cached?.images || []
-                    };
+        let cancelled = false;
+        async function fetchFresh() {
+            try {
+                setLoading(true);
+                // 最新URL一覧を取得（初回パラメータで安定）
+                const urlRes = await fetch(`/api/qiita?page=1&initial=1`, { cache: "no-store" });
+                const urlJson: { urls: string[] } = await urlRes.json();
+                const latestUrls = (urlJson?.urls || []).slice(0, 6);
+                if (latestUrls.length === 0) {
+                    if (!cancelled) setArticles([]);
+                    return;
+                }
+                // OGPを都度取得
+                const ogpRes = await fetch(`/api/ogp`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ urls: latestUrls }),
+                    cache: "no-store",
                 });
-
-                console.log('[PublishedArticles] Articles data:', articlesData);
-                setArticles(articlesData);
+                const ogpJson: { data: Ogp[] } = await ogpRes.json();
+                const data = Array.isArray(ogpJson?.data) ? ogpJson.data : [];
+                const articlesData: Ogp[] = latestUrls.map((u) => {
+                    const found = data.find((d) => d.url === u) || {} as Ogp;
+                    return { title: found.title || "", description: found.description || "", url: u, images: found.images || [] };
+                });
+                if (!cancelled) setArticles(articlesData);
+            } catch (e) {
+                if (!cancelled) setArticles([]);
+            } finally {
+                if (!cancelled) setLoading(false);
             }
-            setLoading(false);
-        }, 1000);
-
-        return () => clearTimeout(timer);
-    }, [qiitaUrls, ogpCache]);
+        }
+        fetchFresh();
+        return () => { cancelled = true; };
+    }, []);
 
     // 見出しは常に表示するため、ここでは非表示にしない
 
