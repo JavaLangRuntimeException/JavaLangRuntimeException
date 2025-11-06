@@ -1,6 +1,6 @@
 "use client";
 
-import React, {useEffect, useState} from "react";
+import React, {useEffect} from "react";
 import {motion} from "framer-motion";
 import {useAtom} from "jotai";
 import {ProfileHeader} from "../feature/profile/ui/profile-header";
@@ -17,10 +17,14 @@ import {
     publishedArticlesLastFetchAtom
 } from "../components/BackgroundFetcher";
 
+import { NavCards } from "../shared/ui/NavCards";
+import { FloatingParticles } from "../shared/ui/Particles";
+import { showAnimationsAtom } from "../shared/atoms/ui";
+
 
 export default function PortfolioLinks() {
     const bgImages = ["/image.png", "/image2.png", "/image3.png"];
-    const [showAnimations, setShowAnimations] = useState(false);
+    const [showAnimations, setShowAnimations] = useAtom(showAnimationsAtom);
     const {showIntro, introCompleted, setIntroCompleted} = useIntro();
     const [connpassEvents, setConnpassEvents] = useAtom(connpassEventsAtom);
     const [connpassLastFetch, setConnpassLastFetch] = useAtom(connpassLastFetchAtom);
@@ -36,7 +40,7 @@ export default function PortfolioLinks() {
         if (isInternalNavigation || introShown) {
             setShowAnimations(false);
         }
-    }, []);
+    }, [setShowAnimations]);
 
     // プログレス完了時のコールバック（プロフィールアニメーションの準備）
     const handleProgressComplete = () => {
@@ -46,22 +50,18 @@ export default function PortfolioLinks() {
     // イントロ表示中にデータをプリフェッチ
     useEffect(() => {
         if (showIntro && !introCompleted) {
-            // Connpassイベントの取得（1時間キャッシュ）
+            // Connpassイベントの取得（キャッシュなし、都度取得）
             const fetchConnpassEvents = async () => {
-                const now = Date.now();
-                const ONE_HOUR = 3600000;
-                if (now - connpassLastFetch > ONE_HOUR || connpassEvents.length === 0) {
-                    try {
-                        console.log('[PortfolioLinks] Prefetching Connpass events during intro...');
-                        const response = await fetch('/api/connpass', { cache: 'no-store' });
-                        const data = await response.json();
-                        if (data.events && data.events.length > 0) {
-                            setConnpassEvents(data.events);
-                            setConnpassLastFetch(Date.now());
-                        }
-                    } catch (error) {
-                        console.error('[PortfolioLinks] Error prefetching Connpass events:', error);
+                try {
+                    console.log('[PortfolioLinks] Prefetching Connpass events during intro...');
+                    const response = await fetch('/api/connpass', { cache: 'no-store' });
+                    const data = await response.json();
+                    if (data.events && data.events.length > 0) {
+                        setConnpassEvents(data.events);
+                        setConnpassLastFetch(Date.now());
                     }
+                } catch (error) {
+                    console.error('[PortfolioLinks] Error prefetching Connpass events:', error);
                 }
             };
 
@@ -265,83 +265,15 @@ export default function PortfolioLinks() {
                     </motion.div>
 
                     {/* ナビゲーションカード */}
-                    <motion.div
-                        className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
-                        initial={showAnimations ? {opacity: 0, y: 30} : {opacity: 1, y: 0}}
-                        animate={{opacity: 1, y: 0}}
-                        transition={showAnimations ? {delay: 1.0, duration: 0.6} : {duration: 0}}
-                    >
-                        <motion.a
-                            href="/link"
-                            className="group rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur transition-all duration-300 hover:bg-white/10 hover:scale-105"
-                            whileHover={{
-                                scale: 1.02
-                            }}
-                            whileTap={{scale: 0.98}}
-                        >
-                            <motion.div
-                                className="flex items-center gap-3 mb-2"
-                                whileHover={{x: 5}}
-                                transition={{type: "spring", stiffness: 300}}
-                            >
-                                <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse"/>
-                                <h3 className="text-lg font-semibold text-white group-hover:text-blue-300 transition-colors">
-                                    Links
-                                </h3>
-                            </motion.div>
-                            <p className="text-sm text-zinc-200/90 group-hover:text-white/90 transition-colors">
-                                プロフィール・SNSのリンク一覧
-                            </p>
-                        </motion.a>
-
-                        <motion.a
-                            href="/contact"
-                            className="group rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur transition-all duration-300 hover:bg-white/10 hover:scale-105 hover:shadow-xl hover:shadow-green-500/10"
-                            whileHover={{
-                                scale: 1.02,
-                                boxShadow: "0 10px 20px rgba(34, 197, 94, 0.1)"
-                            }}
-                            whileTap={{scale: 0.98}}
-                        >
-                            <motion.div
-                                className="flex items-center gap-3 mb-2"
-                                whileHover={{x: 5}}
-                                transition={{type: "spring", stiffness: 300}}
-                            >
-                                <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"/>
-                                <h3 className="text-lg font-semibold text-white group-hover:text-green-300 transition-colors">
-                                    Contact
-                                </h3>
-                            </motion.div>
-                            <p className="text-sm text-zinc-200/90 group-hover:text-white/90 transition-colors">
-                                お問い合わせフォーム<br/>ご質問・ご相談はこちらから
-                            </p>
-                        </motion.a>
-
-                        <motion.a
-                            href="/reserve"
-                            className="group rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur transition-all duration-300 hover:bg-white/10 hover:scale-105 hover:shadow-xl hover:shadow-purple-500/10"
-                            whileHover={{
-                                scale: 1.02,
-                                boxShadow: "0 10px 20px rgba(139, 92, 246, 0.1)"
-                            }}
-                            whileTap={{scale: 0.98}}
-                        >
-                            <motion.div
-                                className="flex items-center gap-3 mb-2"
-                                whileHover={{x: 5}}
-                                transition={{type: "spring", stiffness: 300}}
-                            >
-                                <div className="w-2 h-2 rounded-full bg-purple-400 animate-pulse"/>
-                                <h3 className="text-lg font-semibold text-white group-hover:text-purple-300 transition-colors">
-                                    Ask Me
-                                </h3>
-                            </motion.div>
-                            <p className="text-sm text-zinc-200/90 group-hover:text-white/90 transition-colors">
-                                ご相談・面談予約ページ<br/>ご希望の日時を選択してください
-                            </p>
-                        </motion.a>
-                    </motion.div>
+                    <NavCards
+                        items={[
+                            { href: "/link", title: "Links", color: "blue", description: <>プロフィール・SNSのリンク一覧</> },
+                            { href: "/contact", title: "Contact", color: "green", description: <>お問い合わせフォーム<br/>ご質問・ご相談はこちらから</> },
+                            { href: "/reserve", title: "Ask Me", color: "purple", description: <>ご相談・面談予約ページ<br/>ご希望の日時を選択してください</> },
+                        ]}
+                        animate={showAnimations}
+                        delay={1.0}
+                    />
 
                     {/* Affiliation */}
                     <motion.div
@@ -382,52 +314,7 @@ export default function PortfolioLinks() {
             )}
 
             {/* フローティングパーティクルエフェクト */}
-            {introCompleted && (
-                <div className="fixed inset-0 pointer-events-none overflow-hidden">
-                    {[
-                        {left: 5, top: 10, duration: 8, delay: 0},
-                        {left: 15, top: 30, duration: 9, delay: 0.5},
-                        {left: 25, top: 50, duration: 10, delay: 1},
-                        {left: 35, top: 70, duration: 11, delay: 1.5},
-                        {left: 45, top: 20, duration: 9.5, delay: 2},
-                        {left: 55, top: 40, duration: 8.5, delay: 2.5},
-                        {left: 65, top: 60, duration: 10.5, delay: 3},
-                        {left: 75, top: 80, duration: 9.8, delay: 3.5},
-                        {left: 85, top: 25, duration: 8.2, delay: 4},
-                        {left: 95, top: 45, duration: 11.2, delay: 4.5},
-                        {left: 10, top: 65, duration: 9.2, delay: 0.3},
-                        {left: 20, top: 85, duration: 10.8, delay: 0.8},
-                        {left: 30, top: 15, duration: 8.8, delay: 1.3},
-                        {left: 40, top: 35, duration: 9.8, delay: 1.8},
-                        {left: 50, top: 55, duration: 10.2, delay: 2.3},
-                        {left: 60, top: 75, duration: 8.7, delay: 2.8},
-                        {left: 70, top: 95, duration: 11.5, delay: 3.3},
-                        {left: 80, top: 5, duration: 9.3, delay: 3.8},
-                        {left: 90, top: 15, duration: 8.9, delay: 4.3},
-                        {left: 0, top: 90, duration: 10.1, delay: 4.8},
-                    ].map((particle, i) => (
-                        <motion.div
-                            key={i}
-                            className="absolute w-1 h-1 bg-white/30 rounded-full"
-                            style={{
-                                left: `${particle.left}%`,
-                                top: `${particle.top}%`,
-                            }}
-                            animate={{
-                                y: [-100, 1200],
-                                opacity: [0, 1, 0],
-                                scale: [0, 1, 0],
-                            }}
-                            transition={{
-                                duration: particle.duration,
-                                repeat: Infinity,
-                                ease: "linear",
-                                delay: particle.delay,
-                            }}
-                        />
-                    ))}
-                </div>
-            )}
+            {introCompleted && <FloatingParticles enabled />}
 
         </HeroBackground>
     );
