@@ -79,29 +79,10 @@ export const BackgroundFetcher: React.FC = () => {
     const [currentPage, setCurrentPage] = useAtom(currentPageAtom);
     const [hasMore, setHasMore] = useAtom(hasMoreAtom);
     const [isFetching, setIsFetching] = useAtom(isFetchingAtom);
-    const [connpassEvents, setConnpassEvents] = useAtom(connpassEventsAtom);
-    const [connpassLastFetch, setConnpassLastFetch] = useAtom(connpassLastFetchAtom);
 
     // /blogsページにいるかどうかをチェック
     const isBlogsPage = pathname === '/blogs';
 
-    // Connpassイベントを取得する関数
-    const fetchConnpassEvents = React.useCallback(async () => {
-        try {
-            console.log('[BackgroundFetcher] Fetching Connpass events...');
-            const response = await fetch('/api/connpass');
-            const data = await response.json();
-
-            if (data.events && data.events.length > 0) {
-                setConnpassEvents(data.events);
-                setConnpassLastFetch(Date.now());
-                setCookie('taramanji_connpass_events', JSON.stringify(data.events));
-                console.log(`[BackgroundFetcher] Cached ${data.events.length} Connpass events`);
-            }
-        } catch (error) {
-            console.error('[BackgroundFetcher] Connpass fetch error:', error);
-        }
-    }, [setConnpassEvents, setConnpassLastFetch]);
 
     const fetchNextBatch = React.useCallback(async () => {
         // ページ数の異常値チェックと修正
@@ -181,29 +162,6 @@ export const BackgroundFetcher: React.FC = () => {
         // 初回ロード時のCookieからの復元
         const cookieUrls = getCookie('taramanji_qiita_urls');
         const cookieOgp = getCookie('taramanji_ogp_cache');
-        const cookieConnpass = getCookie('taramanji_connpass_events');
-
-        // Connpassイベントの復元
-        if (cookieConnpass && connpassEvents.length === 0) {
-            try {
-                const parsedEvents = JSON.parse(cookieConnpass);
-                setConnpassEvents(parsedEvents);
-                console.log(`[BackgroundFetcher] Restored ${parsedEvents.length} Connpass events from cookie`);
-            } catch (error) {
-                console.error('[BackgroundFetcher] Error parsing Connpass events from cookie:', error);
-            }
-        }
-
-        // Connpassイベントの初回フェッチ（1時間キャッシュ）
-        const shouldFetchConnpass = () => {
-            const now = Date.now();
-            const ONE_HOUR = 3600000;
-            return (now - connpassLastFetch) > ONE_HOUR;
-        };
-
-        if (shouldFetchConnpass()) {
-            fetchConnpassEvents();
-        }
 
         if (cookieUrls && qiitaUrls.length === 0) {
             try {
@@ -261,7 +219,7 @@ export const BackgroundFetcher: React.FC = () => {
         }
 
         return () => clearInterval(interval);
-    }, [fetchNextBatch, fetchConnpassEvents, lastFetchTime, connpassLastFetch, qiitaUrls.length, connpassEvents.length, ogpCache, setQiitaUrls, setOgpCache, setCurrentPage, setHasMore, setConnpassEvents, isBlogsPage]);
+    }, [fetchNextBatch, lastFetchTime, qiitaUrls.length, ogpCache, setQiitaUrls, setOgpCache, setCurrentPage, setHasMore, isBlogsPage]);
 
     // このコンポーネントは何もレンダリングしない（バックグラウンド処理のみ）
     return null;

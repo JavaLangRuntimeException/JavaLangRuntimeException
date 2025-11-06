@@ -2,24 +2,33 @@
 
 import React from "react";
 import { motion } from "framer-motion";
-import { atom, useAtom } from "jotai";
+import { useAtom } from "jotai";
 import { qiitaUrlsAtom, ogpCacheAtom, isFetchingAtom, hasMoreAtom, currentPageAtom } from "../../components/BackgroundFetcher";
 import dynamic from "next/dynamic";
 const BackgroundFetcher = dynamic(() => import("../../components/BackgroundFetcher").then(m => m.BackgroundFetcher), { ssr: false });
 import { fetchMultipleOgp, getCacheStats, type OGPResponse } from "./server";
 import Link from "next/link";
-import Image from 'next/image';
 import { HeroBackground } from "../../shared/ui/HeroBackground";
+import { ArticleCard } from "../../feature/articles/ui/ArticleCard";
+import { SeriesButtons } from "../../feature/articles/ui/SeriesButtons";
+import { Pagination } from "../../feature/articles/ui/Pagination";
+import { SearchInput } from "../../feature/articles/ui/SearchInput";
+import {
+    searchTextAtom,
+    selectedSeriesAtom,
+    currentPageAtomLocal,
+    itemsPerPageAtom,
+    articlesByPageAtom,
+    cheatSheetArticlesAtom,
+    pageLoadingAtom,
+    loadingAtom,
+    fetchedPagesAtom,
+    cacheStatsAtom,
+} from "../../feature/blogs/state";
 
-const searchAtom = atom("");
+// state moved to feature/blogs/state
 
-interface Ogp {
-    title: string;
-    description: string;
-    url: string;
-    images?: string[];
-    tags?: string[];
-}
+import type { ArticleOgp as Ogp } from "../../feature/articles/types";
 
 // ローカルストレージキャッシュの設定（既存のOGP取得用）
 const LOCAL_STORAGE_KEY = 'taramanji_qiita_ogp_cache';
@@ -375,17 +384,14 @@ function getSeriesFilterKeyword(seriesName: string): string {
 }
 
 export default function BlogsPage() {
-    const [searchText, setSearchText] = useAtom(searchAtom);
-    const [loading, setLoading] = React.useState(false);
-    const [selectedSeries, setSelectedSeries] = React.useState("");
-    const [articlesByPage, setArticlesByPage] = React.useState<Map<number, Ogp[]>>(new Map());
-    const [cheatSheetArticles, setCheatSheetArticles] = React.useState<Ogp[]>([]);
-    const [currentPage, setCurrentPage] = React.useState(1);
-    const itemsPerPage = 6;
-    const [cacheStats, setCacheStats] = React.useState<{
-        localCacheSize: number;
-        serverCacheSize: number;
-    }>({ localCacheSize: 0, serverCacheSize: 0 });
+    const [searchText, setSearchText] = useAtom(searchTextAtom);
+    const [loading, setLoading] = useAtom(loadingAtom);
+    const [selectedSeries, setSelectedSeries] = useAtom(selectedSeriesAtom);
+    const [articlesByPage, setArticlesByPage] = useAtom(articlesByPageAtom);
+    const [cheatSheetArticles, setCheatSheetArticles] = useAtom(cheatSheetArticlesAtom);
+    const [currentPage, setCurrentPage] = useAtom(currentPageAtomLocal);
+    const [itemsPerPage] = useAtom(itemsPerPageAtom);
+    const [cacheStats, setCacheStats] = useAtom(cacheStatsAtom);
 
     // グローバル状態から取得
     const qiitaUrls = useAtom(qiitaUrlsAtom)[0];
@@ -423,7 +429,7 @@ export default function BlogsPage() {
             });
         };
         updateCacheStats();
-    }, []);
+    }, [setCacheStats]);
 
     // チートシート記事から「他のチートシート」セクションのリンクをスクレイピング
     const fetchCheatSheetFromArticle = React.useCallback(async () => {
@@ -488,7 +494,7 @@ export default function BlogsPage() {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [setLoading, setCheatSheetArticles]);
 
     // 手動でQiita記事をfetchする関数（バックグラウンドfetchが動かない場合の対策）- タグ情報を先に取得し、タイトルやOGPはQiita APIで取得
     // 現在は使用していない（ページごとに取得する方式に変更）
@@ -564,7 +570,7 @@ export default function BlogsPage() {
         } finally {
             setLoading(false);
         }
-    }, [isFetching, qiitaUrls.length]);
+    }, [isFetching, qiitaUrls.length, setLoading]);
 
     // タグ情報を取得する関数（Qiita APIから取得）
     // 現在は使用していない（ページごとに取得する方式に変更）
@@ -604,8 +610,8 @@ export default function BlogsPage() {
     }, []);
 
     // ページごとにQiita APIから記事を取得（非チートシートのみ）
-    const [pageLoading, setPageLoading] = React.useState(false);
-    const [fetchedPages, setFetchedPages] = React.useState<Set<number>>(new Set());
+    const [pageLoading, setPageLoading] = useAtom(pageLoadingAtom);
+    const [fetchedPages, setFetchedPages] = useAtom(fetchedPagesAtom);
 
     // 現在のページの記事を取得
     React.useEffect(() => {
@@ -805,7 +811,7 @@ export default function BlogsPage() {
         };
 
         fetchPageArticles();
-    }, [currentPage, selectedSeries, itemsPerPage, fetchedPages]);
+    }, [currentPage, selectedSeries, itemsPerPage, fetchedPages, setArticlesByPage, setFetchedPages, setPageLoading]);
 
     // チートシート選択時の処理
     React.useEffect(() => {
@@ -1134,7 +1140,7 @@ export default function BlogsPage() {
         if (!selectedSeries) {
             setFetchedPages(new Set());
         }
-    }, [selectedSeries, searchText]);
+    }, [selectedSeries, searchText, setCurrentPage, setFetchedPages]);
 
     // currentPageがtotalPagesを超えないようにする
     React.useEffect(() => {
@@ -1142,7 +1148,7 @@ export default function BlogsPage() {
             console.log(`[BlogPage] Adjusting currentPage from ${currentPage} to ${totalPages}`);
             setCurrentPage(totalPages);
         }
-    }, [currentPage, totalPages]);
+    }, [currentPage, totalPages, setCurrentPage]);
 
     // ページ移動後に記事がない場合、前のページに戻す
     React.useEffect(() => {
@@ -1173,7 +1179,7 @@ export default function BlogsPage() {
                 console.error("[OGP] Error retrying incomplete OGP:", error);
             });
         }
-    }, [paginatedData]);
+    }, [paginatedData, setCurrentPage]);
 
     const handleSeriesClick = (series: string) => {
         setSelectedSeries(series);
@@ -1186,8 +1192,8 @@ export default function BlogsPage() {
         setSelectedSeries("");
     };
 
-    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSearchText(e.target.value);
+    const handleSearchChange = (value: string) => {
+        setSearchText(value);
     };
 
     // 現在のページ情報をコンソールに出力（開発時のデバッグ用）
@@ -1249,183 +1255,42 @@ export default function BlogsPage() {
                     </motion.div>
 
                 {/* 検索バー */}
-                <motion.div
-                    key="search"
-                    className="max-w-md mx-auto mb-6"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.2 }}
-                >
-                        <input
-                            type="text"
-                            value={searchText}
-                            onChange={handleSearchChange}
-                            placeholder="タイトル検索..."
-                            className="w-full p-3 rounded-xl border border-white/10 bg-white/5 backdrop-blur text-white placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-green-500/50 focus:border-green-500/50 transition-all"
-                        />
-                    </motion.div>
+                <SearchInput value={searchText} onChange={handleSearchChange} />
 
                 {/* シリーズ選択ボタン群 */}
-                <motion.div
-                    key="series-buttons"
-                    className="mb-6 flex flex-wrap gap-2 justify-center"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.3 }}
-                >
-                        {seriesList.map((series) => (
-                            <button
-                                key={series}
-                                onClick={() => handleSeriesClick(series)}
-                                className={
-                                    series === selectedSeries
-                                        ? "px-4 py-2 rounded-lg bg-green-500/20 text-green-300 border border-green-500/30 backdrop-blur transition-all duration-200 hover:bg-green-500/30"
-                                        : "px-4 py-2 rounded-lg bg-white/5 text-white/90 border border-white/10 backdrop-blur transition-all duration-200 hover:bg-white/10 hover:border-white/20"
-                                }
-                            >
-                                {series}
-                            </button>
-                        ))}
-                        {selectedSeries && (
-                            <button
-                                onClick={clearSeries}
-                                className="px-4 py-2 rounded-lg bg-red-500/20 text-red-300 border border-red-500/30 backdrop-blur transition-all duration-200 hover:bg-red-500/30"
-                            >
-                                Clear
-                            </button>
-                        )}
-                    </motion.div>
+                <SeriesButtons seriesList={seriesList} selectedSeries={selectedSeries} onSelect={handleSeriesClick} onClear={clearSeries} />
 
                 {/* シリーズボタンの下のページネーション（1ページ目から表示） */}
                 {!selectedSeries && !searchText.trim() && !pageLoading && !loading && paginatedData.length > 0 && (
-                    <motion.div
-                        key="top-pagination"
-                        className="mb-6 flex items-center justify-center gap-4"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.6, delay: 0.4 }}
-                    >
-                        <button
-                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                            disabled={currentPage === 1}
-                            className="px-4 py-2 rounded-lg bg-white/5 text-white border border-white/10 backdrop-blur transition-all duration-200 hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            前へ
-                        </button>
-
-                        <span className="text-zinc-300">
-                            {currentPage} / {totalPages}
-                        </span>
-
-                        <button
-                            onClick={() => {
-                                const nextPage = currentPage + 1;
-                                // totalPagesを超えないようにする
-                                if (nextPage <= totalPages) {
-                                    // シリーズ未選択時は、次ページに記事があるかチェック
-                                    if (!selectedSeries) {
-                                        const nextPageArticles = articlesByPage.get(nextPage) || [];
-                                        // 次ページが取得済みで記事がない場合、移動しない
-                                        if (fetchedPages.has(nextPage) && nextPageArticles.length === 0) {
-                                            console.log(`[BlogPage] Next page ${nextPage} has no articles, not moving`);
-                                            return;
-                                        }
-                                        // 次ページが未取得でhasMoreがfalseの場合、移動しない
-                                        if (!fetchedPages.has(nextPage) && !hasMore) {
-                                            console.log(`[BlogPage] No more articles available, not moving to page ${nextPage}`);
-                                            return;
-                                        }
-                                    }
-                                    setCurrentPage(nextPage);
-                                }
-                            }}
-                            disabled={(() => {
-                                // 検索テキストがある場合は常に無効（全件表示のため）
-                                if (searchText.trim()) {
-                                    return true;
-                                }
-
-                                // チートシートの場合は常に無効（全件表示のため）
-                                if (selectedSeries === "チートシート") {
-                                    return true;
-                                }
-
-                                // シリーズ未選択時は、次ページに記事があるか直接チェック
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPrev={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                        onNext={() => {
+                            const nextPage = currentPage + 1;
+                            if (nextPage <= totalPages) {
                                 if (!selectedSeries) {
-                                    const nextPage = currentPage + 1;
                                     const nextPageArticles = articlesByPage.get(nextPage) || [];
-
-                                    // 次ページが取得済みで記事がない場合
-                                    if (fetchedPages.has(nextPage)) {
-                                        return nextPageArticles.length === 0;
-                                    }
-
-                                    // 次ページが未取得でhasMoreがfalseの場合
-                                    if (!hasMore) {
-                                        return true;
-                                    }
-
-                                    // 次ページが未取得でhasMoreがtrueの場合でも、totalPagesを超える場合は無効
-                                    if (currentPage >= totalPages) {
-                                        return true;
-                                    }
-
-                                    return false;
+                                    if (fetchedPages.has(nextPage) && nextPageArticles.length === 0) return;
+                                    if (!fetchedPages.has(nextPage) && !hasMore) return;
                                 }
-
-                                // シリーズ選択時は、フィルター後のデータから次ページの記事数をチェック
-                                if (selectedSeries) {
-                                    const allCachedArticles: Ogp[] = [];
-                                    const articlesCache = getArticlesCache();
-
-                                    for (const [, cachedData] of Object.entries(articlesCache)) {
-                                        if (isCacheValid(cachedData)) {
-                                            allCachedArticles.push(...cachedData.articles);
-                                        }
-                                    }
-
-                                    const allPagesArticles: Ogp[] = [];
-                                    const sortedPages = Array.from(articlesByPage.keys()).sort((a, b) => a - b);
-                                    sortedPages.forEach(page => {
-                                        const pageArticles = articlesByPage.get(page) || [];
-                                        allPagesArticles.push(...pageArticles);
-                                    });
-
-                                    const allArticlesMap = new Map<string, Ogp>();
-                                    [...allCachedArticles, ...allPagesArticles].forEach(article => {
-                                        if (!allArticlesMap.has(article.url)) {
-                                            allArticlesMap.set(article.url, article);
-                                        }
-                                    });
-
-                                    const filterKeyword = getSeriesFilterKeyword(selectedSeries);
-                                    const filtered = Array.from(allArticlesMap.values()).filter((ogpObj) => {
-                                        const title = ogpObj.title || "";
-                                        return title.includes(filterKeyword);
-                                    });
-
-                                    let finalFiltered = filtered;
-                                    if (searchText.trim()) {
-                                        const key = searchText.toLowerCase();
-                                        finalFiltered = filtered.filter((ogpObj) => {
-                                            const title = (ogpObj.title || "").toLowerCase();
-                                            return title.includes(key);
-                                        });
-                                    }
-
-                                    const nextPage = currentPage + 1;
-                                    const startIndex = (nextPage - 1) * itemsPerPage;
-                                    const nextPageData = finalFiltered.slice(startIndex, startIndex + itemsPerPage);
-                                    return nextPageData.length === 0;
-                                }
-
+                                setCurrentPage(nextPage);
+                            }
+                        }}
+                        isNextDisabled={(() => {
+                            if (searchText.trim()) return true;
+                            if (selectedSeries === "チートシート") return true;
+                            if (!selectedSeries) {
+                                const nextPage = currentPage + 1;
+                                const nextPageArticles = articlesByPage.get(nextPage) || [];
+                                if (fetchedPages.has(nextPage)) return nextPageArticles.length === 0;
+                                if (!hasMore) return true;
+                                if (currentPage >= totalPages) return true;
                                 return false;
-                            })()}
-                            className="px-4 py-2 rounded-lg bg-green-500/20 text-green-300 border border-green-500/30 backdrop-blur transition-all duration-200 hover:bg-green-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            次へ
-                        </button>
-                    </motion.div>
+                            }
+                            return false;
+                        })()}
+                    />
                 )}
 
                 {/* 記事取得中のアニメーション */}
@@ -1468,98 +1333,18 @@ export default function BlogsPage() {
 
                                     return true;
                                 })
-                                .map((ogp, idx) => {
-                                    const { title, description, url, images, tags } = ogp;
-                                    const imgidx = images?.[0];
-
-                                    // より堅牢なキー生成：URLハッシュ + インデックス + シリーズ
-                                    const urlHash = url ? (url.split('/').pop() || url.replace(/[^a-zA-Z0-9]/g, '') || 'unknown') : 'empty';
-                                    const seriesKey = selectedSeries || 'all';
-                                    const safeUrlHash = urlHash || 'fallback';
-                                    const uniqueKey = `article-${seriesKey}-${safeUrlHash}-${idx}-${url?.length || 0}`;
-
-                                    // キーが空文字列になることを防ぐ最終チェック
-                                    if (!uniqueKey || uniqueKey.trim() === '') {
-                                        console.error(`[KeyError] Generated empty key for item ${idx}:`, { url, seriesKey, urlHash });
-                                        return null; // 空キーの場合はコンポーネントをレンダリングしない
-                                    }
-
-                                    if (process.env.NODE_ENV === 'development') {
-                                        console.log(`Rendering item ${idx}:`, {
-                                            title: title || '(No title)',
-                                            url,
-                                            hasImages: !!imgidx,
-                                            uniqueKey
-                                        });
-                                    }
-
-                                    return (
-                                        <motion.a
-                                            key={uniqueKey}
-                                            href={url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="group relative rounded-xl border border-white/20 bg-white/10 p-8 backdrop-blur transition-all duration-300 hover:bg-white/15 hover:scale-105 hover:shadow-xl hover:shadow-green-500/20 hover:border-green-500/30"
-                                            initial={{ opacity: 0, y: 20 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            transition={{ delay: idx * 0.1, duration: 0.5 }}
-                                            whileHover={{ scale: 1.02 }}
-                                            whileTap={{ scale: 0.98 }}
-                                        >
-                                            {/* OGP画像をカード上部に表示 */}
-                                            {imgidx && (
-                                                <div className="mb-4 rounded-lg overflow-hidden border border-white/10 shadow-lg">
-                                                    <Image
-                                                        src={imgidx}
-                                                        alt={title || "Qiita 記事一覧"}
-                                                        className="w-full h-56 object-cover group-hover:scale-105 transition-transform duration-300"
-                                                        width={800}
-                                                        height={320}
-                                                        loading="lazy"
-                                                        placeholder="blur"
-                                                        blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDABQODxIPDRQSEBIXFRQdHx4eHRoaHSQtJSEkLzYvLy02LjY2OjY2Njo2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Njb/2wBDAR0XFx8aHx4fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx8fHx//wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
-                                                    />
-                                                </div>
-                                            )}
-                                            <div className="flex items-start gap-3 mb-3">
-                                                <div className="w-2 h-2 mt-2 rounded-full bg-green-400 animate-pulse flex-shrink-0"/>
-                                                <h2 className="text-xl font-semibold text-white group-hover:text-green-300 transition-colors line-clamp-2">
-                                                    {title}
-                                                </h2>
-                                            </div>
-                                            {description && (
-                                                <p className="text-sm text-zinc-300/90 line-clamp-4 mb-4">
-                                                    {description}
-                                                </p>
-                                            )}
-
-                                            {/* タグ表示 */}
-                                            {tags && tags.length > 0 && (
-                                                <div className="flex flex-wrap gap-2 mb-4">
-                                                    {tags.slice(0, 8).map((tag, tagIdx) => (
-                                                        <span
-                                                            key={`${uniqueKey}-tag-${tagIdx}`}
-                                                            className="px-3 py-1 text-xs rounded-full bg-green-500/20 text-green-300 border border-green-500/30"
-                                                        >
-                                                            {tag}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            )}
-
-                                            <div className="mt-4 flex items-center text-green-400 group-hover:text-green-300 transition-colors">
-                                                <span className="text-sm font-semibold">記事を読む</span>
-                                                <motion.span
-                                                    className="ml-2"
-                                                    animate={{x: [0, 5, 0]}}
-                                                    transition={{duration: 1.5, repeat: Infinity}}
-                                                >
-                                                    →
-                                                </motion.span>
-                                            </div>
-                                        </motion.a>
-                                    );
-                                })
+                                .map((ogp, idx) => (
+                                    <ArticleCard
+                                        key={`article-${(selectedSeries || 'all')}-${idx}`}
+                                        title={ogp.title}
+                                        description={ogp.description}
+                                        url={ogp.url}
+                                        image={ogp.images?.[0]}
+                                        tags={ogp.tags}
+                                        index={idx}
+                                        seriesKey={selectedSeries || 'all'}
+                                    />
+                                ))
                                 .filter(Boolean)}
                         </div>
                     )}

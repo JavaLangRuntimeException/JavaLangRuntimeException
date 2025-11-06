@@ -30,24 +30,16 @@ export const ConnpassEventCards: React.FC<{ showAnimations?: boolean; delay?: nu
                                                                                                delay = 0
                                                                                            }) => {
     const [globalEvents, setGlobalEvents] = useAtom(connpassEventsAtom);
-    const [globalLastFetch, setGlobalLastFetch] = useAtom(connpassLastFetchAtom);
+    const [, setGlobalLastFetch] = useAtom(connpassLastFetchAtom);
     const [events, setEvents] = useState<ConnpassEvent[]>(globalEvents);
     const [loading, setLoading] = useState(globalEvents.length === 0);
 
     useEffect(() => {
-        // グローバル状態からデータを取得
-        if (globalEvents.length > 0) {
-            setEvents(globalEvents);
-            setLoading(false);
-        }
-
+        // キャッシュを使用せず、常に最新データを取得
         let cancelled = false;
         const fetchEvents = async () => {
             try {
-                // グローバル状態にデータがない場合のみローディングを表示
-                if (globalEvents.length === 0) {
-                    setLoading(true);
-                }
+                setLoading(true);
 
                 const response = await fetch('/api/connpass', { cache: 'no-store' });
                 const data: ConnpassResponse = await response.json();
@@ -60,7 +52,7 @@ export const ConnpassEventCards: React.FC<{ showAnimations?: boolean; delay?: nu
                 }
             } catch (error) {
                 console.error('Failed to fetch Connpass events:', error);
-                if (!cancelled && globalEvents.length === 0) {
+                if (!cancelled) {
                     setEvents([]);
                 }
             } finally {
@@ -68,15 +60,11 @@ export const ConnpassEventCards: React.FC<{ showAnimations?: boolean; delay?: nu
             }
         };
 
-        // グローバル状態にデータがない場合、または1時間以上経過している場合は再取得
-        const now = Date.now();
-        const ONE_HOUR = 3600000;
-        if (globalEvents.length === 0 || (now - globalLastFetch > ONE_HOUR)) {
-            fetchEvents();
-        }
+        // 常に最新データを取得
+        fetchEvents();
 
         return () => { cancelled = true; };
-    }, [globalEvents, globalLastFetch, setGlobalEvents, setGlobalLastFetch]);
+    }, [setGlobalEvents, setGlobalLastFetch]);
 
     // 見出しは常に表示するため、ここでは非表示にしない
 
