@@ -28,7 +28,7 @@ export const affiliations: Affiliation[] = [
         color: "bg-blue-600",
         href: "https://www.rm2c.ise.ritsumei.ac.jp/",
         category: "university_research",
-        description: "VR/AR/MRなどのXRシステムに関する位置推定技術やクライアントかんの通信に関する研究や、XR環境を使用したヒューマンインターフェースなど心理学実験をしています。"
+        description: "VR/AR/MRなどのXRシステムに関する位置推定技術やクライアント間の通信に関する研究や、XR環境を使用したヒューマンインターフェースなど心理学実験を行っています。"
     },
 
     // community

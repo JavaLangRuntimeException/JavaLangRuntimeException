@@ -3,6 +3,7 @@
 import React from "react";
 import {useAtom} from "jotai";
 import {atomWithStorage} from "jotai/utils";
+import {usePathname} from "next/navigation";
 import {apiFetchMultipleOgp, apiFetchQiita} from "../shared/api/blogs";
 
 interface Ogp {
@@ -39,6 +40,15 @@ export const isFetchingAtom = atomWithStorage<boolean>('taramanji_is_fetching', 
 export const connpassEventsAtom = atomWithStorage<ConnpassEvent[]>('taramanji_connpass_events', []);
 export const connpassLastFetchAtom = atomWithStorage<number>('taramanji_connpass_last_fetch', 0);
 
+// ルートページ用の記事データ（PublishedArticles用）
+interface PublishedArticleData {
+    pickupArticles: Array<{ url: string; title: string; description: string; images?: string[]; tags?: string[] }>;
+    latestArticlesFromScrape: Array<{ url: string; title: string; description: string; images?: string[]; tags?: string[] }>; // スクレイピングで取得したLatest Articles
+    latestArticles: Array<{ url: string; title: string; description: string; images?: string[]; tags?: string[] }>; // QiitaAPIで取得したLatest Articles
+}
+export const publishedArticlesAtom = atomWithStorage<PublishedArticleData | null>('taramanji_published_articles', null);
+export const publishedArticlesLastFetchAtom = atomWithStorage<number>('taramanji_published_articles_last_fetch', 0);
+
 // バックグラウンドfetchの設定
 const FETCH_INTERVAL = 30000; // 30秒間隔
 const MAX_PAGES_PER_SESSION = 50; // 1セッションで最大50ページまで取得（約1000件）
@@ -62,6 +72,7 @@ const getCookie = (name: string): string | null => {
 };
 
 export const BackgroundFetcher: React.FC = () => {
+    const pathname = usePathname();
     const [qiitaUrls, setQiitaUrls] = useAtom(qiitaUrlsAtom);
     const [ogpCache, setOgpCache] = useAtom(ogpCacheAtom);
     const [lastFetchTime, setLastFetchTime] = useAtom(lastFetchTimeAtom);
@@ -70,6 +81,9 @@ export const BackgroundFetcher: React.FC = () => {
     const [isFetching, setIsFetching] = useAtom(isFetchingAtom);
     const [connpassEvents, setConnpassEvents] = useAtom(connpassEventsAtom);
     const [connpassLastFetch, setConnpassLastFetch] = useAtom(connpassLastFetchAtom);
+
+    // /blogsページにいるかどうかをチェック
+    const isBlogsPage = pathname === '/blogs';
 
     // Connpassイベントを取得する関数
     const fetchConnpassEvents = React.useCallback(async () => {
@@ -234,20 +248,20 @@ export const BackgroundFetcher: React.FC = () => {
             }
         }
 
-        // 定期的なバックグラウンドフェッチ
+        // 定期的なバックグラウンドフェッチ（/blogsページにいる時のみ）
         const interval = setInterval(() => {
-            if (shouldFetch()) {
+            if (isBlogsPage && shouldFetch()) {
                 fetchNextBatch();
             }
         }, FETCH_INTERVAL);
 
-        // 初回実行
-        if (shouldFetch()) {
+        // 初回実行（/blogsページにいる時のみ）
+        if (isBlogsPage && shouldFetch()) {
             fetchNextBatch();
         }
 
         return () => clearInterval(interval);
-    }, [fetchNextBatch, fetchConnpassEvents, lastFetchTime, connpassLastFetch, qiitaUrls.length, connpassEvents.length, ogpCache, setQiitaUrls, setOgpCache, setCurrentPage, setHasMore, setConnpassEvents]);
+    }, [fetchNextBatch, fetchConnpassEvents, lastFetchTime, connpassLastFetch, qiitaUrls.length, connpassEvents.length, ogpCache, setQiitaUrls, setOgpCache, setCurrentPage, setHasMore, setConnpassEvents, isBlogsPage]);
 
     // このコンポーネントは何もレンダリングしない（バックグラウンド処理のみ）
     return null;

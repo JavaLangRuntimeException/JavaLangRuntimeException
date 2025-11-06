@@ -173,7 +173,7 @@ function HeaderMarquee({ onSlotsChange }: HeaderMarqueeProps) {
       ? "直近相談予約可能時間: 取得中…"
       : "直近相談予約可能時間: 取得できませんでした";
 
-  const message = `${text} | Links ではプロフィール・SNS・連絡先を掲載中。Contact ではお問い合わせが可能です。Ask Meでは面談予約が可能です。面談の変更・取消は EventID を添えてお問い合わせください。`;
+  const message = `${text} | 相談可能時間: 9:00 - 23:00 | Links ではプロフィール・SNS・連絡先を掲載中。Contact ではお問い合わせが可能です。Ask Meでは面談予約が可能です。面談の変更・取消は EventID を添えてお問い合わせください。`;
 
   return (
     <div className="relative overflow-hidden">
@@ -233,7 +233,7 @@ async function computeNextFiveSlotsCrossWeek(): Promise<string[]> {
   const oneMonthLater = new Date(now);
   oneMonthLater.setMonth(oneMonthLater.getMonth() + 1);
   const dayStart = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 9, 0, 0, 0);
-  const dayEnd = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 24, 0, 0, 0);
+  const dayEnd = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 0, 0, 0);
   const align = (d: Date) => {
     const t = new Date(d);
     const m = t.getMinutes();

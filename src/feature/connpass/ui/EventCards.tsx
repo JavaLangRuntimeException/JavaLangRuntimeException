@@ -2,7 +2,8 @@
 
 import React, {useEffect, useState} from "react";
 import {motion} from "framer-motion";
-// キャッシュを使わず毎回取得
+import {useAtom} from "jotai";
+import {connpassEventsAtom, connpassLastFetchAtom} from "../../../components/BackgroundFetcher";
 
 interface ConnpassEvent {
     event_id: number;
@@ -28,28 +29,54 @@ export const ConnpassEventCards: React.FC<{ showAnimations?: boolean; delay?: nu
                                                                                                showAnimations = true,
                                                                                                delay = 0
                                                                                            }) => {
-    const [events, setEvents] = useState<ConnpassEvent[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [globalEvents, setGlobalEvents] = useAtom(connpassEventsAtom);
+    const [globalLastFetch, setGlobalLastFetch] = useAtom(connpassLastFetchAtom);
+    const [events, setEvents] = useState<ConnpassEvent[]>(globalEvents);
+    const [loading, setLoading] = useState(globalEvents.length === 0);
 
     useEffect(() => {
+        // グローバル状態からデータを取得
+        if (globalEvents.length > 0) {
+            setEvents(globalEvents);
+            setLoading(false);
+        }
+
         let cancelled = false;
         const fetchEvents = async () => {
             try {
-                setLoading(true);
+                // グローバル状態にデータがない場合のみローディングを表示
+                if (globalEvents.length === 0) {
+                    setLoading(true);
+                }
+
                 const response = await fetch('/api/connpass', { cache: 'no-store' });
                 const data: ConnpassResponse = await response.json();
-                if (!cancelled) setEvents(data.events || []);
+                if (!cancelled) {
+                    const fetchedEvents = data.events || [];
+                    setEvents(fetchedEvents);
+                    // グローバル状態も更新
+                    setGlobalEvents(fetchedEvents);
+                    setGlobalLastFetch(Date.now());
+                }
             } catch (error) {
                 console.error('Failed to fetch Connpass events:', error);
-                if (!cancelled) setEvents([]);
+                if (!cancelled && globalEvents.length === 0) {
+                    setEvents([]);
+                }
             } finally {
                 if (!cancelled) setLoading(false);
             }
         };
 
-        fetchEvents();
+        // グローバル状態にデータがない場合、または1時間以上経過している場合は再取得
+        const now = Date.now();
+        const ONE_HOUR = 3600000;
+        if (globalEvents.length === 0 || (now - globalLastFetch > ONE_HOUR)) {
+            fetchEvents();
+        }
+
         return () => { cancelled = true; };
-    }, []);
+    }, [globalEvents, globalLastFetch, setGlobalEvents, setGlobalLastFetch]);
 
     // 見出しは常に表示するため、ここでは非表示にしない
 
@@ -73,7 +100,10 @@ export const ConnpassEventCards: React.FC<{ showAnimations?: boolean; delay?: nu
         >
             <h2 className="text-lg font-semibold">📅 Organized Events</h2>
             {loading && (
-                <p className="mt-2 text-sm text-zinc-400">イベントを取得中...</p>
+                <div className="mt-4 flex items-center justify-center gap-3">
+                    <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-green-400"></div>
+                    <p className="text-sm text-zinc-400">イベント取得中...</p>
+                </div>
             )}
 
             {!loading && events.length === 0 && (
@@ -81,7 +111,7 @@ export const ConnpassEventCards: React.FC<{ showAnimations?: boolean; delay?: nu
             )}
 
             {!loading && events.length > 0 && (
-            <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-2 mt-3">
+            <div className="grid gap-6 sm:grid-cols-1 mt-3">
                 {events.map((event, index) => (
                     <motion.a
                         key={event.event_id}

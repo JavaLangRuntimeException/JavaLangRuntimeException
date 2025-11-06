@@ -6,9 +6,16 @@ import { getLinkPreview } from "link-preview-js";
 /**
  * QiitaのAPIレスポンス例 (必要分のみ定義)
  */
+export type QiitaTag = {
+    name: string;
+    versions: string[];
+};
+
 export type QiitaItemResponse = {
     url: string;
     title: string;
+    tags: QiitaTag[];
+    body?: string; // 本文（Markdown形式）
 };
 
 /**
@@ -37,28 +44,26 @@ const CACHE_DURATION = 365 * 24 * 60 * 60 * 1000; // 1年間（ミリ秒）
  * ここではタイトルなど最小限しか定義していませんが、
  * 実際はもっと多くのプロパティを含む想定です。
  */
-export async function fetchQiitaURLs(page: number, isInitialLoad: boolean = false): Promise<string[]> {
+export async function fetchQiitaItems(page: number, isInitialLoad: boolean = false, perPageOverride?: number): Promise<QiitaItemResponse[]> {
     try {
         // キャッシュチェック
         if (urlCache.has(page)) {
-            const cached = urlCache.get(page) || [];
-            console.log(`[fetchQiitaURLs] Using cached data for page ${page}: ${cached.length} URLs`);
-            return cached;
+            // URLキャッシュから復元できないため、キャッシュは無効化
         }
 
-        // 初回ロードは15件を取得
-        const perPage = isInitialLoad ? 15 : 20;
+        // perPageOverrideが指定されている場合はそれを使用、否则は初回ロードは15件、それ以外は20件を取得
+        const perPage = perPageOverride ?? (isInitialLoad ? 15 : 20);
         const apiUrl = `https://qiita.com/api/v2/users/JavaLangRuntimeException/items?page=${page}&per_page=${perPage}`;
 
-        console.log(`[fetchQiitaURLs] Fetching page ${page}, perPage: ${perPage}`);
-        console.log(`[fetchQiitaURLs] API URL: ${apiUrl}`);
-        console.log(`[fetchQiitaURLs] Bearer token available: ${!!process.env.NEXT_PUBLIC_BEARER_TOKEN}`);
+        console.log(`[fetchQiitaItems] Fetching page ${page}, perPage: ${perPage}`);
+        console.log(`[fetchQiitaItems] API URL: ${apiUrl}`);
+        console.log(`[fetchQiitaItems] Bearer token available: ${!!process.env.NEXT_PUBLIC_BEARER_TOKEN}`);
 
         const headers: Record<string, string> = {};
         if (process.env.NEXT_PUBLIC_BEARER_TOKEN) {
             headers.Authorization = `Bearer ${process.env.NEXT_PUBLIC_BEARER_TOKEN}`;
         } else {
-            console.warn('[fetchQiitaURLs] No bearer token found, trying without authentication');
+            console.warn('[fetchQiitaItems] No bearer token found, trying without authentication');
         }
 
         const response = await axios.get<QiitaItemResponse[]>(
@@ -69,38 +74,45 @@ export async function fetchQiitaURLs(page: number, isInitialLoad: boolean = fals
             }
         );
 
-        console.log(`[fetchQiitaURLs] Response status: ${response.status}`);
-        console.log(`[fetchQiitaURLs] Response data length: ${response.data?.length || 0}`);
+        console.log(`[fetchQiitaItems] Response status: ${response.status}`);
+        console.log(`[fetchQiitaItems] Response data length: ${response.data?.length || 0}`);
 
         if (response.data && response.data.length > 0) {
-            console.log(`[fetchQiitaURLs] First item sample:`, {
+            console.log(`[fetchQiitaItems] First item sample:`, {
                 title: response.data[0].title,
-                url: response.data[0].url
+                url: response.data[0].url,
+                tags: response.data[0].tags?.map(t => t.name) || []
             });
         }
 
-        const urls = response.data.map((item) => item.url);
+        const items = response.data;
+        const urls = items.map((item) => item.url);
         urlCache.set(page, urls);
 
-        console.log(`[fetchQiitaURLs] Successfully fetched ${urls.length} URLs for page ${page}`);
+        console.log(`[fetchQiitaItems] Successfully fetched ${items.length} items for page ${page}`);
 
         // 初回ロード時は、バックグラウンドで次のページを事前取得
-        if (isInitialLoad && !isFetchingBackground && urls.length > 0) {
+        if (isInitialLoad && !isFetchingBackground && items.length > 0) {
             isFetchingBackground = true;
-            fetchQiitaURLs(page + 1, false).catch(() => {
+            fetchQiitaItems(page + 1, false).catch(() => {
                 isFetchingBackground = false;
             });
         }
 
-        return urls;
+        return items;
     } catch (error) {
-        console.error(`[fetchQiitaURLs] Error fetching page ${page}:`, error);
+        console.error(`[fetchQiitaItems] Error fetching page ${page}:`, error);
         if (axios.isAxiosError(error)) {
-            console.error(`[fetchQiitaURLs] Response status: ${error.response?.status}`);
-            console.error(`[fetchQiitaURLs] Response data:`, error.response?.data);
+            console.error(`[fetchQiitaItems] Response status: ${error.response?.status}`);
+            console.error(`[fetchQiitaItems] Response data:`, error.response?.data);
         }
         return [];
     }
+}
+
+export async function fetchQiitaURLs(page: number, isInitialLoad: boolean = false): Promise<string[]> {
+    const items = await fetchQiitaItems(page, isInitialLoad);
+    return items.map((item) => item.url);
 }
 
 /**
@@ -157,13 +169,15 @@ export async function fetchOgp(url: string): Promise<OGPResponse> {
 
 /**
  * 複数のOGP情報を一括取得（既存キャッシュを最大限活用）
+ * @param urls URLの配列
+ * @param skipCache キャッシュをスキップして常に最新データを取得する場合true
  */
-export async function fetchMultipleOgp(urls: string[]): Promise<OGPResponse[]> {
+export async function fetchMultipleOgp(urls: string[], skipCache: boolean = false): Promise<OGPResponse[]> {
     try {
         const results: OGPResponse[] = [];
         const urlsToFetch: string[] = [];
 
-        // 既存キャッシュをチェック
+        // 既存キャッシュをチェック（skipCacheがtrueの場合はスキップ）
         for (const url of urls) {
             // Restrict to Qiita pages only
             let isQiita = false;
@@ -178,7 +192,7 @@ export async function fetchMultipleOgp(urls: string[]): Promise<OGPResponse[]> {
                 results.push({});
                 continue;
             }
-            if (ogpCache.has(url) && isCacheValid(url)) {
+            if (!skipCache && ogpCache.has(url) && isCacheValid(url)) {
                 results.push(ogpCache.get(url) || {});
             } else {
                 // 新規取得が必要
@@ -202,9 +216,11 @@ export async function fetchMultipleOgp(urls: string[]): Promise<OGPResponse[]> {
                             }
                         }) as OGPResponse;
 
-                        // キャッシュに保存
-                        ogpCache.set(url, preview);
-                        cacheTimestamps.set(url, Date.now());
+                        // キャッシュに保存（skipCacheがfalseの場合のみ）
+                        if (!skipCache) {
+                            ogpCache.set(url, preview);
+                            cacheTimestamps.set(url, Date.now());
+                        }
 
                         console.log(`OGP fetched for ${url}: title="${preview.title || 'NO_TITLE'}"`);
                         return { url, data: preview };
@@ -218,7 +234,7 @@ export async function fetchMultipleOgp(urls: string[]): Promise<OGPResponse[]> {
             // 結果をマージ
             let fetchIndex = 0;
             for (let i = 0; i < urls.length; i++) {
-                if (!ogpCache.has(urls[i]) || !isCacheValid(urls[i])) {
+                if (skipCache || !ogpCache.has(urls[i]) || !isCacheValid(urls[i])) {
                     results[i] = newOgpData[fetchIndex].data;
                     fetchIndex++;
                 }

@@ -18,7 +18,7 @@ export const linkCards: LinkCard[] = [
   // AtCoder → LinkedIn
   { href: "https://www.linkedin.com/in/javalangruntimeexception/", imgSrc: "/linkedin.png", title: "LinkedIn", description: "Profile", backText: "つながりましょう" },
   // Qiita
-  { href: "/blogs", imgSrc: "/qiita.png", title: "Qiita", description: "@JavaLangRuntimeException", backText: "記事一覧" },
+  { href: "/blogs", imgSrc: "/qiita.png", title: "Published Articles(Qiita)", description: "@JavaLangRuntimeException", backText: "記事一覧" },
   // Speaker Deck
   { href: "https://speakerdeck.com/javalangruntimeexception", imgSrc: "/speakerdeck.jpeg", title: "Speaker Deck", description: "@JavaLangRuntimeException", backText: "登壇スライド" },
   // Teratail
