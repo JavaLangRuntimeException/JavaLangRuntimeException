@@ -33,10 +33,9 @@ export function HeroBackground({
 }) {
   const [scrollY, setScrollY] = React.useState(0);
   const [bgIndex, setBgIndex] = React.useState(0);
-  // intro.enabledが設定されている場合は初期値をtrueにして、チラつきを防ぐ
-  const [showIntro, setShowIntro] = React.useState<boolean>(!!intro?.enabled);
-  // intro.enabledがfalseの場合は最初から完了状態にする
-  const [introCompleted, setIntroCompleted] = React.useState<boolean>(!intro?.enabled);
+  // 初期状態はfalseにして、useLayoutEffectで同期的に更新（チラつきを防ぐ）
+  const [showIntro, setShowIntro] = React.useState<boolean>(false);
+  const [introCompleted, setIntroCompleted] = React.useState<boolean>(true);
 
   React.useEffect(() => {
     function handleScroll() {
@@ -51,7 +50,10 @@ export function HeroBackground({
     return () => clearInterval(t);
   }, [images.length, cycleMs]);
 
-  React.useEffect(() => {
+  // useLayoutEffectで同期的に状態を設定（レンダリング前に確定させてチラつきを防ぐ）
+  React.useLayoutEffect(() => {
+    if (typeof window === 'undefined') return;
+
     if (!intro?.enabled) {
       setShowIntro(false);
       setIntroCompleted(true);
@@ -64,18 +66,12 @@ export function HeroBackground({
 
     let shouldShow = !!intro.enabled;
     if (intro.onlyFirstVisit) {
-      // 内部ナビゲーションの場合、またはイントロが既に表示済みの場合は表示しない
       shouldShow = !isInternalNavigation && !introShown;
     }
 
-    if (shouldShow) {
-      setShowIntro(true);
-      setIntroCompleted(false);
-    } else {
-      setShowIntro(false);
-      setIntroCompleted(true);
-    }
-  }, [intro]);
+    setShowIntro(shouldShow);
+    setIntroCompleted(!shouldShow);
+  }, [intro?.enabled, intro?.onlyFirstVisit]);
 
   return (
     <div className={`relative min-h-screen overflow-hidden text-white ${className}`}>

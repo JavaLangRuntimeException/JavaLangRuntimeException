@@ -3,7 +3,7 @@
 import React, {useEffect, useState} from "react";
 import {motion} from "framer-motion";
 import {useAtom} from "jotai";
-import {publishedArticlesAtom, publishedArticlesLastFetchAtom} from "../../../components/BackgroundFetcher";
+import {publishedArticlesAtom} from "../../../components/BackgroundFetcher";
 
 interface Ogp {
     title: string;
@@ -17,15 +17,14 @@ export const PublishedArticles: React.FC<{ showAnimations?: boolean; delay?: num
                                                                                               showAnimations = true,
                                                                                               delay = 0
                                                                                           }) => {
-    const [globalArticles, setGlobalArticles] = useAtom(publishedArticlesAtom);
-    const [globalLastFetch, setGlobalLastFetch] = useAtom(publishedArticlesLastFetchAtom);
+    const [globalArticles] = useAtom(publishedArticlesAtom);
     const [pickupArticles, setPickupArticles] = useState<Ogp[]>(globalArticles?.pickupArticles || []);
     const [latestArticlesFromScrape, setLatestArticlesFromScrape] = useState<Ogp[]>(globalArticles?.latestArticlesFromScrape || []);
     const [latestArticles, setLatestArticles] = useState<Ogp[]>(globalArticles?.latestArticles || []);
     const [loading, setLoading] = useState(!globalArticles);
 
+    // グローバル状態からデータを同期（データ取得はpage.tsxで行うため、ここでは表示のみ）
     useEffect(() => {
-        // グローバル状態からデータを取得
         if (globalArticles) {
             console.log('[PublishedArticles] Loading from global state:', {
                 pickupCount: globalArticles.pickupArticles.length,
@@ -37,147 +36,11 @@ export const PublishedArticles: React.FC<{ showAnimations?: boolean; delay?: num
             setLatestArticlesFromScrape(globalArticles.latestArticlesFromScrape || []);
             setLatestArticles(globalArticles.latestArticles);
             setLoading(false);
+        } else {
+            // グローバル状態にデータがない場合はローディング状態を維持
+            setLoading(true);
         }
-
-        let cancelled = false;
-        async function fetchFresh() {
-            try {
-                setLoading(true);
-
-                // ピックアップ記事とスクレイピングで取得したLatest Articlesはスクレイピングから取得
-                const scrapeRes = await fetch(`/api/qiita-scrape?t=${Date.now()}`, { cache: "no-store" });
-                const scrapeJson: {
-                    pickupArticles?: Array<{ url: string; title: string; tags: string[] }>;
-                    latestArticles?: Array<{ url: string; title: string; tags: string[] }>;
-                } = await scrapeRes.json();
-
-                const pickupItems = scrapeJson?.pickupArticles || [];
-                const latestItemsFromScrape = scrapeJson?.latestArticles || [];
-
-                // LatestArticlesはQiitaAPIから取得（ピックアップ記事と重複しない最新3件）
-                // 重複を考慮して多めに取得（最大10件取得してからフィルタリング）
-                const qiitaApiRes = await fetch(`/api/qiita?page=1&includeTags=1&perPage=10`, { cache: "no-store" });
-                const qiitaApiJson: {
-                    items?: Array<{
-                        url: string;
-                        title: string;
-                        body?: string;
-                        tags: Array<{ name: string }>
-                    }>
-                } = await qiitaApiRes.json();
-
-                console.log('[PublishedArticles] QiitaAPI response:', qiitaApiJson?.items?.length || 0, 'items');
-
-                // ピックアップ記事とスクレイピングで取得したLatest ArticlesのURLを取得（重複除外用）
-                const pickupUrlsSet = new Set(pickupItems.map(item => item.url));
-                const scrapeLatestUrlsSet = new Set(latestItemsFromScrape.map(item => item.url));
-                const allExcludedUrlsSet = new Set([...pickupUrlsSet, ...scrapeLatestUrlsSet]);
-                console.log('[PublishedArticles] Pickup URLs:', Array.from(pickupUrlsSet));
-                console.log('[PublishedArticles] Scrape Latest URLs:', Array.from(scrapeLatestUrlsSet));
-
-                // ピックアップ記事とスクレイピングLatest Articlesと重複しない最新記事を取得（最大3件）
-                const allApiItems = qiitaApiJson?.items || [];
-                const filteredItems = allApiItems.filter(item => !allExcludedUrlsSet.has(item.url));
-                console.log('[PublishedArticles] Filtered items (after removing pickup and scrape latest duplicates):', filteredItems.length);
-
-                const latestItems = filteredItems
-                    .slice(0, 3) // 最大3件
-                    .map(item => ({
-                        url: item.url,
-                        title: item.title,
-                        tags: item.tags.map(tag => tag.name)
-                    }));
-
-                console.log('[PublishedArticles] Latest items from QiitaAPI:', latestItems);
-                console.log('[PublishedArticles] Latest items count:', latestItems.length);
-                console.log('[PublishedArticles] Pickup items:', pickupItems);
-                console.log('[PublishedArticles] Latest items from scrape:', latestItemsFromScrape);
-
-                const allItems = [...pickupItems, ...latestItemsFromScrape, ...latestItems];
-
-                if (allItems.length === 0) {
-                    if (!cancelled) {
-                        setPickupArticles([]);
-                        setLatestArticlesFromScrape([]);
-                        setLatestArticles([]);
-                    }
-                    return;
-                }
-
-                // OGP取得なしで、直接記事データを作成
-                const createArticleData = (items: Array<{ url: string; title: string; tags: string[] }>): Ogp[] => {
-                    return items.map((item) => {
-                        return {
-                            title: item.title || "",
-                            description: "", // OGP取得しないため空文字
-                            url: item.url,
-                            images: [], // OGP取得しないため空配列
-                            tags: item.tags || []
-                        };
-                    }).filter(a => a.title && a.title.trim() !== "");
-                };
-
-                const pickupArticlesData = createArticleData(pickupItems);
-                const latestArticlesFromScrapeData = createArticleData(latestItemsFromScrape);
-                const latestArticlesData = createArticleData(latestItems);
-
-                console.log('[PublishedArticles] Pickup articles data:', pickupArticlesData.length);
-                console.log('[PublishedArticles] Latest articles from scrape data:', latestArticlesFromScrapeData.length);
-                console.log('[PublishedArticles] Latest articles data:', latestArticlesData.length);
-                console.log('[PublishedArticles] Latest articles data details:', latestArticlesData);
-
-                if (!cancelled) {
-                    setPickupArticles(pickupArticlesData);
-                    setLatestArticlesFromScrape(latestArticlesFromScrapeData);
-                    setLatestArticles(latestArticlesData);
-                    // グローバル状態も更新
-                    setGlobalArticles({
-                        pickupArticles: pickupArticlesData.map(a => ({
-                            url: a.url,
-                            title: a.title,
-                            description: a.description,
-                            images: a.images,
-                            tags: a.tags || []
-                        })),
-                        latestArticlesFromScrape: latestArticlesFromScrapeData.map(a => ({
-                            url: a.url,
-                            title: a.title,
-                            description: a.description,
-                            images: a.images,
-                            tags: a.tags || []
-                        })),
-                        latestArticles: latestArticlesData.map(a => ({
-                            url: a.url,
-                            title: a.title,
-                            description: a.description,
-                            images: a.images,
-                            tags: a.tags || []
-                        }))
-                    });
-                    setGlobalLastFetch(Date.now());
-                }
-
-            } catch (e) {
-                if (!cancelled) {
-                    setPickupArticles([]);
-                    setLatestArticlesFromScrape([]);
-                    setLatestArticles([]);
-                }
-                console.log(e);
-            } finally {
-                if (!cancelled) setLoading(false);
-            }
-        }
-
-        // グローバル状態にデータがない場合、または5分以上経過している場合は再取得
-        const now = Date.now();
-        const FIVE_MINUTES = 5 * 60 * 1000;
-        if (!globalArticles || (now - globalLastFetch > FIVE_MINUTES)) {
-            fetchFresh();
-        }
-
-        return () => { cancelled = true; };
-    }, [globalArticles, globalLastFetch, setGlobalArticles, setGlobalLastFetch]);
+    }, [globalArticles]);
 
     // 見出しは常に表示するため、ここでは非表示にしない
 

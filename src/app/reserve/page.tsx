@@ -951,7 +951,7 @@ export default function ReservePage() {
             </button>
           </div>
         </div>
-        <p className="-mt-2 mb-3 text-xs text-zinc-600">30分枠をクリックで選択。<br />同日の隣接時間枠をクリックで1時間以上の面談設定ができます。 <br /> 選択中の枠は青色表示、選択不可の枠はグレー表示になります。 <br />赤色の日付は予約可能な時間枠がない日です。<br />黄色の日付は予約可能な時間が残りわずかであることを示します。</p>
+        <p className="-mt-2 mb-3 text-xs text-zinc-600">30分枠をクリックで選択。<br />同日の隣接時間枠をクリックで1時間以上の面談設定ができます。<br />赤色の日付は予約可能な時間枠がない日です。<br />黄色の日付は予約可能な時間が残りわずかであることを示します。</p>
         <div className="relative">
         {busyLoading && (
           <div className="absolute inset-0 z-10 grid place-items-center bg-white/60 backdrop-blur-sm">
