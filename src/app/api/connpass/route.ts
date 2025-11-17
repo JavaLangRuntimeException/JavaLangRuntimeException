@@ -107,6 +107,14 @@ export async function GET(request: Request) {
             }
         });
         console.log('Scraped events count:', events.length);
+
+        // 日付が近い順（昇順）にソート
+        events.sort((a, b) => {
+            const dateA = new Date(a.started_at).getTime();
+            const dateB = new Date(b.started_at).getTime();
+            return dateA - dateB; // 昇順（古い順から新しい順）
+        });
+
         return NextResponse.json({
             results_returned: events.length,
             results_available: events.length,

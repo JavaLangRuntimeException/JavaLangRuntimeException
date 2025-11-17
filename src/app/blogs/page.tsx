@@ -1126,8 +1126,15 @@ export default function BlogsPage() {
                 if (nextPageHasArticles === false && fetchedPages.has(nextPage)) {
                     return Math.max(maxFetchedPage, currentPage);
                 }
-                // まだ次のページがある可能性がある
-                return Math.max(maxFetchedPage, currentPage) + 1;
+                // 現在のページに記事がある場合のみ、次のページも表示候補に入れる
+                const currentPageArticles = articlesByPage.get(currentPage) || [];
+                if (currentPageArticles.length > 0) {
+                    // 現在のページに記事があり、次ページがまだ未取得の場合のみ+1
+                    return !fetchedPages.has(nextPage) ? Math.max(maxFetchedPage, currentPage + 1) : Math.max(maxFetchedPage, currentPage);
+                } else {
+                    // 現在のページに記事がない場合は最大取得済みページを返す
+                    return maxFetchedPage;
+                }
             }
         }
     }, [itemsPerPage, selectedSeries, fetchedPages, currentPage, articlesByPage, searchText, hasMore]);
@@ -1157,7 +1164,7 @@ export default function BlogsPage() {
             console.log(`[BlogPage] No articles on page ${currentPage}, moving back to page ${currentPage - 1}`);
             setCurrentPage(currentPage - 1);
         }
-    }, [paginatedData, currentPage, selectedSeries, searchText]);
+    }, [paginatedData, currentPage, selectedSeries, searchText, setCurrentPage]);
 
     // 表示されている記事でOGPが不完全な場合、バックグラウンドで再取得
     React.useEffect(() => {

@@ -3,7 +3,7 @@
 import React, {useEffect, useState} from "react";
 import {motion} from "framer-motion";
 import {useAtom} from "jotai";
-import {connpassEventsAtom, connpassLastFetchAtom} from "../../../components/BackgroundFetcher";
+import {connpassEventsAtom} from "../../../components/BackgroundFetcher";
 
 interface ConnpassEvent {
     event_id: number;
@@ -20,51 +20,33 @@ interface ConnpassEvent {
     image_url?: string;
 }
 
-interface ConnpassResponse {
-    results_returned: number;
-    events: ConnpassEvent[];
-}
-
 export const ConnpassEventCards: React.FC<{ showAnimations?: boolean; delay?: number }> = ({
                                                                                                showAnimations = true,
                                                                                                delay = 0
                                                                                            }) => {
-    const [globalEvents, setGlobalEvents] = useAtom(connpassEventsAtom);
-    const [, setGlobalLastFetch] = useAtom(connpassLastFetchAtom);
-    const [events, setEvents] = useState<ConnpassEvent[]>(globalEvents);
+    const [globalEvents] = useAtom(connpassEventsAtom);
+    // 日付順にソートする関数
+    const sortEventsByDate = React.useCallback((events: ConnpassEvent[]) => {
+        return [...events].sort((a, b) => {
+            const dateA = new Date(a.started_at).getTime();
+            const dateB = new Date(b.started_at).getTime();
+            return dateA - dateB; // 昇順（古い順から新しい順）
+        });
+    }, []);
+    const [events, setEvents] = useState<ConnpassEvent[]>(() => sortEventsByDate(globalEvents));
     const [loading, setLoading] = useState(globalEvents.length === 0);
 
+    // グローバル状態からデータを同期（データ取得はpage.tsxで行うため、ここでは表示のみ）
     useEffect(() => {
-        // キャッシュを使用せず、常に最新データを取得
-        let cancelled = false;
-        const fetchEvents = async () => {
-            try {
-                setLoading(true);
-
-                const response = await fetch('/api/connpass', { cache: 'no-store' });
-                const data: ConnpassResponse = await response.json();
-                if (!cancelled) {
-                    const fetchedEvents = data.events || [];
-                    setEvents(fetchedEvents);
-                    // グローバル状態も更新
-                    setGlobalEvents(fetchedEvents);
-                    setGlobalLastFetch(Date.now());
-                }
-            } catch (error) {
-                console.error('Failed to fetch Connpass events:', error);
-                if (!cancelled) {
-                    setEvents([]);
-                }
-            } finally {
-                if (!cancelled) setLoading(false);
-            }
-        };
-
-        // 常に最新データを取得
-        fetchEvents();
-
-        return () => { cancelled = true; };
-    }, [setGlobalEvents, setGlobalLastFetch]);
+        if (globalEvents.length > 0) {
+            const sortedEvents = sortEventsByDate(globalEvents);
+            setEvents(sortedEvents);
+            setLoading(false);
+        } else {
+            // グローバル状態にデータがない場合はローディング状態を維持
+            setLoading(true);
+        }
+    }, [globalEvents, sortEventsByDate]);
 
     // 見出しは常に表示するため、ここでは非表示にしない
 
