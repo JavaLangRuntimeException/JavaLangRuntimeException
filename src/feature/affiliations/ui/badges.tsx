@@ -11,7 +11,9 @@ export function AffiliationBadges() {
         "university_research",
         "community",
         "engineer",
-        "community_event_management",
+        "community_director",
+        "event_management",
+        "community_organizer",
         "conference_staff",
         "technical_mentor",
     ] as const;
@@ -20,7 +22,9 @@ export function AffiliationBadges() {
         "university_research": "University & Research",
         "community": "Community",
         "engineer": "Engineer",
-        "community_event_management": "Community & Event Management",
+        "community_director": "Community Director",
+        "event_management": "Event Management",
+        "community_organizer": "Community Organizer",
         "conference_staff": "Conference Staff",
         "technical_mentor": "Technical Mentor",
     };
