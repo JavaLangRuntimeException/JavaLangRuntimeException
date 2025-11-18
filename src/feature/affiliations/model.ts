@@ -2,7 +2,9 @@ export type AffiliationCategory =
     | "university_research"
     | "community"
     | "engineer"
-    | "community_event_management"
+    | "community_director"
+    | "event_management"
+    | "community_organizer"
     | "conference_staff"
     | "technical_mentor";
 
@@ -63,40 +65,44 @@ export const affiliations: Affiliation[] = [
         description: "サイバーエージェント2028年卒のサーバーサイドエンジニアとして、技術開発に取り組んでいます。"
     },
     {
-        label: "任天堂株式会社長期アルバイト",
+        label: "任天堂株式会社 長期アルバイト",
         color: "bg-red-600",
         href: "https://www.nintendo.com/jp",
         category: "engineer",
         description: "任天堂にてソフトウェアエンジニアとして長期アルバイトに従事しています。"
     },
 
-    // community_event_management
+    // community_director
+    {
+        label: "JINEN株式会社 Community Director / Engineer",
+        color: "bg-blue-900",
+        href: "https://jinnen.co.jp/",
+        category: "community_director",
+        description: "学生エンジニアコミュニティSTECHの運営サポートや各種コミュニティに必要なツールの開発を行っています。"
+    },
+
+    // event_management
     {
         label: "特定非営利活動法人NxTEND 新規事業推進室",
         color: "bg-amber-600",
         href: "https://www.nxtend.or.jp/",
-        category: "community_event_management",
+        category: "event_management",
         description: "NxTENDにて各地域のエンジニアコミュニティを活性化するための新規事業の企画・運営を行っています。"
     },
-    {
-        label: "JINEN株式会社",
-        color: "bg-blue-900",
-        href: "https://jinnen.co.jp/",
-        category: "community_event_management",
-        description: "学生エンジニアコミュニティSTECHの運営サポートや各種コミュニティに必要なツールの開発を行っています。"
-    },
+
+    // community_organizer
     {
         label: "kyoto.go Organizer",
         color: "bg-violet-600",
         href: "https://x.com/kyotogolang",
-        category: "community_event_management",
+        category: "community_organizer",
         description: "京都のGo当地コミュニティを主催し、定期的な勉強会やイベントを開催しています。"
     },
     {
         label: "biwako.go Organizer",
         color: "bg-amber-800",
         href: "https://x.com/biwakogolang",
-        category: "community_event_management",
+        category: "community_organizer",
         description: "滋賀のGo当地コミュニティを主催し、定期的な勉強会やイベントを開催しています。"
     },
 
