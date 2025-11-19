@@ -14,5 +14,10 @@ export function ConditionalHeader() {
     return null;
   }
 
+  // /reserve-researchページではヘッダーを非表示
+  if (pathname === "/reserve-research") {
+    return null;
+  }
+
   return <Header />;
 }

@@ -11,6 +11,7 @@ export async function POST(req: Request) {
   try {
     const url = new URL(req.url);
     const debug = url.searchParams.get("debug") === "1";
+    const noBuffer = url.searchParams.get("noBuffer") === "1";
     // Bodyが空の場合があるため安全にパース
     let body: BusyRequest | null = null;
     try {
@@ -47,8 +48,8 @@ export async function POST(req: Request) {
     const texts = results.map((r) => r.text);
     const intervals = texts.flatMap((t) => parseIcsBusyIntervals(t, { windowStart: weekStart, windowEnd: weekEnd }));
 
-    // Add 30-minute buffer before/after each busy interval, clip to the requested week, then merge overlaps
-    const bufferMs = 30 * 60 * 1000;
+    // Add 30-minute buffer before/after each busy interval (unless noBuffer=1), clip to the requested week, then merge overlaps
+    const bufferMs = noBuffer ? 0 : 30 * 60 * 1000;
     const clipped = intervals
       .map((iv) => {
         const s = new Date(new Date(iv.start).getTime() - bufferMs);
