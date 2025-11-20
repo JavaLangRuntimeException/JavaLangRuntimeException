@@ -4,6 +4,7 @@ import React from "react";
 import { PURPOSES } from "../../../shared/config/purposes";
 import { useBodyScrollLock } from "../../../shared/lib/useBodyScrollLock";
 import { GlassCardSimple } from "../../../shared/ui/GlassCard";
+import { CircleCheckLoader } from "../../../shared/ui/CircleCheckLoader";
 
 export type CreatedInfo = { ok: boolean; eventId?: string; htmlLink?: string; meetLink?: string } | null;
 
@@ -69,6 +70,10 @@ export function CompletionModal({
         <div className="p-3 sm:p-4 overflow-y-auto overscroll-contain flex-1 min-h-0">
           {createdInfo.ok ? (
             <div className="space-y-3 text-sm text-zinc-800">
+              {/* 完了アニメーション */}
+              <div className="mb-4 flex items-center justify-center">
+                <CircleCheckLoader isComplete={true} size={80} />
+              </div>
               <GlassCardSimple
                 gradientFrom="from-emerald-400"
                 gradientTo="to-green-500"

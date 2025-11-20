@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { HeroBackground } from "../../shared/ui/HeroBackground";
 import { ContactForm } from "../../feature/contact/ui/ContactForm";
 import { GlassCard } from "../../shared/ui/GlassCard";
+import { CircleCheckLoader } from "../../shared/ui/CircleCheckLoader";
 
 export default function ContactPage() {
   const bgImages = ["/image.png", "/image2.png", "/image3.png"];
@@ -111,6 +112,10 @@ export default function ContactPage() {
                 <h3 className="text-base font-semibold text-white drop-shadow">お問い合わせを受け付けました</h3>
               </div>
               <div className="p-8 text-center">
+                {/* 完了アニメーション */}
+                <div className="mb-6 flex items-center justify-center">
+                  <CircleCheckLoader isComplete={true} size={80} />
+                </div>
                 <div className="space-y-4 text-zinc-700">
                   <p className="text-lg">
                     お問い合わせありがとうございます。
