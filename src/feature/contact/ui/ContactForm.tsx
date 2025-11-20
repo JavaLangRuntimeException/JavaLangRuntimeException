@@ -8,6 +8,7 @@ import { InfoBadge } from "../../../shared/ui/InfoBadge";
 import { z } from "zod";
 import { useAtom } from "jotai";
 import { useLoading } from "../../../shared/contexts/LoadingContext";
+import { CircleCheckLoader } from "../../../shared/ui/CircleCheckLoader";
 import {
   contactEmailAtom,
   contactNameAtom,
@@ -554,7 +555,9 @@ export function ContactForm({ onSuccess }: ContactFormProps) {
               <h3 className="text-base font-semibold text-white drop-shadow">お問い合わせを送信中</h3>
             </div>
             <div className="p-8 text-center">
-              <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-2 border-zinc-300 border-t-blue-600" />
+              <div className="mx-auto mb-4 flex items-center justify-center">
+                <CircleCheckLoader isComplete={false} size={64} />
+              </div>
               <div className="text-sm font-medium text-zinc-700">お問い合わせを送信しています…</div>
             </div>
           </div>

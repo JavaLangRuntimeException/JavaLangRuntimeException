@@ -3,6 +3,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, CalendarClock, NotebookText } from "lucide-react";
+import { CircleCheckLoader } from "../../shared/ui/CircleCheckLoader";
 
 export default function ReserveHourlyPage() {
   // 11/25の週(11/25月)から12/28の週(12/26金)までの期間制限
@@ -356,7 +357,9 @@ export default function ReserveHourlyPage() {
                 <h3 className="text-base font-semibold text-white drop-shadow">予定を作成します</h3>
               </div>
               <div className="p-8 text-center">
-                <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-2 border-zinc-300 border-t-blue-600" />
+                <div className="mx-auto mb-4 flex items-center justify-center">
+                  <CircleCheckLoader isComplete={false} size={64} />
+                </div>
                 <div className="text-sm font-medium text-zinc-700">予定を作成しています…</div>
               </div>
             </div>
@@ -375,6 +378,10 @@ export default function ReserveHourlyPage() {
               <div className="p-6">
                 {createdInfo.ok ? (
                   <>
+                    {/* 完了アニメーション */}
+                    <div className="mb-6 flex items-center justify-center">
+                      <CircleCheckLoader isComplete={true} size={80} />
+                    </div>
                     <p className="text-sm text-zinc-700 mb-4">
                       予約が完了しました。入力いただいたメールアドレスに Google カレンダーから招待が届きますのでご確認ください。
                     </p>

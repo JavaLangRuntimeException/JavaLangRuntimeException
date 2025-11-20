@@ -19,6 +19,7 @@ import { ChevronLeft, ChevronRight, CalendarClock, NotebookText } from "lucide-r
 import { GlassCardSimple } from "../../shared/ui/GlassCard";
 import { InfoBadge } from "../../shared/ui/InfoBadge";
 import { useLoading } from "../../shared/contexts/LoadingContext";
+import { CircleCheckLoader } from "../../shared/ui/CircleCheckLoader";
 import {
   emailAtom,
   contactMethodAtom,
@@ -1042,7 +1043,9 @@ export default function ReservePage() {
               <h3 className="text-base font-semibold text-white drop-shadow">予定を作成します</h3>
             </div>
             <div className="p-8 text-center">
-              <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-2 border-zinc-300 border-t-blue-600" />
+              <div className="mx-auto mb-4 flex items-center justify-center">
+                <CircleCheckLoader isComplete={false} size={64} />
+              </div>
               <div className="text-sm font-medium text-zinc-700">予定を作成しています…</div>
             </div>
           </div>
