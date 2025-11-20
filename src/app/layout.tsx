@@ -14,9 +14,9 @@ export const metadata: Metadata = {
     title: "taramanji",
     description: "エンジニア・コミュニティディレクター taramanji のホームページ",
     icons: {
-        icon: "/image.png",
-        shortcut: "/image.png",
-        apple: "/image.png",
+        icon: "/image.ico",
+        shortcut: "/image.ico",
+        apple: "/image.ico",
     },
 };
 
@@ -29,7 +29,7 @@ export default function RootLayout({
         <html lang="ja">
         <head>
             <meta name="viewport" content="width=device-width, initial-scale=1"/>
-            <link rel="icon" type="image/png" href="/image.png"/>
+            <link rel="icon" type="image/x-icon" href="/image.ico"/>
         </head>
         <body className={`${inter.className} min-h-screen w-full`}>
         <LoadingProvider>
