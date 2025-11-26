@@ -1,0 +1,24 @@
+import { atom } from "jotai";
+
+export const nameAtom = atom<string>("");
+export const vrUsageAtom = atom<"none" | "monthly" | "weekly" | "daily" | null>(null);
+export const heightAtom = atom<number | null>(null);
+export const trialPatternAtom = atom<"standing_humanSwinging" | "fours_humanSwinging" | "standing_bearRolling" | "fours_bearRolling" | null>(null);
+export const r1Atom = atom<number | null>(null);
+export const r2Atom = atom<number | null>(null);
+export const r3Atom = atom<number | null>(null);
+export const r4Atom = atom<number | null>(null);
+export const r5Atom = atom<number | null>(null);
+export const r6Atom = atom<number | null>(null);
+export const r7Atom = atom<number | null>(null);
+export const r8Atom = atom<number | null>(null);
+export const r9Atom = atom<number | null>(null);
+export const r10Atom = atom<number | null>(null);
+export const r11Atom = atom<number | null>(null);
+export const r12Atom = atom<number | null>(null);
+export const r13Atom = atom<number | null>(null);
+export const r14Atom = atom<number | null>(null);
+export const r15Atom = atom<number | null>(null);
+export const r16Atom = atom<number | null>(null);
+export const r17Atom = atom<number | null>(null);
+export const r18Atom = atom<number | null>(null);
