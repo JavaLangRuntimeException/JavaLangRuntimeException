@@ -1,0 +1,220 @@
+"use client";
+
+import React, {useEffect, useState} from "react";
+import {motion} from "framer-motion";
+import {useAtom} from "jotai";
+import {publishedArticlesAtom} from "../../../components/BackgroundFetcher";
+
+interface Ogp {
+    title: string;
+    description: string;
+    url: string;
+    images?: string[];
+    tags?: string[];
+}
+
+export const PublishedArticles: React.FC<{ showAnimations?: boolean; delay?: number }> = ({
+                                                                                              showAnimations = true,
+                                                                                              delay = 0
+                                                                                          }) => {
+    const [globalArticles] = useAtom(publishedArticlesAtom);
+    const [pickupArticles, setPickupArticles] = useState<Ogp[]>(globalArticles?.pickupArticles || []);
+    const [latestArticlesFromScrape, setLatestArticlesFromScrape] = useState<Ogp[]>(globalArticles?.latestArticlesFromScrape || []);
+    const [latestArticles, setLatestArticles] = useState<Ogp[]>(globalArticles?.latestArticles || []);
+    const [loading, setLoading] = useState(!globalArticles);
+
+    // グローバル状態からデータを同期（データ取得はpage.tsxで行うため、ここでは表示のみ）
+    useEffect(() => {
+        if (globalArticles) {
+            console.log('[PublishedArticles] Loading from global state:', {
+                pickupCount: globalArticles.pickupArticles.length,
+                latestFromScrapeCount: globalArticles.latestArticlesFromScrape?.length || 0,
+                latestCount: globalArticles.latestArticles.length,
+                latestArticles: globalArticles.latestArticles
+            });
+            setPickupArticles(globalArticles.pickupArticles);
+            setLatestArticlesFromScrape(globalArticles.latestArticlesFromScrape || []);
+            setLatestArticles(globalArticles.latestArticles);
+            setLoading(false);
+        } else {
+            // グローバル状態にデータがない場合はローディング状態を維持
+            setLoading(true);
+        }
+    }, [globalArticles]);
+
+    // 見出しは常に表示するため、ここでは非表示にしない
+
+    return (
+        <motion.div
+            className="mt-16"
+            initial={showAnimations ? {opacity: 0, y: 30} : {opacity: 1, y: 0}}
+            animate={{opacity: 1, y: 0}}
+            transition={showAnimations ? {delay, duration: 0.6} : {duration: 0}}
+        >
+            <h2 className="text-lg font-semibold">📝 Published Articles</h2>
+            {loading && (
+                <div className="mt-4 flex items-center justify-center gap-3">
+                    <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-green-400"></div>
+                    <p className="text-sm text-zinc-400">記事を取得中...</p>
+                </div>
+            )}
+
+            {!loading && pickupArticles.length === 0 && latestArticlesFromScrape.length === 0 && latestArticles.length === 0 && (
+                <p className="mt-2 text-sm text-zinc-400">記事がまだありません</p>
+            )}
+
+            {!loading && (pickupArticles.length > 0 || latestArticlesFromScrape.length > 0 || latestArticles.length > 0) && (
+            <>
+                {/* ピックアップ記事 */}
+                {pickupArticles.length > 0 && (
+                    <div className="mt-3">
+                        <h3 className="text-md font-semibold text-zinc-300 mb-3">⭐ Pickup Articles</h3>
+                        <div className="grid gap-6 sm:grid-cols-1 mt-3">
+                            {pickupArticles.map((article, index) => (
+                                <ArticleCard
+                                    key={article.url}
+                                    article={article}
+                                    index={index}
+                                    showAnimations={showAnimations}
+                                    delay={delay + 0.3}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* スクレイピングで取得した最新記事 */}
+                {latestArticlesFromScrape.length > 0 && (
+                    <div className="mt-6">
+                        <h3 className="text-md font-semibold text-zinc-300 mb-3">📰 PickUp Articles</h3>
+                        <div className="grid gap-6 sm:grid-cols-1 mt-3">
+                            {latestArticlesFromScrape.map((article, index) => (
+                                <ArticleCard
+                                    key={article.url}
+                                    article={article}
+                                    index={index}
+                                    showAnimations={showAnimations}
+                                    delay={delay + 0.3 + (pickupArticles.length * 0.1)}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* QiitaAPIで取得した最新記事 */}
+                {latestArticles.length > 0 && (
+                    <div className="mt-6">
+                        <h3 className="text-md font-semibold text-zinc-300 mb-3">📰 Latest Articles</h3>
+                        <div className="grid gap-6 sm:grid-cols-1 mt-3">
+                            {latestArticles.map((article, index) => (
+                                <ArticleCard
+                                    key={article.url}
+                                    article={article}
+                                    index={index}
+                                    showAnimations={showAnimations}
+                                    delay={delay + 0.3 + (pickupArticles.length * 0.1) + (latestArticlesFromScrape.length * 0.1)}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </>
+            )}
+
+            {!loading && (
+                <motion.div
+                    className="mt-6 text-center"
+                    initial={showAnimations ? {opacity: 0, y: 20} : {opacity: 1, y: 0}}
+                    animate={{opacity: 1, y: 0}}
+                    transition={showAnimations ? {delay: delay + 1.0, duration: 0.5} : {duration: 0}}
+                >
+                    <a
+                        href="/blogs"
+                        className="inline-flex items-center gap-2 rounded-lg bg-white/10 px-6 py-3 text-sm font-medium text-white hover:bg-white/20 transition-all duration-200 ring-1 ring-white/20 hover:ring-white/40"
+                    >
+                        <span>すべての記事を見る</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                             stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7"/>
+                        </svg>
+                    </a>
+                </motion.div>
+            )}
+        </motion.div>
+    );
+};
+
+// 記事カードコンポーネント
+const ArticleCard: React.FC<{
+    article: Ogp;
+    index: number;
+    showAnimations: boolean;
+    delay: number;
+}> = ({ article, index, showAnimations, delay }) => {
+    return (
+        <motion.a
+            href={article.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group relative rounded-xl border border-white/10 overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-xl hover:shadow-green-500/20"
+            initial={showAnimations ? {opacity: 0, y: 20} : {opacity: 1, y: 0}}
+            animate={{opacity: 1, y: 0}}
+            transition={showAnimations ? {delay: delay + index * 0.1, duration: 0.5} : {duration: 0}}
+            whileHover={{scale: 1.02}}
+            whileTap={{scale: 0.98}}
+        >
+            {/* 背景画像 */}
+            {article.images && article.images.length > 0 && (
+                <div
+                    className="absolute inset-0 bg-cover bg-center opacity-30 group-hover:opacity-40 transition-opacity duration-300"
+                    style={{backgroundImage: `url(${article.images[0]})`}}
+                />
+            )}
+
+            {/* グラデーションオーバーレイ */}
+            <div
+                className="absolute inset-0 bg-gradient-to-br from-black/40 via-black/50 to-black/60 backdrop-blur-sm"/>
+
+            {/* コンテンツ */}
+            <div className="relative p-6">
+                <div className="flex items-start gap-3 mb-3">
+                    <div className="w-2 h-2 mt-2 rounded-full bg-green-400 animate-pulse flex-shrink-0"/>
+                    <h3 className="text-lg font-semibold text-white group-hover:text-green-300 transition-colors line-clamp-2 drop-shadow-lg">
+                        {article.title}
+                    </h3>
+                </div>
+
+                {article.description && (
+                    <p className="text-sm text-white/90 line-clamp-2 mb-4 drop-shadow">
+                        {article.description}
+                    </p>
+                )}
+
+                {article.tags && article.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-4">
+                        {article.tags.slice(0, 5).map((tag, tagIndex) => (
+                            <span
+                                key={tagIndex}
+                                className="px-2 py-1 text-xs rounded-full bg-green-500/20 text-green-300 border border-green-500/30 drop-shadow"
+                            >
+                                {tag}
+                            </span>
+                        ))}
+                    </div>
+                )}
+
+                <div className="mt-4 flex items-center text-green-400 group-hover:text-green-300 transition-colors drop-shadow-lg">
+                    <span className="text-sm font-semibold">記事を読む</span>
+                    <motion.span
+                        className="ml-2"
+                        animate={{x: [0, 5, 0]}}
+                        transition={{duration: 1.5, repeat: Infinity}}
+                    >
+                        →
+                    </motion.span>
+                </div>
+            </div>
+        </motion.a>
+    );
+};
+
