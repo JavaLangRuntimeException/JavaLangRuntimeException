@@ -385,7 +385,7 @@ export function QuestionnaireForm({ onSubmit, isSubmitting }: { onSubmit: () => 
         onChange={setR18}
         questionNumber="【R18】"
         questionJa="バーチャルの身体(アバタ)に対して、力強さを感じた。"
-        questionEn="I felt confident moving with the virtual body."
+        questionEn="I felt a sense of strength in the virtual body."
         disabled={isSubmitting}
       />
 
