@@ -218,8 +218,8 @@ export async function fetchMultipleOgp(urls: string[], skipCache: boolean = fals
 
                         // キャッシュに保存（skipCacheがfalseの場合のみ）
                         if (!skipCache) {
-                            ogpCache.set(url, preview);
-                            cacheTimestamps.set(url, Date.now());
+                        ogpCache.set(url, preview);
+                        cacheTimestamps.set(url, Date.now());
                         }
 
                         console.log(`OGP fetched for ${url}: title="${preview.title || 'NO_TITLE'}"`);
