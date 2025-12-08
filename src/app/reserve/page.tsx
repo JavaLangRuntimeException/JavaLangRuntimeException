@@ -15,7 +15,7 @@ import { CompletionModal } from "../../feature/reserve/ui/CompletionModal";
 import { ConfirmModal } from "../../feature/reserve/ui/ConfirmModal";
 import { CancelModal } from "../../feature/reserve/ui/CancelModal";
 import { useAtom } from "jotai";
-import { ChevronLeft, ChevronRight, CalendarClock, NotebookText } from "lucide-react";
+import { ChevronLeft, ChevronRight, CalendarClock, NotebookText, ChevronUp } from "lucide-react";
 import { GlassCardSimple } from "../../shared/ui/GlassCard";
 import { InfoBadge } from "../../shared/ui/InfoBadge";
 import { useLoading } from "../../shared/contexts/LoadingContext";
@@ -1018,6 +1018,16 @@ export default function ReservePage() {
             setEndMin(slotEnd.getMinutes());
           }}
         />
+        </div>
+        <div className="mt-4 flex justify-center">
+          <button
+            type="button"
+            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+            className="inline-flex items-center gap-2 rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+          >
+            <ChevronUp className="h-4 w-4" aria-hidden="true" />
+            ページ上部へ
+          </button>
         </div>
       </section>
 
