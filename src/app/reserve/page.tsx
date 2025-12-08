@@ -124,7 +124,7 @@ export default function ReservePage() {
   const isHolidayPeriod = React.useCallback((date: Date) => {
     const month = date.getMonth() + 1;
     const day = date.getDate();
-    
+
     // 12/29-12/31
     if (month === 12 && day >= 29) {
       return true;
