@@ -134,6 +134,40 @@ export function DateTimeFields({
     return sel.getTime() > lim.getTime();
   }, [year, month, day]);
 
+  const isHolidayPeriod = React.useMemo(() => {
+    if (year == null || month == null || day == null) return false;
+    // 12/29-12/31
+    if (month === 12 && day >= 29) {
+      return true;
+    }
+    // 1/1-1/5
+    if (month === 1 && day <= 5) {
+      return true;
+    }
+    return false;
+  }, [year, month, day]);
+
+  // 現在の日付が11/29から1/5の間かどうかをチェック
+  const shouldShowHolidayCard = React.useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1;
+    const currentDay = now.getDate();
+
+    // 11/29-12/31の間
+    if (currentMonth === 11 && currentDay >= 29) {
+      return true;
+    }
+    // 12/1-12/31の間
+    if (currentMonth === 12) {
+      return true;
+    }
+    // 1/1-1/5の間
+    if (currentMonth === 1 && currentDay <= 5) {
+      return true;
+    }
+    return false;
+  }, []);
+
   return (
     <section className="mt-6 grid gap-4 sm:grid-cols-2">
       <div className="sm:col-span-2 -mb-2">
@@ -141,10 +175,21 @@ export function DateTimeFields({
           <div className="absolute inset-y-0 left-0 w-1.5 bg-gradient-to-b from-blue-400 to-indigo-500" />
           <div className="ml-3 flex items-center gap-3">
             <Info className="mt-0.5 h-5 w-5 text-blue-300" aria-hidden="true" />
-            <p className="m-0 text-xs text-white/90">カレンダーを押して日付と時間の指定ができます</p>
+            <p className="m-0 text-xs text-white/90">予約可能時間: 1ヶ月後までの月曜〜日曜 9:00 - 23:00(JST)</p>
           </div>
         </div>
       </div>
+      {shouldShowHolidayCard && (
+        <div className="sm:col-span-2 -mb-2">
+          <div className="relative overflow-hidden rounded-2xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur animate-in fade-in-50">
+            <div className="absolute inset-y-0 left-0 w-1.5 bg-gradient-to-b from-red-400 to-rose-500" />
+            <div className="ml-3 flex items-center gap-3">
+              <Info className="mt-0.5 h-5 w-5 text-red-300" aria-hidden="true" />
+              <p className="m-0 text-xs text-white/90">12/29-翌年1/5の期間は予約できません</p>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="rounded-2xl border border-white/20 bg-white/90 p-6 shadow-lg backdrop-blur">
         <h2 className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-zinc-700"><CalendarClock className="h-4 w-4 text-zinc-500" /> 日付を直接選択</h2>
         <div className="grid grid-cols-4 gap-3">
@@ -166,6 +211,9 @@ export function DateTimeFields({
         {year != null && month != null && day != null && isBeyondOneMonth && (
           <p className="mt-1 text-xs text-red-600">1ヶ月以降先は選択できません</p>
         )}
+        {year != null && month != null && day != null && isHolidayPeriod && (
+          <p className="mt-1 text-xs text-red-600">12/29-1/5の期間は予約できません</p>
+        )}
       </div>
       <div className="rounded-2xl border border-white/20 bg-white/90 p-6 shadow-lg backdrop-blur">
         <h2 className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-zinc-700"><Clock className="h-4 w-4 text-zinc-500" /> 時間を直接選択</h2>
@@ -181,7 +229,6 @@ export function DateTimeFields({
         {(startHour == null || startMin == null || endHour == null || endMin == null) && (
           <p className="mt-2 text-xs text-red-600">時間の入力は必須です</p>
         )}
-        <p className="mt-2 text-xs text-zinc-500">予約可能時間: 1ヶ月後までの月曜〜日曜 9:00 - 23:00</p>
         {(timeError || endBeforeOrEqualStart) ? (
           <p className="mt-2 text-xs text-red-600">{timeError || "終了は開始より後にしてください"}</p>
         ) : selectionInvalid ? (
