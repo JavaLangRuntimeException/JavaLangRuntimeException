@@ -120,6 +120,22 @@ export default function ReservePage() {
     ? new Date(year as number, (month as number) - 1, day as number, endHour as number, endMin as number, 0, 0)
     : new Date(0);
 
+  // 12/29-1/5の期間チェック関数
+  const isHolidayPeriod = React.useCallback((date: Date) => {
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    
+    // 12/29-12/31
+    if (month === 12 && day >= 29) {
+      return true;
+    }
+    // 1/1-1/5
+    if (month === 1 && day <= 5) {
+      return true;
+    }
+    return false;
+  }, []);
+
   const selectionInvalid = React.useMemo(() => {
     if (!hasDate || !hasTime) return false;
     const s = new Date(year as number, (month as number) - 1, day as number, startHour as number, startMin as number);
@@ -130,6 +146,8 @@ export default function ReservePage() {
     if (s.getTime() <= nowTs) return true;
     if (s.getTime() < leadCutoff) return true;
     if (s.getTime() > oneMonthLater.getTime()) return true;
+    // 12/29-1/5は予約不可
+    if (isHolidayPeriod(s)) return true;
     // Offline business hours constraint (10:00 - 21:00)
     if (contactMethod === "offline") {
       const sh = startHour as number;
@@ -143,7 +161,7 @@ export default function ReservePage() {
     }
     if (isOverlappingBusy(s, e, busy)) return true;
     return false;
-  }, [hasDate, hasTime, year, month, day, startHour, startMin, endHour, endMin, busy, oneMonthLater, contactMethod]);
+  }, [hasDate, hasTime, year, month, day, startHour, startMin, endHour, endMin, busy, oneMonthLater, contactMethod, isHolidayPeriod]);
 
   const zodDirectErrors = React.useMemo(() => {
     const result = contactSchema.safeParse({
