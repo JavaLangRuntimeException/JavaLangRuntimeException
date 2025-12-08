@@ -54,6 +54,22 @@ export function WeekGrid({
     return date;
   }, [now]);
 
+  // 12/29-1/5の期間チェック関数
+  const isHolidayPeriod = React.useCallback((date: Date) => {
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    
+    // 12/29-12/31
+    if (month === 12 && day >= 29) {
+      return true;
+    }
+    // 1/1-1/5
+    if (month === 1 && day <= 5) {
+      return true;
+    }
+    return false;
+  }, []);
+
   // 予約不可日付の判定関数
   const isDateUnavailable = React.useCallback((date: Date) => {
     const dateStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0);
@@ -65,6 +81,11 @@ export function WeekGrid({
 
     // 1ヶ月以降は予約不可
     if (dateStart.getTime() > oneMonthLater.getTime()) {
+      return true;
+    }
+
+    // 12/29-1/5は予約不可
+    if (isHolidayPeriod(date)) {
       return true;
     }
 
@@ -100,7 +121,7 @@ export function WeekGrid({
     });
 
     return availableSlots.length === 0;
-  }, [busy, today, oneMonthLater, leadCutoff, businessHours]);
+  }, [busy, today, oneMonthLater, leadCutoff, businessHours, isHolidayPeriod]);
 
   // 予約可能時間が残りわずかの判定関数
   const isDateLimited = React.useCallback((date: Date) => {
@@ -182,6 +203,7 @@ export function WeekGrid({
                 const isPast = cellEnd.getTime() <= now.getTime();
                 const withinLead = cellStart.getTime() < leadCutoff.getTime();
                 const beyondOneMonth = cellStart.getTime() > oneMonthLater.getTime();
+                const isHoliday = isHolidayPeriod(d);
                 const blocked = isOverlappingBusy(cellStart, cellEnd, busy);
                 const withinSelection = cellEnd > selectedStart && cellStart < selectedEnd;
                 // Business hours constraint
@@ -190,24 +212,25 @@ export function WeekGrid({
                 const allowStartMinutes = businessHours.start * 60;
                 const allowEndMinutes = businessHours.end * 60;
                 const outsideBusiness = startMinutes < allowStartMinutes || endMinutes > allowEndMinutes;
+                const isDisabled = blocked || isPast || withinLead || beyondOneMonth || outsideBusiness || isHoliday;
                 return (
                   <button
                     type="button"
                     key={`${d.toDateString()}-${hour}-${min}`}
                     className={`border-t border-l border-zinc-200 p-2 text-center text-xs transition-colors focus:z-10 focus:outline-none focus:ring-2 focus:ring-blue-500/40 ${
-                      blocked || isPast || withinLead || beyondOneMonth || outsideBusiness
+                      isDisabled
                         ? "cursor-not-allowed bg-zinc-100 text-zinc-400"
                         : withinSelection
                         ? "bg-blue-50 text-blue-700 hover:bg-blue-100"
                         : "bg-white hover:bg-zinc-50"
                     }`}
-                    disabled={blocked || isPast || withinLead || beyondOneMonth || outsideBusiness}
+                    disabled={isDisabled}
                     onClick={() => {
-                      if (isPast || withinLead || beyondOneMonth || outsideBusiness) return;
+                      if (isPast || withinLead || beyondOneMonth || outsideBusiness || isHoliday) return;
                       onSelectSlot(cellStart, cellEnd);
                     }}
                   >
-                    {isPast ? "過去" : withinLead || beyondOneMonth || outsideBusiness ? "不可" : blocked ? "不可" : withinSelection ? "選択中" : "可"}
+                    {isPast ? "過去" : withinLead || beyondOneMonth || outsideBusiness || isHoliday ? "不可" : blocked ? "不可" : withinSelection ? "選択中" : "可"}
                   </button>
                 );
               })}

@@ -44,6 +44,12 @@ export async function POST(req: Request) {
           if (startDate.getTime() < minStart) {
             return NextResponse.json({ ok: false, error: "lead_time_violation", message: "予約は現在から2時間後以降のみ可能です" }, { status: 400 });
           }
+          // 12/29-1/5は予約不可
+          const month = startDate.getMonth() + 1;
+          const day = startDate.getDate();
+          if ((month === 12 && day >= 29) || (month === 1 && day <= 5)) {
+            return NextResponse.json({ ok: false, error: "holiday_period", message: "12/29-1/5の期間は予約できません" }, { status: 400 });
+          }
         } catch {}
         const formatLocalDateTime = (y: number, m1: number, d: number, h: number, mi: number) => {
           const pad = (n: number) => String(n).padStart(2, "0");
