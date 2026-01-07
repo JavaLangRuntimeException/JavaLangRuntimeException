@@ -41,13 +41,13 @@ function getAdminSubject(purpose: string, name: string): string {
     case "TechSelect+":
       return `TS+ご相談_${baseName}様x棚橋(taramanji)`;
     case "開発委託/相談":
-      return `開発に関するご相談_${baseName}様x棚橋(taramanji)`;
+      return `開発ご相談_${baseName}様x棚橋(taramanji)`;
     case "STECH":
       return `STECHご相談_${baseName}様x棚橋(taramanji)`;
     case "RM2C":
       return `RM2Cご相談_${baseName}様x棚橋(taramanji)`;
     case "JINEN":
-      return `コミュニティやイベントに関する全般ご相談(JINEN)_${baseName}様x棚橋(taramanji)`;
+      return `コミュニティご相談_${baseName}様x棚橋(taramanji)`;
     case "NxTEND_Event":
       return `NxTEND_Eventご相談_${baseName}様x棚橋(taramanji)`;
     case "NxTEND_Organize":

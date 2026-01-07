@@ -247,7 +247,7 @@ export function CompletionModal({
               >
                 <p className="m-0 text-xs text-black/90">
                   予定の取り消しをご希望の場合は、<br />
-                  以下の「予定を取り消す」ボタンから削除してください。
+                  <a className="underline break-all" href="/reserve">Ask Meページ</a>から予定を取り消してください。
                 </p>
               </GlassCardSimple>
               <GlassCardSimple

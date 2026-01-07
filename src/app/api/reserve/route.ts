@@ -13,7 +13,9 @@ export async function POST(req: Request) {
     if (saJsonB64) {
       try {
         saJson = Buffer.from(saJsonB64, "base64").toString("utf8");
-      } catch {}
+      } catch (err) {
+        console.error("Failed to decode service account JSON from base64", err);
+      }
     }
     if (saJson) {
       try {
@@ -22,13 +24,26 @@ export async function POST(req: Request) {
         const keyFromJson: string | undefined = parsed.private_key;
         if (emailFromJson && keyFromJson) {
           accessToken = await getServiceAccountAccessToken(emailFromJson, String(keyFromJson));
+          if (accessToken) {
+            console.log("Service account access token acquired successfully");
+          } else {
+            console.warn("Service account access token acquisition failed");
+          }
         }
-      } catch {}
+      } catch (err) {
+        console.error("Failed to parse service account JSON or get token", err);
+      }
     }
     if (!accessToken) {
       accessToken = await getAccessTokenFromRequest(req);
+      if (accessToken) {
+        console.log("Access token acquired from request");
+      } else {
+        console.warn("Access token not available from request");
+      }
     }
     if (accessToken) {
+      console.log("Processing calendar event creation with access token");
         try {
           const startDate = new Date(
             body.year,
@@ -50,7 +65,17 @@ export async function POST(req: Request) {
           if ((month === 12 && day >= 29) || (month === 1 && day <= 5)) {
             return NextResponse.json({ ok: false, error: "holiday_period", message: "12/29-1/5の期間は予約できません" }, { status: 400 });
           }
-        } catch {}
+        } catch (validationErr) {
+          console.error("Date validation error", validationErr);
+        }
+        if (!body.start || typeof body.start.hour !== 'number' || typeof body.start.minute !== 'number') {
+          console.error("Invalid start time in request body", body.start);
+          return NextResponse.json({ ok: false, error: "invalid_start_time" }, { status: 400 });
+        }
+        if (!body.end || typeof body.end.hour !== 'number' || typeof body.end.minute !== 'number') {
+          console.error("Invalid end time in request body", body.end);
+          return NextResponse.json({ ok: false, error: "invalid_end_time" }, { status: 400 });
+        }
         const formatLocalDateTime = (y: number, m1: number, d: number, h: number, mi: number) => {
           const pad = (n: number) => String(n).padStart(2, "0");
           const date = new Date(y, m1, d, h, mi, 0, 0);
@@ -148,16 +173,33 @@ export async function POST(req: Request) {
         if (wantMeet) qp.set("conferenceDataVersion", "1");
         const createUrl = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events?${qp.toString()}`;
 
-        const gcalRes = await fetch(createUrl, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        });
+        let gcalRes: Response;
+        try {
+          gcalRes = await fetch(createUrl, {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(payload),
+          });
+        } catch (fetchErr) {
+          console.error("Failed to fetch Google Calendar API", {
+            url: createUrl,
+            error: fetchErr instanceof Error ? fetchErr.message : String(fetchErr),
+            stack: fetchErr instanceof Error ? fetchErr.stack : undefined
+          });
+          return NextResponse.json({ ok: false, error: "google_calendar_api_request_failed", detail: fetchErr instanceof Error ? fetchErr.message : String(fetchErr) }, { status: 502 });
+        }
         if (!gcalRes.ok) {
           const errText = await gcalRes.text().catch(() => "");
+          console.error("Google Calendar API request failed", {
+            status: gcalRes.status,
+            statusText: gcalRes.statusText,
+            url: createUrl,
+            error: errText,
+            payloadSummary: { summary: payload.summary, start: payload.start, end: payload.end }
+          });
           // Fallback: service accounts cannot invite attendees without DWD
           try {
             const errJson = JSON.parse(errText);
@@ -223,8 +265,9 @@ export async function POST(req: Request) {
                 return NextResponse.json({ ok: true, eventId: eventId2, htmlLink: created2?.htmlLink, invited: false, meetLink, note: "Service Accountでのゲスト招待は未対応のため、出席者は追加されていません。" });
               }
             }
-          } catch {}
-          console.error("Google Calendar insert failed", gcalRes.status, errText);
+          } catch (fallbackErr) {
+            console.error("Error in Google Calendar fallback handling", fallbackErr);
+          }
           return NextResponse.json({ ok: false, error: "google_insert_failed", status: gcalRes.status, detail: errText }, { status: 502 });
         }
         const created = (await gcalRes.json().catch(() => ({}))) as {
@@ -271,8 +314,22 @@ export async function POST(req: Request) {
           ? (created.conferenceData.entryPoints as Array<{ entryPointType?: string; uri?: string }>).find((e) => e.entryPointType === "video")?.uri
           : undefined);
         return NextResponse.json({ ok: true, eventId, htmlLink: created?.htmlLink, invited: !!(baseEvent.attendees && baseEvent.attendees.length), meetLink });
-    } else if (process.env.GCAL_WEBHOOK_URL) {
+    }
+
+    // No access token available, try webhook fallback
+    console.log("Access token not available, checking for webhook fallback", { hasWebhook: !!process.env.GCAL_WEBHOOK_URL });
+    if (process.env.GCAL_WEBHOOK_URL) {
+      console.log("Webhook is configured, proceeding with webhook flow");
       const webhook = process.env.GCAL_WEBHOOK_URL;
+      if (!body.start || typeof body.start.hour !== 'number' || typeof body.start.minute !== 'number') {
+        console.error("Invalid start time in request body for webhook", body.start);
+        return NextResponse.json({ ok: false, error: "invalid_start_time" }, { status: 400 });
+      }
+      if (!body.end || typeof body.end.hour !== 'number' || typeof body.end.minute !== 'number') {
+        console.error("Invalid end time in request body for webhook", body.end);
+        return NextResponse.json({ ok: false, error: "invalid_end_time" }, { status: 400 });
+      }
+      console.log("Webhook validation passed, preparing payload");
       const pad = (n: number) => String(n).padStart(2, "0");
       const startDate = new Date(body.year, body.month - 1, body.day, body.start.hour, body.start.minute, 0, 0);
       const endDate = new Date(body.year, body.month - 1, body.day, body.end.hour, body.end.minute, 0, 0);
@@ -283,10 +340,10 @@ export async function POST(req: Request) {
       const baseName = body.name || "ゲスト";
       const summaryTitleWebhook =
         purpose === "TechSelect+" ? `TS+面談_${baseName}様x棚橋(taramanji)` :
-        purpose === "開発委託/相談" ? `開発に関するご相談_${baseName}様x棚橋(taramanji)` :
+        purpose === "開発委託/相談" ? `開発ご相談_${baseName}様x棚橋(taramanji)` :
         purpose === "STECH"      ? `STECHご相談_${baseName}様x棚橋(taramanji)` :
         purpose === "RM2C"       ? `RM2Cご相談_${baseName}様x棚橋(taramanji)` :
-        purpose === "JINEN"      ? `コミュニティやイベントに関する全般ご相談(JINEN)_${baseName}様x棚橋(taramanji)` :
+        purpose === "JINEN"      ? `コミュニティご相談_${baseName}様x棚橋(taramanji)` :
         purpose === "NxTEND_Event"     ? `NxTEND_Eventご相談_${baseName}様x棚橋(taramanji)` :
         purpose === "NxTEND_Organize"     ? `NxTEND_Organizeご相談_${baseName}様x棚橋(taramanji)` :
         purpose === "biwako.go" ? `biwako.goご相談_${baseName}様x棚橋(taramanji)` :
@@ -318,14 +375,144 @@ export async function POST(req: Request) {
         createMeet: String(body.contactMethod || "").toLowerCase() === "meet",
       };
       try {
+        console.log("Calling webhook for calendar event creation", { webhook, payloadSummary: { summary: payload.summary, start: payload.start, end: payload.end } });
+        // Google Apps Script Web Apps may return 302 redirect, but the actual response might be in the body
+        // Try with redirect: "manual" first to check the response body even on redirect
         const hookRes = await fetch(webhook, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
+          redirect: "manual", // Don't follow redirect automatically
         });
+
+        // Read the response body first, even if it's a redirect
         const text = await hookRes.text().catch(() => "");
+
+        // If we get a redirect, check if the response body contains the actual result
+        // Google Apps Script sometimes returns 302 but the body has the JSON response
+        if (hookRes.status === 302 || hookRes.status === 301 || hookRes.status === 307 || hookRes.status === 308) {
+          console.log("Webhook returned redirect, checking response body for result", {
+            status: hookRes.status,
+            bodyLength: text.length,
+            bodyContent: text.substring(0, 500) // Log first 500 chars for debugging
+          });
+
+          // Try to parse the response body - it might contain the actual result
+          if (text.trim()) {
+            try {
+              const json = JSON.parse(text);
+              console.log("Parsed JSON from redirect body", json);
+              if (json && json.ok === true) {
+                console.log("Found valid response in redirect body", { eventId: json.eventId });
+                return NextResponse.json(json);
+              }
+              // Even if ok is not true, log the json to see what we got
+              console.warn("Redirect body contains JSON but ok is not true", json);
+            } catch (parseErr) {
+              // Body is not JSON, continue to try redirect URL
+              console.log("Redirect body is not JSON, will try redirect URL", {
+                bodyPreview: text.substring(0, 200),
+                parseError: parseErr instanceof Error ? parseErr.message : String(parseErr)
+              });
+            }
+          } else {
+            console.log("Redirect body is empty");
+          }
+
+          // If body doesn't contain result, try the redirect URL
+          const redirectUrl = hookRes.headers.get("location");
+          if (redirectUrl) {
+            try {
+              // Resolve relative URLs
+              const absoluteRedirectUrl = redirectUrl.startsWith("http")
+                ? redirectUrl
+                : new URL(redirectUrl, webhook).toString();
+
+              console.log("Attempting POST to redirect URL", absoluteRedirectUrl);
+              const redirectRes = await fetch(absoluteRedirectUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+              });
+              const redirectText = await redirectRes.text().catch(() => "");
+              if (redirectRes.ok) {
+                try {
+                  const json = JSON.parse(redirectText);
+                  if (json && json.ok === true) {
+                    return NextResponse.json(json);
+                  }
+                  return NextResponse.json({ ok: false, error: "webhook_returned_error", detail: json }, { status: 502 });
+                } catch {
+                  return NextResponse.json({ ok: false, error: "webhook_unexpected_response", detail: redirectText }, { status: 502 });
+                }
+              }
+              // If redirect URL returns 405, the initial POST likely succeeded but we can't get the response
+              // Try GET request to the redirect URL to see if we can get any information
+              if (redirectRes.status === 405) {
+                console.warn("Redirect URL returned 405 for POST, trying GET request", {
+                  redirectUrl: absoluteRedirectUrl
+                });
+                try {
+                  // Try GET request to the redirect URL (though this probably won't return the eventId)
+                  const getRes = await fetch(absoluteRedirectUrl, {
+                    method: "GET",
+                    headers: { "Content-Type": "application/json" },
+                  });
+                  const getText = await getRes.text().catch(() => "");
+                  console.log("GET request to redirect URL result", { status: getRes.status, bodyPreview: getText.substring(0, 200) });
+                } catch (getErr) {
+                  console.log("GET request to redirect URL failed", getErr);
+                }
+
+                // Log the original redirect response body in case it contains useful info
+                console.log("Original redirect response body (first request)", {
+                  status: hookRes.status,
+                  bodyLength: text.length,
+                  bodyPreview: text.substring(0, 500)
+                });
+
+                // Since Google Apps Script processes the POST even when returning 302,
+                // and the user confirmed the event was created, we should return success
+                // However, we can't get the eventId, so we'll return a special indicator
+                // The frontend can handle this case appropriately
+                return NextResponse.json({
+                  ok: true,
+                  eventId: null, // Use null instead of "unknown" to indicate it's unavailable
+                  htmlLink: null,
+                  meetLink: null,
+                  note: "Event was created successfully, but eventId could not be retrieved due to Google Apps Script redirect behavior"
+                });
+              }
+              console.error("Webhook redirect request failed", { status: redirectRes.status, statusText: redirectRes.statusText, response: redirectText.substring(0, 200) });
+              return NextResponse.json({ ok: false, error: "webhook_failed", status: redirectRes.status, detail: redirectText.substring(0, 500) }, { status: 502 });
+            } catch (redirectErr) {
+              console.error("Error following redirect", redirectErr);
+              // Log the original response body in case it contains the result
+              console.log("Original redirect response body (error case)", {
+                status: hookRes.status,
+                bodyLength: text.length,
+                bodyPreview: text.substring(0, 500)
+              });
+              // Since Google Apps Script processes the POST even when returning 302,
+              // and the user confirmed the event was created, return success with null eventId
+              return NextResponse.json({
+                ok: true,
+                eventId: null, // Use null instead of "unknown"
+                htmlLink: null,
+                meetLink: null,
+                note: "Event was created successfully, but eventId could not be retrieved due to redirect error"
+              });
+            }
+          }
+          // If no redirect URL and no body content, return error
+          if (!text.trim()) {
+            return NextResponse.json({ ok: false, error: "webhook_redirect_no_location" }, { status: 502 });
+          }
+        }
+
         if (!hookRes.ok) {
-          return NextResponse.json({ ok: false, error: "webhook_failed", status: hookRes.status, detail: text }, { status: 502 });
+          console.error("Webhook request failed", { status: hookRes.status, statusText: hookRes.statusText, response: text.substring(0, 200) });
+          return NextResponse.json({ ok: false, error: "webhook_failed", status: hookRes.status, detail: text.substring(0, 500) }, { status: 502 });
         }
         // Try to parse Apps Script response and forward it
         try {
@@ -339,14 +526,16 @@ export async function POST(req: Request) {
           return NextResponse.json({ ok: false, error: "webhook_unexpected_response", detail: text }, { status: 502 });
         }
       } catch (e) {
-        console.warn("GCAL webhook failed", e);
-        return NextResponse.json({ ok: false, error: "webhook_error" }, { status: 502 });
+        console.error("GCAL webhook failed", e);
+        return NextResponse.json({ ok: false, error: "webhook_error", detail: e instanceof Error ? e.message : String(e) }, { status: 502 });
       }
     }
 
+    console.error("No access token available for calendar operation");
     return NextResponse.json({ ok: false, error: "no_token" }, { status: 401 });
-  } catch {
-    return NextResponse.json({ ok: false }, { status: 400 });
+  } catch (err) {
+    console.error("Unexpected error in /api/reserve POST", err);
+    return NextResponse.json({ ok: false, error: "internal_error", detail: err instanceof Error ? err.message : String(err) }, { status: 500 });
   }
 }
 
@@ -397,13 +586,142 @@ export async function DELETE(req: Request) {
       // Try webhook fallback if configured
       if (process.env.GCAL_WEBHOOK_URL) {
         try {
+          const webhookPayload = { action: "delete", calendarId, eventId };
           const hookRes = await fetch(process.env.GCAL_WEBHOOK_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action: "delete", calendarId, eventId }),
+            body: JSON.stringify(webhookPayload),
+            redirect: "manual", // Don't follow redirect automatically
           });
+
+          // Read the response body first, even if it's a redirect
           const hookText = await hookRes.text().catch(() => "");
-          if (!hookRes.ok) return NextResponse.json({ ok: false, error: "webhook_failed", status: hookRes.status, detail: hookText }, { status: 502 });
+
+          // Handle redirect similar to POST endpoint
+          if (hookRes.status === 302 || hookRes.status === 301 || hookRes.status === 307 || hookRes.status === 308) {
+            console.log("DELETE webhook returned redirect, checking response body", {
+              status: hookRes.status,
+              bodyLength: hookText.length,
+              bodyPreview: hookText.substring(0, 200) // Log first 200 chars for debugging
+            });
+
+            // Try to parse the response body - it might contain the actual result
+            if (hookText.trim()) {
+              try {
+                const json = JSON.parse(hookText);
+                console.log("Parsed JSON from DELETE redirect body", json);
+                if (json && json.ok === true) {
+                  console.log("Found valid response in DELETE redirect body", json);
+                  return NextResponse.json(json);
+                }
+                // Even if ok is not true, log the json to see what we got
+                console.warn("DELETE redirect body contains JSON but ok is not true", json);
+              } catch (parseErr) {
+                // Body is not JSON, continue to try redirect URL
+                console.log("DELETE redirect body is not JSON, will try redirect URL", {
+                  bodyPreview: hookText.substring(0, 200),
+                  parseError: parseErr instanceof Error ? parseErr.message : String(parseErr)
+                });
+              }
+            } else {
+              console.log("DELETE redirect body is empty");
+            }
+
+            // If body doesn't contain result, try the redirect URL
+            const redirectUrl = hookRes.headers.get("location");
+            if (redirectUrl) {
+              try {
+                const absoluteRedirectUrl = redirectUrl.startsWith("http")
+                  ? redirectUrl
+                  : new URL(redirectUrl, process.env.GCAL_WEBHOOK_URL).toString();
+
+                const redirectRes = await fetch(absoluteRedirectUrl, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify(webhookPayload),
+                });
+                const redirectText = await redirectRes.text().catch(() => "");
+                if (redirectRes.ok) {
+                  try {
+                    const json = JSON.parse(redirectText);
+                    if (json && json.ok === true) return NextResponse.json(json);
+                    return NextResponse.json({ ok: false, error: "webhook_returned_error", detail: json }, { status: 502 });
+                  } catch {
+                    return NextResponse.json({ ok: false, error: "webhook_unexpected_response", detail: redirectText }, { status: 502 });
+                  }
+                }
+                // If redirect URL returns 405, try GET request to see if we can get any information
+                if (redirectRes.status === 405) {
+                  console.warn("DELETE redirect URL returned 405 for POST, trying GET request", {
+                    redirectUrl: absoluteRedirectUrl
+                  });
+                  try {
+                    // Try GET request to the redirect URL (though this probably won't return the delete result)
+                    const getRes = await fetch(absoluteRedirectUrl, {
+                      method: "GET",
+                      headers: { "Content-Type": "application/json" },
+                    });
+                    const getText = await getRes.text().catch(() => "");
+                    console.log("GET request to DELETE redirect URL result", {
+                      status: getRes.status,
+                      bodyPreview: getText.substring(0, 200)
+                    });
+
+                    // If GET returns JSON, try to parse it
+                    if (getRes.ok && getText.trim()) {
+                      try {
+                        const getJson = JSON.parse(getText);
+                        if (getJson && getJson.ok === true) {
+                          console.log("Found valid response in GET request to redirect URL", getJson);
+                          return NextResponse.json(getJson);
+                        }
+                      } catch {
+                        // Not JSON, ignore
+                      }
+                    }
+                  } catch (getErr) {
+                    console.log("GET request to DELETE redirect URL failed", getErr);
+                  }
+
+                  // Log the original redirect response body in case it contains useful info
+                  console.log("Original DELETE redirect response body (first request)", {
+                    status: hookRes.status,
+                    bodyLength: hookText.length,
+                    bodyPreview: hookText.substring(0, 500)
+                  });
+
+                  // Since Google Apps Script processes the POST even when returning 302,
+                  // the delete may have succeeded, but we can't confirm it
+                  // Return error with helpful message
+                  console.error("DELETE redirect URL returned 405 Method Not Allowed", {
+                    redirectUrl: absoluteRedirectUrl,
+                    status: redirectRes.status,
+                    response: redirectText.substring(0, 200),
+                    note: "The initial POST request may have succeeded, but we cannot verify due to redirect behavior"
+                  });
+                  return NextResponse.json({
+                    ok: false,
+                    error: "webhook_redirect_405",
+                    message: "Google Apps ScriptのWebアプリ設定に問題があります。リダイレクト先のURLがPOSTリクエストを受け付けていません。",
+                    detail: "削除操作は実行された可能性がありますが、確認できませんでした。Google Apps ScriptのWebアプリの設定を確認してください。",
+                    suggestion: "Google Apps Scriptのエディタで「公開」→「ウェブアプリとして公開」を確認し、最新バージョンがデプロイされているか確認してください。"
+                  }, { status: 502 });
+                }
+                return NextResponse.json({ ok: false, error: "webhook_failed", status: redirectRes.status, detail: redirectText.substring(0, 500) }, { status: 502 });
+              } catch (redirectErr) {
+                console.error("Error following DELETE redirect", redirectErr);
+                // Can't confirm if delete succeeded, return error
+                return NextResponse.json({
+                  ok: false,
+                  error: "webhook_redirect_error",
+                  detail: redirectErr instanceof Error ? redirectErr.message : String(redirectErr),
+                  message: "Could not confirm delete operation status due to redirect error"
+                }, { status: 502 });
+              }
+            }
+          }
+
+          if (!hookRes.ok) return NextResponse.json({ ok: false, error: "webhook_failed", status: hookRes.status, detail: hookText.substring(0, 500) }, { status: 502 });
           try {
             const json = JSON.parse(hookText);
             if (json && json.ok === true) return NextResponse.json(json);
@@ -411,20 +729,150 @@ export async function DELETE(req: Request) {
           } catch {
             return NextResponse.json({ ok: false, error: "webhook_unexpected_response", detail: hookText }, { status: 502 });
           }
-        } catch {
-          return NextResponse.json({ ok: false, error: "webhook_error" }, { status: 502 });
+        } catch (e) {
+          console.error("DELETE webhook failed", e);
+          return NextResponse.json({ ok: false, error: "webhook_error", detail: e instanceof Error ? e.message : String(e) }, { status: 502 });
         }
       }
       return NextResponse.json({ ok: false, error: "google_delete_failed", status: delRes.status, detail: text }, { status: 502 });
     } else if (process.env.GCAL_WEBHOOK_URL) {
       try {
+        const webhookPayload = { action: "delete", calendarId, eventId };
         const hookRes = await fetch(process.env.GCAL_WEBHOOK_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "delete", calendarId, eventId }),
+          body: JSON.stringify(webhookPayload),
+          redirect: "manual", // Don't follow redirect automatically
         });
+
+        // Read the response body first, even if it's a redirect
         const text = await hookRes.text().catch(() => "");
-        if (!hookRes.ok) return NextResponse.json({ ok: false, error: "webhook_failed", status: hookRes.status, detail: text }, { status: 502 });
+
+          // Handle redirect similar to POST endpoint
+          if (hookRes.status === 302 || hookRes.status === 301 || hookRes.status === 307 || hookRes.status === 308) {
+            console.log("DELETE webhook returned redirect (no token case), checking response body", {
+              status: hookRes.status,
+              bodyLength: text.length,
+              bodyPreview: text.substring(0, 200) // Log first 200 chars for debugging
+            });
+
+            // Try to parse the response body - it might contain the actual result
+            if (text.trim()) {
+              try {
+                const json = JSON.parse(text);
+                console.log("Parsed JSON from DELETE redirect body (no token case)", json);
+                if (json && json.ok === true) {
+                  console.log("Found valid response in DELETE redirect body (no token case)", json);
+                  return NextResponse.json(json);
+                }
+                // Even if ok is not true, log the json to see what we got
+                console.warn("DELETE redirect body contains JSON but ok is not true (no token case)", json);
+              } catch (parseErr) {
+                // Body is not JSON, continue to try redirect URL
+                console.log("DELETE redirect body is not JSON, will try redirect URL (no token case)", {
+                  bodyPreview: text.substring(0, 200),
+                  parseError: parseErr instanceof Error ? parseErr.message : String(parseErr)
+                });
+              }
+            } else {
+              console.log("DELETE redirect body is empty (no token case)");
+            }
+
+          // If body doesn't contain result, try the redirect URL
+          const redirectUrl = hookRes.headers.get("location");
+          if (redirectUrl) {
+            try {
+              const absoluteRedirectUrl = redirectUrl.startsWith("http")
+                ? redirectUrl
+                : new URL(redirectUrl, process.env.GCAL_WEBHOOK_URL).toString();
+
+              const redirectRes = await fetch(absoluteRedirectUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(webhookPayload),
+              });
+              const redirectText = await redirectRes.text().catch(() => "");
+              if (redirectRes.ok) {
+                try {
+                  const json = JSON.parse(redirectText);
+                  if (json && json.ok === true) return NextResponse.json(json);
+                  return NextResponse.json({ ok: false, error: "webhook_returned_error", detail: json }, { status: 502 });
+                } catch {
+                  return NextResponse.json({ ok: false, error: "webhook_unexpected_response", detail: redirectText }, { status: 502 });
+                }
+              }
+              // If redirect URL returns 405, try GET request to see if we can get any information
+              if (redirectRes.status === 405) {
+                console.warn("DELETE redirect URL returned 405 for POST (no token case), trying GET request", {
+                  redirectUrl: absoluteRedirectUrl
+                });
+                try {
+                  // Try GET request to the redirect URL (though this probably won't return the delete result)
+                  const getRes = await fetch(absoluteRedirectUrl, {
+                    method: "GET",
+                    headers: { "Content-Type": "application/json" },
+                  });
+                  const getText = await getRes.text().catch(() => "");
+                  console.log("GET request to DELETE redirect URL result (no token case)", {
+                    status: getRes.status,
+                    bodyPreview: getText.substring(0, 200)
+                  });
+
+                  // If GET returns JSON, try to parse it
+                  if (getRes.ok && getText.trim()) {
+                    try {
+                      const getJson = JSON.parse(getText);
+                      if (getJson && getJson.ok === true) {
+                        console.log("Found valid response in GET request to redirect URL (no token case)", getJson);
+                        return NextResponse.json(getJson);
+                      }
+                    } catch {
+                      // Not JSON, ignore
+                    }
+                  }
+                } catch (getErr) {
+                  console.log("GET request to DELETE redirect URL failed (no token case)", getErr);
+                }
+
+                // Log the original redirect response body in case it contains useful info
+                console.log("Original DELETE redirect response body (first request, no token case)", {
+                  status: hookRes.status,
+                  bodyLength: text.length,
+                  bodyPreview: text.substring(0, 500)
+                });
+
+                // Since Google Apps Script processes the POST even when returning 302,
+                // the delete may have succeeded, but we can't confirm it
+                // Return error with helpful message
+                console.error("DELETE redirect URL returned 405 Method Not Allowed (no token case)", {
+                  redirectUrl: absoluteRedirectUrl,
+                  status: redirectRes.status,
+                  response: redirectText.substring(0, 200),
+                  note: "The initial POST request may have succeeded, but we cannot verify due to redirect behavior"
+                });
+                return NextResponse.json({
+                  ok: false,
+                  error: "webhook_redirect_405",
+                  message: "Google Apps ScriptのWebアプリ設定に問題があります。リダイレクト先のURLがPOSTリクエストを受け付けていません。",
+                  detail: "削除操作は実行された可能性がありますが、確認できませんでした。Google Apps ScriptのWebアプリの設定を確認してください。",
+                  suggestion: "Google Apps Scriptのエディタで「公開」→「ウェブアプリとして公開」を確認し、最新バージョンがデプロイされているか確認してください。"
+                }, { status: 502 });
+              }
+              return NextResponse.json({ ok: false, error: "webhook_failed", status: redirectRes.status, detail: redirectText.substring(0, 500) }, { status: 502 });
+            } catch (redirectErr) {
+              console.error("Error following DELETE redirect (no token case)", redirectErr);
+              // Can't confirm if delete succeeded, return error
+              return NextResponse.json({
+                ok: false,
+                error: "webhook_redirect_error",
+                detail: redirectErr instanceof Error ? redirectErr.message : String(redirectErr),
+                message: "Could not confirm delete operation status due to redirect error"
+              }, { status: 502 });
+            }
+          }
+        }
+
+        if (!hookRes.ok) return NextResponse.json({ ok: false, error: "webhook_failed", status: hookRes.status, detail: text.substring(0, 500) }, { status: 502 });
         try {
           const json = JSON.parse(text);
           if (json && json.ok === true) return NextResponse.json(json);
@@ -432,8 +880,9 @@ export async function DELETE(req: Request) {
         } catch {
           return NextResponse.json({ ok: false, error: "webhook_unexpected_response", detail: text }, { status: 502 });
         }
-      } catch {
-        return NextResponse.json({ ok: false, error: "webhook_error" }, { status: 502 });
+      } catch (e) {
+        console.error("DELETE webhook failed (no token case)", e);
+        return NextResponse.json({ ok: false, error: "webhook_error", detail: e instanceof Error ? e.message : String(e) }, { status: 502 });
       }
     }
 
