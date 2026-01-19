@@ -11,6 +11,8 @@ export const linkCards: LinkCard[] = [
   { href: "/", imgSrc: "/image.png", title: "Home", description: "ホームの画面へ", backText: "ホームへ" },
   // Twitter
   { href: "https://twitter.com/javalangruntime", imgSrc: "/twitter.png", title: "X (Twitter)", description: "@JavaLangRuntime", backText: "なぜJavaの実行時のエラーにしたか？" },
+  // Instagram
+  { href: "https://www.instagram.com/manjiin773tara/", imgSrc: "/instagram.jpeg", title: "Instagram", description: "@manjiin773tara", backText: "カメラマンとしての活動を投稿しています" },
   // MIXI2
   { href: "https://mixi.social/@JavaLangRuntime", imgSrc: "/mixi2.png", title: "MiXi2", description: "@JavaLangRuntime", backText: "それは私が一番みたエラーだからです(本音はJavaLangRuntimeExceptionを調べたエンジニアがこのサイトに来る誘導...?)" },
   // GitHub

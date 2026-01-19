@@ -2,6 +2,7 @@ export type AffiliationCategory =
     | "university_research"
     | "community"
     | "engineer"
+    | "photographer"
     | "community_director"
     | "event_management"
     | "community_organizer"
@@ -58,18 +59,20 @@ export const affiliations: Affiliation[] = [
 
     // engineer
     {
-        label: "株式会社サイバーエージェント 2028 Engineer",
+        label: "株式会社サイバーエージェント",
         color: "bg-lime-600",
         href: "https://www.cyberagent.co.jp/",
         category: "engineer",
         description: "サイバーエージェント2028年卒のサーバーサイドエンジニアとして、技術開発に取り組んでいます。"
     },
+
+    // photographer
     {
-        label: "任天堂株式会社 長期アルバイト",
-        color: "bg-red-600",
-        href: "https://www.nintendo.com/jp",
-        category: "engineer",
-        description: "任天堂にてソフトウェアエンジニアとして長期アルバイトに従事しています。"
+        label: "フリーランスカメラマン",
+        color: "bg-pink-600",
+        href: "https://www.instagram.com/manjiin773tara/",
+        category: "photographer",
+        description: "フリーランスカメラマンとして出張撮影を承ります。ポートレート、イベント撮影など幅広く対応可能です。"
     },
 
     // community_director
@@ -83,7 +86,7 @@ export const affiliations: Affiliation[] = [
 
     // event_management
     {
-        label: "特定非営利活動法人NxTEND 新規事業推進室",
+        label: "特定非営利活動法人NxTEND 戦略事業本部",
         color: "bg-amber-600",
         href: "https://www.nxtend.or.jp/",
         category: "event_management",

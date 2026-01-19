@@ -269,7 +269,7 @@ export default function PortfolioLinks() {
                             ease: "easeInOut"
                         }}
                     >
-                        Engineer • Community Director
+                        Engineer • Researcher • Photographer • Community Director
                     </motion.p>
                 </motion.div>
             )}
