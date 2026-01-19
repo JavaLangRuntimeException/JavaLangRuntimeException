@@ -1,4 +1,10 @@
 import { NextResponse } from "next/server";
+import {
+  getGoogleCalendarAccessToken,
+  getAccessTokenFromRequest,
+  getServiceAccountAccessToken,
+  getAccessTokenFromServiceAccount,
+} from "../../../shared/lib/google-calendar-auth";
 
 export async function POST(req: Request) {
   try {
@@ -7,40 +13,11 @@ export async function POST(req: Request) {
 
     const calendarId = process.env.GCAL_CALENDAR_ID || "primary";
     // Prefer Service Account if configured
-    let accessToken: string | null = null;
-    let saJson;
-    const saJsonB64 = process.env.GCAL_SA_JSON_BASE64;
-    if (saJsonB64) {
-      try {
-        saJson = Buffer.from(saJsonB64, "base64").toString("utf8");
-      } catch (err) {
-        console.error("Failed to decode service account JSON from base64", err);
-      }
-    }
-    if (saJson) {
-      try {
-        const parsed = JSON.parse(saJson);
-        const emailFromJson: string | undefined = parsed.client_email;
-        const keyFromJson: string | undefined = parsed.private_key;
-        if (emailFromJson && keyFromJson) {
-          accessToken = await getServiceAccountAccessToken(emailFromJson, String(keyFromJson));
-          if (accessToken) {
-            console.log("Service account access token acquired successfully");
-          } else {
-            console.warn("Service account access token acquisition failed");
-          }
-        }
-      } catch (err) {
-        console.error("Failed to parse service account JSON or get token", err);
-      }
-    }
-    if (!accessToken) {
-      accessToken = await getAccessTokenFromRequest(req);
-      if (accessToken) {
-        console.log("Access token acquired from request");
-      } else {
-        console.warn("Access token not available from request");
-      }
+    const accessToken = await getGoogleCalendarAccessToken(req);
+    if (accessToken) {
+      console.log("Access token acquired");
+    } else {
+      console.warn("Access token not available");
     }
     if (accessToken) {
       console.log("Processing calendar event creation with access token");
@@ -135,6 +112,8 @@ export async function POST(req: Request) {
           summaryTitle = `NxTEND運営_${body.name || "ゲスト"}様`;
         } else if (purpose === "開発委託/相談") {
           summaryTitle = `開発相談_${body.name || "ゲスト"}様`;
+        } else if (purpose === "出張撮影依頼") {
+          summaryTitle = `出張撮影_${body.name || "ゲスト"}様`;
         } else if (purpose === "RCC") {
           summaryTitle = `RCC_${body.name || "ゲスト"}様`;
         } else if (purpose === "RM2C") {
@@ -551,27 +530,7 @@ export async function DELETE(req: Request) {
     const calendarId = process.env.GCAL_CALENDAR_ID || "primary";
 
     // Prefer Service Account / OAuth
-    let accessToken: string | null = null;
-    let saJson: string | undefined;
-    const saJsonB64 = process.env.GCAL_SA_JSON_BASE64;
-    if (saJsonB64) {
-      try {
-        saJson = Buffer.from(saJsonB64, "base64").toString("utf8");
-      } catch {}
-    }
-    if (saJson) {
-      try {
-        const parsed = JSON.parse(saJson);
-        const emailFromJson: string | undefined = parsed.client_email;
-        const keyFromJson: string | undefined = parsed.private_key;
-        if (emailFromJson && keyFromJson) {
-          accessToken = await getServiceAccountAccessToken(emailFromJson, String(keyFromJson));
-        }
-      } catch {}
-    }
-    if (!accessToken) {
-      accessToken = await getAccessTokenFromRequest(req);
-    }
+    const accessToken = await getGoogleCalendarAccessToken(req);
 
     if (accessToken) {
       const delRes = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}?sendUpdates=all`, {
@@ -901,21 +860,7 @@ export async function GET(req: Request) {
     const calendarId = process.env.GCAL_CALENDAR_ID || "primary";
 
     // Acquire token
-    let accessToken: string | null = null;
-    let saJson: string | undefined;
-    const saJsonB64 = process.env.GCAL_SA_JSON_BASE64;
-    if (saJsonB64) {
-      try { saJson = Buffer.from(saJsonB64, "base64").toString("utf8"); } catch {}
-    }
-    if (saJson) {
-      try {
-        const parsed = JSON.parse(saJson);
-        const emailFromJson: string | undefined = parsed.client_email;
-        const keyFromJson: string | undefined = parsed.private_key;
-        if (emailFromJson && keyFromJson) accessToken = await getServiceAccountAccessToken(emailFromJson, String(keyFromJson));
-      } catch {}
-    }
-    if (!accessToken) accessToken = await getAccessTokenFromRequest(req);
+    const accessToken = await getGoogleCalendarAccessToken(req);
     if (!accessToken) {
       // Fallback to webhook if available
       if (process.env.GCAL_WEBHOOK_URL) {
@@ -965,79 +910,5 @@ export async function GET(req: Request) {
   }
 }
 
-async function getAccessTokenFromRequest(req: Request): Promise<string | null> {
-  // try cookie access token first
-  const cookiesHeader = req.headers.get("cookie") || "";
-  const cookiePairs = cookiesHeader
-    .split(/;\s*/)
-    .map((c) => c.split("=") as [string, string])
-    .filter((a) => a.length === 2)
-    .map(([k, v]) => [decodeURIComponent(k), decodeURIComponent(v)] as [string, string]);
-  const cookieMap = Object.fromEntries(cookiePairs) as Record<string, string>;
-
-  const accessToken = cookieMap["gcal_access_token"];
-  const exp = Number(cookieMap["gcal_token_exp"] || 0);
-  if (accessToken && Date.now() < exp - 60_000) return accessToken;
-
-  // refresh via cookie refresh token or env refresh token
-  const refreshToken = cookieMap["gcal_refresh_token"] || process.env.GOOGLE_REFRESH_TOKEN || "";
-  const clientId = process.env.GOOGLE_CLIENT_ID || "";
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET || "";
-  if (!refreshToken || !clientId || !clientSecret) return null;
-
-  try {
-    const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        client_id: clientId,
-        client_secret: clientSecret,
-        refresh_token: refreshToken,
-        grant_type: "refresh_token",
-      }),
-    });
-    const tokens: { access_token?: string } = await tokenRes.json();
-    return tokens.access_token || null;
-  } catch {
-    return null;
-  }
-}
-
-async function getServiceAccountAccessToken(clientEmail: string, privateKey: string, subject?: string): Promise<string | null> {
-  try {
-    const header = { alg: "RS256", typ: "JWT" };
-    const now = Math.floor(Date.now() / 1000);
-    const claim = {
-      iss: clientEmail,
-      scope: "https://www.googleapis.com/auth/calendar",
-      aud: "https://oauth2.googleapis.com/token",
-      iat: now,
-      exp: now + 3600,
-      ...(subject ? { sub: subject } : {}),
-    } as Record<string, string | number>;
-
-    const enc = (obj: unknown) => Buffer.from(JSON.stringify(obj)).toString("base64url");
-    const unsigned = `${enc(header)}.${enc(claim)}`;
-    const crypto = await import("node:crypto");
-    const signer = crypto.createSign("RSA-SHA256");
-    signer.update(unsigned);
-    const signature = signer.sign(privateKey).toString("base64url");
-    const assertion = `${unsigned}.${signature}`;
-
-    const resp = await fetch("https://oauth2.googleapis.com/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-        assertion,
-      }),
-    });
-    if (!resp.ok) return null;
-    const data: { access_token?: string } = await resp.json();
-    return data.access_token || null;
-  } catch {
-    return null;
-  }
-}
 
 

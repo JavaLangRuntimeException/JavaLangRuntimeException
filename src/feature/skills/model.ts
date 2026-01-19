@@ -115,6 +115,20 @@ export const skills: Skill[] = [
         tags: ["Mentoring", "Code Review", "Design Review", "Workshop", "Career"],
     },
     {
+        title: "Photography",
+        short: "出張撮影、ポートレート、イベント撮影",
+        description:
+            "フリーランスカメラマンとして出張撮影を承ります。ポートレート、イベント撮影、など幅広く対応可能です。",
+        color: "bg-pink-700",
+        tags: [
+            "出張撮影",
+            "ポートレート",
+            "イベント撮影",
+            "写真編集",
+            "Lightroom Classic",
+        ],
+    },
+    {
         title: "Certification",
         short: "取得した資格",
         description:
