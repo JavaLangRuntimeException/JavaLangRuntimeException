@@ -47,9 +47,15 @@ export function Header() {
             style={{ pointerEvents: isAnyLoading ? 'none' : 'auto' }}
           >
             <span className="relative z-20">Home</span>
-            <span className="pointer-events-none absolute top-1/2 right-0 -translate-y-1/2 translate-x-full opacity-0 transition-transform duration-300 ease-out group-hover:translate-x-1/2 group-hover:opacity-100 group-active:translate-x-1/2 group-active:opacity-100 z-10" aria-hidden="true">
-              <Image src="/gopher.png" alt="Gopher" width={30} height={30} className="h-[30px] w-[30px] -rotate-45" />
-            </span>
+            {isActive("/") ? (
+              <span className="pointer-events-none absolute top-1/2 right-0 -translate-y-1/2 translate-x-full opacity-0 transition-transform duration-300 ease-out group-hover:translate-x-1/2 group-hover:opacity-100 group-active:translate-x-1/2 group-active:opacity-100 z-10" aria-hidden="true">
+                <Image src="/qiitan.png" alt="Qiitan" width={30} height={30} className="h-[30px] w-[30px] -rotate-45" />
+              </span>
+            ) : (
+              <span className="pointer-events-none absolute top-1/2 left-0 -translate-y-1/2 -translate-x-full opacity-0 transition-transform duration-300 ease-out group-hover:-translate-x-1/2 group-hover:opacity-100 group-active:-translate-x-1/2 group-active:opacity-100 z-10" aria-hidden="true">
+                <Image src="/gopher.png" alt="Gopher" width={30} height={30} className="h-[30px] w-[30px] rotate-45" />
+              </span>
+            )}
           </Link>
           <Link
             href="/link"
@@ -66,11 +72,11 @@ export function Header() {
             <span className="relative z-20">Links</span>
             {isActive("/link") ? (
               <span className="pointer-events-none absolute top-1/2 right-0 -translate-y-1/2 translate-x-full opacity-0 transition-transform duration-300 ease-out group-hover:translate-x-1/2 group-hover:opacity-100 group-active:translate-x-1/2 group-active:opacity-100 z-10" aria-hidden="true">
-                <Image src="/gopher.png" alt="Gopher" width={30} height={30} className="h-[30px] w-[30px] -rotate-45" />
+                <Image src="/qiitan.png" alt="Qiitan" width={30} height={30} className="h-[30px] w-[30px] -rotate-45" />
               </span>
             ) : (
               <span className="pointer-events-none absolute top-1/2 left-0 -translate-y-1/2 -translate-x-full opacity-0 transition-transform duration-300 ease-out group-hover:-translate-x-1/2 group-hover:opacity-100 group-active:-translate-x-1/2 group-active:opacity-100 z-10" aria-hidden="true">
-                <Image src="/qiitan.png" alt="Qiitan" width={30} height={30} className="h-[30px] w-[30px] rotate-45" />
+                <Image src="/gopher.png" alt="Gopher" width={30} height={30} className="h-[30px] w-[30px] rotate-45" />
               </span>
             )}
           </Link>
@@ -89,11 +95,11 @@ export function Header() {
             <span className="relative z-20">Contact</span>
             {isActive("/contact") ? (
               <span className="pointer-events-none absolute top-1/2 right-0 -translate-y-1/2 translate-x-full opacity-0 transition-transform duration-300 ease-out group-hover:translate-x-1/2 group-hover:opacity-100 group-active:translate-x-1/2 group-active:opacity-100 z-10" aria-hidden="true">
-                <Image src="/gopher.png" alt="Gopher" width={30} height={30} className="h-[30px] w-[30px] -rotate-45" />
+                <Image src="/qiitan.png" alt="Qiitan" width={30} height={30} className="h-[30px] w-[30px] -rotate-45" />
               </span>
             ) : (
               <span className="pointer-events-none absolute top-1/2 left-0 -translate-y-1/2 -translate-x-full opacity-0 transition-transform duration-300 ease-out group-hover:-translate-x-1/2 group-hover:opacity-100 group-active:-translate-x-1/2 group-active:opacity-100 z-10" aria-hidden="true">
-                <Image src="/qiitan.png" alt="Qiitan" width={30} height={30} className="h-[30px] w-[30px] rotate-45" />
+                <Image src="/gopher.png" alt="Gopher" width={30} height={30} className="h-[30px] w-[30px] rotate-45" />
               </span>
             )}
           </Link>
@@ -112,11 +118,11 @@ export function Header() {
             <span className="relative z-20">Ask Me</span>
             {isActive("/reserve") ? (
               <span className="pointer-events-none absolute top-1/2 right-0 -translate-y-1/2 translate-x-full opacity-0 transition-transform duration-300 ease-out group-hover:translate-x-1/2 group-hover:opacity-100 group-active:translate-x-1/2 group-active:opacity-100 z-10" aria-hidden="true">
-                <Image src="/gopher.png" alt="Gopher" width={30} height={30} className="h-[30px] w-[30px] -rotate-45" />
+                <Image src="/qiitan.png" alt="Qiitan" width={30} height={30} className="h-[30px] w-[30px] -rotate-45" />
               </span>
             ) : (
               <span className="pointer-events-none absolute top-1/2 left-0 -translate-y-1/2 -translate-x-full opacity-0 transition-transform duration-300 ease-out group-hover:-translate-x-1/2 group-hover:opacity-100 group-active:-translate-x-1/2 group-active:opacity-100 z-10" aria-hidden="true">
-                <Image src="/qiitan.png" alt="Qiitan" width={30} height={30} className="h-[30px] w-[30px] rotate-45" />
+                <Image src="/gopher.png" alt="Gopher" width={30} height={30} className="h-[30px] w-[30px] rotate-45" />
               </span>
             )}
           </Link>

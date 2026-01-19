@@ -33,9 +33,54 @@ export function HeroBackground({
 }) {
   const [scrollY, setScrollY] = React.useState(0);
   const [bgIndex, setBgIndex] = React.useState(0);
+  const [imagesLoaded, setImagesLoaded] = React.useState(false);
   // 初期状態はfalseにして、useLayoutEffectで同期的に更新（チラつきを防ぐ）
   const [showIntro, setShowIntro] = React.useState<boolean>(false);
   const [introCompleted, setIntroCompleted] = React.useState<boolean>(true);
+
+  // 画像を事前にpreloadしてキャッシュする
+  React.useEffect(() => {
+    if (images.length === 0) {
+      setImagesLoaded(true);
+      return;
+    }
+
+    let cancelled = false;
+    const imageElements: HTMLImageElement[] = [];
+    let loadedCount = 0;
+
+    const handleImageLoad = () => {
+      loadedCount++;
+      if (loadedCount === images.length && !cancelled) {
+        setImagesLoaded(true);
+      }
+    };
+
+    const handleImageError = () => {
+      loadedCount++;
+      if (loadedCount === images.length && !cancelled) {
+        setImagesLoaded(true);
+      }
+    };
+
+    // すべての画像を事前に読み込む
+    images.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+      img.onload = handleImageLoad;
+      img.onerror = handleImageError;
+      imageElements.push(img);
+    });
+
+    return () => {
+      cancelled = true;
+      // クリーンアップ
+      imageElements.forEach((img) => {
+        img.onload = null;
+        img.onerror = null;
+      });
+    };
+  }, [images]);
 
   React.useEffect(() => {
     function handleScroll() {
@@ -46,9 +91,10 @@ export function HeroBackground({
   }, []);
 
   React.useEffect(() => {
+    if (!imagesLoaded) return;
     const t = setInterval(() => setBgIndex((i) => (i + 1) % images.length), cycleMs);
     return () => clearInterval(t);
-  }, [images.length, cycleMs]);
+  }, [images.length, cycleMs, imagesLoaded]);
 
   // useLayoutEffectで同期的に状態を設定（レンダリング前に確定させてチラつきを防ぐ）
   React.useLayoutEffect(() => {
@@ -80,21 +126,33 @@ export function HeroBackground({
         <div className="absolute inset-0 -z-10 bg-black" />
       ) : (
         <div className="absolute inset-0 -z-10">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={bgIndex}
-              className="absolute inset-0"
-              style={{
-                backgroundImage: `url(${images[bgIndex]})`,
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-              }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.8 }}
-            />
-          </AnimatePresence>
+          {imagesLoaded && images.length > 0 ? (
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={bgIndex}
+                className="absolute inset-0"
+                style={{
+                  backgroundImage: `url(${images[bgIndex]})`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.8 }}
+              />
+            </AnimatePresence>
+          ) : (
+            // 画像読み込み中は黒背景
+            <div className="absolute inset-0 bg-black" />
+          )}
+          {/* すべての画像を非表示でpreload（ブラウザキャッシュに保持） */}
+          <div className="hidden">
+            {images.map((src, index) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img key={index} src={src} alt="" aria-hidden="true" />
+            ))}
+          </div>
         </div>
       )}
 
