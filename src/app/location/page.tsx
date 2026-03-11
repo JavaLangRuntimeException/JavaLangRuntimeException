@@ -26,6 +26,7 @@ const LOCATION_STYLES: Record<string, { dot: string; text: string; char: string 
   "リモート":              { dot: "bg-cyan-400",    text: "text-cyan-300",    char: "リ" },
   "複数箇所（お問い合わせください）": { dot: "bg-pink-400", text: "text-pink-300", char: "複" },
   "未定（お問い合わせください）": { dot: "bg-gray-400",   text: "text-gray-400",   char: "？" },
+  "対応不可日・休日":        { dot: "bg-rose-400",    text: "text-rose-300",   char: "休" },
 };
 
 const DEFAULT_STYLE = { dot: "bg-white", text: "text-white/80", char: "・" };

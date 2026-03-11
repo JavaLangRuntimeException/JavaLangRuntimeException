@@ -38,6 +38,7 @@ const LOCATION_OPTIONS = [
   "リモート",
   "複数箇所（お問い合わせください）",
   "未定（お問い合わせください）",
+  "対応不可日・休日",
 ];
 
 export default function AdminPage() {
