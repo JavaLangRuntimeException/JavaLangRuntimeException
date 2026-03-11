@@ -71,12 +71,15 @@ export async function GET() {
   }
 }
 
-// POST: 勤務場所を設定
+// POST: 勤務場所を設定（単一 or 一括）
+// body: { date, location } または { dates: string[], location }
 export async function POST(request: NextRequest) {
   try {
-    const { date, location } = await request.json();
+    const body = await request.json();
+    const { location } = body;
+    const dates: string[] = body.dates || (body.date ? [body.date] : []);
 
-    if (!date || !location) {
+    if (dates.length === 0 || !location) {
       return NextResponse.json(
         { ok: false, error: "日付と勤務場所を指定してください" },
         { status: 400 }
@@ -84,10 +87,12 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await getLocations();
-    data[date] = location;
+    for (const d of dates) {
+      data[d] = location;
+    }
     await setLocations(data);
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, count: dates.length });
   } catch (error) {
     console.error("Failed to set location:", error);
     return NextResponse.json(
