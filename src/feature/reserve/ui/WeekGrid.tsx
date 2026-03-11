@@ -11,15 +11,15 @@ const LOCATION_STYLES: Record<string, { color: string; char: string }> = {
   "大阪府大阪市":           { color: "text-orange-600",  char: "阪" },
   "大阪府茨木市":           { color: "text-amber-600",   char: "茨" },
   "大阪府（大阪市・茨木市以外）": { color: "text-orange-700", char: "大" },
-  "東京都渋谷区":           { color: "text-red-600",     char: "渋" },
-  "東京都（渋谷区以外）":     { color: "text-red-700",     char: "東" },
+  "東京都渋谷区":           { color: "text-pink-500",    char: "渋" },
+  "東京都（渋谷区以外）":     { color: "text-pink-600",    char: "東" },
   "愛知県名古屋市":         { color: "text-blue-600",    char: "名" },
   "愛知県（名古屋市以外）":   { color: "text-blue-700",    char: "愛" },
   "岐阜県":               { color: "text-lime-600",    char: "岐" },
   "リモート":              { color: "text-cyan-600",    char: "リ" },
   "複数箇所（お問い合わせください）": { color: "text-pink-600", char: "複" },
   "未定（お問い合わせください）": { color: "text-gray-500",   char: "？" },
-  "対応不可日・休日":        { color: "text-rose-600",    char: "休" },
+  "対応不可日・休日":        { color: "text-red-700",     char: "休" },
 };
 
 function weekdayName(d: Date) {
