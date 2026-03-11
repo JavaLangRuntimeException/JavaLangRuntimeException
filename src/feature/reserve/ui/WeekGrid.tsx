@@ -2,24 +2,24 @@
 
 import React, { useState, useEffect } from "react";
 
-// 勤務場所の色・文字マッピング（location/page.tsxと同期）
-const LOCATION_STYLES: Record<string, { color: string; char: string }> = {
-  "滋賀県草津市":           { color: "text-emerald-600", char: "草" },
-  "滋賀県（草津市以外）":     { color: "text-emerald-700", char: "滋" },
-  "京都府京都市":           { color: "text-purple-600",  char: "京" },
-  "京都府（京都市以外）":     { color: "text-purple-700",  char: "都" },
-  "大阪府大阪市":           { color: "text-orange-600",  char: "阪" },
-  "大阪府茨木市":           { color: "text-amber-600",   char: "茨" },
-  "大阪府（大阪市・茨木市以外）": { color: "text-orange-700", char: "大" },
-  "東京都渋谷区":           { color: "text-pink-500",    char: "渋" },
-  "東京都（渋谷区以外）":     { color: "text-pink-600",    char: "東" },
-  "愛知県名古屋市":         { color: "text-blue-600",    char: "名" },
-  "愛知県（名古屋市以外）":   { color: "text-blue-700",    char: "愛" },
-  "岐阜県":               { color: "text-lime-600",    char: "岐" },
-  "リモート":              { color: "text-cyan-600",    char: "リ" },
-  "複数箇所（お問い合わせください）": { color: "text-pink-600", char: "複" },
-  "未定（お問い合わせください）": { color: "text-gray-500",   char: "？" },
-  "対応不可日・休日":        { color: "text-red-700",     char: "休" },
+// 勤務場所の色・表示ラベルマッピング
+const LOCATION_STYLES: Record<string, { color: string; label: string }> = {
+  "滋賀県草津市":           { color: "text-emerald-600", label: "滋賀県草津市" },
+  "滋賀県（草津市以外）":     { color: "text-emerald-700", label: "滋賀県（草津市以外）" },
+  "京都府京都市":           { color: "text-purple-600",  label: "京都府京都市" },
+  "京都府（京都市以外）":     { color: "text-purple-700",  label: "京都府（京都市以外）" },
+  "大阪府大阪市":           { color: "text-orange-600",  label: "大阪府大阪市" },
+  "大阪府茨木市":           { color: "text-amber-600",   label: "大阪府茨木市" },
+  "大阪府（大阪市・茨木市以外）": { color: "text-orange-700", label: "大阪府（他）" },
+  "東京都渋谷区":           { color: "text-pink-500",    label: "東京都渋谷区" },
+  "東京都（渋谷区以外）":     { color: "text-pink-600",    label: "東京都（渋谷区以外）" },
+  "愛知県名古屋市":         { color: "text-blue-600",    label: "愛知県名古屋市" },
+  "愛知県（名古屋市以外）":   { color: "text-blue-700",    label: "愛知県（名古屋市以外）" },
+  "岐阜県":               { color: "text-lime-600",    label: "岐阜県" },
+  "リモート":              { color: "text-cyan-600",    label: "リモート" },
+  "複数箇所（お問い合わせください）": { color: "text-pink-600", label: "複" },
+  "未定（お問い合わせください）": { color: "text-gray-500",   label: "？" },
+  "対応不可日・休日":        { color: "text-red-700",     label: "休" },
 };
 
 function weekdayName(d: Date) {
@@ -224,8 +224,8 @@ export function WeekGrid({
               >
                 <div>{`${d.getMonth() + 1}/${d.getDate()}(${weekdayName(d)})`}</div>
                 {locStyle && (
-                  <div className={`text-xs font-bold ${locStyle.color}`}>
-                    {locStyle.char}
+                  <div className={`text-[10px] leading-tight font-bold ${locStyle.color}`}>
+                    {locStyle.label}
                   </div>
                 )}
               </div>
