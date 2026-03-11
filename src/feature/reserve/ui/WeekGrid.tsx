@@ -1,6 +1,26 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
+
+// 勤務場所の色・文字マッピング（location/page.tsxと同期）
+const LOCATION_STYLES: Record<string, { color: string; char: string }> = {
+  "滋賀県草津市":           { color: "text-emerald-600", char: "草" },
+  "滋賀県（草津市以外）":     { color: "text-emerald-700", char: "滋" },
+  "京都府京都市":           { color: "text-purple-600",  char: "京" },
+  "京都府（京都市以外）":     { color: "text-purple-700",  char: "都" },
+  "大阪府大阪市":           { color: "text-orange-600",  char: "阪" },
+  "大阪府茨木市":           { color: "text-amber-600",   char: "茨" },
+  "大阪府（大阪市・茨木市以外）": { color: "text-orange-700", char: "大" },
+  "東京都渋谷区":           { color: "text-red-600",     char: "渋" },
+  "東京都（渋谷区以外）":     { color: "text-red-700",     char: "東" },
+  "愛知県名古屋市":         { color: "text-blue-600",    char: "名" },
+  "愛知県（名古屋市以外）":   { color: "text-blue-700",    char: "愛" },
+  "岐阜県":               { color: "text-lime-600",    char: "岐" },
+  "リモート":              { color: "text-cyan-600",    char: "リ" },
+  "複数箇所（お問い合わせください）": { color: "text-pink-600", char: "複" },
+  "未定（お問い合わせください）": { color: "text-gray-500",   char: "？" },
+  "対応不可日・休日":        { color: "text-rose-600",    char: "休" },
+};
 
 function weekdayName(d: Date) {
   return ["日", "月", "火", "水", "木", "金", "土"][d.getDay()];
@@ -41,6 +61,17 @@ export function WeekGrid({
   onSelectSlot: (slotStart: Date, slotEnd: Date) => void;
   businessHours?: { start: number; end: number };
 }) {
+  const [locations, setLocations] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    fetch("/api/location")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.ok) setLocations(data.locations || {});
+      })
+      .catch(() => {});
+  }, []);
+
   const monday = getMonday(focusDate);
   const days = Array.from({ length: 7 }, (_, i) => new Date(monday.getTime() + i * 86400000));
   const rows = Array.from({ length: 28 }, (_, i) => ({ hour: 9 + Math.floor(i / 2), min: i % 2 === 0 ? 0 : 30 }));
@@ -175,6 +206,9 @@ export function WeekGrid({
             const isToday = d.getTime() === today.getTime();
             const isUnavailable = isDateUnavailable(d);
             const isLimited = isDateLimited(d);
+            const dateKey = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+            const locName = locations[dateKey];
+            const locStyle = locName ? LOCATION_STYLES[locName] : null;
             return (
               <div
                 key={d.toDateString()}
@@ -188,7 +222,12 @@ export function WeekGrid({
                     : "bg-gradient-to-b from-zinc-50 to-white text-zinc-600"
                 }`}
               >
-                {`${d.getMonth() + 1}/${d.getDate()}(${weekdayName(d)})`}
+                <div>{`${d.getMonth() + 1}/${d.getDate()}(${weekdayName(d)})`}</div>
+                {locStyle && (
+                  <div className={`text-xs font-bold ${locStyle.color}`}>
+                    {locStyle.char}
+                  </div>
+                )}
               </div>
             );
           })}
