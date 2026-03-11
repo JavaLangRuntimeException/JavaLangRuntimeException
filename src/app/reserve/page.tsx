@@ -764,6 +764,14 @@ export default function ReservePage() {
       <InfoBadge dotColor="bg-yellow-400/80">
         フォームに入力いただいた内容はご相談や面談の予約確認の目的でのみ使用されます。
       </InfoBadge>
+      <div className="mb-4" />
+      <InfoBadge dotColor="bg-orange-400/80">
+        対面でのご相談をご希望の方は{" "}
+        <a href="/location" className="underline underline-offset-2 font-semibold hover:text-orange-200 transition-colors">
+          勤務場所ページ
+        </a>
+        {" "}で勤務予定地をご確認ください。
+      </InfoBadge>
 
       <div className="mt-4 sm:mt-6">
         {slotSuggestLoading ? (
