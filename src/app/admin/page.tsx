@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession, signOut } from "next-auth/react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 type ICalEvent = {
@@ -80,6 +80,43 @@ taramanji.com
   const [bulkLocation, setBulkLocation] = useState(LOCATION_OPTIONS[0]);
   const [bulkSaving, setBulkSaving] = useState(false);
 
+  // Drag selection state
+  const isDragging = useRef(false);
+  const dragMode = useRef<"select" | "deselect">("select");
+  const sortedDatesRef = useRef<string[]>([]);
+
+  const handleDragStart = useCallback((date: string) => {
+    isDragging.current = true;
+    const wasSelected = selectedDates.has(date);
+    dragMode.current = wasSelected ? "deselect" : "select";
+    setSelectedDates((prev) => {
+      const next = new Set(prev);
+      if (wasSelected) {
+        next.delete(date);
+      } else {
+        next.add(date);
+      }
+      return next;
+    });
+  }, [selectedDates]);
+
+  const handleDragEnter = useCallback((date: string) => {
+    if (!isDragging.current) return;
+    setSelectedDates((prev) => {
+      const next = new Set(prev);
+      if (dragMode.current === "select") {
+        next.add(date);
+      } else {
+        next.delete(date);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleDragEnd = useCallback(() => {
+    isDragging.current = false;
+  }, []);
+
   useEffect(() => {
     // セッションがない場合はログイン画面にリダイレクト
     if (status !== "loading" && !session?.user?.email) {
@@ -87,6 +124,17 @@ taramanji.com
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, status]);
+
+  // ドラッグ終了をグローバルで検知
+  useEffect(() => {
+    const end = () => handleDragEnd();
+    window.addEventListener("pointerup", end);
+    window.addEventListener("pointercancel", end);
+    return () => {
+      window.removeEventListener("pointerup", end);
+      window.removeEventListener("pointercancel", end);
+    };
+  }, [handleDragEnd]);
 
   const handleLogout = async () => {
     // セッションからログアウト
@@ -573,7 +621,7 @@ taramanji.com
               {Object.keys(locations).length === 0 ? (
                 <p className="text-gray-400">登録がありません</p>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-2 select-none">
                   {Object.keys(locations)
                     .sort()
                     .map((date) => {
@@ -584,7 +632,15 @@ taramanji.com
                       return (
                         <div
                           key={date}
-                          className={`flex items-center p-3 rounded-lg border gap-2 transition-colors ${
+                          onPointerDown={(e) => {
+                            // セレクトやボタン上でのドラッグは無視
+                            const tag = (e.target as HTMLElement).tagName;
+                            if (tag === "SELECT" || tag === "OPTION" || tag === "BUTTON") return;
+                            e.preventDefault();
+                            handleDragStart(date);
+                          }}
+                          onPointerEnter={() => handleDragEnter(date)}
+                          className={`flex items-center p-3 rounded-lg border gap-2 transition-colors cursor-pointer ${
                             isSelected
                               ? "bg-blue-900/30 border-blue-500/40"
                               : "bg-gray-700/50 border-gray-600"
@@ -594,7 +650,7 @@ taramanji.com
                             type="checkbox"
                             checked={isSelected}
                             onChange={() => toggleDate(date)}
-                            className="h-4 w-4 rounded border-gray-500 bg-gray-600 text-blue-500 focus:ring-blue-500 shrink-0 cursor-pointer"
+                            className="h-4 w-4 rounded border-gray-500 bg-gray-600 text-blue-500 focus:ring-blue-500 shrink-0 cursor-pointer pointer-events-auto"
                           />
                           <span className="text-white font-medium min-w-[100px] shrink-0">
                             {label}
