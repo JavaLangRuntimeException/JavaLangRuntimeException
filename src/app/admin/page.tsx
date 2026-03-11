@@ -488,22 +488,45 @@ taramanji.com
                     .sort()
                     .map((date) => {
                       const d = new Date(date + "T00:00:00");
-                      const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
-                      const label = `${d.getMonth() + 1}/${d.getDate()}（${dayNames[d.getDay()]}）`;
+                      const dNames = ["日", "月", "火", "水", "木", "金", "土"];
+                      const label = `${d.getMonth() + 1}/${d.getDate()}（${dNames[d.getDay()]}）`;
                       return (
                         <div
                           key={date}
-                          className="flex items-center justify-between p-3 rounded-lg bg-gray-700/50 border border-gray-600"
+                          className="flex items-center justify-between p-3 rounded-lg bg-gray-700/50 border border-gray-600 gap-2"
                         >
-                          <div className="flex items-center gap-4">
-                            <span className="text-white font-medium min-w-[100px]">
-                              {label}
-                            </span>
-                            <span className="text-gray-300">{locations[date]}</span>
-                          </div>
+                          <span className="text-white font-medium min-w-[100px] shrink-0">
+                            {label}
+                          </span>
+                          <select
+                            value={locations[date]}
+                            onChange={async (e) => {
+                              const newLocation = e.target.value;
+                              try {
+                                const res = await fetch("/api/admin/location", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ date, location: newLocation }),
+                                });
+                                const data = await res.json();
+                                if (data.ok) {
+                                  setLocations((prev) => ({ ...prev, [date]: newLocation }));
+                                }
+                              } catch (err) {
+                                console.error("Failed to update location:", err);
+                              }
+                            }}
+                            className="flex-1 min-w-0 bg-gray-600 text-white px-3 py-1 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                            {LOCATION_OPTIONS.map((opt) => (
+                              <option key={opt} value={opt}>
+                                {opt}
+                              </option>
+                            ))}
+                          </select>
                           <button
                             onClick={() => deleteLocation(date)}
-                            className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm transition-colors"
+                            className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded text-sm transition-colors shrink-0"
                           >
                             削除
                           </button>
