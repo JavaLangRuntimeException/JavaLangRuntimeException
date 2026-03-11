@@ -10,9 +10,7 @@ type LocationMap = Record<string, string>;
 // GET: 今日以降の勤務場所を取得（公開用）+ 古いエントリを自動削除
 export async function GET() {
   try {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayStr = today.toISOString().slice(0, 10);
+    const todayStr = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" });
 
     const raw = await getRedis().get(KV_KEY);
     const data: LocationMap = raw ? JSON.parse(raw) : {};
