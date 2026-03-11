@@ -7,7 +7,32 @@ import Link from "next/link";
 
 type LocationMap = Record<string, string>;
 
-const dayNames = ["日", "月", "火", "水", "木", "金", "土"];
+const dayNames = ["月", "火", "水", "木", "金", "土", "日"];
+
+// 場所ごとの色マッピング（ドット色 / テキスト色）
+const LOCATION_COLORS: Record<string, { dot: string; text: string }> = {
+  "滋賀県草津市":           { dot: "bg-emerald-400", text: "text-emerald-300" },
+  "滋賀県（草津市以外）":     { dot: "bg-emerald-600", text: "text-emerald-400" },
+  "京都府京都市":           { dot: "bg-purple-400",  text: "text-purple-300" },
+  "京都府（京都市以外）":     { dot: "bg-purple-600",  text: "text-purple-400" },
+  "大阪府大阪市":           { dot: "bg-orange-400",  text: "text-orange-300" },
+  "大阪府茨木市":           { dot: "bg-amber-400",   text: "text-amber-300" },
+  "大阪府（大阪市・茨木市以外）": { dot: "bg-orange-600", text: "text-orange-400" },
+  "東京都渋谷区":           { dot: "bg-red-400",     text: "text-red-300" },
+  "東京都（渋谷区以外）":     { dot: "bg-red-600",     text: "text-red-400" },
+  "愛知県名古屋市":         { dot: "bg-yellow-400",  text: "text-yellow-300" },
+  "愛知県（名古屋市以外）":   { dot: "bg-yellow-600",  text: "text-yellow-400" },
+  "岐阜県":               { dot: "bg-lime-400",    text: "text-lime-300" },
+  "リモート":              { dot: "bg-cyan-400",    text: "text-cyan-300" },
+  "複数箇所（お問い合わせください）": { dot: "bg-pink-400", text: "text-pink-300" },
+  "未定（お問い合わせください）": { dot: "bg-gray-400",   text: "text-gray-400" },
+};
+
+const DEFAULT_COLOR = { dot: "bg-white", text: "text-white/80" };
+
+function getLocationColor(location: string) {
+  return LOCATION_COLORS[location] || DEFAULT_COLOR;
+}
 
 function getMonday(date: Date): Date {
   const d = new Date(date);
@@ -29,11 +54,13 @@ function isToday(dateStr: string): boolean {
   return dateStr === formatYMD(new Date());
 }
 
+const dayNamesJP = ["日", "月", "火", "水", "木", "金", "土"];
+
 function formatDateLabel(dateStr: string): string {
   const date = new Date(dateStr + "T00:00:00");
   const month = date.getMonth() + 1;
   const day = date.getDate();
-  const dayName = dayNames[date.getDay()];
+  const dayName = dayNamesJP[date.getDay()];
   return `${month}/${day}（${dayName}）`;
 }
 
@@ -43,6 +70,7 @@ export default function LocationPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [monthOffset, setMonthOffset] = useState(0);
 
   useEffect(() => {
     const fetchLocations = async () => {
@@ -63,22 +91,45 @@ export default function LocationPage() {
     fetchLocations();
   }, []);
 
-  // カレンダー用: 今日から4週間分の日付を生成
-  const weeks = useMemo(() => {
-    const today = new Date();
-    const monday = getMonday(today);
-    const result: Date[][] = [];
-    for (let w = 0; w < 4; w++) {
-      const week: Date[] = [];
-      for (let d = 0; d < 7; d++) {
-        const date = new Date(monday);
-        date.setDate(monday.getDate() + w * 7 + d);
-        week.push(date);
+  // カレンダー用: 表示月の週を生成（月曜始まり）
+  const calendarMonth = useMemo(() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + monthOffset;
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+
+    // 月曜始まりで最初の日を求める（0=日,1=月,...6=土 → 月曜=0にする）
+    const startDow = (firstDay.getDay() + 6) % 7; // 月=0, 火=1, ..., 日=6
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - startDow);
+
+    const weeks: Date[][] = [];
+    const cursor = new Date(startDate);
+    while (cursor <= lastDay || weeks.length === 0 || weeks[weeks.length - 1].length < 7) {
+      if (weeks.length === 0 || weeks[weeks.length - 1].length === 7) {
+        if (weeks.length > 0 && cursor > lastDay) break;
+        weeks.push([]);
       }
-      result.push(week);
+      weeks[weeks.length - 1].push(new Date(cursor));
+      cursor.setDate(cursor.getDate() + 1);
     }
-    return result;
-  }, []);
+    // 最後の週を7日に埋める
+    while (weeks[weeks.length - 1].length < 7) {
+      weeks[weeks.length - 1].push(new Date(cursor));
+      cursor.setDate(cursor.getDate() + 1);
+    }
+
+    return {
+      year: firstDay.getFullYear(),
+      month: firstDay.getMonth() + 1,
+      weeks,
+    };
+  }, [monthOffset]);
+
+  // 2ヶ月先まで制限
+  const canGoNext = monthOffset < 2;
+  const canGoPrev = monthOffset > 0;
 
   const displayDate = selectedDate || formatYMD(new Date());
   const displayLocation = locations[displayDate];
@@ -137,17 +188,33 @@ export default function LocationPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5, duration: 0.7 }}
             >
-              <h2 className="mb-3 text-center text-lg font-semibold text-white">
-                {new Date().getFullYear()}年{new Date().getMonth() + 1}月〜
-              </h2>
+              <div className="mb-3 flex items-center justify-center gap-4">
+                <button
+                  onClick={() => setMonthOffset((p) => p - 1)}
+                  disabled={!canGoPrev}
+                  className="px-2 py-1 text-white/70 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed transition-colors text-lg"
+                >
+                  ←
+                </button>
+                <h2 className="text-center text-lg font-semibold text-white min-w-[120px]">
+                  {calendarMonth.year}年{calendarMonth.month}月
+                </h2>
+                <button
+                  onClick={() => setMonthOffset((p) => p + 1)}
+                  disabled={!canGoNext}
+                  className="px-2 py-1 text-white/70 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed transition-colors text-lg"
+                >
+                  →
+                </button>
+              </div>
 
-              {/* 曜日ヘッダー */}
+              {/* 曜日ヘッダー（月曜始まり） */}
               <div className="grid grid-cols-7 gap-1 mb-1">
-                {dayNames.map((name, i) => (
+                {dayNames.map((name) => (
                   <div
                     key={name}
                     className={`text-center text-xs font-medium py-1 ${
-                      i === 0 ? "text-red-300" : i === 6 ? "text-blue-300" : "text-white/60"
+                      name === "日" ? "text-red-300" : name === "土" ? "text-blue-300" : "text-white/60"
                     }`}
                   >
                     {name}
@@ -156,14 +223,18 @@ export default function LocationPage() {
               </div>
 
               {/* 日付グリッド */}
-              {weeks.map((week, wi) => (
+              {calendarMonth.weeks.map((week, wi) => (
                 <div key={wi} className="grid grid-cols-7 gap-1 mb-1">
                   {week.map((date) => {
                     const dateStr = formatYMD(date);
-                    const hasLocation = !!locations[dateStr];
+                    const locationName = locations[dateStr];
+                    const hasLocation = !!locationName;
                     const today = isToday(dateStr);
                     const selected = dateStr === displayDate;
-                    const isPast = date < new Date(new Date().toISOString().slice(0, 10) + "T00:00:00");
+                    const todayStr = formatYMD(new Date());
+                    const isPast = dateStr < todayStr;
+                    const isCurrentMonth = date.getMonth() + 1 === calendarMonth.month;
+                    const color = hasLocation ? getLocationColor(locationName) : null;
 
                     return (
                       <button
@@ -172,15 +243,17 @@ export default function LocationPage() {
                         disabled={isPast}
                         className={`
                           relative rounded-lg p-1.5 text-center text-sm transition-all
-                          ${isPast ? "opacity-30 cursor-not-allowed" : "cursor-pointer hover:bg-white/20"}
+                          ${!isCurrentMonth ? "opacity-20" : ""}
+                          ${isPast && isCurrentMonth ? "opacity-30 cursor-not-allowed" : ""}
+                          ${!isPast ? "cursor-pointer hover:bg-white/20" : "cursor-not-allowed"}
                           ${today ? "ring-2 ring-blue-400" : ""}
                           ${selected ? "bg-blue-500/30" : ""}
                           ${hasLocation ? "font-bold text-white" : "text-white/50"}
                         `}
                       >
                         <span className="block">{date.getDate()}</span>
-                        {hasLocation && (
-                          <span className="block mx-auto mt-0.5 h-1.5 w-1.5 rounded-full bg-orange-400" />
+                        {hasLocation && color && isCurrentMonth && (
+                          <span className={`block mx-auto mt-0.5 h-1.5 w-1.5 rounded-full ${color.dot}`} />
                         )}
                       </button>
                     );
@@ -195,7 +268,10 @@ export default function LocationPage() {
                     <span className="text-xs text-white/60">
                       {formatDateLabel(displayDate)}
                     </span>
-                    <p className="mt-1 text-lg font-bold text-white">{displayLocation}</p>
+                    <p className={`mt-1 text-lg font-bold ${getLocationColor(displayLocation).text}`}>
+                      <span className={`inline-block h-2.5 w-2.5 rounded-full ${getLocationColor(displayLocation).dot} mr-2 align-middle`} />
+                      {displayLocation}
+                    </p>
                   </div>
                 ) : (
                   <p className="text-center text-sm text-white/40 pt-2">
@@ -205,23 +281,30 @@ export default function LocationPage() {
               </div>
 
               {/* 色の説明 */}
-              <div className="mt-3 flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-xs text-white/50">
-                <span className="flex items-center gap-1.5">
-                  <span className="inline-block h-3 w-3 rounded ring-2 ring-blue-400" />
-                  今日
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="inline-block h-3 w-3 rounded bg-blue-500/30" />
-                  選択中
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-orange-400" />
-                  勤務場所登録済み
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="inline-block h-3 w-3 rounded opacity-30 bg-white/20" />
-                  過去（選択不可）
-                </span>
+              <div className="mt-3 space-y-2">
+                <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-xs text-white/50">
+                  <span className="flex items-center gap-1.5">
+                    <span className="inline-block h-3 w-3 rounded ring-2 ring-blue-400" />
+                    今日
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="inline-block h-3 w-3 rounded bg-blue-500/30" />
+                    選択中
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="inline-block h-3 w-3 rounded opacity-30 bg-white/20" />
+                    過去（選択不可）
+                  </span>
+                </div>
+                {/* 場所ごとの色凡例 */}
+                <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-white/50">
+                  {Object.entries(LOCATION_COLORS).map(([name, c]) => (
+                    <span key={name} className="flex items-center gap-1">
+                      <span className={`inline-block h-1.5 w-1.5 rounded-full ${c.dot}`} />
+                      {name}
+                    </span>
+                  ))}
+                </div>
               </div>
             </motion.div>
 
@@ -259,8 +342,11 @@ export default function LocationPage() {
                           {formatDateLabel(date)}
                         </span>
                       </div>
-                      <span className="text-white/90 font-medium">
-                        {locations[date]}
+                      <span className="flex items-center gap-2">
+                        <span className={`inline-block h-2 w-2 rounded-full ${getLocationColor(locations[date]).dot}`} />
+                        <span className={`font-medium ${getLocationColor(locations[date]).text}`}>
+                          {locations[date]}
+                        </span>
                       </span>
                     </motion.div>
                   ))}
