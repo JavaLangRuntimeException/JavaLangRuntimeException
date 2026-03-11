@@ -9,29 +9,29 @@ type LocationMap = Record<string, string>;
 
 const dayNames = ["月", "火", "水", "木", "金", "土", "日"];
 
-// 場所ごとの色マッピング（ドット色 / テキスト色）
-const LOCATION_COLORS: Record<string, { dot: string; text: string }> = {
-  "滋賀県草津市":           { dot: "bg-emerald-400", text: "text-emerald-300" },
-  "滋賀県（草津市以外）":     { dot: "bg-emerald-600", text: "text-emerald-400" },
-  "京都府京都市":           { dot: "bg-purple-400",  text: "text-purple-300" },
-  "京都府（京都市以外）":     { dot: "bg-purple-600",  text: "text-purple-400" },
-  "大阪府大阪市":           { dot: "bg-orange-400",  text: "text-orange-300" },
-  "大阪府茨木市":           { dot: "bg-amber-400",   text: "text-amber-300" },
-  "大阪府（大阪市・茨木市以外）": { dot: "bg-orange-600", text: "text-orange-400" },
-  "東京都渋谷区":           { dot: "bg-red-400",     text: "text-red-300" },
-  "東京都（渋谷区以外）":     { dot: "bg-red-600",     text: "text-red-400" },
-  "愛知県名古屋市":         { dot: "bg-yellow-400",  text: "text-yellow-300" },
-  "愛知県（名古屋市以外）":   { dot: "bg-yellow-600",  text: "text-yellow-400" },
-  "岐阜県":               { dot: "bg-lime-400",    text: "text-lime-300" },
-  "リモート":              { dot: "bg-cyan-400",    text: "text-cyan-300" },
-  "複数箇所（お問い合わせください）": { dot: "bg-pink-400", text: "text-pink-300" },
-  "未定（お問い合わせください）": { dot: "bg-gray-400",   text: "text-gray-400" },
+// 場所ごとの色・漢字1文字マッピング
+const LOCATION_STYLES: Record<string, { dot: string; text: string; char: string }> = {
+  "滋賀県草津市":           { dot: "bg-emerald-400", text: "text-emerald-300", char: "草" },
+  "滋賀県（草津市以外）":     { dot: "bg-emerald-600", text: "text-emerald-400", char: "滋" },
+  "京都府京都市":           { dot: "bg-purple-400",  text: "text-purple-300",  char: "京" },
+  "京都府（京都市以外）":     { dot: "bg-purple-600",  text: "text-purple-400",  char: "都" },
+  "大阪府大阪市":           { dot: "bg-orange-400",  text: "text-orange-300",  char: "阪" },
+  "大阪府茨木市":           { dot: "bg-amber-400",   text: "text-amber-300",   char: "茨" },
+  "大阪府（大阪市・茨木市以外）": { dot: "bg-orange-600", text: "text-orange-400", char: "大" },
+  "東京都渋谷区":           { dot: "bg-red-400",     text: "text-red-300",     char: "渋" },
+  "東京都（渋谷区以外）":     { dot: "bg-red-600",     text: "text-red-400",     char: "東" },
+  "愛知県名古屋市":         { dot: "bg-yellow-400",  text: "text-yellow-300",  char: "名" },
+  "愛知県（名古屋市以外）":   { dot: "bg-yellow-600",  text: "text-yellow-400",  char: "愛" },
+  "岐阜県":               { dot: "bg-lime-400",    text: "text-lime-300",    char: "岐" },
+  "リモート":              { dot: "bg-cyan-400",    text: "text-cyan-300",    char: "リ" },
+  "複数箇所（お問い合わせください）": { dot: "bg-pink-400", text: "text-pink-300", char: "複" },
+  "未定（お問い合わせください）": { dot: "bg-gray-400",   text: "text-gray-400",   char: "？" },
 };
 
-const DEFAULT_COLOR = { dot: "bg-white", text: "text-white/80" };
+const DEFAULT_STYLE = { dot: "bg-white", text: "text-white/80", char: "・" };
 
-function getLocationColor(location: string) {
-  return LOCATION_COLORS[location] || DEFAULT_COLOR;
+function getLocationStyle(location: string) {
+  return LOCATION_STYLES[location] || DEFAULT_STYLE;
 }
 
 function getMonday(date: Date): Date {
@@ -127,8 +127,6 @@ export default function LocationPage() {
     };
   }, [monthOffset]);
 
-  // 2ヶ月先まで制限
-  const canGoNext = monthOffset < 2;
   const canGoPrev = monthOffset > 0;
 
   const displayDate = selectedDate || formatYMD(new Date());
@@ -162,6 +160,15 @@ export default function LocationPage() {
         </motion.p>
 
         <motion.p
+          className="mb-2 text-center text-sm text-white/60"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.43, duration: 0.7 }}
+        >
+          最短2ヶ月先まで公開しています
+        </motion.p>
+
+        <motion.p
           className="mb-8 text-center text-sm text-white/60"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -188,7 +195,7 @@ export default function LocationPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5, duration: 0.7 }}
             >
-              <div className="mb-3 flex items-center justify-center gap-4">
+              <div className="mb-3 flex items-center justify-center gap-3">
                 <button
                   onClick={() => setMonthOffset((p) => p - 1)}
                   disabled={!canGoPrev}
@@ -201,11 +208,18 @@ export default function LocationPage() {
                 </h2>
                 <button
                   onClick={() => setMonthOffset((p) => p + 1)}
-                  disabled={!canGoNext}
-                  className="px-2 py-1 text-white/70 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed transition-colors text-lg"
+                  className="px-2 py-1 text-white/70 hover:text-white transition-colors text-lg"
                 >
                   →
                 </button>
+                {monthOffset !== 0 && (
+                  <button
+                    onClick={() => setMonthOffset(0)}
+                    className="ml-1 px-3 py-1 text-xs bg-white/10 hover:bg-white/20 text-white/70 hover:text-white rounded-lg transition-colors"
+                  >
+                    今月
+                  </button>
+                )}
               </div>
 
               {/* 曜日ヘッダー（月曜始まり） */}
@@ -234,7 +248,7 @@ export default function LocationPage() {
                     const todayStr = formatYMD(new Date());
                     const isPast = dateStr < todayStr;
                     const isCurrentMonth = date.getMonth() + 1 === calendarMonth.month;
-                    const color = hasLocation ? getLocationColor(locationName) : null;
+                    const style = hasLocation ? getLocationStyle(locationName) : null;
 
                     return (
                       <button
@@ -242,7 +256,7 @@ export default function LocationPage() {
                         onClick={() => !isPast && setSelectedDate(dateStr)}
                         disabled={isPast}
                         className={`
-                          relative rounded-lg p-1.5 text-center text-sm transition-all
+                          relative rounded-lg p-1 text-center transition-all
                           ${!isCurrentMonth ? "opacity-20" : ""}
                           ${isPast && isCurrentMonth ? "opacity-30 cursor-not-allowed" : ""}
                           ${!isPast ? "cursor-pointer hover:bg-white/20" : "cursor-not-allowed"}
@@ -251,9 +265,11 @@ export default function LocationPage() {
                           ${hasLocation ? "font-bold text-white" : "text-white/50"}
                         `}
                       >
-                        <span className="block">{date.getDate()}</span>
-                        {hasLocation && color && isCurrentMonth && (
-                          <span className={`block mx-auto mt-0.5 h-1.5 w-1.5 rounded-full ${color.dot}`} />
+                        <span className="block text-sm">{date.getDate()}</span>
+                        {hasLocation && style && isCurrentMonth && (
+                          <span className={`block text-[10px] leading-tight ${style.text}`}>
+                            {style.char}
+                          </span>
                         )}
                       </button>
                     );
@@ -268,8 +284,8 @@ export default function LocationPage() {
                     <span className="text-xs text-white/60">
                       {formatDateLabel(displayDate)}
                     </span>
-                    <p className={`mt-1 text-lg font-bold ${getLocationColor(displayLocation).text}`}>
-                      <span className={`inline-block h-2.5 w-2.5 rounded-full ${getLocationColor(displayLocation).dot} mr-2 align-middle`} />
+                    <p className={`mt-1 text-lg font-bold ${getLocationStyle(displayLocation).text}`}>
+                      <span className={`inline-block h-2.5 w-2.5 rounded-full ${getLocationStyle(displayLocation).dot} mr-2 align-middle`} />
                       {displayLocation}
                     </p>
                   </div>
@@ -297,10 +313,10 @@ export default function LocationPage() {
                   </span>
                 </div>
                 {/* 場所ごとの色凡例 */}
-                <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-xs text-white/50">
-                  {Object.entries(LOCATION_COLORS).map(([name, c]) => (
+                <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-xs text-white/50">
+                  {Object.entries(LOCATION_STYLES).map(([name, s]) => (
                     <span key={name} className="flex items-center gap-1">
-                      <span className={`inline-block h-1.5 w-1.5 rounded-full ${c.dot}`} />
+                      <span className={`inline-block w-3.5 text-center font-bold ${s.text}`}>{s.char}</span>
                       {name}
                     </span>
                   ))}
@@ -343,8 +359,8 @@ export default function LocationPage() {
                         </span>
                       </div>
                       <span className="flex items-center gap-2">
-                        <span className={`inline-block h-2 w-2 rounded-full ${getLocationColor(locations[date]).dot}`} />
-                        <span className={`font-medium ${getLocationColor(locations[date]).text}`}>
+                        <span className={`inline-block h-2 w-2 rounded-full ${getLocationStyle(locations[date]).dot}`} />
+                        <span className={`font-medium ${getLocationStyle(locations[date]).text}`}>
                           {locations[date]}
                         </span>
                       </span>

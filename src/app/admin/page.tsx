@@ -75,6 +75,11 @@ taramanji.com
   const [locationValue, setLocationValue] = useState(LOCATION_OPTIONS[0]);
   const [locationResult, setLocationResult] = useState<{ ok: boolean; message: string } | null>(null);
 
+  // Bulk selection state
+  const [selectedDates, setSelectedDates] = useState<Set<string>>(new Set());
+  const [bulkLocation, setBulkLocation] = useState(LOCATION_OPTIONS[0]);
+  const [bulkSaving, setBulkSaving] = useState(false);
+
   useEffect(() => {
     // セッションがない場合はログイン画面にリダイレクト
     if (status !== "loading" && !session?.user?.email) {
@@ -206,6 +211,48 @@ taramanji.com
       }
     } catch (error) {
       console.error("Failed to delete location:", error);
+    }
+  };
+
+  const toggleDate = (date: string) => {
+    setSelectedDates((prev) => {
+      const next = new Set(prev);
+      if (next.has(date)) {
+        next.delete(date);
+      } else {
+        next.add(date);
+      }
+      return next;
+    });
+  };
+
+  const selectAllDates = () => {
+    setSelectedDates(new Set(Object.keys(locations)));
+  };
+
+  const clearSelection = () => {
+    setSelectedDates(new Set());
+  };
+
+  const bulkUpdateLocations = async () => {
+    if (selectedDates.size === 0) return;
+    setBulkSaving(true);
+    try {
+      const res = await fetch("/api/admin/location", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dates: Array.from(selectedDates), location: bulkLocation }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setLocationResult({ ok: true, message: `${selectedDates.size}件を「${bulkLocation}」に変更しました` });
+        setSelectedDates(new Set());
+        fetchLocations();
+      }
+    } catch {
+      setLocationResult({ ok: false, message: "一括変更に失敗しました" });
+    } finally {
+      setBulkSaving(false);
     }
   };
 
@@ -470,15 +517,58 @@ taramanji.com
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-white">
                   登録済み勤務場所 ({Object.keys(locations).length} 件)
+                  {selectedDates.size > 0 && (
+                    <span className="ml-2 text-sm text-blue-300">（{selectedDates.size}件選択中）</span>
+                  )}
                 </h2>
-                <button
-                  onClick={fetchLocations}
-                  disabled={locationLoading}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500 disabled:opacity-50 text-sm"
-                >
-                  {locationLoading ? "読み込み中..." : "更新"}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={selectAllDates}
+                    className="px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-500 text-xs"
+                  >
+                    全選択
+                  </button>
+                  <button
+                    onClick={clearSelection}
+                    disabled={selectedDates.size === 0}
+                    className="px-3 py-1 bg-gray-600 text-white rounded hover:bg-gray-500 disabled:opacity-30 text-xs"
+                  >
+                    選択解除
+                  </button>
+                  <button
+                    onClick={fetchLocations}
+                    disabled={locationLoading}
+                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500 disabled:opacity-50 text-sm"
+                  >
+                    {locationLoading ? "読み込み中..." : "更新"}
+                  </button>
+                </div>
               </div>
+
+              {/* 一括変更バー */}
+              {selectedDates.size > 0 && (
+                <div className="mb-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 p-4 rounded-lg bg-blue-900/30 border border-blue-500/30">
+                  <span className="text-blue-200 text-sm font-medium shrink-0">
+                    {selectedDates.size}件を一括変更 →
+                  </span>
+                  <select
+                    value={bulkLocation}
+                    onChange={(e) => setBulkLocation(e.target.value)}
+                    className="flex-1 min-w-0 bg-gray-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    {LOCATION_OPTIONS.map((opt) => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={bulkUpdateLocations}
+                    disabled={bulkSaving}
+                    className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 font-medium text-sm shrink-0"
+                  >
+                    {bulkSaving ? "変更中..." : "一括変更"}
+                  </button>
+                </div>
+              )}
 
               {Object.keys(locations).length === 0 ? (
                 <p className="text-gray-400">登録がありません</p>
@@ -490,11 +580,22 @@ taramanji.com
                       const d = new Date(date + "T00:00:00");
                       const dNames = ["日", "月", "火", "水", "木", "金", "土"];
                       const label = `${d.getMonth() + 1}/${d.getDate()}（${dNames[d.getDay()]}）`;
+                      const isSelected = selectedDates.has(date);
                       return (
                         <div
                           key={date}
-                          className="flex items-center justify-between p-3 rounded-lg bg-gray-700/50 border border-gray-600 gap-2"
+                          className={`flex items-center p-3 rounded-lg border gap-2 transition-colors ${
+                            isSelected
+                              ? "bg-blue-900/30 border-blue-500/40"
+                              : "bg-gray-700/50 border-gray-600"
+                          }`}
                         >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleDate(date)}
+                            className="h-4 w-4 rounded border-gray-500 bg-gray-600 text-blue-500 focus:ring-blue-500 shrink-0 cursor-pointer"
+                          />
                           <span className="text-white font-medium min-w-[100px] shrink-0">
                             {label}
                           </span>
