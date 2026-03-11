@@ -18,15 +18,15 @@ const LOCATION_STYLES: Record<string, { dot: string; text: string; char: string 
   "大阪府大阪市":           { dot: "bg-orange-400",  text: "text-orange-300",  char: "阪" },
   "大阪府茨木市":           { dot: "bg-amber-400",   text: "text-amber-300",   char: "茨" },
   "大阪府（大阪市・茨木市以外）": { dot: "bg-orange-600", text: "text-orange-400", char: "大" },
-  "東京都渋谷区":           { dot: "bg-red-400",     text: "text-red-300",     char: "渋" },
-  "東京都（渋谷区以外）":     { dot: "bg-red-600",     text: "text-red-400",     char: "東" },
+  "東京都渋谷区":           { dot: "bg-pink-400",    text: "text-pink-300",    char: "渋" },
+  "東京都（渋谷区以外）":     { dot: "bg-pink-500",    text: "text-pink-400",    char: "東" },
   "愛知県名古屋市":         { dot: "bg-blue-400",    text: "text-blue-300",    char: "名" },
   "愛知県（名古屋市以外）":   { dot: "bg-blue-600",    text: "text-blue-400",    char: "愛" },
   "岐阜県":               { dot: "bg-lime-400",    text: "text-lime-300",    char: "岐" },
   "リモート":              { dot: "bg-cyan-400",    text: "text-cyan-300",    char: "リ" },
   "複数箇所（お問い合わせください）": { dot: "bg-pink-400", text: "text-pink-300", char: "複" },
   "未定（お問い合わせください）": { dot: "bg-gray-400",   text: "text-gray-400",   char: "？" },
-  "対応不可日・休日":        { dot: "bg-rose-400",    text: "text-rose-300",   char: "休" },
+  "対応不可日・休日":        { dot: "bg-red-600",     text: "text-red-400",    char: "休" },
 };
 
 const DEFAULT_STYLE = { dot: "bg-white", text: "text-white/80", char: "・" };
