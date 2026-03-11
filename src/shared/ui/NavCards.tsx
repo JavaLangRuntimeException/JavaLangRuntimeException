@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 interface NavCard {
     href: string;
     title: string;
-    color: "blue" | "green" | "purple";
+    color: "blue" | "green" | "purple" | "orange";
     description: React.ReactNode;
 }
 
@@ -34,6 +34,12 @@ const colorToClasses: Record<NavCard["color"], { dot: string; hover: string; tit
         hover: "hover:bg-white/10",
         title: "group-hover:text-purple-300",
         shadow: "hover:shadow-purple-500/10",
+    },
+    orange: {
+        dot: "bg-orange-400",
+        hover: "hover:bg-white/10",
+        title: "group-hover:text-orange-300",
+        shadow: "hover:shadow-orange-500/10",
     },
 };
 
