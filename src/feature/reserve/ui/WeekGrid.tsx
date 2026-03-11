@@ -17,7 +17,6 @@ const LOCATION_STYLES: Record<string, { color: string; label: string }> = {
   "愛知県（名古屋市以外）":   { color: "text-blue-700",    label: "愛知県（名古屋市以外）" },
   "岐阜県":               { color: "text-lime-600",    label: "岐阜県" },
   "リモート":              { color: "text-cyan-600",    label: "リモート" },
-  "複数箇所（お問い合わせください）": { color: "text-pink-600", label: "複" },
   "未定（お問い合わせください）": { color: "text-gray-500",   label: "？" },
   "対応不可日・休日":        { color: "text-red-700",     label: "休" },
 };

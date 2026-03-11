@@ -24,7 +24,6 @@ const LOCATION_STYLES: Record<string, { dot: string; text: string; char: string 
   "愛知県（名古屋市以外）":   { dot: "bg-blue-600",    text: "text-blue-400",    char: "愛" },
   "岐阜県":               { dot: "bg-lime-400",    text: "text-lime-300",    char: "岐" },
   "リモート":              { dot: "bg-cyan-400",    text: "text-cyan-300",    char: "リ" },
-  "複数箇所（お問い合わせください）": { dot: "bg-pink-400", text: "text-pink-300", char: "複" },
   "未定（お問い合わせください）": { dot: "bg-gray-400",   text: "text-gray-400",   char: "？" },
   "対応不可日・休日":        { dot: "bg-red-600",     text: "text-red-400",    char: "休" },
 };
