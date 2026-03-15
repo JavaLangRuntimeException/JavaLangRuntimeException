@@ -31,23 +31,19 @@ export function Header() {
         </div>
         <nav className="flex items-center gap-1 whitespace-nowrap">
           <Link
-            href="/"
-            onClick={() => {
-              // Homeボタンがクリックされた時にフラグを設定
-              sessionStorage.setItem('from_home', 'true');
-            }}
+            href="/location"
             className={cn(
               "relative group overflow-hidden rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
-              isActive("/")
-                ? "bg-gradient-to-r from-red-600 to-pink-600 text-white shadow-lg shadow-red-500/25"
+              isActive("/location")
+                ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/25"
                 : isAnyLoading
                 ? "text-zinc-400 cursor-not-allowed"
                 : "text-zinc-700 hover:bg-gradient-to-r hover:from-zinc-100 hover:to-zinc-200 dark:text-zinc-300 dark:hover:from-zinc-800 dark:hover:to-zinc-700"
             )}
             style={{ pointerEvents: isAnyLoading ? 'none' : 'auto' }}
           >
-            <span className="relative z-20">Home</span>
-            {isActive("/") ? (
+            <span className="relative z-20">Schedule</span>
+            {isActive("/location") ? (
               <span className="pointer-events-none absolute top-1/2 right-0 -translate-y-1/2 translate-x-full opacity-0 transition-transform duration-300 ease-out group-hover:translate-x-1/2 group-hover:opacity-100 group-active:translate-x-1/2 group-active:opacity-100 z-10" aria-hidden="true">
                 <Image src="/qiitan.png" alt="Qiitan" width={30} height={30} className="h-[30px] w-[30px] -rotate-45" />
               </span>

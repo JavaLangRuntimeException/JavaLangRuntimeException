@@ -174,7 +174,7 @@ export default function LocationPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.45, duration: 0.7 }}
         >
-          <Link href="/reserve" className="text-blue-300 hover:text-blue-200 underline underline-offset-2 transition-colors">
+          <Link href="/reserve" className="text-orange-300 hover:text-orange-200 underline underline-offset-2 transition-colors">
             Ask Me
           </Link>
           ページでの対面でのお問い合わせにご活用ください
@@ -182,7 +182,7 @@ export default function LocationPage() {
 
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-white/30 border-t-white" />
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-orange-300/30 border-t-orange-400" />
           </div>
         ) : error ? (
           <p className="py-8 text-center text-red-300">{error}</p>
@@ -260,8 +260,8 @@ export default function LocationPage() {
                           ${!isCurrentMonth ? "opacity-20" : ""}
                           ${isPast && isCurrentMonth ? "opacity-30 cursor-not-allowed" : ""}
                           ${!isPast ? "cursor-pointer hover:bg-white/20" : "cursor-not-allowed"}
-                          ${today ? "ring-2 ring-blue-400" : ""}
-                          ${selected ? "bg-blue-500/30" : ""}
+                          ${today ? "ring-2 ring-orange-400" : ""}
+                          ${selected ? "bg-orange-500/30" : ""}
                           ${hasLocation ? "font-bold text-white" : "text-white/50"}
                         `}
                       >
@@ -300,11 +300,11 @@ export default function LocationPage() {
               <div className="mt-3 space-y-2">
                 <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-xs text-white/50">
                   <span className="flex items-center gap-1.5">
-                    <span className="inline-block h-3 w-3 rounded ring-2 ring-blue-400" />
+                    <span className="inline-block h-3 w-3 rounded ring-2 ring-orange-400" />
                     今日
                   </span>
                   <span className="flex items-center gap-1.5">
-                    <span className="inline-block h-3 w-3 rounded bg-blue-500/30" />
+                    <span className="inline-block h-3 w-3 rounded bg-orange-500/30" />
                     選択中
                   </span>
                   <span className="flex items-center gap-1.5">
@@ -341,7 +341,7 @@ export default function LocationPage() {
                     <motion.div
                       key={date}
                       className={`flex items-center justify-between px-6 py-4 cursor-pointer transition-colors hover:bg-white/5 ${
-                        isToday(date) ? "bg-blue-500/10" : ""
+                        isToday(date) ? "bg-orange-500/10" : ""
                       } ${date === displayDate ? "bg-white/5" : ""}`}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
@@ -350,7 +350,7 @@ export default function LocationPage() {
                     >
                       <div className="flex items-center gap-3">
                         {isToday(date) && (
-                          <span className="rounded-full bg-blue-500 px-2 py-0.5 text-xs font-bold text-white">
+                          <span className="rounded-full bg-orange-500 px-2 py-0.5 text-xs font-bold text-white">
                             TODAY
                           </span>
                         )}
