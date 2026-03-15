@@ -20,6 +20,7 @@ import { GlassCardSimple } from "../../shared/ui/GlassCard";
 import { InfoBadge } from "../../shared/ui/InfoBadge";
 import { useLoading } from "../../shared/contexts/LoadingContext";
 import { CircleCheckLoader } from "../../shared/ui/CircleCheckLoader";
+import { TerminalLoadingModal } from "../../shared/ui/TerminalLoadingModal";
 import {
   emailAtom,
   contactMethodAtom,
@@ -1071,22 +1072,13 @@ export default function ReservePage() {
       )}
 
       {/* 作成中モーダル */}
-      {creating && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-3 backdrop-blur-sm">
-          <div className="w-full max-w-md overflow-hidden rounded-2xl border border-white/20 bg-white/95 shadow-2xl backdrop-blur">
-            <div className="flex items-center gap-2 border-b border-white/20 bg-gradient-to-r from-blue-500/90 to-indigo-500/90 px-5 py-3 backdrop-blur">
-              <NotebookText className="h-5 w-5 text-white" aria-hidden="true" />
-              <h3 className="text-base font-semibold text-white drop-shadow">予定を作成します</h3>
-            </div>
-            <div className="p-8 text-center">
-              <div className="mx-auto mb-4 flex items-center justify-center">
-                <CircleCheckLoader isComplete={false} size={64} />
-              </div>
-              <div className="text-sm font-medium text-zinc-700">予定を作成しています…</div>
-            </div>
-          </div>
-        </div>
-      )}
+      <TerminalLoadingModal
+        isOpen={creating}
+        title="予定を作成します"
+        message="予定を作成しています…"
+        icon={<NotebookText className="h-5 w-5 text-white" aria-hidden="true" />}
+        variant="reserve"
+      />
 
       {/* 作成完了モーダル */}
       <CompletionModal

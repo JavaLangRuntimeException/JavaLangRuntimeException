@@ -3,6 +3,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ImmersiveIntro } from "../../components/ImmersiveIntro";
+import { TerminalBackground } from "./TerminalBackground";
 
 type IntroConfig = {
   enabled?: boolean;
@@ -121,40 +122,8 @@ export function HeroBackground({
 
   return (
     <div className={`relative min-h-screen overflow-hidden text-white ${className}`}>
-      {/* Welcomeイントロが完了するまでは真っ黒な背景、完了後は通常の背景画像 */}
-      {!introCompleted ? (
-        <div className="absolute inset-0 -z-10 bg-black" />
-      ) : (
-        <div className="absolute inset-0 -z-10">
-          {imagesLoaded && images.length > 0 ? (
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={bgIndex}
-                className="absolute inset-0"
-                style={{
-                  backgroundImage: `url(${images[bgIndex]})`,
-                  backgroundSize: "cover",
-                  backgroundPosition: "center",
-                }}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.8 }}
-              />
-            </AnimatePresence>
-          ) : (
-            // 画像読み込み中は黒背景
-            <div className="absolute inset-0 bg-black" />
-          )}
-          {/* すべての画像を非表示でpreload（ブラウザキャッシュに保持） */}
-          <div className="hidden">
-            {images.map((src, index) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img key={index} src={src} alt="" aria-hidden="true" />
-            ))}
-          </div>
-        </div>
-      )}
+      {/* 黒背景 */}
+      <div className="absolute inset-0 -z-10 bg-black" />
 
       <AnimatePresence>
         {showIntro && intro?.enabled && (
@@ -239,6 +208,9 @@ export function HeroBackground({
               }}
             />
           </div>
+
+          {/* CLIターミナル背景演出 */}
+          <TerminalBackground />
 
           <div className="relative z-10 mx-auto max-w-5xl px-4 py-16">{children}</div>
         </>

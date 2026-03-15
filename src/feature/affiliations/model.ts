@@ -20,11 +20,11 @@ export type Affiliation = {
 export const affiliations: Affiliation[] = [
     // university_research
     {
-        label: "立命館大学情報理工学部",
+        label: "立命館大学大学院情報理工学研究科人間情報科学コース",
         color: "bg-red-600",
         href: "https://www.ritsumei.ac.jp/",
         category: "university_research",
-        description: "立命館大学情報理工学部にて、コンピュータサイエンスとエンジニアリングを学んでいます。"
+        description: "立命館大学大学院情報理工学研究科人間情報科学コースにて、コンピュータサイエンスとエンジニアリングを学んでいます。"
     },
     {
         label: "リアリティメディア & モバイルコンピューティング研究室(RM2C)",
@@ -47,9 +47,10 @@ export const affiliations: Affiliation[] = [
         color: "bg-sky-600",
         href: "https://stech.jinnen.co.jp/",
         category: "community",
-        description: "上位1%の学生エンジニアが集う審査制コミュニティSTECHのマネージャーとして運営に携わっています。"
+        description: "上位1%の学生エンジニアが集う審査制コミュニティSTECHの運営に携わっています。"
     },
     {
+
         label: "CATechLounge",
         color: "bg-cyan-600",
         href: "https://www.cyberagent.co.jp/careers/special/students/tech_lounge/",
@@ -65,6 +66,13 @@ export const affiliations: Affiliation[] = [
         category: "engineer",
         description: "サイバーエージェント2028年卒のサーバーサイドエンジニアとして、技術開発に取り組んでいます。"
     },
+    {
+        label: "JINEN株式会社 Engineer",
+        color: "bg-blue-900",
+        href: "https://jinnen.co.jp/",
+        category: "engineer",
+        description: "各種コミュニティに必要なツールの開発を行っています。"
+    },
 
     // photographer
     {
@@ -72,16 +80,16 @@ export const affiliations: Affiliation[] = [
         color: "bg-pink-600",
         href: "https://www.instagram.com/manjiin773tara/",
         category: "photographer",
-        description: "フリーランスカメラマンとして出張撮影を承ります。ポートレート、イベント撮影など幅広く対応可能です。"
+        description: "フリーランスカメラマンとして出張撮影を承ります。ポートレート、イベント撮影、テックカンファレンス撮影スタッフなど幅広く対応可能です。"
     },
 
     // community_director
     {
-        label: "JINEN株式会社 Community Director / Engineer",
+        label: "JINEN株式会社",
         color: "bg-blue-900",
         href: "https://jinnen.co.jp/",
         category: "community_director",
-        description: "学生エンジニアコミュニティSTECHの運営サポートや各種コミュニティに必要なツールの開発を行っています。"
+        description: "学生エンジニアコミュニティSTECHの運営サポートや各種コミュニティの運営・企画やコミュニティに関する営業を行っています。"
     },
 
     // event_management
@@ -90,7 +98,7 @@ export const affiliations: Affiliation[] = [
         color: "bg-amber-600",
         href: "https://www.nxtend.or.jp/",
         category: "event_management",
-        description: "NxTENDにて各地域のエンジニアコミュニティを活性化するための新規事業の企画・運営を行っています。"
+        description: "NxTENDにて各地域のエンジニアコミュニティを活性化するための事業の企画・運営を行っています。"
     },
 
     // community_organizer

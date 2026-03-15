@@ -9,6 +9,7 @@ import { z } from "zod";
 import { useAtom } from "jotai";
 import { useLoading } from "../../../shared/contexts/LoadingContext";
 import { CircleCheckLoader } from "../../../shared/ui/CircleCheckLoader";
+import { TerminalLoadingModal } from "../../../shared/ui/TerminalLoadingModal";
 import {
   contactEmailAtom,
   contactNameAtom,
@@ -547,22 +548,13 @@ export function ContactForm({ onSuccess }: ContactFormProps) {
       </motion.form>
 
       {/* 送信中モーダル */}
-      {isSubmitting && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-3 backdrop-blur-sm">
-          <div className="w-full max-w-md overflow-hidden rounded-2xl border border-white/20 bg-white/95 shadow-2xl backdrop-blur">
-            <div className="flex items-center gap-2 border-b border-white/20 bg-gradient-to-r from-blue-500/90 to-indigo-500/90 px-5 py-3 backdrop-blur">
-              <NotebookText className="h-5 w-5 text-white" aria-hidden="true" />
-              <h3 className="text-base font-semibold text-white drop-shadow">お問い合わせを送信中</h3>
-            </div>
-            <div className="p-8 text-center">
-              <div className="mx-auto mb-4 flex items-center justify-center">
-                <CircleCheckLoader isComplete={false} size={64} />
-              </div>
-              <div className="text-sm font-medium text-zinc-700">お問い合わせを送信しています…</div>
-            </div>
-          </div>
-        </div>
-      )}
+      <TerminalLoadingModal
+        isOpen={isSubmitting}
+        title="お問い合わせを送信中"
+        message="お問い合わせを送信しています…"
+        icon={<NotebookText className="h-5 w-5 text-white" aria-hidden="true" />}
+        variant="contact"
+      />
     </motion.div>
   );
 }
