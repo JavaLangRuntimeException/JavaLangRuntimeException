@@ -31,29 +31,6 @@ export function Header() {
         </div>
         <nav className="flex items-center gap-1 whitespace-nowrap">
           <Link
-            href="/location"
-            className={cn(
-              "relative group overflow-hidden rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
-              isActive("/location")
-                ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/25"
-                : isAnyLoading
-                ? "text-zinc-400 cursor-not-allowed"
-                : "text-zinc-700 hover:bg-gradient-to-r hover:from-zinc-100 hover:to-zinc-200 dark:text-zinc-300 dark:hover:from-zinc-800 dark:hover:to-zinc-700"
-            )}
-            style={{ pointerEvents: isAnyLoading ? 'none' : 'auto' }}
-          >
-            <span className="relative z-20">Schedule</span>
-            {isActive("/location") ? (
-              <span className="pointer-events-none absolute top-1/2 right-0 -translate-y-1/2 translate-x-full opacity-0 transition-transform duration-300 ease-out group-hover:translate-x-1/2 group-hover:opacity-100 group-active:translate-x-1/2 group-active:opacity-100 z-10" aria-hidden="true">
-                <Image src="/qiitan.png" alt="Qiitan" width={30} height={30} className="h-[30px] w-[30px] -rotate-45" />
-              </span>
-            ) : (
-              <span className="pointer-events-none absolute top-1/2 left-0 -translate-y-1/2 -translate-x-full opacity-0 transition-transform duration-300 ease-out group-hover:-translate-x-1/2 group-hover:opacity-100 group-active:-translate-x-1/2 group-active:opacity-100 z-10" aria-hidden="true">
-                <Image src="/gopher.png" alt="Gopher" width={30} height={30} className="h-[30px] w-[30px] rotate-45" />
-              </span>
-            )}
-          </Link>
-          <Link
             href="/link"
             className={cn(
               "relative group overflow-hidden rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
@@ -67,6 +44,29 @@ export function Header() {
           >
             <span className="relative z-20">Links</span>
             {isActive("/link") ? (
+              <span className="pointer-events-none absolute top-1/2 right-0 -translate-y-1/2 translate-x-full opacity-0 transition-transform duration-300 ease-out group-hover:translate-x-1/2 group-hover:opacity-100 group-active:translate-x-1/2 group-active:opacity-100 z-10" aria-hidden="true">
+                <Image src="/qiitan.png" alt="Qiitan" width={30} height={30} className="h-[30px] w-[30px] -rotate-45" />
+              </span>
+            ) : (
+              <span className="pointer-events-none absolute top-1/2 left-0 -translate-y-1/2 -translate-x-full opacity-0 transition-transform duration-300 ease-out group-hover:-translate-x-1/2 group-hover:opacity-100 group-active:-translate-x-1/2 group-active:opacity-100 z-10" aria-hidden="true">
+                <Image src="/gopher.png" alt="Gopher" width={30} height={30} className="h-[30px] w-[30px] rotate-45" />
+              </span>
+            )}
+          </Link>
+          <Link
+            href="/location"
+            className={cn(
+              "relative group overflow-hidden rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200",
+              isActive("/location")
+                ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-lg shadow-orange-500/25"
+                : isAnyLoading
+                ? "text-zinc-400 cursor-not-allowed"
+                : "text-zinc-700 hover:bg-gradient-to-r hover:from-zinc-100 hover:to-zinc-200 dark:text-zinc-300 dark:hover:from-zinc-800 dark:hover:to-zinc-700"
+            )}
+            style={{ pointerEvents: isAnyLoading ? 'none' : 'auto' }}
+          >
+            <span className="relative z-20">WorkSpot</span>
+            {isActive("/location") ? (
               <span className="pointer-events-none absolute top-1/2 right-0 -translate-y-1/2 translate-x-full opacity-0 transition-transform duration-300 ease-out group-hover:translate-x-1/2 group-hover:opacity-100 group-active:translate-x-1/2 group-active:opacity-100 z-10" aria-hidden="true">
                 <Image src="/qiitan.png" alt="Qiitan" width={30} height={30} className="h-[30px] w-[30px] -rotate-45" />
               </span>
@@ -141,17 +141,42 @@ interface HeaderMarqueeProps {
 function HeaderMarquee({ onSlotsChange }: HeaderMarqueeProps) {
   const [slots, setSlots] = React.useState<string[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [locationInfo, setLocationInfo] = React.useState("");
 
   React.useEffect(() => {
     let active = true;
     (async () => {
       try {
         setIsLoading(true);
-        const suggestions = await computeNextFiveSlotsCrossWeek();
+        const [suggestions] = await Promise.all([
+          computeNextFiveSlotsCrossWeek(),
+          // 勤務場所情報の取得
+          (async () => {
+            try {
+              const res = await fetch("/api/location", { cache: "no-store" });
+              const json = await res.json();
+              if (!active || !json.ok) return;
+              const locations: Record<string, string> = json.locations || {};
+              const now = new Date();
+              const todayStr = now.toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" });
+              const tomorrow = new Date(now);
+              tomorrow.setDate(tomorrow.getDate() + 1);
+              const tomorrowStr = tomorrow.toLocaleDateString("sv-SE", { timeZone: "Asia/Tokyo" });
+              const todayWeekday = ["日", "月", "火", "水", "木", "金", "土"][now.getDay()];
+              const tomorrowWeekday = ["日", "月", "火", "水", "木", "金", "土"][tomorrow.getDay()];
+              const todayLabel = `${now.getMonth() + 1}/${now.getDate()}(${todayWeekday})`;
+              const tomorrowLabel = `${tomorrow.getMonth() + 1}/${tomorrow.getDate()}(${tomorrowWeekday})`;
+              const todayLoc = locations[todayStr] || "未定";
+              const tomorrowLoc = locations[tomorrowStr] || "未定";
+              setLocationInfo(`勤務場所: ${todayLabel} ${todayLoc} / ${tomorrowLabel} ${tomorrowLoc}`);
+            } catch {
+              // 勤務場所の取得に失敗しても無視
+            }
+          })(),
+        ]);
         if (active) {
           setSlots(suggestions);
           setIsLoading(false);
-          // スロットが取得できた場合はtrue、取得できなかった場合はfalse
           const hasValidSlots = suggestions.length > 0;
           console.log('HeaderMarquee: slots loaded', suggestions.length, 'hasValidSlots:', hasValidSlots);
           onSlotsChange?.(hasValidSlots);
@@ -160,7 +185,6 @@ function HeaderMarquee({ onSlotsChange }: HeaderMarqueeProps) {
         if (active) {
           setSlots([]);
           setIsLoading(false);
-          // エラーが発生した場合はfalse（下の領域を表示）
           console.log('HeaderMarquee: error occurred', error);
           onSlotsChange?.(false);
         }
@@ -175,7 +199,8 @@ function HeaderMarquee({ onSlotsChange }: HeaderMarqueeProps) {
       ? "直近相談予約可能時間: 取得中…"
       : "直近相談予約可能時間: 取得できませんでした";
 
-  const message = `${text} | 相談可能時間: 9:00 - 23:00 | Links ではプロフィール・SNS・連絡先を掲載中。Contact ではお問い合わせが可能です。Ask Meでは面談予約が可能です。面談の変更・取消は EventID を添えてお問い合わせください。`;
+  const locationSegment = locationInfo ? ` | ${locationInfo}` : "";
+  const message = `${text}${locationSegment} | 相談可能時間: 9:00 - 23:00 | Links ではプロフィール・SNS・連絡先を掲載中。Contact ではお問い合わせが可能です。Ask Meでは面談予約が可能です。面談の変更・取消は EventID を添えてお問い合わせください。`;
 
   return (
     <div className="relative overflow-hidden">
