@@ -295,9 +295,9 @@ export default function PortfolioLinks() {
                     <NavCards
                         items={[
                             { href: "/link", title: "Links", color: "blue", description: <>プロフィール・SNSのリンク一覧</> },
+                            { href: "/location", title: "Work Spot", color: "orange", description: <>勤務場所の予定<br/>今日以降の勤務予定地を確認</> },
                             { href: "/contact", title: "Contact", color: "green", description: <>お問い合わせフォーム<br/>ご質問・ご相談はこちらから</> },
                             { href: "/reserve", title: "Ask Me", color: "purple", description: <>ご相談・面談予約ページ<br/>ご希望の日時を選択してください</> },
-                            { href: "/location", title: "Location", color: "orange", description: <>勤務場所の予定<br/>今日以降の勤務予定地を確認</> },
                         ]}
                         animate={showAnimations}
                         delay={1.0}
