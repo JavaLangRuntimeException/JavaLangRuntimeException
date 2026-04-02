@@ -6,7 +6,15 @@ import { useBodyScrollLock } from "../../../shared/lib/useBodyScrollLock";
 import { GlassCardSimple } from "../../../shared/ui/GlassCard";
 import { CircleCheckLoader } from "../../../shared/ui/CircleCheckLoader";
 
-export type CreatedInfo = { ok: boolean; eventId?: string; htmlLink?: string; meetLink?: string } | null;
+export type CreatedInfo = {
+  ok: boolean;
+  eventId?: string;
+  htmlLink?: string;
+  meetLink?: string;
+  error?: string;
+  message?: string;
+  detail?: unknown;
+} | null;
 
 export function CompletionModal({
   createdInfo,
@@ -265,7 +273,20 @@ export function CompletionModal({
               </GlassCardSimple>
             </div>
           ) : (
-            <p className="text-sm text-red-600">作成に失敗しました。</p>
+            <div className="space-y-2 text-sm">
+              <p className="text-red-600">作成に失敗しました。</p>
+              {createdInfo.message && (
+                <p className="text-zinc-700">{createdInfo.message}</p>
+              )}
+              {createdInfo.error && (
+                <p className="font-mono text-xs text-zinc-500 break-all">error: {createdInfo.error}</p>
+              )}
+              {createdInfo.detail && (
+                <pre className="overflow-x-auto rounded-md bg-zinc-100 p-3 text-xs text-zinc-700 whitespace-pre-wrap break-all">
+                  {typeof createdInfo.detail === "string" ? createdInfo.detail : JSON.stringify(createdInfo.detail, null, 2)}
+                </pre>
+              )}
+            </div>
           )}
           <div className="mt-4 sm:mt-5 flex flex-col-reverse sm:flex-row gap-2 sm:gap-3 justify-end">
             {createdInfo.ok && createdInfo.eventId && onOpenCancelModal && (
@@ -300,5 +321,4 @@ function formatTimeRange(sh: number | null, sm: number | null, eh: number | null
   if (sh == null || sm == null || eh == null || em == null) return "XX : XX ~ XX : XX";
   return `${pad(sh)} : ${pad(sm)} ~ ${pad(eh)} : ${pad(em)}`;
 }
-
 
