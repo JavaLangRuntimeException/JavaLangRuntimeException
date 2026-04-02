@@ -8,7 +8,6 @@ import { InfoBadge } from "../../../shared/ui/InfoBadge";
 import { z } from "zod";
 import { useAtom } from "jotai";
 import { useLoading } from "../../../shared/contexts/LoadingContext";
-import { CircleCheckLoader } from "../../../shared/ui/CircleCheckLoader";
 import { TerminalLoadingModal } from "../../../shared/ui/TerminalLoadingModal";
 import {
   contactEmailAtom,

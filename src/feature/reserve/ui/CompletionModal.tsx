@@ -58,6 +58,11 @@ export function CompletionModal({
   const hasPlaceDetail = !!details.offlinePlaceDetail;
   const shouldShowToggle = hasMeetingNote || hasPlaceDetail;
   const hasPlaceName = !!(details.offlinePlaceName && details.offlinePlaceName.trim());
+  const detailText = createdInfo?.detail == null
+    ? ""
+    : typeof createdInfo.detail === "string"
+    ? createdInfo.detail
+    : JSON.stringify(createdInfo.detail, null, 2);
 
   const handleOpenCancelModal = () => {
     if (createdInfo?.eventId && onOpenCancelModal) {
@@ -281,9 +286,9 @@ export function CompletionModal({
               {createdInfo.error && (
                 <p className="font-mono text-xs text-zinc-500 break-all">error: {createdInfo.error}</p>
               )}
-              {createdInfo.detail && (
+              {detailText && (
                 <pre className="overflow-x-auto rounded-md bg-zinc-100 p-3 text-xs text-zinc-700 whitespace-pre-wrap break-all">
-                  {typeof createdInfo.detail === "string" ? createdInfo.detail : JSON.stringify(createdInfo.detail, null, 2)}
+                  {detailText}
                 </pre>
               )}
             </div>
@@ -321,4 +326,3 @@ function formatTimeRange(sh: number | null, sm: number | null, eh: number | null
   if (sh == null || sm == null || eh == null || em == null) return "XX : XX ~ XX : XX";
   return `${pad(sh)} : ${pad(sm)} ~ ${pad(eh)} : ${pad(em)}`;
 }
-
