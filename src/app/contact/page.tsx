@@ -7,6 +7,15 @@ import { ContactForm } from "../../feature/contact/ui/ContactForm";
 import { GlassCard } from "../../shared/ui/GlassCard";
 import { CircleCheckLoader } from "../../shared/ui/CircleCheckLoader";
 
+const alternateContacts = [
+  { label: "NxTEND", email: "shuta.tanahashi@nxtend.or.jp" },
+  { label: "JINEN・STECH", email: "s.tanahashi@jinnen.co.jp" },
+  { label: "株式会社888", email: "shuta.tanahashi@888incs.com" },
+  { label: "TSKaigi", email: "tanahashi@tskaigi.org" },
+  { label: "RM2CLab", email: "tanahasi@rm2c.ise.ritsumei.ac.jp" },
+  { label: "その他", email: "tanahashishuta@gmail.com" },
+];
+
 export default function ContactPage() {
   const bgImages = ["/image.png", "/image2.png", "/image3.png"];
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -72,6 +81,35 @@ export default function ContactPage() {
           <p className="m-0 text-sm text-white/90">
             <span className="font-semibold text-white">お問い合わせいただいてから1週間以内にお返事いたします</span>
           </p>
+        </GlassCard>
+
+        <GlassCard
+          gradientFrom="from-cyan-400"
+          gradientTo="to-sky-500"
+          iconColor="text-cyan-300"
+          animationDelay={0.65}
+        >
+          <div className="space-y-3">
+            <p className="m-0 text-sm text-white/90">
+              <span className="font-semibold text-white">代替連絡先</span>
+            </p>
+            <div className="space-y-2 text-sm text-white/85">
+              {alternateContacts.map((contact) => (
+                <div
+                  key={contact.label}
+                  className="flex flex-col gap-1 rounded-lg border border-white/10 bg-white/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <span className="font-medium text-white">{contact.label}</span>
+                  <a
+                    href={`mailto:${contact.email}`}
+                    className="break-all text-cyan-100 underline decoration-cyan-200/70 underline-offset-4 transition hover:text-white"
+                  >
+                    {contact.email}
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
         </GlassCard>
 
         {/* ファイル添付の注意事項 */}

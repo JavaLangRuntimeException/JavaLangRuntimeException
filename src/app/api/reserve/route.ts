@@ -1,15 +1,66 @@
 import { NextResponse } from "next/server";
-import {
-  getGoogleCalendarAccessToken,
-  getAccessTokenFromRequest,
-  getServiceAccountAccessToken,
-  getAccessTokenFromServiceAccount,
-} from "../../../shared/lib/google-calendar-auth";
+import { getGoogleCalendarAccessToken } from "../../../shared/lib/google-calendar-auth";
+import { getRedis } from "../../../lib/redis";
+import { isAskMeUnavailableLocation } from "../../../shared/config/locations";
+
+const LOCATION_KV_KEY = "work_locations";
+
+function pad(n: number) {
+  return String(n).padStart(2, "0");
+}
+
+function formatDateKey(year: number, month: number, day: number) {
+  return `${year}-${pad(month)}-${pad(day)}`;
+}
+
+async function validateReservationWindow(body: Record<string, unknown>) {
+  if (!body.start || typeof body.start !== "object" || typeof (body.start as { hour?: unknown }).hour !== "number" || typeof (body.start as { minute?: unknown }).minute !== "number") {
+    return NextResponse.json({ ok: false, error: "invalid_start_time" }, { status: 400 });
+  }
+  if (!body.end || typeof body.end !== "object" || typeof (body.end as { hour?: unknown }).hour !== "number" || typeof (body.end as { minute?: unknown }).minute !== "number") {
+    return NextResponse.json({ ok: false, error: "invalid_end_time" }, { status: 400 });
+  }
+
+  const year = Number(body.year);
+  const month = Number(body.month);
+  const day = Number(body.day);
+  const start = body.start as { hour: number; minute: number };
+  const startDate = new Date(year, month - 1, day, start.hour, start.minute, 0, 0);
+  const now = Date.now();
+  const minStart = now + 2 * 60 * 60 * 1000;
+  if (startDate.getTime() < minStart) {
+    return NextResponse.json({ ok: false, error: "lead_time_violation", message: "予約は現在から2時間後以降のみ可能です" }, { status: 400 });
+  }
+
+  const startMonth = startDate.getMonth() + 1;
+  const startDay = startDate.getDate();
+  if ((startMonth === 12 && startDay >= 29) || (startMonth === 1 && startDay <= 5)) {
+    return NextResponse.json({ ok: false, error: "holiday_period", message: "12/29-1/5の期間は予約できません" }, { status: 400 });
+  }
+
+  try {
+    const raw = await getRedis().get(LOCATION_KV_KEY);
+    const locations: Record<string, string> = raw ? JSON.parse(raw) : {};
+    const location = locations[formatDateKey(year, month, day)];
+    if (isAskMeUnavailableLocation(location)) {
+      return NextResponse.json({ ok: false, error: "location_unavailable", message: "対応不可日・休日は予約できません" }, { status: 400 });
+    }
+  } catch (error) {
+    console.error("Failed to validate location availability:", error);
+  }
+
+  return null;
+}
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     console.log("reserve payload", body);
+
+    const reservationWindowError = await validateReservationWindow(body as Record<string, unknown>);
+    if (reservationWindowError) {
+      return reservationWindowError;
+    }
 
     const calendarId = process.env.GCAL_CALENDAR_ID || "primary";
     // Prefer Service Account if configured
@@ -21,30 +72,6 @@ export async function POST(req: Request) {
     }
     if (accessToken) {
       console.log("Processing calendar event creation with access token");
-        try {
-          const startDate = new Date(
-            body.year,
-            body.month - 1,
-            body.day,
-            body.start?.hour,
-            body.start?.minute,
-            0,
-            0
-          );
-          const now = Date.now();
-          const minStart = now + 2 * 60 * 60 * 1000;
-          if (startDate.getTime() < minStart) {
-            return NextResponse.json({ ok: false, error: "lead_time_violation", message: "予約は現在から2時間後以降のみ可能です" }, { status: 400 });
-          }
-          // 12/29-1/5は予約不可
-          const month = startDate.getMonth() + 1;
-          const day = startDate.getDate();
-          if ((month === 12 && day >= 29) || (month === 1 && day <= 5)) {
-            return NextResponse.json({ ok: false, error: "holiday_period", message: "12/29-1/5の期間は予約できません" }, { status: 400 });
-          }
-        } catch (validationErr) {
-          console.error("Date validation error", validationErr);
-        }
         if (!body.start || typeof body.start.hour !== 'number' || typeof body.start.minute !== 'number') {
           console.error("Invalid start time in request body", body.start);
           return NextResponse.json({ ok: false, error: "invalid_start_time" }, { status: 400 });
@@ -300,16 +327,7 @@ export async function POST(req: Request) {
     if (process.env.GCAL_WEBHOOK_URL) {
       console.log("Webhook is configured, proceeding with webhook flow");
       const webhook = process.env.GCAL_WEBHOOK_URL;
-      if (!body.start || typeof body.start.hour !== 'number' || typeof body.start.minute !== 'number') {
-        console.error("Invalid start time in request body for webhook", body.start);
-        return NextResponse.json({ ok: false, error: "invalid_start_time" }, { status: 400 });
-      }
-      if (!body.end || typeof body.end.hour !== 'number' || typeof body.end.minute !== 'number') {
-        console.error("Invalid end time in request body for webhook", body.end);
-        return NextResponse.json({ ok: false, error: "invalid_end_time" }, { status: 400 });
-      }
       console.log("Webhook validation passed, preparing payload");
-      const pad = (n: number) => String(n).padStart(2, "0");
       const startDate = new Date(body.year, body.month - 1, body.day, body.start.hour, body.start.minute, 0, 0);
       const endDate = new Date(body.year, body.month - 1, body.day, body.end.hour, body.end.minute, 0, 0);
       const startLocal = `${startDate.getFullYear()}-${pad(startDate.getMonth() + 1)}-${pad(startDate.getDate())}T${pad(startDate.getHours())}:${pad(startDate.getMinutes())}:00`;
@@ -432,13 +450,33 @@ export async function POST(req: Request) {
                   redirectUrl: absoluteRedirectUrl
                 });
                 try {
-                  // Try GET request to the redirect URL (though this probably won't return the eventId)
                   const getRes = await fetch(absoluteRedirectUrl, {
                     method: "GET",
                     headers: { "Content-Type": "application/json" },
                   });
                   const getText = await getRes.text().catch(() => "");
                   console.log("GET request to redirect URL result", { status: getRes.status, bodyPreview: getText.substring(0, 200) });
+
+                  if (getText.trim()) {
+                    try {
+                      const getJson = JSON.parse(getText) as { ok?: boolean; error?: string; message?: string; detail?: unknown };
+                      if (getJson?.ok === true) {
+                        return NextResponse.json(getJson);
+                      }
+                      if (typeof getJson?.ok === "boolean") {
+                        return NextResponse.json({
+                          ok: false,
+                          error: getJson.error || "webhook_returned_error",
+                          message: getJson.message,
+                          detail: getJson.detail ?? getJson,
+                        }, { status: 502 });
+                      }
+                    } catch (parseErr) {
+                      console.warn("GET response from redirect URL was not JSON", {
+                        parseError: parseErr instanceof Error ? parseErr.message : String(parseErr)
+                      });
+                    }
+                  }
                 } catch (getErr) {
                   console.log("GET request to redirect URL failed", getErr);
                 }
@@ -450,17 +488,12 @@ export async function POST(req: Request) {
                   bodyPreview: text.substring(0, 500)
                 });
 
-                // Since Google Apps Script processes the POST even when returning 302,
-                // and the user confirmed the event was created, we should return success
-                // However, we can't get the eventId, so we'll return a special indicator
-                // The frontend can handle this case appropriately
                 return NextResponse.json({
-                  ok: true,
-                  eventId: null, // Use null instead of "unknown" to indicate it's unavailable
-                  htmlLink: null,
-                  meetLink: null,
-                  note: "Event was created successfully, but eventId could not be retrieved due to Google Apps Script redirect behavior"
-                });
+                  ok: false,
+                  error: "webhook_redirect_405",
+                  message: "Google Apps Script のリダイレクト先から予約作成結果を取得できませんでした。",
+                  detail: "初回POSTは受理されましたが、redirect先URLはPOSTを受け付けず、結果の確定もできませんでした。",
+                }, { status: 502 });
               }
               console.error("Webhook redirect request failed", { status: redirectRes.status, statusText: redirectRes.statusText, response: redirectText.substring(0, 200) });
               return NextResponse.json({ ok: false, error: "webhook_failed", status: redirectRes.status, detail: redirectText.substring(0, 500) }, { status: 502 });
@@ -909,6 +942,3 @@ export async function GET(req: Request) {
     return NextResponse.json({ ok: false }, { status: 400 });
   }
 }
-
-
-
