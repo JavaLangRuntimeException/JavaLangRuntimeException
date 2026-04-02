@@ -22,7 +22,6 @@ export function HeroBackground({
   intro,
   enableParallaxOverlay = true,
   overlayGradient = "linear-gradient(to bottom, rgba(0,0,0,0.55), rgba(0,0,0,0.75))",
-  cycleMs = 5000,
 }: {
   images: string[];
   children: React.ReactNode;
@@ -30,51 +29,26 @@ export function HeroBackground({
   intro?: IntroConfig;
   enableParallaxOverlay?: boolean;
   overlayGradient?: string;
-  cycleMs?: number;
 }) {
   const [scrollY, setScrollY] = React.useState(0);
-  const [bgIndex, setBgIndex] = React.useState(0);
-  const [imagesLoaded, setImagesLoaded] = React.useState(false);
   // 初期状態はfalseにして、useLayoutEffectで同期的に更新（チラつきを防ぐ）
   const [showIntro, setShowIntro] = React.useState<boolean>(false);
   const [introCompleted, setIntroCompleted] = React.useState<boolean>(true);
 
   // 画像を事前にpreloadしてキャッシュする
   React.useEffect(() => {
-    if (images.length === 0) {
-      setImagesLoaded(true);
-      return;
-    }
+    if (images.length === 0) return;
 
-    let cancelled = false;
     const imageElements: HTMLImageElement[] = [];
-    let loadedCount = 0;
-
-    const handleImageLoad = () => {
-      loadedCount++;
-      if (loadedCount === images.length && !cancelled) {
-        setImagesLoaded(true);
-      }
-    };
-
-    const handleImageError = () => {
-      loadedCount++;
-      if (loadedCount === images.length && !cancelled) {
-        setImagesLoaded(true);
-      }
-    };
 
     // すべての画像を事前に読み込む
     images.forEach((src) => {
       const img = new Image();
       img.src = src;
-      img.onload = handleImageLoad;
-      img.onerror = handleImageError;
       imageElements.push(img);
     });
 
     return () => {
-      cancelled = true;
       // クリーンアップ
       imageElements.forEach((img) => {
         img.onload = null;
@@ -90,12 +64,6 @@ export function HeroBackground({
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  React.useEffect(() => {
-    if (!imagesLoaded) return;
-    const t = setInterval(() => setBgIndex((i) => (i + 1) % images.length), cycleMs);
-    return () => clearInterval(t);
-  }, [images.length, cycleMs, imagesLoaded]);
 
   // useLayoutEffectで同期的に状態を設定（レンダリング前に確定させてチラつきを防ぐ）
   React.useLayoutEffect(() => {
@@ -218,5 +186,3 @@ export function HeroBackground({
     </div>
   );
 }
-
-
