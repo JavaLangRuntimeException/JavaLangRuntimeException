@@ -1,31 +1,16 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-
-// 勤務場所の色・表示ラベルマッピング
-const LOCATION_STYLES: Record<string, { color: string; label: string }> = {
-  "滋賀県草津市":           { color: "text-emerald-600", label: "滋賀県草津市" },
-  "滋賀県（草津市以外）":     { color: "text-emerald-700", label: "滋賀県（草津市以外）" },
-  "京都府京都市":           { color: "text-purple-600",  label: "京都府京都市" },
-  "京都府（京都市以外）":     { color: "text-purple-700",  label: "京都府（京都市以外）" },
-  "大阪府大阪市":           { color: "text-orange-600",  label: "大阪府大阪市" },
-  "大阪府茨木市":           { color: "text-amber-600",   label: "大阪府茨木市" },
-  "大阪府（大阪市・茨木市以外）": { color: "text-orange-700", label: "大阪府（他）" },
-  "東京都渋谷区":           { color: "text-pink-500",    label: "東京都渋谷区" },
-  "東京都（渋谷区以外）":     { color: "text-pink-600",    label: "東京都（渋谷区以外）" },
-  "愛知県名古屋市":         { color: "text-blue-600",    label: "愛知県名古屋市" },
-  "愛知県（名古屋市以外）":   { color: "text-blue-700",    label: "愛知県（名古屋市以外）" },
-  "岐阜県":               { color: "text-lime-600",    label: "岐阜県" },
-  "リモート":              { color: "text-cyan-600",    label: "リモート" },
-  "未定（お問い合わせください）": { color: "text-gray-500",   label: "？" },
-  "対応不可日・休日":        { color: "text-red-700",     label: "休" },
-};
+import { getLocationStyle, isAskMeUnavailableLocation } from "../../../shared/config/locations";
 
 function weekdayName(d: Date) {
   return ["日", "月", "火", "水", "木", "金", "土"][d.getDay()];
 }
 function pad(n: number) {
   return n.toString().padStart(2, "0");
+}
+function formatDateKey(date: Date) {
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 function getMonday(d: Date) {
   const date = new Date(d);
@@ -103,6 +88,7 @@ export function WeekGrid({
   // 予約不可日付の判定関数
   const isDateUnavailable = React.useCallback((date: Date) => {
     const dateStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0);
+    const dateKey = formatDateKey(date);
 
     // 過去の日付は予約不可
     if (dateStart.getTime() < today.getTime()) {
@@ -119,6 +105,9 @@ export function WeekGrid({
       return true;
     }
 
+    if (isAskMeUnavailableLocation(locations[dateKey])) {
+      return true;
+    }
 
     // 営業時間内の全時間帯が予約済みかチェック
     const businessStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), businessHours.start, 0, 0);
@@ -151,7 +140,7 @@ export function WeekGrid({
     });
 
     return availableSlots.length === 0;
-  }, [busy, today, oneMonthLater, leadCutoff, businessHours, isHolidayPeriod]);
+  }, [busy, today, oneMonthLater, leadCutoff, businessHours, isHolidayPeriod, locations]);
 
   // 予約可能時間が残りわずかの判定関数
   const isDateLimited = React.useCallback((date: Date) => {
@@ -205,9 +194,9 @@ export function WeekGrid({
             const isToday = d.getTime() === today.getTime();
             const isUnavailable = isDateUnavailable(d);
             const isLimited = isDateLimited(d);
-            const dateKey = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+            const dateKey = formatDateKey(d);
             const locName = locations[dateKey];
-            const locStyle = locName ? LOCATION_STYLES[locName] : null;
+            const locStyle = locName ? getLocationStyle(locName) : null;
             return (
               <div
                 key={d.toDateString()}
@@ -223,7 +212,7 @@ export function WeekGrid({
               >
                 <div>{`${d.getMonth() + 1}/${d.getDate()}(${weekdayName(d)})`}</div>
                 {locStyle && (
-                  <div className={`text-[10px] leading-tight font-bold ${locStyle.color}`}>
+                  <div className={`text-[10px] leading-tight font-bold ${locStyle.textLight}`}>
                     {locStyle.label}
                   </div>
                 )}
@@ -238,10 +227,12 @@ export function WeekGrid({
               {days.map((d) => {
                 const cellStart = new Date(d.getFullYear(), d.getMonth(), d.getDate(), hour, min, 0);
                 const cellEnd = new Date(cellStart.getTime() + 30 * 60 * 1000);
+                const dateKey = formatDateKey(d);
                 const isPast = cellEnd.getTime() <= now.getTime();
                 const withinLead = cellStart.getTime() < leadCutoff.getTime();
                 const beyondOneMonth = cellStart.getTime() > oneMonthLater.getTime();
                 const isHoliday = isHolidayPeriod(d);
+                const isLocationUnavailable = isAskMeUnavailableLocation(locations[dateKey]);
                 const blocked = isOverlappingBusy(cellStart, cellEnd, busy);
                 const withinSelection = cellEnd > selectedStart && cellStart < selectedEnd;
                 // Business hours constraint
@@ -250,7 +241,7 @@ export function WeekGrid({
                 const allowStartMinutes = businessHours.start * 60;
                 const allowEndMinutes = businessHours.end * 60;
                 const outsideBusiness = startMinutes < allowStartMinutes || endMinutes > allowEndMinutes;
-                const isDisabled = blocked || isPast || withinLead || beyondOneMonth || outsideBusiness || isHoliday;
+                const isDisabled = blocked || isPast || withinLead || beyondOneMonth || outsideBusiness || isHoliday || isLocationUnavailable;
                 return (
                   <button
                     type="button"
@@ -264,11 +255,11 @@ export function WeekGrid({
                     }`}
                     disabled={isDisabled}
                     onClick={() => {
-                      if (isPast || withinLead || beyondOneMonth || outsideBusiness || isHoliday) return;
+                      if (isPast || withinLead || beyondOneMonth || outsideBusiness || isHoliday || isLocationUnavailable) return;
                       onSelectSlot(cellStart, cellEnd);
                     }}
                   >
-                    {isPast ? "過去" : withinLead || beyondOneMonth || outsideBusiness || isHoliday ? "不可" : blocked ? "不可" : withinSelection ? "選択中" : "可"}
+                    {isPast ? "過去" : withinLead || beyondOneMonth || outsideBusiness || isHoliday || isLocationUnavailable ? "不可" : blocked ? "不可" : withinSelection ? "選択中" : "可"}
                   </button>
                 );
               })}
@@ -279,5 +270,4 @@ export function WeekGrid({
     </div>
   );
 }
-
 

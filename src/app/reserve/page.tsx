@@ -19,7 +19,6 @@ import { ChevronLeft, ChevronRight, CalendarClock, NotebookText, ChevronUp } fro
 import { GlassCardSimple } from "../../shared/ui/GlassCard";
 import { InfoBadge } from "../../shared/ui/InfoBadge";
 import { useLoading } from "../../shared/contexts/LoadingContext";
-import { CircleCheckLoader } from "../../shared/ui/CircleCheckLoader";
 import { TerminalLoadingModal } from "../../shared/ui/TerminalLoadingModal";
 import {
   emailAtom,
@@ -45,6 +44,7 @@ import {
 } from "../../feature/reserve/state";
 import Image from "next/image";
 import { AlertBanner } from "../../shared/ui/AlertBanner";
+import { isAskMeUnavailableLocation } from "../../shared/config/locations";
 
 // Purpose type and list centralized in shared config
 
@@ -75,7 +75,15 @@ export default function ReservePage() {
   const [cancelModalEventId, setCancelModalEventId] = React.useState("");
   const [decisionLocked, setDecisionLocked] = React.useState(false);
   const [creating, setCreating] = React.useState(false);
-  const [createdInfo, setCreatedInfo] = React.useState<{ ok: boolean; eventId?: string; htmlLink?: string; meetLink?: string } | null>(null);
+  const [createdInfo, setCreatedInfo] = React.useState<{
+    ok: boolean;
+    eventId?: string;
+    htmlLink?: string;
+    meetLink?: string;
+    error?: string;
+    message?: string;
+    detail?: unknown;
+  } | null>(null);
   const [contactMethod, setContactMethod] = useAtom(contactMethodAtom);
   const [discordName, setDiscordName] = useAtom(discordNameAtom);
   const [slackName, setSlackName] = useAtom(slackNameAtom);
@@ -90,6 +98,8 @@ export default function ReservePage() {
   const [isResolvingPlace, setIsResolvingPlace] = React.useState(false);
   const [busy, setBusy] = React.useState<{ start: string; end: string }[]>([]);
   const [busyLoading, setBusyLoading] = React.useState(true);
+  const [locations, setLocations] = React.useState<Record<string, string>>({});
+  const [locationsLoading, setLocationsLoading] = React.useState(true);
   const [notify, setNotify] = React.useState<string>("");
   const [completedDetails, setCompletedDetails] = React.useState<{
     year: number | null;
@@ -141,6 +151,7 @@ export default function ReservePage() {
     if (!hasDate || !hasTime) return false;
     const s = new Date(year as number, (month as number) - 1, day as number, startHour as number, startMin as number);
     const e = new Date(year as number, (month as number) - 1, day as number, endHour as number, endMin as number);
+    const dateKey = formatDateKey(s);
     const nowTs = Date.now();
     const leadCutoff = nowTs + 2 * 60 * 60 * 1000;
     if (!(e > s)) return true;
@@ -149,6 +160,7 @@ export default function ReservePage() {
     if (s.getTime() > oneMonthLater.getTime()) return true;
     // 12/29-1/5は予約不可
     if (isHolidayPeriod(s)) return true;
+    if (isAskMeUnavailableLocation(locations[dateKey])) return true;
     // Offline business hours constraint (10:00 - 21:00)
     if (contactMethod === "offline") {
       const sh = startHour as number;
@@ -162,7 +174,7 @@ export default function ReservePage() {
     }
     if (isOverlappingBusy(s, e, busy)) return true;
     return false;
-  }, [hasDate, hasTime, year, month, day, startHour, startMin, endHour, endMin, busy, oneMonthLater, contactMethod, isHolidayPeriod]);
+  }, [hasDate, hasTime, year, month, day, startHour, startMin, endHour, endMin, busy, oneMonthLater, contactMethod, isHolidayPeriod, locations]);
 
   const zodDirectErrors = React.useMemo(() => {
     const result = contactSchema.safeParse({
@@ -197,20 +209,22 @@ export default function ReservePage() {
   }, [name, email, purpose, contactMethod, discordServer, discordName, slackWorkspace, slackName, otherNote, offlinePlaceLink, offlinePlaceName, offlinePlaceDetail, hasDate, hasTime, year, month, day, startHour, startMin, endHour, endMin]);
 
   const canSubmit = React.useMemo(() => {
+    if (locationsLoading) return false;
     // 日付と時間の選択が必須
     if (!hasDate || !hasTime) return false;
     // 選択が無効な場合は不可
     if (hasDate && hasTime && selectionInvalid) return false;
     // その他のバリデーションエラーがないかチェック
     return Object.keys(zodDirectErrors).length === 0;
-  }, [zodDirectErrors, hasDate, hasTime, selectionInvalid]);
+  }, [zodDirectErrors, hasDate, hasTime, selectionInvalid, locationsLoading]);
 
   const submitBlockMessage = React.useMemo(() => {
+    if (locationsLoading) return "空き状況を確認中です";
     if (!hasDate || !hasTime) return "日付と時間を選択してください";
     if (Object.keys(zodDirectErrors).length > 0) return "入力内容をご確認ください";
     if (hasDate && hasTime && selectionInvalid) return "ご指定の時間では予約できません";
     return "";
-  }, [zodDirectErrors, hasDate, hasTime, selectionInvalid]);
+  }, [zodDirectErrors, hasDate, hasTime, selectionInvalid, locationsLoading]);
 
   React.useEffect(() => {
     if (submitBlockMessage) {
@@ -250,6 +264,15 @@ export default function ReservePage() {
       .finally(() => setBusyLoading(false));
   }, [weekStart]);
 
+  React.useEffect(() => {
+    setLocationsLoading(true);
+    fetch("/api/location", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => setLocations(d?.ok ? (d.locations || {}) : {}))
+      .catch(() => setLocations({}))
+      .finally(() => setLocationsLoading(false));
+  }, []);
+
   const weekdayText = React.useMemo(() => {
     if (!hasDate) return "";
     return weekdayName(new Date(year as number, (month as number) - 1, day as number));
@@ -265,7 +288,7 @@ export default function ReservePage() {
       try {
         setSlotSuggestLoading(true);
         // Ensure we use the same busy source as the calendar for the current week
-        if (busyLoading) {
+        if (busyLoading || locationsLoading) {
           return;
         }
         const cache = new Map<string, { start: string; end: string }[]>();
@@ -312,6 +335,11 @@ export default function ReservePage() {
 
         let guard = 0;
         while (guard < 2000 && t.getTime() <= oneMonthLater.getTime()) {
+          if (isHolidayPeriod(t) || isAskMeUnavailableLocation(locations[formatDateKey(t)])) {
+            t = dayStart(new Date(t.getFullYear(), t.getMonth(), t.getDate() + 1));
+            guard += 1;
+            continue;
+          }
           // Clamp to business start (09:00) if before business hours
           if (t < dayStart(t)) {
             t = dayStart(t);
@@ -345,7 +373,7 @@ export default function ReservePage() {
     }
     computeNextAvailable();
     return () => { cancelled = true; };
-  }, [oneMonthLater, weekStart, busy, busyLoading, contactMethod]);
+  }, [oneMonthLater, weekStart, busy, busyLoading, contactMethod, locations, locationsLoading, isHolidayPeriod]);
 
   // Quick-apply the next available 30-min slot to the selection
   const applyNextAvailableSlot = React.useCallback(() => {
@@ -541,6 +569,7 @@ export default function ReservePage() {
     }
     const startDate = new Date(year as number, (month as number) - 1, day as number, startHour as number, startMin as number);
     const endDate = new Date(year as number, (month as number) - 1, day as number, endHour as number, endMin as number);
+    const locationUnavailable = isAskMeUnavailableLocation(locations[formatDateKey(startDate)]);
     if (startDate.getTime() <= nowTs) {
       alert("過去の時間は選択できません");
       submitLockRef.current = false;
@@ -555,6 +584,12 @@ export default function ReservePage() {
     }
     if (!(endDate > startDate)) {
       alert("終了は開始より後にしてください");
+      submitLockRef.current = false;
+      setCreating(false);
+      return;
+    }
+    if (isHolidayPeriod(startDate) || locationUnavailable) {
+      alert("ご指定の日は予約できません");
       submitLockRef.current = false;
       setCreating(false);
       return;
@@ -636,7 +671,15 @@ export default function ReservePage() {
           meetingNote,
         });
       }
-      setCreatedInfo({ ok, eventId: json?.eventId, htmlLink: json?.htmlLink, meetLink: json?.meetLink });
+      setCreatedInfo({
+        ok,
+        eventId: json?.eventId,
+        htmlLink: json?.htmlLink,
+        meetLink: json?.meetLink,
+        error: json?.error,
+        message: json?.message,
+        detail: json?.detail,
+      });
       if (ok) {
         // 成功送信後は次回以降の自動保存をクリア
         try {
@@ -682,8 +725,13 @@ export default function ReservePage() {
         setEndHour(null as unknown as number);
         setEndMin(null as unknown as number);
       }
-    } catch {
-      setCreatedInfo({ ok: false });
+    } catch (error) {
+      setCreatedInfo({
+        ok: false,
+        error: "request_failed",
+        message: "予約APIへの接続に失敗しました。",
+        detail: error instanceof Error ? error.message : String(error),
+      });
     } finally {
       setCreating(false);
       setReserveLoading(false);
@@ -1126,6 +1174,10 @@ function pad(n: number) {
   return n.toString().padStart(2, "0");
 }
 
+function formatDateKey(date: Date) {
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
 // Removed CalendarTodayHint (moved to header marquee)
 
 function getMonday(d: Date) {
@@ -1146,6 +1198,3 @@ function isOverlappingBusy(start: Date, end: Date, busy: { start: string; end: s
     return Math.max(s, bs) < Math.min(e, be);
   });
 }
-
-
-

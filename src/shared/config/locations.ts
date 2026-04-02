@@ -14,6 +14,9 @@ export type LocationStyle = {
   label: string;
 };
 
+export const PENDING_LOCATION_NAME = "未定（お問い合わせください）";
+export const UNAVAILABLE_LOCATION_NAME = "対応不可日・休日";
+
 export const LOCATION_STYLES: Record<string, LocationStyle> = {
   "滋賀県草津市":           { dot: "bg-emerald-400", text: "text-emerald-300", textLight: "text-emerald-600", char: "草", label: "滋賀県草津市" },
   "滋賀県（草津市以外）":     { dot: "bg-emerald-600", text: "text-emerald-400", textLight: "text-emerald-700", char: "滋", label: "滋賀県（草津市以外）" },
@@ -28,8 +31,8 @@ export const LOCATION_STYLES: Record<string, LocationStyle> = {
   "愛知県（名古屋市以外）":   { dot: "bg-blue-600",    text: "text-blue-400",    textLight: "text-blue-700",    char: "愛", label: "愛知県（名古屋市以外）" },
   "岐阜県":               { dot: "bg-lime-400",    text: "text-lime-300",    textLight: "text-lime-600",    char: "岐", label: "岐阜県" },
   "リモート":              { dot: "bg-cyan-400",    text: "text-cyan-300",    textLight: "text-cyan-600",    char: "リ", label: "リモート" },
-  "未定（お問い合わせください）": { dot: "bg-gray-400",   text: "text-gray-400",   textLight: "text-gray-500",   char: "？", label: "？" },
-  "対応不可日・休日":        { dot: "bg-red-600",     text: "text-red-400",    textLight: "text-red-700",     char: "休", label: "休" },
+  [PENDING_LOCATION_NAME]:     { dot: "bg-gray-400",   text: "text-gray-400",   textLight: "text-gray-500",   char: "？", label: "？" },
+  [UNAVAILABLE_LOCATION_NAME]: { dot: "bg-red-600",     text: "text-red-400",    textLight: "text-red-700",     char: "休", label: "休" },
 };
 
 export const DEFAULT_LOCATION_STYLE: LocationStyle = {
@@ -41,4 +44,8 @@ export const LOCATION_OPTIONS = Object.keys(LOCATION_STYLES);
 
 export function getLocationStyle(location: string): LocationStyle {
   return LOCATION_STYLES[location] || DEFAULT_LOCATION_STYLE;
+}
+
+export function isAskMeUnavailableLocation(location?: string | null): boolean {
+  return location === UNAVAILABLE_LOCATION_NAME;
 }
