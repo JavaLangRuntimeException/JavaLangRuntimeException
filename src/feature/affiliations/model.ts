@@ -12,7 +12,7 @@ export type AffiliationCategory =
 export type Affiliation = {
     label: string;
     color: string;
-    href: string;
+    href?: string;
     category: AffiliationCategory;
     description?: string;
 };
