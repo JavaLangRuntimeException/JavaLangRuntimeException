@@ -60,7 +60,7 @@ export const affiliations: Affiliation[] = [
 
     // engineer
     {
-        label: "株式会社サイバーエージェント",
+        label: "株式会社サイバーエージェント ServerSide Engineer",
         color: "bg-lime-600",
         href: "https://www.cyberagent.co.jp/",
         category: "engineer",
@@ -72,6 +72,13 @@ export const affiliations: Affiliation[] = [
         href: "https://jinnen.co.jp/",
         category: "engineer",
         description: "各種コミュニティに必要なツールの開発を行っています。"
+    },
+    {
+        label: "株式会社888 ProjectManager",
+        color: "bg-yellow-900",
+        href: "",
+        category: "engineer",
+        description: "関西地域のDX案件に関するプロジェクトのPMを行っています"
     },
 
     // photographer
@@ -85,7 +92,7 @@ export const affiliations: Affiliation[] = [
 
     // community_director
     {
-        label: "JINEN株式会社",
+        label: "JINEN株式会社 Community Director",
         color: "bg-blue-900",
         href: "https://jinnen.co.jp/",
         category: "community_director",
