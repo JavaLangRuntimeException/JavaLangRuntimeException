@@ -20,7 +20,7 @@ export type Affiliation = {
 export const affiliations: Affiliation[] = [
     // university_research
     {
-        label: "立命館大学大学院情報理工学研究科人間情報科学コース",
+        label: "立命館大学大学院情報理工学研究科情報理工学専攻人間情報科学コース",
         color: "bg-red-600",
         href: "https://www.ritsumei.ac.jp/",
         category: "university_research",
@@ -50,12 +50,11 @@ export const affiliations: Affiliation[] = [
         description: "上位1%の学生エンジニアが集う審査制コミュニティSTECHの運営に携わっています。"
     },
     {
-
         label: "CATechLounge",
         color: "bg-cyan-600",
         href: "https://www.cyberagent.co.jp/careers/special/students/tech_lounge/",
         category: "community",
-        description: "サイバーエージェントが運営する学生向け技術コミュニティに参加しています。"
+        description: "株式会社サイバーエージェントが運営する学生向け技術コミュニティに参加しています。"
     },
 
     // engineer
@@ -64,7 +63,7 @@ export const affiliations: Affiliation[] = [
         color: "bg-lime-600",
         href: "https://www.cyberagent.co.jp/",
         category: "engineer",
-        description: "サイバーエージェント2028年卒のサーバーサイドエンジニアとして、技術開発に取り組んでいます。"
+        description: "株式会社サイバーエージェントのサーバーサイドエンジニアとして、技術開発に取り組んでいます。"
     },
     {
         label: "JINEN株式会社 Engineer",
@@ -74,7 +73,7 @@ export const affiliations: Affiliation[] = [
         description: "各種コミュニティに必要なツールの開発を行っています。"
     },
     {
-        label: "株式会社888 ProjectManager",
+        label: "株式会社888 開発ProjectManager",
         color: "bg-yellow-900",
         href: "",
         category: "engineer",
