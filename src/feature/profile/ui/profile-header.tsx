@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { socialLinks } from "../model";
 
 export function ProfileHeader() {
   return (
@@ -17,6 +18,26 @@ export function ProfileHeader() {
       <motion.p className="mt-1 text-zinc-300" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15, duration: 0.5 }}>
       Software Engineer<br />Backend Engineer<br />Photographer<br />XR Researcher<br />Community Director
       </motion.p>
+      <motion.div
+        className="mt-4 flex items-center justify-center gap-4"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.5 }}
+      >
+        {socialLinks.map((s) => (
+          <a
+            key={s.label}
+            href={s.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={s.label}
+            title={s.label}
+            className="relative h-9 w-9 overflow-hidden rounded-full bg-white/90 p-1.5 ring-1 ring-white/30 shadow-md transition-transform hover:scale-110"
+          >
+            <Image src={s.imgSrc} alt={s.label} fill className="object-contain p-1.5" />
+          </a>
+        ))}
+      </motion.div>
     </section>
   );
 }
