@@ -10,5 +10,6 @@ export const socialLinks: SocialLink[] = [
   { href: "https://twitter.com/javalangruntime", imgSrc: "/x_home.jpg", label: "X (Twitter)" },
   { href: "https://www.instagram.com/manjiin773tara/", imgSrc: "/instagram_home.png", label: "Instagram" },
   { href: "https://github.com/javalangruntimeexception", imgSrc: "/github_home.png", label: "GitHub" },
+  { href: "https://www.linkedin.com/in/javalangruntimeexception/", imgSrc: "/linkedin_home.png", label: "LinkedIn" },
   { href: "https://orcid.org/0009-0005-4751-648X", imgSrc: "/ORCID_home.png", label: "ORCID" },
 ];
