@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -r \"i18n\\\\|locale\\\\|translate\\\\|language\" /Users/taramanjimacbookpro/develop/JavaLangRuntimeException/src --include=*.ts --include=*.tsx --include=*.json)",
+      "Bash(npx tsc *)"
+    ]
+  }
+}
