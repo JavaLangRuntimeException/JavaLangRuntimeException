@@ -33,6 +33,13 @@ export const affiliations: Affiliation[] = [
         category: "university_research",
         description: "VR/AR/MRなどのXRシステムに関する位置推定技術やクライアント間の通信に関する研究や、XR環境を使用したヒューマンインターフェースなど心理学実験を行っています。"
     },
+    {
+        label: "クラスター株式会社 Research Assistant",
+        color: "bg-blue-500",
+        href: "https://cluster.mu/",
+        category: "university_research",
+        description: "バーチャルリアリティプラットフォームを活用した人間拡張や仮想と現実のインタラクションの研究に関してのリサーチアシスタントをしています。"
+    },
 
     // community
     {
