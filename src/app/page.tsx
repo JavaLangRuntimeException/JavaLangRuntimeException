@@ -9,6 +9,7 @@ import {HeroBackground} from "../shared/ui/HeroBackground";
 import {SkillBadges} from "../feature/skills/ui/SkillBadges";
 import {ConnpassEventCards} from "../feature/connpass/ui/EventCards";
 import {PublishedArticles} from "../feature/articles/ui/PublishedArticles";
+import {OrcidWorks} from "../feature/orcid/ui/OrcidWorks";
 import {useIntro} from "../shared/contexts/IntroContext";
 import { NavCards } from "../shared/ui/NavCards";
 import { FloatingParticles } from "../shared/ui/Particles";
@@ -330,13 +331,22 @@ export default function PortfolioLinks() {
                         <ConnpassEventCards showAnimations={showAnimations} delay={1.6}/>
                     </motion.div>
 
-                    {/* Published Articles */}
+                    {/* Publications (ORCID) */}
                     <motion.div
                         initial={showAnimations ? {opacity: 0, y: 30} : {opacity: 1, y: 0}}
                         animate={{opacity: 1, y: 0}}
                         transition={showAnimations ? {delay: 1.8, duration: 0.6} : {duration: 0}}
                     >
-                        <PublishedArticles showAnimations={showAnimations} delay={1.8}/>
+                        <OrcidWorks showAnimations={showAnimations} delay={1.8}/>
+                    </motion.div>
+
+                    {/* Published Articles */}
+                    <motion.div
+                        initial={showAnimations ? {opacity: 0, y: 30} : {opacity: 1, y: 0}}
+                        animate={{opacity: 1, y: 0}}
+                        transition={showAnimations ? {delay: 2.0, duration: 0.6} : {duration: 0}}
+                    >
+                        <PublishedArticles showAnimations={showAnimations} delay={2.0}/>
                     </motion.div>
                 </motion.div>
             )}

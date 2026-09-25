@@ -14,7 +14,6 @@ export function AffiliationBadges() {
         "photographer",
         "community_director",
         "event_management",
-        "community_organizer",
         "conference_staff",
         "technical_mentor",
     ] as const;
@@ -24,9 +23,8 @@ export function AffiliationBadges() {
         "community": "Community",
         "engineer": "Engineer",
         "photographer": "Photographer",
-        "community_director": "Community Director",
+        "community_director": "Community Director/Organizer",
         "event_management": "Event Management",
-        "community_organizer": "Community Organizer",
         "conference_staff": "Conference Staff",
         "technical_mentor": "Technical Mentor",
     };

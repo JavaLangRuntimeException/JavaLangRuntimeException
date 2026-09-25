@@ -5,7 +5,6 @@ export type AffiliationCategory =
     | "photographer"
     | "community_director"
     | "event_management"
-    | "community_organizer"
     | "conference_staff"
     | "technical_mentor";
 
@@ -50,7 +49,7 @@ export const affiliations: Affiliation[] = [
         description: "立命館大学学術部公認団体として、コンピュータ技術の研究・学習活動を行っています。"
     },
     {
-        label: "学生エンジニアコミュニティSTECH Manager",
+        label: "学生エンジニアコミュニティSTECH",
         color: "bg-sky-600",
         href: "https://stech.jinnen.co.jp/",
         category: "community",
@@ -66,7 +65,7 @@ export const affiliations: Affiliation[] = [
 
     // engineer
     {
-        label: "株式会社サイバーエージェント ServerSide Engineer",
+        label: "株式会社サイバーエージェント",
         color: "bg-lime-600",
         href: "https://www.cyberagent.co.jp/",
         category: "engineer",
@@ -80,9 +79,9 @@ export const affiliations: Affiliation[] = [
         description: "各種コミュニティに必要なツールの開発を行っています。"
     },
     {
-        label: "株式会社888 開発ProjectManager",
+        label: "株式会社888 受託開発事業部長",
         color: "bg-yellow-900",
-        href: "",
+        href: "https://888incs.com",
         category: "engineer",
         description: "関西地域のDX案件に関するプロジェクトのPMを行っています"
     },
@@ -96,13 +95,28 @@ export const affiliations: Affiliation[] = [
         description: "フリーランスカメラマンとして出張撮影を承ります。ポートレート、イベント撮影、テックカンファレンス撮影スタッフなど幅広く対応可能です。"
     },
 
-    // community_director
+    // community_director / organizer
     {
-        label: "JINEN株式会社 Community Director",
+        label: "JINEN株式会社 STECH Community Director",
         color: "bg-blue-900",
         href: "https://jinnen.co.jp/",
         category: "community_director",
         description: "学生エンジニアコミュニティSTECHの運営サポートや各種コミュニティの運営・企画やコミュニティに関する営業を行っています。"
+    },
+
+    {
+        label: "kyoto.go Organizer",
+        color: "bg-violet-600",
+        href: "https://x.com/kyotogolang",
+        category: "community_director",
+        description: "京都のGo当地コミュニティを主催し、定期的な勉強会やイベントを開催しています。"
+    },
+    {
+        label: "biwako.go Organizer",
+        color: "bg-amber-800",
+        href: "https://x.com/biwakogolang",
+        category: "community_director",
+        description: "滋賀のGo当地コミュニティを主催し、定期的な勉強会やイベントを開催しています。"
     },
 
     // event_management
@@ -112,22 +126,6 @@ export const affiliations: Affiliation[] = [
         href: "https://www.nxtend.or.jp/",
         category: "event_management",
         description: "NxTENDにて各地域のエンジニアコミュニティを活性化するための事業の企画・運営を行っています。"
-    },
-
-    // community_organizer
-    {
-        label: "kyoto.go Organizer",
-        color: "bg-violet-600",
-        href: "https://x.com/kyotogolang",
-        category: "community_organizer",
-        description: "京都のGo当地コミュニティを主催し、定期的な勉強会やイベントを開催しています。"
-    },
-    {
-        label: "biwako.go Organizer",
-        color: "bg-amber-800",
-        href: "https://x.com/biwakogolang",
-        category: "community_organizer",
-        description: "滋賀のGo当地コミュニティを主催し、定期的な勉強会やイベントを開催しています。"
     },
 
     // conference_staff
