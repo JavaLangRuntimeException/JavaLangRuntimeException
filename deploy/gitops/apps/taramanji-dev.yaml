@@ -1,4 +1,4 @@
-# dev。main へのマージで CI が overlays/dev の版を書き換え、ここが同期する
+# dev。main への PR（と手動実行）で CI が overlays/dev の版を書き換え、ここが同期する
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
