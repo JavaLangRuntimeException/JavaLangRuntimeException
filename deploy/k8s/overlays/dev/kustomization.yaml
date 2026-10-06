@@ -1,4 +1,4 @@
-# dev（同じ kind の taramanji-dev namespace）。main にマージすると CI がタグを書き換え、Argo CD が同期する。
+# dev（同じ kind の taramanji-dev namespace）。main への PR（と手動実行）で CI がイメージを作って版を書き換え、Argo CD が同期する。
 # 本番との違い: 1 台ずつ・HPA/PDB なし・カナリアなし・ホスト名 dev.taramanji.com / dev-gws.taramanji.com（Cloudflare Access で本人だけ）・Redis も同じ namespace
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization

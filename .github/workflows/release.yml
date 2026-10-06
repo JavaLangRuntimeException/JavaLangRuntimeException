@@ -1,6 +1,6 @@
-# リリース: タグを打つと、そのコミットのイメージに版のタグを付け、環境の版を書き換える。Argo CD が同期する。
-#   v1.2.3-rc.1（rc タグ）→ stg（本番と同じイメージで最終確認）
-#   v1.2.3                → 本番。Argo Rollouts がカナリア（10% → 25% → 50% → 100%、Datadog で自動判定）で入れ替える
+# リリース: v1.2.3 のタグを打つと、そのコミットのイメージに版のタグを付け、本番（overlays/prod）の版を書き換える。
+# Argo CD が同期し、Argo Rollouts がカナリア（10% → 25% → 50% → 100%、Datadog で自動判定）で入れ替える。
+# そのコミットは main への push のときに stg に出ている（同じイメージ）
 name: release
 
 on:
@@ -48,25 +48,12 @@ jobs:
           for s in identity notification inquiry reservation worklocation content calendarsync analytics web; do
             docker buildx imagetools create -t "$REGISTRY/taramanji-$s:$GITHUB_REF_NAME" "$REGISTRY/taramanji-$s:$SRC"
           done
-      - name: Which environment
-        id: env
-        run: |
-          if [[ "$GITHUB_REF_NAME" == *-rc.* ]]; then echo "name=stg" >> "$GITHUB_OUTPUT"; else echo "name=prod" >> "$GITHUB_OUTPUT"; fi
-      - name: Bump the environment
+      - name: Bump prod
         run: |
           git checkout main
           git pull origin main
-          deploy/k8s/scripts/set-version.sh "${{ steps.env.outputs.name }}" "$GITHUB_REF_NAME"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -am "deploy(${{ steps.env.outputs.name }}): $GITHUB_REF_NAME [skip ci]"
-          git push origin HEAD:main
+          deploy/k8s/scripts/bump-and-push.sh prod "$GITHUB_REF_NAME"
       - name: GitHub Release
-        run: |
-          if [ "${{ steps.env.outputs.name }}" = stg ]; then
-            gh release create "$GITHUB_REF_NAME" --generate-notes --verify-tag --prerelease
-          else
-            gh release create "$GITHUB_REF_NAME" --generate-notes --verify-tag
-          fi
+        run: gh release create "$GITHUB_REF_NAME" --generate-notes --verify-tag
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
