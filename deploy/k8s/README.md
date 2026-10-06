@@ -42,6 +42,9 @@ dev で確認して git tag v1.2.3 && git push origin v1.2.3
                  その間ずっと Datadog で新しい版の 5xx 率（< 5%）と p95（< 3 秒）を判定し、2 回外れたら自動で元の版に戻す
 ```
 
+既知の制約: web（nginx）は APM のトレースを送らないため、カナリアの自動判定が常に「件数 0 = 問題なし」になる。
+web の新しい版は stg と RUM（ブラウザのエラー）で確かめる。改善案は Envoy の上流ごとの指標（canary の Service 宛ての 5xx）での判定。
+
 ```bash
 # カナリアの様子
 kubectl argo rollouts --context kind-taramanji -n taramanji get rollout reservation --watch
