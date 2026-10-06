@@ -1,0 +1,11 @@
+# バックエンドと同じ proto から、ブラウザ用の Connect クライアントの型を作る（npm run gen）
+version: v2
+inputs:
+  - directory: ../backend/proto
+    # notification は内部専用（ブラウザから呼ばない）
+    exclude_paths: [../backend/proto/taramanji/notification]
+plugins:
+  - local: protoc-gen-es
+    out: src/shared/api/gen
+    opt: target=ts,import_extension=none
+clean: true

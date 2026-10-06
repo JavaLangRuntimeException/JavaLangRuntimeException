@@ -1,0 +1,76 @@
+@import "@/styles/globals.css";
+
+/* BoardUI の --font-sans は --font-inter を参照する。日本語は Noto Sans JP で受ける */
+:root {
+  --font-inter: "Inter", "Noto Sans JP";
+  --font-mono-source: "JetBrains Mono";
+}
+
+html {
+  font-feature-settings: "palt" 1;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  @apply bg-background-full text-text-primary font-sans;
+}
+
+/* ヘッダーの横に流れるお知らせ（旧サイトと同じ 60 秒で一周） */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-marquee { animation: none !important; }
+}
+
+/* ---------------------------------------------------------------------------
+ * 操作の手触り
+ *  lift : ホバーで少し大きくなり、アクセント色の光をまとう（カード・タグ）
+ *  press: 押した瞬間に少し縮む（ボタン・タブ・リンク）
+ * Tailwind v4 の translate-* と干渉しないよう transform ではなく scale プロパティを使う
+ * ------------------------------------------------------------------------- */
+@utility lift {
+  transition:
+    scale 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 260ms ease,
+    border-color 200ms ease,
+    background-color 200ms ease;
+  &:hover {
+    scale: 1.025;
+    box-shadow: 0 18px 40px -18px color-mix(in oklab, var(--color-accent-500) 55%, transparent);
+    border-color: color-mix(in oklab, var(--color-accent-400) 55%, transparent);
+  }
+  &:active {
+    scale: 0.985;
+    transition-duration: 120ms;
+  }
+}
+
+@utility press {
+  transition:
+    scale 220ms cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease,
+    box-shadow 150ms ease;
+  &:active:not(:disabled):not([aria-disabled="true"]) {
+    scale: 0.97;
+    transition-duration: 120ms;
+  }
+}
+
+/* タブ（BoardUI / React Aria の role="tab"）も押した感触を出す */
+[role="tab"] {
+  transition: scale 220ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+[role="tab"]:active:not([aria-disabled="true"]) {
+  scale: 0.96;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lift, .lift:hover, .lift:active, .press:active, [role="tab"]:active {
+    scale: none !important;
+  }
+}
