@@ -1,20 +1,20 @@
-# staging トンネル（taramanji-kind）: stg / stg-gws / dev / dev-gws.taramanji.com（と切り替え前の確認用の next）
-# Mac mini から Cloudflare へ外向きに接続するだけなので、ルーターのポート開放は不要
+# 本番トンネル（taramanji-onprem）: taramanji.com / www.taramanji.com / gws.taramanji.com。
+# 振り分けは Gateway（HTTPRoute）がするので、設定（config.yaml）は staging と同じ「すべて Gateway へ」
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: cloudflared-staging
+  name: cloudflared-prod
   labels:
     app: cloudflared
-    tunnel: staging
+    tunnel: prod
 spec:
   # 2 本つないでおき、片方の再起動中も公開を止めない
   replicas: 2
   selector:
-    matchLabels: { app: cloudflared, tunnel: staging }
+    matchLabels: { app: cloudflared, tunnel: prod }
   template:
     metadata:
-      labels: { app: cloudflared, tunnel: staging }
+      labels: { app: cloudflared, tunnel: prod }
       annotations:
         # Datadog: cloudflared の Prometheus メトリクス（:2000/metrics）のうちトンネルの分だけ集める
         # （カスタムメトリクスは課金対象なので絞る）
@@ -41,14 +41,14 @@ spec:
         - maxSkew: 1
           topologyKey: kubernetes.io/hostname
           whenUnsatisfiable: ScheduleAnyway
-          labelSelector: { matchLabels: { app: cloudflared, tunnel: staging } }
+          labelSelector: { matchLabels: { app: cloudflared, tunnel: prod } }
       containers:
         - name: cloudflared
           image: cloudflare/cloudflared:2026.9.3
           env:
             - name: TUNNEL_ID
               valueFrom:
-                secretKeyRef: { name: tunnel-credentials-staging, key: tunnel-id }
+                secretKeyRef: { name: tunnel-credentials-prod, key: tunnel-id }
           args: ["tunnel", "--config", "/etc/cloudflared/config/config.yaml", "run", "$(TUNNEL_ID)"]
           volumeMounts:
             - name: config
@@ -75,7 +75,7 @@ spec:
         # setup.sh が cloudflared tunnel create の認証情報から作る
         - name: creds
           secret:
-            secretName: tunnel-credentials-staging
+            secretName: tunnel-credentials-prod
             items:
               - key: credentials.json
                 path: credentials.json

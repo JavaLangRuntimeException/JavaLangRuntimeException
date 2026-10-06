@@ -10,5 +10,6 @@ resources:
   - notification-env.yaml
   - redis-acl.yaml
   - reservation-env.yaml
+  - tunnel-credentials-prod.yaml
   - tunnel-credentials-staging.yaml
   - worklocation-env.yaml
