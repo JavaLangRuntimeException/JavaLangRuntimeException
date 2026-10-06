@@ -4,6 +4,8 @@ global:
 configs:
   params:
     server.insecure: true
+    # 家の回線では初回の git fetch（リポジトリ全体）が 90 秒を超えることがあるので、待ち時間を伸ばす
+    controller.repo.server.timeout.seconds: "300"
   cm:
     timeout.reconciliation: 180s
 server:
@@ -11,6 +13,9 @@ server:
     requests: { cpu: 20m, memory: 64Mi }
     limits: { memory: 256Mi }
 repoServer:
+  env:
+    - name: ARGOCD_EXEC_TIMEOUT
+      value: 5m
   resources:
     requests: { cpu: 20m, memory: 64Mi }
     limits: { memory: 512Mi }

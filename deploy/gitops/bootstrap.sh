@@ -13,12 +13,12 @@ k apply --server-side -f https://github.com/bitnami-labs/sealed-secrets/releases
 k -n kube-system rollout status deploy/sealed-secrets-controller --timeout=180s
 
 helm --kube-context "$CTX" upgrade --install argo-rollouts argo/argo-rollouts --version 2.43.5 \
-  -n argo-rollouts --create-namespace -f rollouts-values.yaml --wait
+  -n argo-rollouts --create-namespace -f rollouts-values.yaml --wait --timeout 15m
 # プラグインが HTTPRoute を書き換えられるようにする
 k apply -f rollouts-gatewayapi-rbac.yaml
 
 helm --kube-context "$CTX" upgrade --install argocd argo/argo-cd --version 10.9.6 \
-  -n argocd --create-namespace -f argocd-values.yaml --wait
+  -n argocd --create-namespace -f argocd-values.yaml --wait --timeout 15m
 
 k apply -f root.yaml
 echo
