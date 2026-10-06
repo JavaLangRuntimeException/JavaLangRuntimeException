@@ -1,0 +1,62 @@
+# リリース: v1.2.3 のタグを打つと、そのコミットのイメージに版のタグを付け、本番（overlays/prod）の版を書き換える。
+# Argo CD が同期し、Argo Rollouts がカナリア（10% → 25% → 50% → 100%、Datadog で自動判定）で入れ替える
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  packages: write
+
+concurrency:
+  group: deploy-manifests
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io/javalangruntimeexception
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: The tag must be on main
+        run: |
+          git fetch origin main
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main || { echo "::error::タグは main のコミットに打ってください"; exit 1; }
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Wait for CI images of this commit
+        run: |
+          SRC="sha-${GITHUB_SHA::7}"
+          for i in $(seq 1 60); do
+            if docker buildx imagetools inspect "$REGISTRY/taramanji-web:$SRC" >/dev/null 2>&1; then exit 0; fi
+            echo "CI のイメージを待っています ($i/60)"; sleep 30
+          done
+          echo "::error::$SRC のイメージがありません（main の CI が成功しているか確認）"; exit 1
+      - name: Tag images with the release version
+        run: |
+          SRC="sha-${GITHUB_SHA::7}"
+          for s in identity notification inquiry reservation worklocation content calendarsync analytics web; do
+            docker buildx imagetools create -t "$REGISTRY/taramanji-$s:$GITHUB_REF_NAME" "$REGISTRY/taramanji-$s:$SRC"
+          done
+      - name: Bump prod
+        run: |
+          git checkout main
+          git pull origin main
+          deploy/k8s/scripts/set-version.sh prod "$GITHUB_REF_NAME"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "deploy(prod): $GITHUB_REF_NAME [skip ci]"
+          git push origin HEAD:main
+      - name: GitHub Release
+        run: gh release create "$GITHUB_REF_NAME" --generate-notes --verify-tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
