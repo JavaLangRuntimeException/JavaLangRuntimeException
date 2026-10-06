@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { RiAddLine, RiRefreshLine } from "@remixicon/react";
 import { Button, ButtonLink } from "@/components/base/buttons/button";
 import { Checkbox } from "@/components/base/checkbox/checkbox";
 import { calendarSyncApi } from "@/shared/api/clients";
@@ -90,10 +89,10 @@ export function CalendarSyncAdmin() {
         }
         actions={
           <>
-            <ButtonLink href="/api/calendar-sync/connect" variant="primary" leadingIcon={RiAddLine}>
+            <ButtonLink href="/api/calendar-sync/connect" variant="primary">
               アカウントを接続
             </ButtonLink>
-            <Button variant="secondary" leadingIcon={RiRefreshLine} onClick={runNow} disabled={!!busy || accounts.length < 2}>
+            <Button variant="secondary" onClick={runNow} disabled={!!busy || accounts.length < 2}>
               {busy === "run" ? "同期中..." : "今すぐ同期"}
             </Button>
           </>
@@ -161,7 +160,7 @@ export function CalendarSyncAdmin() {
                 ["次回に回した分", lastRun.pending],
               ] as const
             ).map(([label, value]) => (
-              <div key={label} className="rounded-2xl bg-background-secondary-default p-3">
+              <div key={label} className="rounded-xl bg-background-secondary-default p-3">
                 <dt className="text-caption-1-medium text-text-tertiary">{label}</dt>
                 <dd className="text-title-3-semibold tabular-nums text-text-primary">{value}</dd>
               </div>

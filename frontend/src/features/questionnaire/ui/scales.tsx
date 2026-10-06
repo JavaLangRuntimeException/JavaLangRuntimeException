@@ -1,6 +1,5 @@
 import { useId } from "react";
 import { Radio as AriaRadio, RadioGroup as AriaRadioGroup } from "react-aria-components";
-import { Card } from "@/shared/ui/layout";
 import { cx } from "@/utils/cx";
 import { LIKERT_GUIDE } from "../model/questions";
 
@@ -26,7 +25,7 @@ export function LikertScale({
 }) {
   const id = useId();
   return (
-    <Card className="flex flex-col gap-3 sm:p-6">
+    <section className="flex flex-col gap-3 border-t border-separator-border pt-6">
       <div id={id} className="flex flex-col gap-1">
         <h3 className="text-body-2-semibold text-text-secondary">{questionNumber}</h3>
         <p className="text-body-regular text-text-primary">{questionJa}</p>
@@ -72,7 +71,7 @@ export function LikertScale({
         <span className="text-caption-1-regular text-text-tertiary">とてもそう思う</span>
       </AriaRadioGroup>
       <Required show={value === null}>回答は必須です</Required>
-    </Card>
+    </section>
   );
 }
 
@@ -95,7 +94,7 @@ export function NasaTlxScale({
 }) {
   const id = useId();
   return (
-    <Card className="flex flex-col gap-4 sm:p-6">
+    <section className="flex flex-col gap-4 border-t border-separator-border pt-6">
       <h3 id={id} className="text-body-regular text-text-primary">
         <span className="text-body-2-semibold text-text-secondary">{questionNumber}</span> {label}
       </h3>
@@ -139,6 +138,6 @@ export function NasaTlxScale({
         ))}
       </AriaRadioGroup>
       <Required show={value === null}>回答は必須です</Required>
-    </Card>
+    </section>
   );
 }

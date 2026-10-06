@@ -25,8 +25,8 @@ export default function LocationPage() {
       />
       {isPending ? (
         <div className="flex flex-col gap-4" aria-busy="true">
-          <Skeleton className="h-96 rounded-3xl" />
-          <Skeleton className="h-48 rounded-3xl" />
+          <Skeleton className="h-96 rounded-xl" />
+          <Skeleton className="h-48 rounded-xl" />
         </div>
       ) : isError ? (
         <p role="alert" className="py-8 text-center text-body-regular text-text-error-primary">

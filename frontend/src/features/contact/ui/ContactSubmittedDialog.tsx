@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { RiCheckboxCircleLine } from "@remixicon/react";
 import { Dialog } from "@/shared/ui/dialog";
 
 /** 送信完了。数秒後に自動で閉じる（旧ページと同じく初回 5 秒、2 回目以降は 10 秒から数える） */
@@ -19,7 +18,6 @@ export function ContactSubmittedDialog({ isOpen, onClose }: { isOpen: boolean; o
   return (
     <Dialog isOpen={isOpen} onOpenChange={(open) => !open && onClose()} size="small" title="お問い合わせを受け付けました">
       <div className="flex flex-col items-center gap-4 py-2 text-center">
-        <RiCheckboxCircleLine className="size-14 text-accent-600" aria-hidden />
         <p className="text-headline-medium text-text-primary">お問い合わせありがとうございます。</p>
         <p className="text-body-regular text-text-secondary">
           確認メールをお送りいたしました。

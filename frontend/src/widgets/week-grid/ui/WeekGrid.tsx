@@ -43,7 +43,7 @@ export function WeekGrid({
   const days = Array.from({ length: 7 }, (_, i) => new Date(monday.getTime() + i * 86400000));
 
   return (
-    <div className="overflow-x-auto rounded-2xl border border-border-table">
+    <div className="overflow-x-auto rounded-xl border border-border-table">
       <div className="grid min-w-[700px] grid-cols-[72px_repeat(7,1fr)]">
         <div className="bg-background-secondary-default" />
         {days.map((d) => {

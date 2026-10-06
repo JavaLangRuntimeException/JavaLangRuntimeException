@@ -1,4 +1,3 @@
-import { RiArticleLine } from "@remixicon/react";
 import { Link } from "react-router";
 import { ArticleList } from "@/widgets/article-list";
 import { PageContainer, PageHeader } from "@/shared/ui/layout";
@@ -10,12 +9,7 @@ export default function BlogsPage() {
   return (
     <PageContainer width="wide">
       <PageHeader
-        title={
-          <span className="inline-flex items-center gap-2">
-            <RiArticleLine aria-hidden="true" className="size-7 text-accent-600" />
-            Published Articles
-          </span>
-        }
+        title="Published Articles"
         actions={
           <>
             <Link to="/link" className={linkClass}>

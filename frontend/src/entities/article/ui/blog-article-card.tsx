@@ -16,14 +16,14 @@ export function BlogArticleCard({ title, description, url, image, tags = [] }: B
       target="_blank"
       rel="noopener noreferrer"
       className={cx(
-        "group flex flex-col overflow-hidden rounded-3xl border border-border-button-default bg-background-primary-default",
+        "group flex flex-col overflow-hidden rounded-xl border border-border-button-default bg-background-primary-default",
         "lift hover:bg-background-primary-hover",
         "outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring",
       )}
     >
       {image && (
         <div className="aspect-[1200/630] w-full overflow-hidden border-b border-separator-border bg-background-secondary-default">
-          <img src={image} alt={title || "Qiita 記事一覧"} loading="lazy" className="size-full object-cover" />
+          <img src={image} alt={title || "Qiita 記事一覧"} loading="lazy" className="size-full object-cover brightness-[0.82] transition-[filter] duration-300 group-hover:brightness-100 group-focus-visible:brightness-100 motion-reduce:transition-none" />
         </div>
       )}
       <div className="flex flex-1 flex-col gap-3 p-5">
@@ -38,7 +38,7 @@ export function BlogArticleCard({ title, description, url, image, tags = [] }: B
             ))}
           </ul>
         )}
-        <span className="mt-auto pt-1 text-body-2-semibold text-accent-600">
+        <span className="mt-auto pt-1 text-body-2-semibold text-accent-300">
           記事を読む <span aria-hidden="true">→</span>
         </span>
       </div>

@@ -1,4 +1,3 @@
-import type { RemixiconComponentType } from "@remixicon/react";
 import { Dialog } from "@/shared/ui/dialog";
 import { CONTACT_COMMANDS, RESERVE_COMMANDS } from "./commands";
 import { TerminalLines } from "./TerminalLines";
@@ -20,13 +19,11 @@ export function TerminalLoadingDialog({
   isOpen,
   title,
   message,
-  icon: Icon,
   variant,
 }: {
   isOpen: boolean;
   title: string;
   message: string;
-  icon: RemixiconComponentType;
   variant: "reserve" | "contact";
 }) {
   return (
@@ -35,12 +32,7 @@ export function TerminalLoadingDialog({
       onOpenChange={() => {}}
       isDismissable={false}
       size="small"
-      title={
-        <span className="inline-flex items-center gap-2">
-          <Icon className="size-5 text-accent-500" aria-hidden />
-          {title}
-        </span>
-      }
+      title={title}
     >
       <div className="relative -mx-6 -my-5 min-h-48 overflow-hidden bg-background-secondary-default/60 px-6 py-10">
         {isOpen && <Stream variant={variant} />}

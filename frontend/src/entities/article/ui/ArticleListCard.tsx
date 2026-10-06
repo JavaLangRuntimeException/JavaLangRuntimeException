@@ -1,4 +1,3 @@
-import { RiArrowRightLine } from "@remixicon/react";
 import type { ArticleOgp } from "../model/types";
 
 /** 記事 1 件（タイトル・説明・タグ）。外部（Qiita）へのリンク */
@@ -8,7 +7,7 @@ export function ArticleListCard({ article }: { article: ArticleOgp }) {
       href={article.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="group flex gap-4 overflow-hidden rounded-3xl border border-border-button-default bg-background-primary-default p-5 outline-none lift focus-visible:ring-2 focus-visible:ring-border-focus-ring"
+      className="group flex gap-4 overflow-hidden rounded-xl border border-border-button-default bg-background-primary-default p-5 outline-none lift focus-visible:ring-2 focus-visible:ring-border-focus-ring"
     >
       {article.images && article.images.length > 0 && (
         <img src={article.images[0]} alt="" loading="lazy" className="hidden aspect-[1.91/1] w-40 shrink-0 rounded-xl object-cover sm:block" />
@@ -25,10 +24,9 @@ export function ArticleListCard({ article }: { article: ArticleOgp }) {
             ))}
           </ul>
         )}
-        <span className="mt-1 inline-flex items-center gap-1 text-body-2-semibold text-accent-600">
+        <span className="mt-1 inline-flex items-center gap-1 text-body-2-semibold text-accent-300">
           記事を読む
-          <RiArrowRightLine className="size-4 transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none" aria-hidden />
-        </span>
+          </span>
       </div>
     </a>
   );

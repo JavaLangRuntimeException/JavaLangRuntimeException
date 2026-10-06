@@ -1,4 +1,3 @@
-import { RiMailLine, RiUserLine } from "@remixicon/react";
 import { Input } from "@/components/base/input/input";
 import { FieldCard, FieldError } from "./parts";
 
@@ -20,7 +19,6 @@ export function NameEmailFields({
       <div className="grid gap-5 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
           <h2 className="inline-flex items-center gap-2 text-body-semibold text-text-primary">
-            <RiUserLine className="size-4 text-foreground-icon-secondary" aria-hidden />
             お名前
           </h2>
           <Input aria-label="お名前" placeholder="お名前(本名)" value={name} onChange={setName} autoComplete="name" />
@@ -29,7 +27,6 @@ export function NameEmailFields({
         </div>
         <div className="flex flex-col gap-2">
           <h2 className="inline-flex items-center gap-2 text-body-semibold text-text-primary">
-            <RiMailLine className="size-4 text-foreground-icon-secondary" aria-hidden />
             メールアドレス
           </h2>
           <Input aria-label="メールアドレス" type="email" inputDir="ltr" placeholder="your.name@example.com" value={email} onChange={setEmail} autoComplete="email" />

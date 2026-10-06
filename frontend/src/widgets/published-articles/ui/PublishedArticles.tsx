@@ -1,17 +1,14 @@
 import { Link } from "react-router";
-import { RiArrowRightSLine, RiArticleLine, RiNewspaperLine, RiStarLine } from "@remixicon/react";
-import type { RemixiconComponentType } from "@remixicon/react";
 import type { ArticleOgp } from "@/entities/article";
 import { ArticleListCard } from "@/entities/article";
 import { Section, Skeleton } from "@/shared/ui/layout";
 import { usePublishedArticles } from "../model/use-published-articles";
 
-function Group({ icon: Icon, title, articles }: { icon: RemixiconComponentType; title: string; articles: ArticleOgp[] }) {
+function Group({ title, articles }: { title: string; articles: ArticleOgp[] }) {
   if (articles.length === 0) return null;
   return (
     <div className="flex flex-col gap-3">
       <h3 className="inline-flex items-center gap-2 text-body-semibold text-text-secondary">
-        <Icon className="size-4 text-foreground-icon-tertiary" aria-hidden />
         {title}
       </h3>
       <ul className="flex flex-col gap-3">
@@ -33,12 +30,7 @@ export function PublishedArticles() {
   return (
     <Section
       id="articles"
-      title={
-        <span className="inline-flex items-center gap-2">
-          <RiArticleLine className="size-5 text-foreground-icon-secondary" aria-hidden />
-          Published Articles
-        </span>
-      }
+      title="Published Articles"
     >
       {isPending && (
         <div className="flex flex-col gap-3" aria-busy="true">
@@ -50,9 +42,9 @@ export function PublishedArticles() {
       {!isPending && empty && <p className="text-body-2-regular text-text-tertiary">記事がまだありません</p>}
       {!isPending && data && !empty && (
         <div className="flex flex-col gap-8">
-          <Group icon={RiStarLine} title="Pickup Articles" articles={data.pickupArticles} />
-          <Group icon={RiNewspaperLine} title="PickUp Articles" articles={data.latestArticlesFromScrape} />
-          <Group icon={RiNewspaperLine} title="Latest Articles" articles={data.latestArticles} />
+          <Group title="Pickup Articles" articles={data.pickupArticles} />
+          <Group title="PickUp Articles" articles={data.latestArticlesFromScrape} />
+          <Group title="Latest Articles" articles={data.latestArticles} />
         </div>
       )}
       {!isPending && (
@@ -62,8 +54,7 @@ export function PublishedArticles() {
             className="inline-flex items-center gap-1 rounded-xl border border-border-button-default bg-background-primary-default px-4 py-2.5 text-body-medium text-text-primary shadow-xs outline-none press hover:border-border-button-hover hover:bg-background-primary-hover focus-visible:ring-2 focus-visible:ring-border-focus-ring"
           >
             すべての記事を見る
-            <RiArrowRightSLine className="size-4" aria-hidden />
-          </Link>
+            </Link>
         </div>
       )}
     </Section>

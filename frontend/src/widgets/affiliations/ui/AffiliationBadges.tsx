@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { RiBuilding2Line, RiExternalLinkLine } from "@remixicon/react";
 import { affiliations, type AffiliationCategory } from "@/entities/affiliation";
 import { ButtonLink } from "@/components/base/buttons/button";
 import { Dialog } from "@/shared/ui/dialog";
@@ -28,6 +27,12 @@ const categoryLabels: Record<AffiliationCategory, string> = {
   technical_mentor: "Technical Mentor",
 };
 
+/** "bg-sky-600" → 同じ色に黒を 40% 混ぜた背景（暗い面の上で白い文字が 4.5:1 以上になる） */
+function deepen(colorClass: string) {
+  const token = colorClass.replace(/^bg-/, "");
+  return `color-mix(in oklab, var(--color-${token}) 60%, black)`;
+}
+
 /** 所属。タグを押すと説明と公式サイトへのリンクを出す */
 export function AffiliationBadges() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
@@ -36,12 +41,7 @@ export function AffiliationBadges() {
   return (
     <Section
       id="affiliation"
-      title={
-        <span className="inline-flex items-center gap-2">
-          <RiBuilding2Line className="size-5 text-foreground-icon-secondary" aria-hidden />
-          Affiliation
-        </span>
-      }
+      title="Affiliation"
     >
       <div className="flex flex-col gap-5">
         {categoryOrder.map((cat) => {
@@ -58,9 +58,11 @@ export function AffiliationBadges() {
                       onClick={() => setOpenIndex(affiliations.indexOf(a))}
                       className={cx(
                         // 所属ごとの色（旧サイトと同じ。データの識別色はトークンの例外）
-                        "lift rounded-full px-3 py-1.5 text-start text-body-2-medium text-text-white shadow-sm ring-1 ring-white/15 outline-none hover:ring-white/40 focus-visible:ring-2 focus-visible:ring-border-focus-ring",
+                        "lift rounded-full px-3 py-1.5 text-start text-body-2-medium text-text-white ring-1 ring-white/10 outline-none hover:ring-white/35 focus-visible:ring-2 focus-visible:ring-border-focus-ring",
                         a.color,
                       )}
+                      // 白い文字が読めるよう、所属の色に黒を混ぜて少し沈める（色の見分けはそのまま）
+                      style={{ backgroundColor: deepen(a.color) }}
                     >
                       {a.label}
                     </button>
@@ -86,7 +88,7 @@ export function AffiliationBadges() {
         }
         footer={
           open?.href && (
-            <ButtonLink href={open.href} target="_blank" rel="noopener noreferrer" variant="secondary" trailingIcon={RiExternalLinkLine}>
+            <ButtonLink href={open.href} target="_blank" rel="noopener noreferrer" variant="secondary">
               公式サイトを見る
             </ButtonLink>
           )

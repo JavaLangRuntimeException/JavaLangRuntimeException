@@ -15,19 +15,42 @@ API は Go のマイクロサービスを Connect（connect-es）で呼ぶ。Boa
 
 ## デザイン
 
-- **ダークテーマ固定**（`index.html` の `<html class="dark">`）。BoardUI のセマンティックトークンが自動でダーク用に切り替わる
-- アクセントは 1 色（`accent-*`）。ダークでは明るい段（`text-accent-300`・`bg-accent-500/15`）を使う。`accent-50`〜`accent-200` の面や `accent-700` 以上の文字は暗い背景で読めないので使わない
-- 色は BoardUI のセマンティックトークン（`text-text-secondary`、`bg-background-primary-default`、`border-border-button-default` など）。生の色クラスは次の**例外**だけ:
-  - データの識別色: 所属（`entities/affiliation` の `color`）、スキル（`entities/skill` の `color`）、勤務場所（`LOCATION_STYLES`。ダークでは `text` / `dot` を使う）、ORCID の種類
-  - ナビの選択色（Links 青・WorkSpot 橙・Contact 緑・Ask Me 紫。旧サイトと同じ色相）
-  - ターミナル表示のプロンプトの緑、モーダルの暗幕、所属タグの白い輪郭
-- 文字は複合ユーティリティ（`text-title-1-semibold`、`text-body-regular`、`text-caption-1-medium` など）
+「AI が作ったテンプレート」に見えないこと、暗い背景でも読みやすいことを最優先にする。
+
+### 飾りを付けない
+
+- **飾りのアイコン・絵文字を付けない**: 見出し・フォームのラベル・案内文・カードの角・矢印（→ ↗）にアイコンを添えない。言葉だけで伝える
+  - 使ってよいのは操作の役に立つものだけ: セレクトの開閉の矢印、閉じる（×）、前へ/次へ・前の週/次の週の矢印、検索欄の虫眼鏡、アイコンだけのボタン（`aria-label` 必須）、読み込み中のスピナー
+  - 成功・失敗も大きなチェックマークではなく文章で伝える
+- **ロゴを飾りに使わない**: SNS などはロゴの丸ボタンではなく文字のリンクにする。リンク集のロゴは同じ比率の面の中に小さく置き、普段は彩度を落とし、ホバー・フォーカスで本来の色にする
+- **何でも箱で囲まない**: 区切りは細い線（`border-separator-border`）と余白。項目と値は `dl`（定義リスト）。箱が要るときだけ `Card`（角丸は `rounded-xl` まで。`rounded-2xl` 以上は使わない）
+- グラデーション・グラスモーフィズム・光る影は使わない（例外は下の「動き」）
+
+### 文字
+
+- 書体は **IBM Plex Sans JP**（本文・見出し）と **IBM Plex Mono**（日付・メタ情報・メールアドレス・ターミナル）。`index.html` で読み込み、`src/app/styles.css` の `--font-inter` / `--font-mono-source` で BoardUI に渡す
+- 本文 15px・行間 1.8・字間 0.02em。補足は 13〜14px。**12px 以下の文字で内容を書かない**（BoardUI の型は `src/app/theme.css` で日本語向けに上書き済み。`text-body-regular` = 15px など）
+- 約物詰め（`palt`）は見出しだけ。本文はベタ組み
+- 補助のユーティリティ: `prose-ja`（説明の段落）、`meta`（日付・件数・ラベル。等幅）
+- 文字の大小・太さを CSS で変えて**表記を変えない**（`uppercase` で英字を大文字にしない。内容は 1 文字も変えない）
+
+### 色とコントラスト
+
+- **ダークテーマ固定**（`index.html` の `<html class="dark">`）。面の色と文字の色は `src/app/theme.css` で調整済み
+  - 面: ページ `#0e0e10` < 区切った面 `#17171a` < 入力欄 `#1f1f23`（入力欄には 1px の輪郭が付く）
+  - 文字: primary 約 16:1、secondary 7:1 以上、tertiary・placeholder 4.5:1 以上
+- **文字はすべて 4.5:1 以上（大きい文字は 3:1）**。`npm run check:contrast`（dev サーバーを立てた状態）で全ページを確かめる。0 件でないと完了にしない
+- アクセントは 1 色（`accent-*`）。暗い背景の上の文字は `text-accent-300`。`accent-600` 以上の文字は暗い背景で読めないので使わない
+- 色は BoardUI のセマンティックトークン。生の色クラスは次の**例外**だけ:
+  - データの識別色: 所属（`entities/affiliation` の `color`。白い文字が読めるよう黒を混ぜて沈める）、スキル（`entities/skill` の `color`。左の帯）、勤務場所（`LOCATION_STYLES`）、ORCID の種類
+  - ナビの選択色（Links 青・WorkSpot 橙・Contact 緑・Ask Me 紫。白い文字が 4.5:1 以上になる濃さ）
+  - ターミナル表示のプロンプトの緑、モーダルの暗幕
 - 共通の部品: `@/shared/ui/layout`（PageContainer / PageHeader / Section / Card / Skeleton）、`@/shared/ui/dialog`、`@/shared/ui/terminal`（TerminalBackground / TerminalLoadingDialog）、BoardUI の `@/components/base/*`
 - クラスの結合は `cx()`（`@/utils/cx`）
 
 ### 動き（`src/app/styles.css`）
 
-- `lift`: カード・タグ。ホバーで 1.025 倍に浮き、アクセント色の光をまとう。`Card` の `interactive` で付く
+- `lift`: カード・タグ。ホバーで 1.025 倍に浮き、アクセント色の淡い影をまとう。`Card` の `interactive` で付く
 - `press`: ボタン・タブ・リンク。押した瞬間に 0.97 倍。`role="tab"` には全体で効く
 - ページ遷移: `SiteLayout` の `AnimatePresence`（前のページは上へ消え、次はぼかしから浮かぶ。約 280ms）
 - すべて `prefers-reduced-motion` で止まる（ページ遷移はフェードだけ、背景のコマンドは出さない）
@@ -57,7 +80,8 @@ src/
 
 - `npm run dev` — 開発サーバー（API は kind の Gateway へプロキシ。`GATEWAY_URL` で変更可）
 - `npm run gen` — proto（../backend/proto）から connect-es の型を生成
-- `npm run typecheck` / `npm run build` / `npm test`
+- `npm run typecheck` / `npm run build` / `npm test` / `npm run lint:fsd`
+- `npm run check:contrast [URL]` — 全ページの文字のコントラスト（既定は http://localhost:5173。staging なら https://next.taramanji.com）
 
 ## 利用可能な skill / subagent
 

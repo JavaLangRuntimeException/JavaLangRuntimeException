@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { RiSendPlaneLine } from "@remixicon/react";
 import { Button } from "@/components/base/buttons/button";
 import { Input } from "@/components/base/input/input";
 import { Textarea } from "@/components/base/textarea/textarea";
@@ -73,7 +72,7 @@ export function AdminEmailForm() {
         <Input label="宛先" type="email" value={to} onChange={setTo} placeholder="example@gmail.com" inputDir="ltr" />
         <Input label="件名" value={subject} onChange={setSubject} placeholder="件名を入力" />
         <Textarea label="本文" value={body} onChange={setBody} placeholder="メール本文を入力" rows={8} resize="vertical" />
-        <Button variant="primary" className="w-full" leadingIcon={RiSendPlaneLine} onClick={sendEmail} disabled={sending || !to || !subject || !body}>
+        <Button variant="primary" className="w-full" onClick={sendEmail} disabled={sending || !to || !subject || !body}>
           {sending ? "送信中..." : "送信"}
         </Button>
       </div>

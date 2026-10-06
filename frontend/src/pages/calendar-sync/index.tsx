@@ -2,7 +2,7 @@ import { Link } from "react-router";
 
 // 見た目用のクラス（文言は旧サイトと 1 文字も変えない。Google の OAuth 審査に登録済み）
 const link = "text-accent-300 underline underline-offset-2 hover:text-accent-200";
-const code = "rounded bg-background-secondary-default px-1 font-mono text-[0.9em] text-text-primary";
+const code = "break-all rounded bg-background-secondary-default px-1 font-mono text-[0.9em] text-text-primary";
 // Google OAuth の同意画面に「アプリのホームページ」として登録しているページ（ログイン不要）。
 // APP_NAME は同意画面のアプリ名と完全に一致させる
 const APP_NAME = "taramanji Calendar Sync";

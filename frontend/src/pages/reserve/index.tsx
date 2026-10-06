@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { RiArrowLeftSLine, RiArrowRightSLine, RiArrowUpLine, RiCalendarScheduleLine, RiDeleteBinLine, RiFlashlightLine, RiLoader4Line } from "@remixicon/react";
+import { RiArrowLeftSLine, RiArrowRightSLine, RiLoader4Line } from "@remixicon/react";
 import { Button } from "@/components/base/buttons/button";
 import { CancelDialog } from "@/features/reserve-cancel";
 import {
@@ -83,8 +83,8 @@ export default function ReservePage() {
             <Button
               variant="secondary"
               size="small"
-              leadingIcon={RiDeleteBinLine}
-              className="text-text-destructive"
+             
+              className="text-text-error-primary"
               onClick={() => {
                 setCancelEventId("");
                 setCancelOpen(true);
@@ -127,7 +127,7 @@ export default function ReservePage() {
               <span className="font-semibold text-text-primary tabular-nums">{f.slotLoading ? "読み込み中..." : f.displayedSlotText}</span>
             </p>
             {!f.slotLoading && f.displayedSlotText && (
-              <Button variant="secondary" size="small" leadingIcon={RiFlashlightLine} onClick={f.applyNextAvailableSlot}>
+              <Button variant="secondary" size="small" onClick={f.applyNextAvailableSlot}>
                 最短での時間指定(30分枠)
               </Button>
             )}
@@ -192,7 +192,6 @@ export default function ReservePage() {
         <FieldCard>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="inline-flex items-center gap-2 text-body-semibold text-text-primary">
-              <RiCalendarScheduleLine className="size-4 text-foreground-icon-secondary" aria-hidden />
               <span className="whitespace-nowrap">カレンダーから日時選択</span>
             </h2>
             <div className="flex items-center justify-between gap-2">
@@ -230,8 +229,8 @@ export default function ReservePage() {
           </p>
           <div className="relative" aria-busy={f.busyLoading}>
             {f.busyLoading && (
-              <div className="absolute inset-0 z-10 grid place-items-center rounded-2xl bg-background-primary-default/70">
-                <RiLoader4Line className="size-7 animate-spin text-accent-600 motion-reduce:animate-none" aria-label="読み込み中" />
+              <div className="absolute inset-0 z-10 grid place-items-center rounded-xl bg-background-primary-default/70">
+                <RiLoader4Line className="size-7 animate-spin text-accent-300 motion-reduce:animate-none" aria-label="読み込み中" />
               </div>
             )}
             <WeekGrid
@@ -245,7 +244,7 @@ export default function ReservePage() {
             />
           </div>
           <div className="flex justify-center">
-            <Button variant="secondary" size="small" leadingIcon={RiArrowUpLine} onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
+            <Button variant="secondary" size="small" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
               ページ上部へ
             </Button>
           </div>

@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import { RiErrorWarningLine } from "@remixicon/react";
 import { Button } from "@/components/base/buttons/button";
 import { SocialButton } from "@/components/base/social-button/social-button";
 import { signIn, signOutQuietly, useClearSession, useSession } from "@/entities/session";
@@ -46,12 +45,11 @@ export function LoginCard() {
 
   return (
     <div className="flex min-h-dvh items-center justify-center bg-background-secondary-default p-4">
-      <div className="w-full max-w-md rounded-3xl border border-border-button-default bg-background-primary-default p-8 shadow-xs">
+      <div className="w-full max-w-md rounded-xl border border-border-button-default bg-background-primary-default p-8 shadow-xs">
         <h1 className="mb-6 text-center text-title-3-semibold text-text-primary">Admin Login</h1>
 
         {error && (
-          <div role="alert" className="mb-4 flex items-start gap-3 rounded-2xl border border-border-error-default px-4 py-3 text-text-error-primary">
-            <RiErrorWarningLine className="mt-0.5 size-5 shrink-0" aria-hidden="true" />
+          <div role="alert" className="mb-4 flex items-start gap-3 rounded-xl border border-border-error-default px-4 py-3 text-text-error-primary">
             <div>
               <p className="text-body-semibold">アクセス拒否</p>
               <p className="mt-1 text-body-2-regular">{error}</p>

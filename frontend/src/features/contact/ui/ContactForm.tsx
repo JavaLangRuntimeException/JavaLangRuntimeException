@@ -2,19 +2,7 @@ import { useId, useState, type FormEvent } from "react";
 import { useAtom, useSetAtom } from "jotai";
 import { TerminalLoadingDialog } from "@/shared/ui/terminal";
 import { DropZone, FileTrigger } from "react-aria-components";
-import {
-  RiAttachment2,
-  RiChat3Line,
-  RiCloseLine,
-  RiErrorWarningLine,
-  RiFileTextLine,
-  RiHashtag,
-  RiListCheck2,
-  RiShieldCheckLine,
-  RiStickyNoteLine,
-  RiTimeLine,
-  RiUpload2Line,
-} from "@remixicon/react";
+import { RiCloseLine } from "@remixicon/react";
 import { Button } from "@/components/base/buttons/button";
 import { Input } from "@/components/base/input/input";
 import { Select, SelectItem } from "@/components/base/select/select";
@@ -23,7 +11,6 @@ import { inquiryApi } from "@/shared/api/clients";
 import { toApiError } from "@/shared/api/errors";
 import { CONTACT_PURPOSES } from "@/shared/config/purposes";
 import { contactSubmittingAtom } from "@/shared/model/nav-lock";
-import { Card } from "@/shared/ui/layout";
 import { cx } from "@/utils/cx";
 import { DEFAULT_SUBMIT_ERROR, submitErrorMessage } from "../model/errors";
 import { addFiles, formatFileSize, type AttachedFile } from "../model/files";
@@ -38,10 +25,9 @@ import {
   contactSubjectAtom,
 } from "../model/state";
 
-function FieldLabel({ id, icon: Icon, children, required }: { id?: string; icon?: typeof RiChat3Line; children: string; required?: boolean }) {
+function FieldLabel({ id, children, required }: { id?: string; children: string; required?: boolean }) {
   return (
     <span id={id} className="flex items-center gap-1.5 text-body-medium text-text-primary">
-      {Icon && <Icon className="size-4 text-foreground-icon-tertiary" aria-hidden />}
       {children}
       {required && <span className="text-text-error-primary">*</span>}
     </span>
@@ -56,15 +42,14 @@ function FieldError({ children }: { children?: string }) {
 /** 入力の保持・利用目的・必須の案内（旧 InfoBadge の内容） */
 function FormNotes() {
   const notes = [
-    { icon: RiTimeLine, text: <>入力内容は10分間保持されます</> },
-    { icon: RiShieldCheckLine, text: <>フォームに入力いただいた内容はご相談や面談の予約確認の目的でのみ使用されます。</> },
-    { icon: RiErrorWarningLine, text: <><span className="text-text-error-primary">*</span> は必須項目です</> },
+    { text: <>入力内容は10分間保持されます</> },
+    { text: <>フォームに入力いただいた内容はご相談や面談の予約確認の目的でのみ使用されます。</> },
+    { text: <><span className="text-text-error-primary">*</span> は必須項目です</> },
   ];
   return (
     <ul className="flex flex-col gap-2">
-      {notes.map(({ icon: Icon, text }, i) => (
-        <li key={i} className="flex items-start gap-2 text-body-2-regular text-text-secondary">
-          <Icon className="mt-0.5 size-4 shrink-0 text-foreground-icon-tertiary" aria-hidden />
+      {notes.map(({ text }, i) => (
+        <li key={i} className="text-[0.875rem] text-text-secondary">
           <span>{text}</span>
         </li>
       ))}
@@ -156,7 +141,7 @@ export function ContactForm({ onSuccess }: { onSuccess: () => void }) {
       <FormNotes />
 
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
-        <Card className="flex flex-col gap-5 sm:p-6">
+        <div className="flex flex-col gap-6 border-t border-separator-border pt-8">
           <Input
             label="メールアドレス"
             isRequired
@@ -203,11 +188,11 @@ export function ContactForm({ onSuccess }: { onSuccess: () => void }) {
             isInvalid={!!errors.subject}
             hint={errors.subject}
           />
-        </Card>
+        </div>
 
-        <Card className="flex flex-col gap-5 sm:p-6">
+        <div className="flex flex-col gap-6 border-t border-separator-border pt-8">
           <div className="flex flex-col gap-1.5">
-            <FieldLabel id={purposeLabelId} icon={RiListCheck2} required>
+            <FieldLabel id={purposeLabelId} required>
               問い合わせ要件
             </FieldLabel>
             <Select
@@ -232,12 +217,7 @@ export function ContactForm({ onSuccess }: { onSuccess: () => void }) {
           {purpose === "Ask Me" && (
             <div className="flex flex-col gap-1.5">
               <Input
-                label={
-                  <span className="inline-flex items-center gap-1.5">
-                    <RiHashtag className="size-4 text-foreground-icon-tertiary" aria-hidden />
-                    EventID
-                  </span>
-                }
+                label="EventID"
                 isRequired
                 validationBehavior="aria"
                 name="eventId"
@@ -256,12 +236,7 @@ export function ContactForm({ onSuccess }: { onSuccess: () => void }) {
           )}
 
           <Textarea
-            label={
-              <span className="inline-flex items-center gap-1.5">
-                <RiChat3Line className="size-4 text-foreground-icon-tertiary" aria-hidden />
-                本文
-              </span>
-            }
+            label="本文"
             isRequired
             validationBehavior="aria"
             name="message"
@@ -272,10 +247,10 @@ export function ContactForm({ onSuccess }: { onSuccess: () => void }) {
             isInvalid={!!errors.message}
             hint={errors.message}
           />
-        </Card>
+        </div>
 
-        <Card className="flex flex-col gap-4 sm:p-6">
-          <FieldLabel icon={RiAttachment2}>ファイル添付 (任意)</FieldLabel>
+        <div className="flex flex-col gap-4 border-t border-separator-border pt-8">
+          <FieldLabel>ファイル添付 (任意)</FieldLabel>
           <DropZone
             onDrop={async (e) => {
               const files = await Promise.all(
@@ -285,12 +260,11 @@ export function ContactForm({ onSuccess }: { onSuccess: () => void }) {
             }}
             className={({ isDropTarget }) =>
               cx(
-                "flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed px-4 py-6 text-center outline-none",
+                "flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed px-4 py-6 text-center outline-none",
                 isDropTarget ? "border-accent-500 bg-accent-500/15" : "border-border-button-default bg-background-secondary-default",
               )
             }
           >
-            <RiUpload2Line className="size-6 text-foreground-icon-tertiary" aria-hidden />
             <FileTrigger allowsMultiple onSelect={(list) => list && onFiles(Array.from(list))}>
               <Button type="button" variant="secondary" size="small">
                 ファイルを選択
@@ -315,7 +289,6 @@ export function ContactForm({ onSuccess }: { onSuccess: () => void }) {
                 {attached.map(({ file, id }) => (
                   <li key={id} className="flex items-center justify-between gap-3 rounded-xl border border-separator-border px-3 py-2">
                     <span className="flex min-w-0 items-center gap-2">
-                      <RiFileTextLine className="size-5 shrink-0 text-foreground-icon-tertiary" aria-hidden />
                       <span className="flex min-w-0 flex-col">
                         <span className="truncate text-body-2-medium text-text-primary">{file.name}</span>
                         <span className="text-caption-1-regular text-text-tertiary">{formatFileSize(file.size)}</span>
@@ -338,10 +311,10 @@ export function ContactForm({ onSuccess }: { onSuccess: () => void }) {
               </ul>
             </div>
           )}
-        </Card>
+        </div>
 
         {submitError && (
-          <div role="alert" className="whitespace-pre-line rounded-2xl border border-border-error-default px-4 py-3 text-body-2-regular text-text-error-primary">
+          <div role="alert" className="whitespace-pre-line rounded-xl border border-border-error-default px-4 py-3 text-body-2-regular text-text-error-primary">
             {submitError}
           </div>
         )}
@@ -363,7 +336,7 @@ export function ContactForm({ onSuccess }: { onSuccess: () => void }) {
         isOpen={isSubmitting}
         title="お問い合わせを送信中"
         message="お問い合わせを送信しています…"
-        icon={RiStickyNoteLine}
+       
         variant="contact"
       />
     </div>

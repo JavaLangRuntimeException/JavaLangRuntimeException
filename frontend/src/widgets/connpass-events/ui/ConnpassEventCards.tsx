@@ -1,4 +1,3 @@
-import { RiArrowRightLine, RiCalendarEventLine, RiGroupLine, RiMapPinLine, RiTimeLine } from "@remixicon/react";
 import { useConnpassEvents } from "@/entities/event";
 import { Section, Skeleton } from "@/shared/ui/layout";
 
@@ -12,12 +11,7 @@ export function ConnpassEventCards() {
   return (
     <Section
       id="events"
-      title={
-        <span className="inline-flex items-center gap-2">
-          <RiCalendarEventLine className="size-5 text-foreground-icon-secondary" aria-hidden />
-          Organized Events
-        </span>
-      }
+      title="Organized Events"
     >
       {isPending && (
         <div className="flex flex-col gap-3" aria-busy="true">
@@ -34,7 +28,7 @@ export function ConnpassEventCards() {
                 href={event.eventUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group flex flex-col overflow-hidden rounded-3xl border border-border-button-default bg-background-primary-default outline-none lift focus-visible:ring-2 focus-visible:ring-border-focus-ring sm:flex-row"
+                className="group flex flex-col overflow-hidden rounded-xl border border-border-button-default bg-background-primary-default outline-none lift focus-visible:ring-2 focus-visible:ring-border-focus-ring sm:flex-row"
               >
                 {event.imageUrl && (
                   <img src={event.imageUrl} alt="" loading="lazy" className="aspect-[2/1] w-full object-cover sm:aspect-auto sm:w-56" />
@@ -43,24 +37,23 @@ export function ConnpassEventCards() {
                   <h3 className="line-clamp-2 text-headline-semibold text-text-primary">{event.title}</h3>
                   <dl className="flex flex-col gap-1.5 text-body-2-regular text-text-secondary">
                     <div className="flex items-center gap-2">
-                      <dt><RiMapPinLine className="size-4 text-foreground-icon-tertiary" aria-label="場所" /></dt>
+                      <dt className="meta shrink-0">場所</dt>
                       <dd className="line-clamp-1">{event.place}</dd>
                     </div>
                     <div className="flex items-center gap-2">
-                      <dt><RiTimeLine className="size-4 text-foreground-icon-tertiary" aria-label="日時" /></dt>
+                      <dt className="meta shrink-0">日時</dt>
                       <dd>{formatDate(event.startedAt)}</dd>
                     </div>
                     <div className="flex items-center gap-2">
-                      <dt><RiGroupLine className="size-4 text-foreground-icon-tertiary" aria-label="参加者" /></dt>
+                      <dt className="sr-only">参加者</dt>
                       <dd>
                         参加者: {event.accepted}/{event.limit || "∞"}
                         {event.waiting > 0 && ` (補欠: ${event.waiting})`}
                       </dd>
                     </div>
                   </dl>
-                  <span className="mt-auto inline-flex items-center gap-1 text-body-2-semibold text-accent-600">
+                  <span className="mt-auto inline-flex items-center gap-1 text-body-2-semibold text-accent-300">
                     詳細を見る
-                    <RiArrowRightLine className="size-4 transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none" aria-hidden />
                   </span>
                 </div>
               </a>

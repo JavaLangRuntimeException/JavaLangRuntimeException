@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { RiCheckboxCircleLine, RiCheckLine, RiErrorWarningLine, RiFileCopyLine, RiExternalLinkLine } from "@remixicon/react";
 import { Button, ButtonLink } from "@/components/base/buttons/button";
 import { Dialog } from "@/shared/ui/dialog";
 import type { CreatedInfo } from "../api/create-reservation";
@@ -10,7 +9,7 @@ import { formatDate, formatTimeRange, methodLabel, purposeLabel, SummaryItem, Ta
 function CopyField({ label, value, note }: { label: string; value: string; note: string }) {
   const [copied, setCopied] = useState(false);
   return (
-    <div className="flex flex-col gap-2 rounded-2xl border border-border-button-default bg-background-secondary-default p-3.5">
+    <div className="flex flex-col gap-2 rounded-xl border border-border-button-default bg-background-secondary-default p-3.5">
       <span className="text-caption-1-semibold text-text-secondary">{label}</span>
       <code className="break-all rounded-lg border border-border-button-default bg-background-primary-default px-2.5 py-1.5 font-mono text-caption-1-regular text-text-primary">
         {value}
@@ -18,7 +17,7 @@ function CopyField({ label, value, note }: { label: string; value: string; note:
       <Button
         variant="secondary"
         size="small"
-        leadingIcon={copied ? RiCheckLine : RiFileCopyLine}
+       
         onClick={async () => {
           try {
             await navigator.clipboard.writeText(value);
@@ -79,12 +78,7 @@ export function CompletionDialog({
       isOpen={!!createdInfo}
       onOpenChange={(o) => !o && onClose()}
       size="small"
-      title={
-        <span className="inline-flex items-center gap-2">
-          <RiCheckboxCircleLine className="size-5 text-state-success-text" aria-hidden />
-          予定を作成しました！
-        </span>
-      }
+      title="予定を作成しました！"
       footer={
         <>
           {createdInfo?.ok && createdInfo.eventId && onOpenCancelModal && (
@@ -108,7 +102,7 @@ export function CompletionDialog({
             お打ち合わせ当日はどうぞよろしくお願いします。
           </Notice>
           {createdInfo.htmlLink && (
-            <ButtonLink variant="primary" href={createdInfo.htmlLink} target="_blank" rel="noreferrer" trailingIcon={RiExternalLinkLine} className="w-full sm:w-fit">
+            <ButtonLink variant="primary" href={createdInfo.htmlLink} target="_blank" rel="noreferrer" className="w-full sm:w-fit">
               Googleカレンダーを開く
             </ButtonLink>
           )}
@@ -187,7 +181,6 @@ export function CompletionDialog({
       ) : (
         <div className="flex flex-col gap-2">
           <p className="inline-flex items-center gap-1.5 text-body-medium text-text-error-primary">
-            <RiErrorWarningLine className="size-4" aria-hidden />
             作成に失敗しました。
           </p>
           {createdInfo?.message && <p className="text-body-2-regular text-text-secondary">{createdInfo.message}</p>}

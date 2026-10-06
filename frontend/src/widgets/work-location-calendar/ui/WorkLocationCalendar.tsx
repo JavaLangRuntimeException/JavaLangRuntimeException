@@ -51,7 +51,7 @@ export function WorkLocationCalendar({ locations }: { locations: LocationMap }) 
                 role="columnheader"
                 className={cx(
                   "py-1 text-center text-caption-1-medium",
-                  name === "日" ? "text-text-error-primary" : name === "土" ? "text-accent-600" : "text-text-tertiary",
+                  name === "日" ? "text-text-error-primary" : name === "土" ? "text-accent-300" : "text-text-tertiary",
                 )}
               >
                 {name}
@@ -78,9 +78,9 @@ export function WorkLocationCalendar({ locations }: { locations: LocationMap }) 
                       className={cx(
                         "flex h-12 w-full flex-col items-center justify-center rounded-xl text-body-2-regular outline-none transition-colors",
                         "focus-visible:ring-2 focus-visible:ring-border-focus-ring",
-                        !isCurrentMonth && "opacity-30",
+                        !isCurrentMonth && "opacity-50",
                         isPast ? "cursor-not-allowed text-text-tertiary" : "cursor-pointer hover:bg-background-secondary-hover",
-                        isPast && isCurrentMonth && "opacity-40",
+                        isPast && isCurrentMonth && "opacity-60",
                         isToday && "ring-2 ring-accent-500",
                         selected && "bg-accent-500/15",
                         locationName ? "text-body-2-semibold text-text-primary" : "text-text-tertiary",
@@ -97,7 +97,7 @@ export function WorkLocationCalendar({ locations }: { locations: LocationMap }) 
         </div>
 
         {/* 選んだ日の場所 */}
-        <div className="flex min-h-16 items-center justify-center rounded-2xl bg-background-secondary-default px-4 py-3" aria-live="polite">
+        <div className="flex min-h-16 items-center justify-center rounded-xl bg-background-secondary-default px-4 py-3" aria-live="polite">
           {displayLocation ? (
             <div className="flex flex-col items-center gap-1">
               <span className="text-caption-1-regular text-text-tertiary">{formatDateLabel(displayDate)}</span>

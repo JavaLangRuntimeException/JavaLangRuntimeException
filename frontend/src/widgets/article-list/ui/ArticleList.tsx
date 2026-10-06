@@ -39,7 +39,7 @@ export function ArticleList() {
           <Status pulse>記事取得中...</Status>
           <div className="grid gap-5 lg:grid-cols-2" aria-hidden="true">
             {Array.from({ length: 4 }, (_, i) => (
-              <Skeleton key={i} className="h-80 rounded-3xl" />
+              <Skeleton key={i} className="h-80 rounded-xl" />
             ))}
           </div>
         </>

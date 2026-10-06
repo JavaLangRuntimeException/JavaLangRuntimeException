@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useAtomValue } from "jotai";
-import { RiCheckboxCircleLine, RiFileList3Line } from "@remixicon/react";
 import { ConnectError } from "@connectrpc/connect";
 import { heightAtom, isComplete, nameAtom, QuestionnaireForm, responsesAtom, trialPatternAtom, vrUsageAtom } from "@/features/questionnaire";
 import { inquiryApi } from "@/shared/api/clients";
@@ -47,7 +46,6 @@ export default function QuestionnairePage() {
     <PageContainer width="narrow" className="pt-12">
       <header className="mb-10 flex flex-col items-center gap-2 text-center">
         <h1 className="flex items-center gap-2 text-title-2-semibold text-text-primary">
-          <RiFileList3Line className="size-6 text-accent-600" aria-hidden />
           本実験アンケート
         </h1>
         <p className="text-body-regular text-text-secondary">実験のご協力ありがとうございました</p>
@@ -55,14 +53,13 @@ export default function QuestionnairePage() {
 
       {isSubmitted ? (
         <Card className="flex flex-col items-center gap-3 py-12 text-center">
-          <RiCheckboxCircleLine className="size-14 text-accent-600" aria-hidden />
           <h2 className="text-title-3-semibold text-text-primary">送信完了</h2>
           <p className="text-body-regular text-text-secondary">アンケートへのご回答ありがとうございました。</p>
         </Card>
       ) : (
         <>
           {error && (
-            <div role="alert" className="mb-5 rounded-2xl border border-border-error-default px-4 py-3 text-body-2-regular text-text-error-primary">
+            <div role="alert" className="mb-5 rounded-xl border border-border-error-default px-4 py-3 text-body-2-regular text-text-error-primary">
               {error}
             </div>
           )}

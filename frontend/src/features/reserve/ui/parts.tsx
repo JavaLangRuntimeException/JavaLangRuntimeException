@@ -1,23 +1,18 @@
 import type { ReactNode } from "react";
-import { RiCheckboxCircleLine, RiErrorWarningLine, RiInformationLine, type RemixiconComponentType } from "@remixicon/react";
 import { Select, SelectItem } from "@/components/base/select/select";
-import { Card } from "@/shared/ui/layout";
 import { cx } from "@/utils/cx";
 
-type Icon = RemixiconComponentType;
-
 /** 入力欄のまとまり（見出し + 中身） */
-export function FieldCard({ title, icon: IconCmp, children, className }: { title?: ReactNode; icon?: Icon; children: ReactNode; className?: string }) {
+export function FieldCard({ title, children, className }: { title?: ReactNode; children: ReactNode; className?: string }) {
   return (
-    <Card className={cx("flex flex-col gap-3", className)}>
+    <section className={cx("flex flex-col gap-3 border-t border-separator-border pt-6", className)}>
       {title && (
-        <h2 className="inline-flex items-center gap-2 text-body-semibold text-text-primary">
-          {IconCmp && <IconCmp className="size-4 text-foreground-icon-secondary" aria-hidden />}
+        <h2 className="text-[1rem] font-semibold text-text-primary">
           {title}
         </h2>
       )}
       {children}
-    </Card>
+    </section>
   );
 }
 
@@ -32,20 +27,18 @@ export function FieldNote({ children, className }: { children: ReactNode; classN
 
 /** 案内の 1 行（information / warning / success / error） */
 export function Notice({ tone = "information", children, className }: { tone?: "information" | "warning" | "success" | "error"; children: ReactNode; className?: string }) {
-  const IconCmp = tone === "success" ? RiCheckboxCircleLine : tone === "information" ? RiInformationLine : RiErrorWarningLine;
   return (
     <div
       role={tone === "error" ? "alert" : undefined}
       className={cx(
-        "flex items-start gap-2.5 rounded-2xl px-4 py-3 text-body-2-regular",
-        tone === "information" && "bg-notification-information-background text-notification-information-foreground",
-        tone === "success" && "bg-notification-success-background text-notification-success-foreground",
-        tone === "error" && "bg-notification-error-background text-notification-error-foreground",
-        tone === "warning" && "bg-status-yellow-background text-text-primary",
+        "rounded-md border-s-2 bg-background-secondary-default px-4 py-3 text-[0.875rem] leading-[1.75]",
+        tone === "information" && "border-accent-400 text-text-secondary",
+        tone === "success" && "border-state-success-text text-text-primary",
+        tone === "error" && "border-text-error-primary text-text-error-primary",
+        tone === "warning" && "border-amber-400 text-text-primary",
         className,
       )}
     >
-      <IconCmp className="mt-0.5 size-4 shrink-0" aria-hidden />
       <div className="min-w-0 flex-1">{children}</div>
     </div>
   );

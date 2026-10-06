@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { RiLightbulbLine } from "@remixicon/react";
 import { skills } from "@/entities/skill";
 import { Dialog } from "@/shared/ui/dialog";
 import { Section } from "@/shared/ui/layout";
@@ -13,12 +12,7 @@ export function SkillBadges() {
   return (
     <Section
       id="skills"
-      title={
-        <span className="inline-flex items-center gap-2">
-          <RiLightbulbLine className="size-5 text-foreground-icon-secondary" aria-hidden />
-          Skill Set
-        </span>
-      }
+      title="Skill Set"
     >
       <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {skills.map((s, idx) => (
@@ -26,16 +20,13 @@ export function SkillBadges() {
             <button
               type="button"
               onClick={() => setOpenIndex(idx)}
-              className="lift group relative flex h-full w-full flex-col gap-1 overflow-hidden rounded-2xl border border-border-button-default bg-background-primary-default px-4 py-3 ps-5 text-start outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring"
+              className="lift group relative flex h-full w-full flex-col gap-1 overflow-hidden rounded-lg border border-separator-border bg-background-primary-default px-4 py-3.5 ps-5 hover:border-border-button-hover text-start outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring"
             >
               {/* スキルごとの色（旧サイトのタグの色）。左の帯と、ホバーでにじむ色 */}
               <span className={cx("absolute inset-y-0 start-0 w-1", s.color)} aria-hidden />
               <span className={cx("pointer-events-none absolute -end-10 -top-10 size-28 rounded-full opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-40", s.color)} aria-hidden />
-              <span className="relative inline-flex items-center gap-2 text-body-semibold text-text-primary">
-                <span className={cx("size-2 shrink-0 rounded-full", s.color)} aria-hidden />
-                {s.title}
-              </span>
-              <span className="relative line-clamp-2 text-caption-1-regular text-text-tertiary">{s.short}</span>
+              <span className="relative text-body-semibold text-text-primary">{s.title}</span>
+              <span className="relative line-clamp-2 text-caption-1-regular text-text-secondary">{s.short}</span>
             </button>
           </li>
         ))}

@@ -1,7 +1,8 @@
 import type { ElementType, ReactNode } from "react";
 import { cx } from "@/utils/cx";
 
-// サイト全体の見た目の基本。白〜ニュートラルの面 + アクセント 1 色、余白と文字の階層で見せる（装飾・グラデーションは使わない）
+// サイト全体の見た目の基本。暗い面 + アクセント 1 色。区切りは細い線と余白、見出しは文字の大きさで見せる
+// （カードで何でも囲まない・飾りのアイコンを付けない）
 
 export function PageContainer({ children, className, width = "default" }: { children: ReactNode; className?: string; width?: "default" | "narrow" | "wide" }) {
   return (
@@ -21,11 +22,11 @@ export function PageContainer({ children, className, width = "default" }: { chil
 
 export function PageHeader({ eyebrow, title, description, actions }: { eyebrow?: ReactNode; title: ReactNode; description?: ReactNode; actions?: ReactNode }) {
   return (
-    <header className="mb-10 flex flex-col gap-4 border-b border-separator-border pb-8 sm:flex-row sm:items-end sm:justify-between">
-      <div className="flex flex-col gap-2">
-        {eyebrow && <p className="text-caption-1-semibold uppercase tracking-wider text-accent-600">{eyebrow}</p>}
-        <h1 className="text-title-1-semibold text-text-primary">{title}</h1>
-        {description && <div className="max-w-2xl text-body-regular text-text-secondary">{description}</div>}
+    <header className="mb-12 flex flex-col gap-5 pb-2 sm:flex-row sm:items-end sm:justify-between">
+      <div className="flex flex-col gap-3">
+        {eyebrow && <p className="meta tracking-[0.08em] text-accent-300">{eyebrow}</p>}
+        <h1 className="text-[2rem] font-semibold leading-[1.25] tracking-[-0.01em] text-text-primary sm:text-[2.5rem]">{title}</h1>
+        {description && <div className="prose-ja max-w-2xl">{description}</div>}
       </div>
       {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
     </header>
@@ -34,12 +35,12 @@ export function PageHeader({ eyebrow, title, description, actions }: { eyebrow?:
 
 export function Section({ title, description, actions, children, className, id }: { title?: ReactNode; description?: ReactNode; actions?: ReactNode; children: ReactNode; className?: string; id?: string }) {
   return (
-    <section id={id} className={cx("flex flex-col gap-5 py-8", className)}>
+    <section id={id} className={cx("flex flex-col gap-6 border-t border-separator-border py-12 first:border-t-0", className)}>
       {(title || actions) && (
         <div className="flex items-end justify-between gap-4">
-          <div className="flex flex-col gap-1">
-            {title && <h2 className="text-title-3-semibold text-text-primary">{title}</h2>}
-            {description && <p className="text-body-2-regular text-text-secondary">{description}</p>}
+          <div className="flex flex-col gap-1.5">
+            {title && <h2 className="text-[1.375rem] font-semibold leading-snug tracking-[-0.005em] text-text-primary">{title}</h2>}
+            {description && <p className="prose-ja">{description}</p>}
           </div>
           {actions}
         </div>
@@ -54,8 +55,8 @@ export function Card<T extends ElementType = "div">({ as, children, className, i
   return (
     <Comp
       className={cx(
-        "rounded-3xl border border-border-button-default bg-background-primary-default p-5",
-        interactive && "lift hover:bg-background-primary-hover outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring",
+        "rounded-xl border border-separator-border bg-background-primary-default p-5",
+        interactive && "lift hover:border-border-button-hover hover:bg-background-primary-hover outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring",
         className,
       )}
       {...rest}

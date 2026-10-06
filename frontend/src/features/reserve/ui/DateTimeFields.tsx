@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import { RiCalendarScheduleLine, RiTimeLine } from "@remixicon/react";
 import { FieldCard, FieldError, FieldNote, Notice, NumberSelect } from "./parts";
 
 const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
@@ -75,7 +74,7 @@ export function DateTimeFields(p: DateTimeFieldsProps) {
       <Notice>予約可能時間: 1ヶ月後までの月曜〜日曜 9:00 - 23:00(JST)</Notice>
       {holidayNoticeVisible() && <Notice tone="error">12/29-翌年1/5の期間は予約できません</Notice>}
       <div className="grid gap-4 sm:grid-cols-2">
-        <FieldCard title="日付を直接選択" icon={RiCalendarScheduleLine}>
+        <FieldCard title="日付を直接選択">
           <div className="flex items-start gap-2">
             <NumberSelect value={year} onChange={p.setYear} options={p.yearOptions} underLabel="年" disabled={p.disabled} pad={false} />
             <NumberSelect value={month} onChange={p.setMonth} options={p.monthOptions} underLabel="月" disabled={p.disabled} />
@@ -91,7 +90,7 @@ export function DateTimeFields(p: DateTimeFieldsProps) {
           {hasDate && isBeyondOneMonth && <FieldError>1ヶ月以降先は選択できません</FieldError>}
           {hasDate && isHoliday && <FieldError>12/29-1/5の期間は予約できません</FieldError>}
         </FieldCard>
-        <FieldCard title="時間を直接選択" icon={RiTimeLine}>
+        <FieldCard title="時間を直接選択">
           <div className="flex items-start gap-1.5">
             <NumberSelect value={startHour} onChange={setStartHour} options={p.hours} underLabel="時" disabled={p.disabled} />
             <span className="pt-1.5 text-headline-regular text-text-tertiary" aria-hidden>

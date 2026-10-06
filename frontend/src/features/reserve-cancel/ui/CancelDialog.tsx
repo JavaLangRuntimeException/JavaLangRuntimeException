@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ConnectError } from "@connectrpc/connect";
-import { RiCheckboxCircleLine, RiDeleteBinLine, RiErrorWarningLine, RiInformationLine, RiLoader4Line } from "@remixicon/react";
+import { RiLoader4Line } from "@remixicon/react";
 import { Button } from "@/components/base/buttons/button";
 import { Input } from "@/components/base/input/input";
 import { reservationApi } from "@/shared/api/clients";
@@ -89,14 +89,7 @@ export function CancelDialog({
       isDismissable={!deleting}
       size="small"
       title={
-        <span className="inline-flex items-center gap-2">
-          {success ? (
-            <RiCheckboxCircleLine className="size-5 text-state-success-text" aria-hidden />
-          ) : (
-            <RiDeleteBinLine className="size-5 text-foreground-icon-error" aria-hidden />
-          )}
-          {success ? "予定を削除しました。" : "予定の取り消し"}
-        </span>
+        success ? "予定を削除しました。" : "予定の取り消し"
       }
       footer={
         deleting ? undefined : success ? (
@@ -117,21 +110,19 @@ export function CancelDialog({
     >
       {deleting ? (
         <div className="flex flex-col items-center gap-3 py-8 text-body-medium text-text-secondary" role="status">
-          <RiLoader4Line className="size-7 animate-spin text-accent-600 motion-reduce:animate-none" aria-hidden />
+          <RiLoader4Line className="size-7 animate-spin text-accent-300 motion-reduce:animate-none" aria-hidden />
           削除中...
         </div>
       ) : success ? (
         <div className="flex flex-col gap-3">
-          <div className="flex items-start gap-2.5 rounded-2xl bg-notification-success-background px-4 py-3 text-body-2-regular text-notification-success-foreground">
-            <RiInformationLine className="mt-0.5 size-4 shrink-0" aria-hidden />
+          <div className="flex items-start gap-2.5 rounded-xl bg-notification-success-background px-4 py-3 text-body-2-regular text-notification-success-foreground">
             Googleカレンダーから予定が削除され、参加者にキャンセル通知が送信されました。
           </div>
           <p className="text-center text-caption-1-regular text-text-tertiary">5秒後にこの画面は閉じます</p>
         </div>
       ) : (
         <div className="flex flex-col gap-3">
-          <div className="flex items-start gap-2.5 rounded-2xl bg-notification-information-background px-4 py-3 text-notification-information-foreground">
-            <RiInformationLine className="mt-0.5 size-4 shrink-0" aria-hidden />
+          <div className="flex items-start gap-2.5 rounded-xl bg-notification-information-background px-4 py-3 text-notification-information-foreground">
             <div className="text-body-2-regular">
               <p>EventIDは以下の場所で確認できます：</p>
               <ul className="mt-1.5 list-disc space-y-1 ps-5 text-caption-1-regular">
@@ -141,14 +132,12 @@ export function CancelDialog({
             </div>
           </div>
           {showAutoFillBanner && (
-            <div role="status" className="flex items-center gap-2 rounded-2xl bg-notification-success-background px-4 py-2.5 text-body-2-regular text-notification-success-foreground">
-              <RiCheckboxCircleLine className="size-4 shrink-0" aria-hidden />
+            <div role="status" className="flex items-center gap-2 rounded-xl bg-notification-success-background px-4 py-2.5 text-body-2-regular text-notification-success-foreground">
               EventIDを自動入力しました
             </div>
           )}
           {error && (
-            <div role="alert" className="flex items-start gap-2 rounded-2xl bg-notification-error-background px-4 py-2.5 text-body-2-regular text-notification-error-foreground">
-              <RiErrorWarningLine className="mt-0.5 size-4 shrink-0" aria-hidden />
+            <div role="alert" className="flex items-start gap-2 rounded-xl bg-notification-error-background px-4 py-2.5 text-body-2-regular text-notification-error-foreground">
               <span className="break-all">{error}</span>
             </div>
           )}

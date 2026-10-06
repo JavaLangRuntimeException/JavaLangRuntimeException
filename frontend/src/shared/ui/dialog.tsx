@@ -32,7 +32,7 @@ export function Dialog({
     >
       <Modal
         className={cx(
-          "max-h-[90dvh] w-full overflow-hidden rounded-t-3xl border border-border-button-default bg-background-primary-default shadow-xl sm:rounded-3xl",
+          "max-h-[90dvh] w-full overflow-hidden rounded-t-xl border border-border-button-default bg-background-primary-default shadow-xl sm:rounded-xl",
           size === "small" && "sm:max-w-md",
           size === "medium" && "sm:max-w-xl",
           size === "large" && "sm:max-w-3xl",

@@ -1,7 +1,6 @@
 import { useCallback, useState } from "react";
-import { RiAttachment2, RiMailLine, RiTimeLine } from "@remixicon/react";
 import { ContactForm, ContactSubmittedDialog } from "@/features/contact";
-import { Card, PageContainer, PageHeader } from "@/shared/ui/layout";
+import { PageContainer, PageHeader } from "@/shared/ui/layout";
 
 const alternateContacts = [
   { label: "NxTEND", email: "shuta.tanahashi@nxtend.or.jp" },
@@ -20,49 +19,46 @@ export default function ContactPage() {
     <PageContainer width="narrow">
       <PageHeader title="お問い合わせ" description="ご質問やご相談がございましたら、お気軽にお問い合わせください。" />
 
-      <div className="mb-10 grid gap-4 sm:grid-cols-2">
-        <Card className="flex items-start gap-3">
-          <RiTimeLine className="mt-0.5 size-5 shrink-0 text-foreground-icon-tertiary" aria-hidden />
-          <p className="text-body-2-regular text-text-secondary">
-            お問い合わせ対応時間: <span className="text-body-2-semibold text-text-primary">9:00-21:00</span>
-          </p>
-        </Card>
-        <Card className="flex items-start gap-3">
-          <RiMailLine className="mt-0.5 size-5 shrink-0 text-foreground-icon-tertiary" aria-hidden />
-          <p className="text-body-2-semibold text-text-primary">お問い合わせいただいてから1週間以内にお返事いたします</p>
-        </Card>
+      {/* 案内は箱で囲まず、項目と値の一覧（dl）で見せる */}
+      <dl className="mb-12 grid gap-x-8 border-y border-separator-border sm:grid-cols-[11rem_1fr]">
+        <dt className="pt-5 text-body-2-medium text-text-tertiary sm:pb-5">お問い合わせ対応時間</dt>
+        <dd className="pb-5 pt-1 text-body-regular text-text-primary sm:pt-5">
+          <span className="sr-only">お問い合わせ対応時間: </span>
+          <span className="font-mono">9:00-21:00</span>
+        </dd>
+        <dt className="sr-only">お返事</dt>
+        <dd className="border-t border-separator-border py-5 text-body-regular text-text-primary sm:col-span-2">お問い合わせいただいてから1週間以内にお返事いたします</dd>
+      </dl>
 
-        <Card className="flex flex-col gap-3 sm:col-span-2">
-          <p className="text-body-2-semibold text-text-primary">代替連絡先</p>
-          <ul className="divide-y divide-separator-border">
-            {alternateContacts.map((c) => (
-              <li key={c.label} className="flex flex-col gap-0.5 py-2.5 sm:flex-row sm:items-center sm:justify-between">
-                <span className="text-body-2-medium text-text-primary">{c.label}</span>
+      <section className="mb-12" aria-labelledby="alt-contacts">
+        <h2 id="alt-contacts" className="mb-3 text-headline-semibold text-text-primary">代替連絡先</h2>
+        <dl className="grid gap-x-8 sm:grid-cols-[11rem_1fr]">
+          {alternateContacts.map((c) => (
+            <div key={c.label} className="contents">
+              <dt className="border-t border-separator-border pt-3 text-body-2-medium text-text-secondary sm:pb-3">{c.label}</dt>
+              <dd className="pb-3 pt-0.5 sm:border-t sm:border-separator-border sm:pt-3">
                 <a
                   href={`mailto:${c.email}`}
                   dir="ltr"
-                  className="break-all text-body-2-regular text-accent-300 underline-offset-4 hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring"
+                  className="break-all font-mono text-[0.875rem] text-accent-300 underline decoration-transparent underline-offset-4 transition-colors hover:decoration-current focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring"
                 >
                   {c.email}
                 </a>
-              </li>
-            ))}
-          </ul>
-        </Card>
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </section>
 
-        <Card className="flex flex-col gap-2 sm:col-span-2">
-          <p className="flex items-center gap-2 text-body-2-semibold text-text-primary">
-            <RiAttachment2 className="size-4 text-foreground-icon-tertiary" aria-hidden />
-            ファイル添付について
-          </p>
-          <ul className="flex list-disc flex-col gap-1 ps-9 text-caption-1-regular text-text-secondary marker:text-text-tertiary">
-            <li>最大5個までファイルを添付できます</li>
-            <li>1ファイルあたり3MB以下にしてください</li>
-            <li>ファイル形式は問いません</li>
-            <li>ファイルサイズが大きい場合は、GoogleDriveやOneDriveなどのクラウドストレージにアップロードして共有リンクを本文に記載してください</li>
-          </ul>
-        </Card>
-      </div>
+      <section className="mb-12" aria-labelledby="attach-notes">
+        <h2 id="attach-notes" className="mb-3 text-headline-semibold text-text-primary">ファイル添付について</h2>
+        <ul className="flex list-disc flex-col gap-1.5 ps-5 text-body-2-regular text-text-secondary marker:text-text-tertiary">
+          <li>最大5個までファイルを添付できます</li>
+          <li>1ファイルあたり3MB以下にしてください</li>
+          <li>ファイル形式は問いません</li>
+          <li>ファイルサイズが大きい場合は、GoogleDriveやOneDriveなどのクラウドストレージにアップロードして共有リンクを本文に記載してください</li>
+        </ul>
+      </section>
 
       {!isSubmitted && <ContactForm onSuccess={() => setIsSubmitted(true)} />}
       <ContactSubmittedDialog isOpen={isSubmitted} onClose={close} />

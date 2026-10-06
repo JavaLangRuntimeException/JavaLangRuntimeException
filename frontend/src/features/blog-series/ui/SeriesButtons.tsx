@@ -1,4 +1,3 @@
-import { RiCloseLine } from "@remixicon/react";
 import { Button } from "@/components/base/buttons/button";
 import { cx } from "@/utils/cx";
 
@@ -37,7 +36,7 @@ export function SeriesButtons({
         );
       })}
       {selectedSeries && (
-        <Button variant="ghost" size="small" leadingIcon={RiCloseLine} onClick={onClear}>
+        <Button variant="ghost" size="small" onClick={onClear}>
           Clear
         </Button>
       )}

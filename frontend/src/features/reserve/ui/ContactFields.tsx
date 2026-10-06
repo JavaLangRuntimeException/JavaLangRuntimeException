@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { RiChat3Line, RiHashtag, RiLink, RiLoader4Line, RiMapPinLine, RiSlackLine, type RemixiconComponentType } from "@remixicon/react";
+import { RiLoader4Line } from "@remixicon/react";
 import { Input } from "@/components/base/input/input";
 import { Select, SelectItem } from "@/components/base/select/select";
 import { Textarea } from "@/components/base/textarea/textarea";
@@ -14,10 +14,9 @@ const METHODS: { value: Exclude<ContactMethod, "">; label: string }[] = [
   { value: "offline", label: "オフライン（対面）" },
 ];
 
-function SubLabel({ icon: IconCmp, children }: { icon: RemixiconComponentType; children: string }) {
+function SubLabel({ children }: { children: string }) {
   return (
-    <span className="inline-flex items-center gap-1 text-caption-1-medium text-text-secondary">
-      <IconCmp className="size-3.5" aria-hidden />
+    <span className="text-[0.8125rem] font-medium text-text-secondary">
       {children}
     </span>
   );
@@ -63,7 +62,7 @@ export function ContactFields(p: ContactFieldsProps) {
   })();
 
   return (
-    <FieldCard title="ミーティング媒体" icon={RiChat3Line}>
+    <FieldCard title="ミーティング媒体">
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="flex flex-col gap-1.5">
           <Select
@@ -91,12 +90,12 @@ export function ContactFields(p: ContactFieldsProps) {
         {p.contactMethod === "discord" && (
           <>
             <div className="flex flex-col gap-1.5">
-              <SubLabel icon={RiHashtag}>Discordサーバー名</SubLabel>
+              <SubLabel>Discordサーバー名</SubLabel>
               <Input aria-label="Discordサーバー名" placeholder="Discordサーバー名" value={p.discordServer} onChange={p.setDiscordServer} onFocus={p.onDiscordServerFocus} />
               <Required value={p.discordServer} />
             </div>
             <div className="flex flex-col gap-1.5">
-              <SubLabel icon={RiHashtag}>Discord表示名</SubLabel>
+              <SubLabel>Discord表示名</SubLabel>
               <Input aria-label="Discord表示名" placeholder="Discord表示名" value={p.discordName} onChange={p.setDiscordName} />
               <Required value={p.discordName} />
             </div>
@@ -106,12 +105,12 @@ export function ContactFields(p: ContactFieldsProps) {
         {p.contactMethod === "slack" && (
           <>
             <div className="flex flex-col gap-1.5">
-              <SubLabel icon={RiSlackLine}>Slackワークスペース名</SubLabel>
+              <SubLabel>Slackワークスペース名</SubLabel>
               <Input aria-label="Slackワークスペース名" placeholder="面談するSlackワークスペース名" value={p.slackWorkspace} onChange={p.setSlackWorkspace} />
               <Required value={p.slackWorkspace} />
             </div>
             <div className="flex flex-col gap-1.5">
-              <SubLabel icon={RiSlackLine}>Slack表示名</SubLabel>
+              <SubLabel>Slack表示名</SubLabel>
               <Input aria-label="Slack表示名" placeholder="Slack表示名" value={p.slackName} onChange={p.setSlackName} />
               <Required value={p.slackName} />
             </div>
@@ -120,7 +119,7 @@ export function ContactFields(p: ContactFieldsProps) {
 
         {p.contactMethod === "other" && (
           <div className="flex flex-col gap-1.5">
-            <SubLabel icon={RiLink}>備考・リンク</SubLabel>
+            <SubLabel>備考・リンク</SubLabel>
             <Input aria-label="備考・リンク" placeholder="備考（任意：Zoomリンク等）" value={p.otherNote} onChange={p.setOtherNote} />
           </div>
         )}
@@ -128,7 +127,7 @@ export function ContactFields(p: ContactFieldsProps) {
         {p.contactMethod === "offline" && (
           <>
             <div className="flex flex-col gap-1.5 sm:col-span-2">
-              <SubLabel icon={RiMapPinLine}>Googleマップの共有リンク</SubLabel>
+              <SubLabel>Googleマップの共有リンク</SubLabel>
               <Textarea
                 aria-label="Googleマップの共有リンク"
                 placeholder="Googleマップの『共有』で取得できるリンクを貼り付けてください"
@@ -148,7 +147,7 @@ export function ContactFields(p: ContactFieldsProps) {
               <FieldError>{linkError}</FieldError>
             </div>
             <div className="flex flex-col gap-1.5">
-              <SubLabel icon={RiMapPinLine}>場所の名称(自動入力)</SubLabel>
+              <SubLabel>場所の名称(自動入力)</SubLabel>
               {/* 自動入力のみ（ずっと入力不可） */}
               <Input
                 aria-label="場所の名称(自動入力)"
@@ -158,7 +157,7 @@ export function ContactFields(p: ContactFieldsProps) {
               />
             </div>
             <div className="flex flex-col gap-1.5 sm:col-span-2">
-              <SubLabel icon={RiMapPinLine}>場所の詳細（任意）</SubLabel>
+              <SubLabel>場所の詳細（任意）</SubLabel>
               <Textarea
                 aria-label="場所の詳細（任意）"
                 placeholder="集合場所の目印・フロア・席番号などがあればご記入ください（任意）"

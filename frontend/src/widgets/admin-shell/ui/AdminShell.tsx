@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { Button } from "@/components/base/buttons/button";
-import { RiArrowRightUpLine, RiLogoutBoxRLine } from "@remixicon/react";
 import { signOutAndGo } from "@/entities/session";
 
 /** 管理画面の枠（上部バー: タイトル・もう一方の管理画面へのリンク・ログイン中のアカウント・ログアウト） */
@@ -25,8 +24,7 @@ export function AdminShell({
       className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-body-2-medium text-text-secondary outline-none transition-colors hover:bg-background-secondary-hover hover:text-text-primary focus-visible:ring-2 focus-visible:ring-border-focus-ring"
     >
       {crossLink.label.replace(/ →$/, "")}
-      <RiArrowRightUpLine className="size-4" aria-hidden="true" />
-    </a>
+      </a>
   );
   const max = width === "wide" ? "max-w-6xl" : "max-w-5xl";
   return (
@@ -40,7 +38,7 @@ export function AdminShell({
           <div className="flex items-center gap-3">
             {crossLinkPosition === "end" && link}
             <span className="hidden text-body-2-regular text-text-secondary sm:inline">{email}</span>
-            <Button variant="secondary" size="small" leadingIcon={RiLogoutBoxRLine} onClick={() => signOutAndGo("/")}>
+            <Button variant="secondary" size="small" onClick={() => signOutAndGo("/")}>
               ログアウト
             </Button>
           </div>

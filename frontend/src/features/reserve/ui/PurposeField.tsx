@@ -1,11 +1,10 @@
-import { RiCalendarScheduleLine } from "@remixicon/react";
 import { Select, SelectItem } from "@/components/base/select/select";
 import { PURPOSES } from "@/shared/config/purposes";
 import { FieldCard, FieldError } from "./parts";
 
 export function PurposeField({ value, onChange, error }: { value: string; onChange: (v: string) => void; error?: string }) {
   return (
-    <FieldCard title="ご相談内容" icon={RiCalendarScheduleLine}>
+    <FieldCard title="ご相談内容">
       <Select
         aria-label="ご相談内容"
         placeholder="---選択してください---"

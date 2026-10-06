@@ -1,18 +1,47 @@
 @import "@/styles/globals.css";
+@import "./theme.css";
 
-/* BoardUI の --font-sans は --font-inter を参照する。日本語は Noto Sans JP で受ける */
+/* 文字: 本文も見出しも IBM Plex Sans JP（和欧で同じ骨格）。日付・メタ情報・ターミナルは IBM Plex Mono。
+   BoardUI の --font-sans / --font-mono はこの 2 つの変数を参照する */
 :root {
-  --font-inter: "Inter", "Noto Sans JP";
-  --font-mono-source: "JetBrains Mono";
+  --font-inter: "IBM Plex Sans JP";
+  --font-mono-source: "IBM Plex Mono";
 }
 
 html {
-  font-feature-settings: "palt" 1;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 body {
   @apply bg-background-full text-text-primary font-sans;
+  /* 日本語の本文は詰めずに、行間を広めに */
+  font-size: 15px;
+  line-height: 1.8;
+  letter-spacing: 0.02em;
+}
+
+/* 見出しだけ約物を詰める（palt）。本文は読みやすさ優先でベタ組み */
+h1, h2, h3, h4 {
+  font-feature-settings: "palt" 1;
+  letter-spacing: 0.01em;
+}
+
+/* 本文の段落（PageHeader の説明・セクションの説明など） */
+@utility prose-ja {
+  font-size: 15px;
+  line-height: 1.85;
+  letter-spacing: 0.03em;
+  color: var(--color-text-secondary);
+}
+
+/* 日付・件数・ラベルなどの補助情報 */
+@utility meta {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+  letter-spacing: 0.02em;
+  color: var(--color-text-tertiary);
 }
 
 /* ヘッダーの横に流れるお知らせ（旧サイトと同じ 60 秒で一周） */

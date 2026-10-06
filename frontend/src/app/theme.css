@@ -1,0 +1,150 @@
+/* ---------------------------------------------------------------------------
+ * ダークテーマの調整（BoardUI の .dark のトークンを上書き）
+ *  - 文字のコントラスト: primary 約 16:1、secondary 7:1 以上、tertiary / placeholder 4.5:1 以上（面に対して）
+ *  - 面は 3 段だけ: ページ < 区切った面 < 入力欄。入力欄は面と見分けられる明るさ + 1px の線
+ *  - 真っ黒・真っ白を避け、わずかに暖かい灰色にして目の疲れを抑える
+ * ------------------------------------------------------------------------- */
+.dark {
+  --color-background-full:              #0e0e10;
+  --color-background-primary-default:   #17171a;
+  --color-background-primary-hover:     #1d1d21;
+  --color-background-primary-active:    #1a1a1d;
+  --color-background-secondary-default: #131316;
+  --color-background-secondary-hover:   #1d1d21;
+  --color-background-tertiary-default:  #1f1f23;
+  --color-background-tertiary-hover:    #26262b;
+
+  --color-text-primary:     #f3f2ee;
+  --color-text-secondary:   #bdbcb6;
+  --color-text-tertiary:    #9a9993;
+  --color-text-placeholder: #8a8983;
+
+  --color-foreground-icon-primary:    #f3f2ee;
+  --color-foreground-icon-secondary:  #bdbcb6;
+  --color-foreground-icon-tertiary:   #9a9993;
+  --color-foreground-icon-quaternary: #7d7c77;
+
+  --color-separator-border:        #2a2a2e;
+  --color-separator-border-strong: #34343a;
+  --color-border-button-default:   #34343a;
+  --color-border-button-hover:     #55555c;
+  --color-border-button-active:    #4a4a50;
+
+  /* 入力欄の線（BoardUI の入力は ring-transparent なので、輪郭は outline で足す） */
+  --field-outline: #3a3a40;
+  --field-outline-hover: #55555c;
+}
+
+/* 入力欄（TextField / TextArea）は面より一段明るく、1px の輪郭を付けて「ここに書く」と分かるように。
+   フォーカス時は BoardUI の ring（box-shadow）がそのまま重なる */
+.dark .bg-background-tertiary-default {
+  outline: 1px solid var(--field-outline);
+  outline-offset: -1px;
+}
+.dark .bg-background-tertiary-default:hover {
+  outline-color: var(--field-outline-hover);
+}
+
+/* ---------------------------------------------------------------------------
+ * 文字の大きさ（BoardUI の型を日本語向けに上書き）
+ *  本文 15px・行間 1.8、補足 13〜14px（12px 未満の本文は作らない）。
+ *  regular は行間を広く、medium 以上（ボタン・見出し）は詰め気味にしてボタンの高さを保つ
+ * ------------------------------------------------------------------------- */
+@theme {
+  --text-caption-2-regular: 0.75rem;
+  --text-caption-2-regular--line-height: 1.6;
+  --text-caption-2-regular--letter-spacing: 0.02em;
+  --text-caption-2-medium: 0.75rem;
+  --text-caption-2-medium--line-height: 1.4;
+  --text-caption-2-medium--letter-spacing: 0.02em;
+  --text-caption-2-semibold: 0.75rem;
+  --text-caption-2-semibold--line-height: 1.4;
+  --text-caption-2-semibold--letter-spacing: 0.02em;
+  --text-caption-2-bold: 0.75rem;
+  --text-caption-2-bold--line-height: 1.4;
+  --text-caption-2-bold--letter-spacing: 0.02em;
+  --text-caption-1-regular: 0.8125rem;
+  --text-caption-1-regular--line-height: 1.65;
+  --text-caption-1-regular--letter-spacing: 0.02em;
+  --text-caption-1-medium: 0.8125rem;
+  --text-caption-1-medium--line-height: 1.45;
+  --text-caption-1-medium--letter-spacing: 0.02em;
+  --text-caption-1-semibold: 0.8125rem;
+  --text-caption-1-semibold--line-height: 1.45;
+  --text-caption-1-semibold--letter-spacing: 0.02em;
+  --text-caption-1-bold: 0.8125rem;
+  --text-caption-1-bold--line-height: 1.45;
+  --text-caption-1-bold--letter-spacing: 0.02em;
+  --text-body-2-regular: 0.875rem;
+  --text-body-2-regular--line-height: 1.75;
+  --text-body-2-regular--letter-spacing: 0.02em;
+  --text-body-2-medium: 0.875rem;
+  --text-body-2-medium--line-height: 1.5;
+  --text-body-2-medium--letter-spacing: 0.02em;
+  --text-body-2-semibold: 0.875rem;
+  --text-body-2-semibold--line-height: 1.5;
+  --text-body-2-semibold--letter-spacing: 0.02em;
+  --text-body-2-bold: 0.875rem;
+  --text-body-2-bold--line-height: 1.5;
+  --text-body-2-bold--letter-spacing: 0.02em;
+  --text-body-regular: 0.9375rem;
+  --text-body-regular--line-height: 1.8;
+  --text-body-regular--letter-spacing: 0.02em;
+  --text-body-medium: 0.9375rem;
+  --text-body-medium--line-height: 1.5;
+  --text-body-medium--letter-spacing: 0.02em;
+  --text-body-semibold: 0.9375rem;
+  --text-body-semibold--line-height: 1.5;
+  --text-body-semibold--letter-spacing: 0.02em;
+  --text-body-bold: 0.9375rem;
+  --text-body-bold--line-height: 1.5;
+  --text-body-bold--letter-spacing: 0.02em;
+  --text-headline-regular: 1.0625rem;
+  --text-headline-regular--line-height: 1.6;
+  --text-headline-regular--letter-spacing: 0.02em;
+  --text-headline-medium: 1.0625rem;
+  --text-headline-medium--line-height: 1.45;
+  --text-headline-medium--letter-spacing: 0.02em;
+  --text-headline-semibold: 1.0625rem;
+  --text-headline-semibold--line-height: 1.45;
+  --text-headline-semibold--letter-spacing: 0.02em;
+  --text-headline-bold: 1.0625rem;
+  --text-headline-bold--line-height: 1.45;
+  --text-headline-bold--letter-spacing: 0.02em;
+  --text-title-3-regular: 1.25rem;
+  --text-title-3-regular--line-height: 1.45;
+  --text-title-3-regular--letter-spacing: -0.005em;
+  --text-title-3-medium: 1.25rem;
+  --text-title-3-medium--line-height: 1.4;
+  --text-title-3-medium--letter-spacing: -0.005em;
+  --text-title-3-semibold: 1.25rem;
+  --text-title-3-semibold--line-height: 1.4;
+  --text-title-3-semibold--letter-spacing: -0.005em;
+  --text-title-3-bold: 1.25rem;
+  --text-title-3-bold--line-height: 1.4;
+  --text-title-3-bold--letter-spacing: -0.005em;
+  --text-title-2-regular: 1.5rem;
+  --text-title-2-regular--line-height: 1.4;
+  --text-title-2-regular--letter-spacing: -0.005em;
+  --text-title-2-medium: 1.5rem;
+  --text-title-2-medium--line-height: 1.35;
+  --text-title-2-medium--letter-spacing: -0.005em;
+  --text-title-2-semibold: 1.5rem;
+  --text-title-2-semibold--line-height: 1.35;
+  --text-title-2-semibold--letter-spacing: -0.005em;
+  --text-title-2-bold: 1.5rem;
+  --text-title-2-bold--line-height: 1.35;
+  --text-title-2-bold--letter-spacing: -0.005em;
+  --text-title-1-regular: 1.875rem;
+  --text-title-1-regular--line-height: 1.3;
+  --text-title-1-regular--letter-spacing: -0.005em;
+  --text-title-1-medium: 1.875rem;
+  --text-title-1-medium--line-height: 1.25;
+  --text-title-1-medium--letter-spacing: -0.005em;
+  --text-title-1-semibold: 1.875rem;
+  --text-title-1-semibold--line-height: 1.25;
+  --text-title-1-semibold--letter-spacing: -0.005em;
+  --text-title-1-bold: 1.875rem;
+  --text-title-1-bold--line-height: 1.25;
+  --text-title-1-bold--letter-spacing: -0.005em;
+}

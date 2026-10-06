@@ -3,7 +3,6 @@ import { useAtom } from "jotai";
 import { Button } from "@/components/base/buttons/button";
 import { Input } from "@/components/base/input/input";
 import { Radio, RadioGroup } from "@/components/base/radio/radio";
-import { Card } from "@/shared/ui/layout";
 import { TRIAL_PATTERN_OPTIONS, QUESTIONS, VR_USAGE_OPTIONS } from "../model/questions";
 import { isComplete } from "../model/schema";
 import { heightAtom, nameAtom, responsesAtom, trialPatternAtom, vrUsageAtom, type TrialPattern, type VrUsage } from "../model/state";
@@ -11,11 +10,11 @@ import { LikertScale, NasaTlxScale } from "./scales";
 
 function Section({ title, children, error }: { title: string; children: React.ReactNode; error?: string | false }) {
   return (
-    <Card className="flex flex-col gap-3 sm:p-6">
+    <section className="flex flex-col gap-3 border-t border-separator-border pt-6">
       <h3 className="text-body-semibold text-text-primary">{title}</h3>
       {children}
       {error && <p className="text-caption-1-regular text-text-error-primary">{error}</p>}
-    </Card>
+    </section>
   );
 }
 

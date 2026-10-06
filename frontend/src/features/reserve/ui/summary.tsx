@@ -29,7 +29,7 @@ export function methodLabel(m: ContactMethod) {
 /** 確認・完了画面の 1 項目 */
 export function SummaryItem({ label, children, wide, className }: { label: string; children: ReactNode; wide?: boolean; className?: string }) {
   return (
-    <div className={cx("rounded-2xl border border-border-button-default bg-background-primary-default px-3.5 py-3", wide && "col-span-2", className)}>
+    <div className={cx("rounded-xl border border-border-button-default bg-background-primary-default px-3.5 py-3", wide && "col-span-2", className)}>
       <dt className="text-caption-1-regular text-text-tertiary">{label}</dt>
       <dd className="mt-1 break-all text-body-2-medium text-text-primary">{children}</dd>
     </div>

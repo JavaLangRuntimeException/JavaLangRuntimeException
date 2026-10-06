@@ -1,5 +1,4 @@
 import { Fragment } from "react";
-import { RiArrowRightLine, RiGraduationCapLine } from "@remixicon/react";
 import { Chip } from "@/components/base/badges/chip";
 import { ORCID_SELF_NAME, ORCID_WORK_TYPE_LABELS, useOrcidWorks, type OrcidWork } from "@/entities/publication";
 import { Section, Skeleton } from "@/shared/ui/layout";
@@ -12,12 +11,7 @@ export function OrcidWorks() {
   return (
     <Section
       id="publications"
-      title={
-        <span className="inline-flex items-center gap-2">
-          <RiGraduationCapLine className="size-5 text-foreground-icon-secondary" aria-hidden />
-          Publications
-        </span>
-      }
+      title="Publications"
     >
       {isPending && (
         <div className="flex flex-col gap-3" aria-busy="true">
@@ -69,15 +63,14 @@ function WorkCard({ work }: { work: OrcidWork }) {
       )}
       {work.venue && <p className="text-body-2-regular italic text-text-tertiary">{work.venue}</p>}
       {work.doi && (
-        <span className="inline-flex items-center gap-1 text-body-2-semibold text-accent-600">
+        <span className="inline-flex items-center gap-1 text-body-2-semibold text-accent-300">
           DOI: {work.doi}
-          <RiArrowRightLine className="size-4 transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none" aria-hidden />
-        </span>
+          </span>
       )}
     </>
   );
   const className =
-    "group flex flex-col gap-2 rounded-3xl border border-border-button-default bg-background-primary-default p-5 outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring";
+    "group flex flex-col gap-2 rounded-xl border border-border-button-default bg-background-primary-default p-5 outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring";
   return work.url ? (
     <a href={work.url} target="_blank" rel="noopener noreferrer" className={`${className} lift`}>
       {body}

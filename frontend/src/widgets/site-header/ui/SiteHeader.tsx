@@ -7,8 +7,8 @@ import { HeaderMarquee } from "./HeaderMarquee";
 // 選択中のページの色（旧サイトと同じ色相: Links 青・WorkSpot 橙・Contact 緑・Ask Me 紫）。ナビの識別色はトークンの例外（CLAUDE.md）
 const NAV = [
   { to: "/link", label: "Links", active: "bg-blue-600 shadow-blue-500/30" },
-  { to: "/location", label: "WorkSpot", active: "bg-orange-500 shadow-orange-500/30" },
-  { to: "/contact", label: "Contact", active: "bg-emerald-600 shadow-emerald-500/30" },
+  { to: "/location", label: "WorkSpot", active: "bg-orange-700 shadow-orange-700/30" },
+  { to: "/contact", label: "Contact", active: "bg-emerald-700 shadow-emerald-700/30" },
   { to: "/reserve", label: "Ask Me", active: "bg-violet-600 shadow-violet-500/30" },
 ] as const;
 

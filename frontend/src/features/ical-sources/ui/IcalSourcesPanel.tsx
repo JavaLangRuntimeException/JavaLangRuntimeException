@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { RiArrowLeftSLine, RiArrowRightSLine, RiDownloadLine } from "@remixicon/react";
+import { RiArrowLeftSLine, RiArrowRightSLine } from "@remixicon/react";
 import { Button } from "@/components/base/buttons/button";
 import { reservationApi } from "@/shared/api/clients";
 import { AdminPanel } from "@/shared/ui/admin";
@@ -60,7 +60,7 @@ export function IcalSourcesPanel() {
               今週
             </Button>
           </div>
-          <Button variant="primary" leadingIcon={RiDownloadLine} onClick={fetchIcalSources} disabled={loading}>
+          <Button variant="primary" onClick={fetchIcalSources} disabled={loading}>
             {loading ? "読み込み中..." : "取得"}
           </Button>
         </div>
@@ -101,7 +101,7 @@ export function IcalSourcesPanel() {
         ) : (
           <ul className="flex max-h-96 flex-col gap-2 overflow-y-auto">
             {events.map((event, i) => (
-              <li key={i} className="flex items-start justify-between gap-3 rounded-2xl border border-border-button-default px-4 py-3">
+              <li key={i} className="flex items-start justify-between gap-3 rounded-xl border border-border-button-default px-4 py-3">
                 <div className="min-w-0">
                   <p className="text-body-medium break-all text-text-primary">{event.summary}</p>
                   <p className="text-body-2-regular tabular-nums text-text-secondary">

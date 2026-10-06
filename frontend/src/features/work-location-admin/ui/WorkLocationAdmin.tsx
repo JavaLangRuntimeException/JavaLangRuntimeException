@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { RiDeleteBinLine, RiRefreshLine, RiSaveLine } from "@remixicon/react";
 import { Button } from "@/components/base/buttons/button";
 import { Checkbox } from "@/components/base/checkbox/checkbox";
 import { Input } from "@/components/base/input/input";
@@ -154,7 +153,7 @@ export function WorkLocationAdmin() {
             <span className="text-body-2-medium text-text-secondary">勤務場所</span>
             <LocationSelect label="勤務場所" value={value} onChange={setValue} />
           </div>
-          <Button variant="primary" leadingIcon={RiSaveLine} onClick={saveLocation} disabled={!date}>
+          <Button variant="primary" onClick={saveLocation} disabled={!date}>
             保存
           </Button>
         </div>
@@ -175,7 +174,7 @@ export function WorkLocationAdmin() {
             <Button variant="ghost" size="xs" onClick={() => setSelected(new Set())} disabled={selected.size === 0}>
               選択解除
             </Button>
-            <Button variant="secondary" size="small" leadingIcon={RiRefreshLine} onClick={fetchLocations} disabled={loading}>
+            <Button variant="secondary" size="small" onClick={fetchLocations} disabled={loading}>
               {loading ? "読み込み中..." : "更新"}
             </Button>
           </>
@@ -183,7 +182,7 @@ export function WorkLocationAdmin() {
       >
         {/* 一括変更バー */}
         {selected.size > 0 && (
-          <div className="mb-4 flex flex-col items-stretch gap-3 rounded-2xl border border-accent-500/40 bg-accent-500/15 p-4 sm:flex-row sm:items-center">
+          <div className="mb-4 flex flex-col items-stretch gap-3 rounded-xl border border-accent-500/40 bg-accent-500/15 p-4 sm:flex-row sm:items-center">
             <span className="shrink-0 text-body-2-semibold text-accent-200">{selected.size}件を一括変更 →</span>
             <LocationSelect label="一括変更する勤務場所" value={bulkLocation} onChange={setBulkLocation} size="sm" className="min-w-0 flex-1" />
             <Button variant="primary" size="small" onClick={bulkUpdate} disabled={bulkSaving}>
@@ -211,14 +210,14 @@ export function WorkLocationAdmin() {
                   }}
                   onPointerEnter={() => handleDragEnter(d)}
                   className={cx(
-                    "flex cursor-pointer items-center gap-3 rounded-2xl border px-3 py-2 transition-colors",
+                    "flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2 transition-colors",
                     isSelected ? "border-accent-300 bg-accent-500/15" : "border-border-button-default bg-background-primary-default hover:bg-background-primary-hover",
                   )}
                 >
                   <Checkbox isSelected={isSelected} onChange={() => toggleDate(d)} aria-label={`${label}を選択`} />
                   <span className="w-24 shrink-0 text-body-medium tabular-nums text-text-primary">{label}</span>
                   <LocationSelect label={`${label}の勤務場所`} value={locations[d]} onChange={(v) => updateOne(d, v)} size="sm" className="min-w-0 flex-1" />
-                  <Button variant="ghost" size="small" leadingIcon={RiDeleteBinLine} className="shrink-0 text-text-error-primary" onClick={() => deleteLocation(d)}>
+                  <Button variant="ghost" size="small" className="shrink-0 text-text-error-primary" onClick={() => deleteLocation(d)}>
                     削除
                   </Button>
                 </li>
