@@ -25,9 +25,8 @@ export function siteOrigins() {
 }
 
 /** Datadog の env タグ（RUM） */
-export function envName(): "prod" | "stg" | "dev" | "staging" {
+export function envName(): "prod" | "stg" | "dev" {
   const host = window.location.hostname;
-  if (host === "next.taramanji.com") return "staging";
   const e = ENVS.find((x) => host === x.site || host === x.calendar);
   return e ? e.prefix : "prod";
 }

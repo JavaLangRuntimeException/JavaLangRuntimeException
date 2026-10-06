@@ -51,9 +51,9 @@ patches:
       - op: replace
         path: /spec/scaleTargetRef/name
         value: content
-  # 本番のホスト名（next.taramanji.com は切り替え前の確認用。切り替え後に外す）
+  # 本番のホスト名
   - target: { kind: HTTPRoute, labelSelector: "taramanji.com/host-group=site" }
     patch: |-
       - op: replace
         path: /spec/hostnames
-        value: ["taramanji.com", "www.taramanji.com", "next.taramanji.com"]
+        value: ["taramanji.com", "www.taramanji.com"]
