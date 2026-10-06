@@ -2,6 +2,9 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
+  annotations:
+    # 既定値（Kubernetes が補う値）を差分にしないよう、比較は API サーバー側で行う
+    argocd.argoproj.io/compare-options: ServerSideDiff=true
   name: taramanji-dev
   namespace: argocd
 spec:
