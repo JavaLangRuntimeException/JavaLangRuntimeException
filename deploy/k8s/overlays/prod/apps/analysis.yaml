@@ -1,4 +1,5 @@
 # カナリアの自動判定（Datadog の APM 指標を新しい版 version:<タグ> で絞って見る）。
+# 見るのはそのサービスが受けたリクエスト（http.server.request）だけ。外部 API への送信（http.client.request）の失敗は含めない。
 # トラフィックが少ない時間は件数 0 になるので、0 件は「問題なし」として扱う（default_zero）
 apiVersion: argoproj.io/v1alpha1
 kind: ClusterAnalysisTemplate
@@ -20,8 +21,8 @@ spec:
           apiVersion: v2
           interval: 5m
           queries:
-            errors: sum:trace.http.request.errors{env:prod,service:{{args.service}},version:{{args.version}}}.as_count()
-            hits: sum:trace.http.request.hits{env:prod,service:{{args.service}},version:{{args.version}}}.as_count()
+            errors: sum:trace.http.server.request.errors{env:prod,service:{{args.service}},version:{{args.version}}}.as_count()
+            hits: sum:trace.http.server.request.hits{env:prod,service:{{args.service}},version:{{args.version}}}.as_count()
           formula: "default_zero(errors) / (default_zero(hits) + 0.000001)"
     # p95 が 3 秒を超えたら失敗（GAS や外部 API を待つ RPC があるので余裕を持たせる）
     - name: p95-latency
@@ -34,5 +35,5 @@ spec:
           apiVersion: v2
           interval: 5m
           queries:
-            p95: p95:trace.http.request{env:prod,service:{{args.service}},version:{{args.version}}}
+            p95: p95:trace.http.server.request{env:prod,service:{{args.service}},version:{{args.version}}}
           formula: "default_zero(p95)"

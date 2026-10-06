@@ -63,6 +63,9 @@ spec:
               valueFrom: { fieldRef: { fieldPath: "metadata.labels['tags.datadoghq.com/version']" } }
             - { name: DD_LOGS_INJECTION, value: "true" }
             - { name: DD_RUNTIME_METRICS_ENABLED, value: "true" }
+            # span の名前を「受けた（http.server.request）」と「送った（http.client.request）」で分ける。
+            # 分けないと外部 API（iCal など）の失敗が自分のエラー率に混ざり、カナリアの判定を誤らせる
+            - { name: DD_TRACE_SPAN_ATTRIBUTE_SCHEMA, value: v1 }
             # GC をメモリ上限に合わせる（OOMKill の前に GC が頑張る）
             - name: GOMEMLIMIT
               valueFrom: { resourceFieldRef: { resource: limits.memory } }
