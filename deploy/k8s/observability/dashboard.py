@@ -101,7 +101,7 @@ def service_map():
 
 
 def dashboard():
-    http = "trace.http.request"
+    http = "trace.http.server.request"
     svc_filter = "env:prod AND service IN (" + ",".join(SERVICES) + ") AND $service"
     return {
         "title": TITLE,

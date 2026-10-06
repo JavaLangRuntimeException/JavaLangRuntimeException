@@ -35,7 +35,7 @@ MONITORS = [
     {
         "name": "[taramanji] {{service.name}} の p95 レイテンシが悪化",
         "type": "query alert",
-        "query": "percentile(last_15m):p95:trace.http.request{env:prod AND service IN "
+        "query": "percentile(last_15m):p95:trace.http.server.request{env:prod AND service IN "
                  "(identity,inquiry,reservation,worklocation,content,analytics)} by {service} > 3",
         "message": msg("{{service.name}} の p95 が {{value}} 秒です（外部 API の遅れ・GAS の応答を確認）。"),
         "options": {"thresholds": {"critical": 3, "warning": 1.5}, "require_full_window": False},

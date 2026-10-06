@@ -36,9 +36,16 @@ patches:
   # Go サービスの APP_ENV（web は nginx なので除く）
   - target: { kind: Deployment, labelSelector: "app.kubernetes.io/name!=web" }
     patch: |-
-      - op: replace
-        path: /spec/template/spec/containers/0/env/0/value
-        value: dev
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata: { name: any }
+      spec:
+        template:
+          spec:
+            containers:
+              - name: app
+                env:
+                  - { name: APP_ENV, value: dev }
   - target: { kind: StatefulSet }
     patch: |-
       - op: replace
@@ -85,13 +92,26 @@ patches:
         path: /spec/rules/0/filters/0/requestRedirect/hostname
         value: dev.taramanji.com
   # ログインを受けるホストと、カレンダー同期の戻り先
-  - target: { kind: Deployment, name: identity }
-    patch: |-
-      - op: replace
-        path: /spec/template/spec/containers/0/env/9/value
-        value: dev.taramanji.com,dev-gws.taramanji.com
-  - target: { kind: Deployment, name: calendarsync }
-    patch: |-
-      - op: replace
-        path: /spec/template/spec/containers/0/env/9/value
-        value: https://dev-gws.taramanji.com
+  # 名前で書き換える（番号で指すと、env を足したときに別の項目を上書きしてしまう）
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata: { name: identity }
+      spec:
+        template:
+          spec:
+            containers:
+              - name: app
+                env:
+                  - { name: LOGIN_HOSTS, value: "dev.taramanji.com,dev-gws.taramanji.com" }
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata: { name: calendarsync }
+      spec:
+        template:
+          spec:
+            containers:
+              - name: app
+                env:
+                  - { name: AUTH_URL, value: "https://dev-gws.taramanji.com" }
