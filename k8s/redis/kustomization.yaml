@@ -1,0 +1,5 @@
+# portfolio と calendar-sync が各 namespace に 1 つずつ持つ Redis（namespace は読み込む側で決まる）
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - redis.yaml

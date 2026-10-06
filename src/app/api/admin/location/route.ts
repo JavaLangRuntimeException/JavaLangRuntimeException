@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getRedis } from "../../../../lib/redis";
+import { rejectUnlessAdmin } from "@/lib/admin-guard";
 
 export const dynamic = "force-dynamic";
 
@@ -59,6 +60,8 @@ async function cleanAndFillEntries(): Promise<LocationMap> {
 
 // GET: 全勤務場所を取得（admin用）
 export async function GET() {
+  const denied = await rejectUnlessAdmin();
+  if (denied) return denied;
   try {
     const data = await cleanAndFillEntries();
     return NextResponse.json({ ok: true, locations: data });
@@ -74,6 +77,8 @@ export async function GET() {
 // POST: 勤務場所を設定（単一 or 一括）
 // body: { date, location } または { dates: string[], location }
 export async function POST(request: NextRequest) {
+  const denied = await rejectUnlessAdmin();
+  if (denied) return denied;
   try {
     const body = await request.json();
     const { location } = body;
@@ -104,6 +109,8 @@ export async function POST(request: NextRequest) {
 
 // DELETE: 勤務場所を削除
 export async function DELETE(request: NextRequest) {
+  const denied = await rejectUnlessAdmin();
+  if (denied) return denied;
   try {
     const { date } = await request.json();
 

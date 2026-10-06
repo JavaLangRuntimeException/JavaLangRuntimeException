@@ -1,0 +1,80 @@
+# taramanji.com 本体
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: portfolio
+  labels:
+    tags.datadoghq.com/env: production
+    tags.datadoghq.com/service: portfolio
+    tags.datadoghq.com/version: "1"
+spec:
+  # 2 台で動かし、イメージ更新中も止まらないようにする
+  replicas: 2
+  selector:
+    matchLabels: { app: portfolio }
+  template:
+    metadata:
+      labels:
+        app: portfolio
+        tags.datadoghq.com/env: production
+        tags.datadoghq.com/service: portfolio
+        tags.datadoghq.com/version: "1"
+      annotations:
+        # Datadog: コンテナのログを Node.js のログとして集める
+        ad.datadoghq.com/app.logs: '[{"source":"nodejs","service":"portfolio"}]'
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: app
+          image: taramanji-web
+          # OrbStack の k8s はローカルの Docker イメージをそのまま使う
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          envFrom:
+            - secretRef:
+                name: portfolio-secrets
+          env:
+            - name: AUTH_TRUST_HOST
+              value: "true"
+            # Datadog: DogStatsD の送り先（同じノードの Agent）と Unified Service Tagging
+            - name: DD_AGENT_HOST
+              valueFrom:
+                fieldRef: { fieldPath: status.hostIP }
+            - name: DD_ENV
+              valueFrom:
+                fieldRef: { fieldPath: "metadata.labels['tags.datadoghq.com/env']" }
+            - name: DD_SERVICE
+              valueFrom:
+                fieldRef: { fieldPath: "metadata.labels['tags.datadoghq.com/service']" }
+            - name: DD_VERSION
+              valueFrom:
+                fieldRef: { fieldPath: "metadata.labels['tags.datadoghq.com/version']" }
+          volumeMounts:
+            - name: next-cache
+              mountPath: /app/.next/cache
+          readinessProbe:
+            httpGet: { path: /api/auth/providers, port: 3000 }
+          livenessProbe:
+            tcpSocket: { port: 3000 }
+            initialDelaySeconds: 10
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits: { memory: 1Gi }
+      volumes:
+        - name: next-cache
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: portfolio
+spec:
+  type: LoadBalancer
+  selector: { app: portfolio }
+  ports:
+    # localhost:80 は calendar-sync が使っているので 8080
+    - port: 8080
+      targetPort: 3000

@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:calendar-sync": "node --test src/feature/calendar-sync/*.test.ts"
   },
   "dependencies": {
     "@aws-sdk/client-ses": "^3.916.0",

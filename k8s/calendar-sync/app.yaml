@@ -1,0 +1,82 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: calendar-sync
+  labels:
+    tags.datadoghq.com/env: production
+    tags.datadoghq.com/service: calendar-sync
+    tags.datadoghq.com/version: "1"
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: calendar-sync }
+  template:
+    metadata:
+      labels:
+        app: calendar-sync
+        tags.datadoghq.com/env: production
+        tags.datadoghq.com/service: calendar-sync
+        tags.datadoghq.com/version: "1"
+      annotations:
+        # Datadog: コンテナのログを Node.js のログとして集める
+        ad.datadoghq.com/app.logs: '[{"source":"nodejs","service":"calendar-sync"}]'
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+      containers:
+        - name: app
+          image: taramanji-web
+          # OrbStack の k8s はローカルの Docker イメージをそのまま使う
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+          envFrom:
+            - secretRef:
+                name: calendar-sync-secrets
+          env:
+            - name: REDIS_URL
+              value: redis://redis:6379
+            - name: AUTH_TRUST_HOST
+              value: "true"
+            # Datadog: DogStatsD の送り先（同じノードの Agent）と Unified Service Tagging
+            - name: DD_AGENT_HOST
+              valueFrom:
+                fieldRef: { fieldPath: status.hostIP }
+            - name: DD_ENV
+              valueFrom:
+                fieldRef: { fieldPath: "metadata.labels['tags.datadoghq.com/env']" }
+            - name: DD_SERVICE
+              valueFrom:
+                fieldRef: { fieldPath: "metadata.labels['tags.datadoghq.com/service']" }
+            - name: DD_VERSION
+              valueFrom:
+                fieldRef: { fieldPath: "metadata.labels['tags.datadoghq.com/version']" }
+          volumeMounts:
+            - name: next-cache
+              mountPath: /app/.next/cache
+          readinessProbe:
+            httpGet: { path: /api/auth/providers, port: 3000 }
+          livenessProbe:
+            tcpSocket: { port: 3000 }
+            initialDelaySeconds: 10
+          resources:
+            requests: { cpu: 50m, memory: 192Mi }
+            limits: { memory: 768Mi }
+      volumes:
+        - name: config
+          configMap:
+            name: calendar-sync-config
+        - name: next-cache
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: calendar-sync
+spec:
+  type: LoadBalancer
+  selector: { app: calendar-sync }
+  ports:
+    - port: 80
+      targetPort: 3000

@@ -23,5 +23,10 @@ export function ConditionalHeader() {
     return null;
   }
 
+  // 管理画面は独自のヘッダーを持つ（gws.taramanji.com では外部ページへのリンク先読みが転送で失敗するため）
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) {
+    return null;
+  }
+
   return <Header />;
 }
