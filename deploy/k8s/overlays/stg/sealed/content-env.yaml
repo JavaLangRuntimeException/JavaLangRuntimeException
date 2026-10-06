@@ -1,0 +1,13 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: content-env
+  namespace: taramanji-stg
+spec:
+  encryptedData:
+    REDIS_URL: AgCJ52uP1jyeTWN0FznebrrLzIy6Tlt9qX8DVWRDB/lfcAPKcpxYS27CbaEK8GpypJt/KYYFGo1FFZJWZmWfn8lNOgA/5ADK9TEVhbovEGvurwgSPbDjXEMNBlyQoEH2ishzX/+UQ8JiWy1ujplIoYEMY6plkl3GmUe4DPo12k0xPzRFV3xfiiGIO//WaSYOAGO4TQenZOwt+VP4nnOVQbJO8Sv+MXAcjvBlHkzO+TjxjoVrXyQ0p8OhGRRTPaML/jcsHe6vERe2gLlIBZsf5sihpVsKnh1nzGWmoCFSTmm5SP47PCMQjsLD55pMW0og3RAJXO2eGPV+OKZaOYI9OwMsaknXA0UHkEfdG8RpXQ8+7SZ2l4yJ/u74DDvqSKWbFxGf3xAxWiiR7QFukzeinCDJLvvrGAORA7+lF0S3do96otQdaSmGm+hljTwNsR4ZLUI8Xe+YP2aDBeoDGzi+v8G2TTZRyiZmp8bw1OeBEgjtErHvQ3IrAdt5DA/Ost6uuvD6DgToVxNUOH8vRj2UdYQTVoXzlRV19RVB2ESOTmXP7TpDxAdfoS5aF4QGVDNDzXu1Ac4FcaSAtwVDfrdoJfK1Ugv570E/fpZ1L9Xx2JQq3UH8gohypZCXgSno0751zokAm/L639+vZUYL3RYknA+zR0nQWR7NUBtyHmMRjjWwPfIHRPmGZnZL+xAf16uyKUU693QM/S/RQoxUQVg/ut5p/WS2Zbll7kDW9RZn0500VirUY1FqyJrYF2SWaEFEnGhPmn4PjVGg7SddlRgp9Z8U0boyYSAT5EVTNI3lX4y/s/8k1E0ZAbHpD7qqWOf28HpI3ZyEnIXFxOttbAFzbwok
+  template:
+    metadata:
+      name: content-env
+      namespace: taramanji-stg

@@ -1,7 +1,8 @@
 import { datadogRum } from "@datadog/browser-rum";
+import { envName } from "@/shared/config/site";
 
 // Datadog RUM: Core Web Vitals・JS エラー・画面遷移。API 呼び出しには traceparent を付け、ブラウザ → Gateway → Go サービスを 1 本のトレースにつなぐ
-const HOSTS = ["taramanji.com", "www.taramanji.com", "gws.taramanji.com", "next.taramanji.com", "dev.taramanji.com", "dev-gws.taramanji.com"];
+const HOSTS = ["taramanji.com", "www.taramanji.com", "gws.taramanji.com", "next.taramanji.com", "stg.taramanji.com", "stg-gws.taramanji.com", "dev.taramanji.com", "dev-gws.taramanji.com"];
 
 export function initRum() {
   const applicationId = import.meta.env.VITE_DD_RUM_APPLICATION_ID;
@@ -12,7 +13,7 @@ export function initRum() {
     clientToken,
     site: import.meta.env.VITE_DD_SITE ?? "us5.datadoghq.com",
     service: "web",
-    env: window.location.hostname.startsWith("dev") ? "dev" : window.location.hostname === "next.taramanji.com" ? "staging" : "prod",
+    env: envName(),
     version: import.meta.env.VITE_APP_VERSION ?? "dev",
     sessionSampleRate: 100,
     sessionReplaySampleRate: 0,

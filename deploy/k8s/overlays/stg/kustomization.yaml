@@ -1,0 +1,98 @@
+# stg（同じ kind の taramanji-stg namespace）。v1.2.3-rc.1 のような rc タグで CI が版を書き換え、Argo CD が同期する。
+# 本番に出す直前の版を、本番と同じイメージで確かめる場所。
+# 本番との違い: 1 台ずつ・HPA/PDB なし・カナリアなし・ホスト名 stg.taramanji.com / stg-gws.taramanji.com（Cloudflare Access で本人だけ）・Redis も同じ namespace
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: taramanji-stg
+resources:
+  - namespace.yaml
+  - ../../base/apps
+  - ../../base/data
+  - ../../base/routes
+  - sealed
+
+# set-version.sh が書き換える（CI の release ジョブ。rc タグのとき）
+images:
+  - { name: taramanji/identity, newName: ghcr.io/javalangruntimeexception/taramanji-identity, newTag: bootstrap }
+  - { name: taramanji/notification, newName: ghcr.io/javalangruntimeexception/taramanji-notification, newTag: bootstrap }
+  - { name: taramanji/inquiry, newName: ghcr.io/javalangruntimeexception/taramanji-inquiry, newTag: bootstrap }
+  - { name: taramanji/reservation, newName: ghcr.io/javalangruntimeexception/taramanji-reservation, newTag: bootstrap }
+  - { name: taramanji/worklocation, newName: ghcr.io/javalangruntimeexception/taramanji-worklocation, newTag: bootstrap }
+  - { name: taramanji/content, newName: ghcr.io/javalangruntimeexception/taramanji-content, newTag: bootstrap }
+  - { name: taramanji/calendarsync, newName: ghcr.io/javalangruntimeexception/taramanji-calendarsync, newTag: bootstrap }
+  - { name: taramanji/analytics, newName: ghcr.io/javalangruntimeexception/taramanji-analytics, newTag: bootstrap }
+  - { name: taramanji/web, newName: ghcr.io/javalangruntimeexception/taramanji-web, newTag: bootstrap }
+
+patches:
+  - path: version.yaml
+    target: { kind: Deployment }
+  - target: { kind: Deployment }
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+      - op: replace
+        path: /spec/template/metadata/labels/tags.datadoghq.com~1env
+        value: stg
+  # Go サービスの APP_ENV（web は nginx なので除く。Go 側が受け付ける値は local / dev / staging / prod）
+  - target: { kind: Deployment, labelSelector: "app.kubernetes.io/name!=web" }
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/env/0/value
+        value: staging
+  - target: { kind: StatefulSet }
+    patch: |-
+      - op: replace
+        path: /spec/template/metadata/labels/tags.datadoghq.com~1service
+        value: redis-stg
+  # 1 台なので PDB は外す（drain を止めないため）。台数も固定
+  - target: { kind: PodDisruptionBudget }
+    patch: |-
+      $patch: delete
+      apiVersion: policy/v1
+      kind: PodDisruptionBudget
+      metadata: { name: any }
+  - target: { kind: HorizontalPodAutoscaler }
+    patch: |-
+      $patch: delete
+      apiVersion: autoscaling/v2
+      kind: HorizontalPodAutoscaler
+      metadata: { name: any }
+  # stg の同期は手動で試すときだけ（実在のカレンダーを書き換えないよう CronJob は止めておく）
+  - target: { kind: CronJob }
+    patch: |-
+      - op: add
+        path: /spec/suspend
+        value: true
+  # ホスト名と転送先
+  - target: { kind: HTTPRoute, labelSelector: "taramanji.com/host-group=site" }
+    patch: |-
+      - op: replace
+        path: /spec/hostnames
+        value: ["stg.taramanji.com"]
+  - target: { kind: HTTPRoute, labelSelector: "taramanji.com/host-group=gws" }
+    patch: |-
+      - op: replace
+        path: /spec/hostnames
+        value: ["stg-gws.taramanji.com"]
+  - target: { kind: HTTPRoute, name: site-redirects }
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/filters/0/requestRedirect/hostname
+        value: stg-gws.taramanji.com
+  - target: { kind: HTTPRoute, name: gws-redirects }
+    patch: |-
+      - op: replace
+        path: /spec/rules/0/filters/0/requestRedirect/hostname
+        value: stg.taramanji.com
+  # ログインを受けるホストと、カレンダー同期の戻り先
+  - target: { kind: Deployment, name: identity }
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/env/9/value
+        value: stg.taramanji.com,stg-gws.taramanji.com
+  - target: { kind: Deployment, name: calendarsync }
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/env/9/value
+        value: https://stg-gws.taramanji.com

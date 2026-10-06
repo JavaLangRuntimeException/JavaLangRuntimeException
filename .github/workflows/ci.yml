@@ -85,7 +85,7 @@ jobs:
           curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.7.0/kubeconform-linux-amd64.tar.gz | tar xz -C /usr/local/bin kubeconform
       - name: Render and validate (dev / prod / gke)
         run: |
-          for env in dev prod gke; do
+          for env in dev stg prod gke; do
             echo "== $env"
             kubectl kustomize deploy/k8s/overlays/$env > /tmp/$env.yaml
             kubeconform -strict -summary -ignore-missing-schemas \
