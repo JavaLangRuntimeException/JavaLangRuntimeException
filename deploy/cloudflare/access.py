@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-dev / stg（と切り替え前の確認用 next）を Cloudflare Access で守る。何度実行しても同じ結果になる。
+dev / stg を Cloudflare Access で守る。何度実行しても同じ結果になる。
 Cloudflare の入口で Google ログインを求め、ADMIN_EMAIL のアカウントだけを通す（GKE なら IAP にあたる）。
 
   python3 deploy/cloudflare/access.py ~/Downloads/cf-access-token.txt
@@ -26,7 +26,7 @@ SECRETS = os.path.join(HERE, "..", "k8s", "secrets", "prod", "identity.env")
 
 APPS = {
     "taramanji-dev": ["dev.taramanji.com", "dev-gws.taramanji.com"],
-    "taramanji-stg": ["stg.taramanji.com", "stg-gws.taramanji.com", "next.taramanji.com"],
+    "taramanji-stg": ["stg.taramanji.com", "stg-gws.taramanji.com"],
 }
 
 

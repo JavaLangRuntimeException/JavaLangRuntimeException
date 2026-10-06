@@ -70,7 +70,7 @@ spec:
             # GC をメモリ上限に合わせる（OOMKill の前に GC が頑張る）
             - name: GOMEMLIMIT
               valueFrom: { resourceFieldRef: { resource: limits.memory } }
-            - { name: LOGIN_HOSTS, value: "taramanji.com,www.taramanji.com,gws.taramanji.com,next.taramanji.com" }
+            - { name: LOGIN_HOSTS, value: "taramanji.com,www.taramanji.com,gws.taramanji.com" }
           envFrom:
             - secretRef: { name: identity-env }
           startupProbe:
