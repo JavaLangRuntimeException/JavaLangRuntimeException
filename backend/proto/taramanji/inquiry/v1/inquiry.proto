@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package taramanji.inquiry.v1;
+
+// お問い合わせ・アンケート・管理者からのメール送信
+service InquiryService {
+  rpc SubmitContact(SubmitContactRequest) returns (SubmitContactResponse) {}
+  rpc SubmitQuestionnaire(SubmitQuestionnaireRequest) returns (SubmitQuestionnaireResponse) {}
+  // 管理者
+  rpc SendAdminEmail(SendAdminEmailRequest) returns (SendAdminEmailResponse) {}
+}
+
+message ContactFile {
+  string name = 1;
+  string content_type = 2;
+  bytes data = 3;
+}
+
+message SubmitContactRequest {
+  string email = 1;
+  string name = 2;
+  string organization = 3;
+  string subject = 4;
+  string purpose = 5;
+  string message = 6;
+  // 「Ask Me」（予約の変更・取消）のとき必須
+  string event_id = 7;
+  repeated ContactFile files = 8;
+}
+
+message SubmitContactResponse {
+}
+
+message SubmitQuestionnaireRequest {
+  string name = 1;
+  // none / monthly / weekly / daily
+  string vr_usage = 2;
+  double height = 3;
+  string trial_pattern = 4;
+  // r1〜r18（キーは "r1" など）
+  map<string, int32> responses = 5;
+}
+
+message SubmitQuestionnaireResponse {
+}
+
+message SendAdminEmailRequest {
+  string to = 1;
+  string subject = 2;
+  string body = 3;
+}
+
+message SendAdminEmailResponse {
+  string message_id = 1;
+  bool dev = 2;
+}

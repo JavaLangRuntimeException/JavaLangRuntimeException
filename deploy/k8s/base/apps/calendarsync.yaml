@@ -1,0 +1,135 @@
+# calendarsync: カレンダー同期（管理者用）
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: calendarsync
+  labels:
+    app.kubernetes.io/name: calendarsync
+    app.kubernetes.io/part-of: taramanji
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  strategy:
+    rollingUpdate: { maxSurge: 1, maxUnavailable: 0 }
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: calendarsync
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: calendarsync
+        app.kubernetes.io/part-of: taramanji
+        tags.datadoghq.com/env: prod
+        tags.datadoghq.com/service: calendarsync
+        taramanji.com/redis-client: "true"
+        taramanji.com/public: "true"
+      annotations:
+        ad.datadoghq.com/app.logs: '[{"source":"go","service":"calendarsync"}]'
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile: { type: RuntimeDefault }
+      # 2 台のワーカー（別ゾーン扱い）に散らす。1 台を drain してもサービスは止まらない
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          nodeTaintsPolicy: Honor
+          labelSelector: { matchLabels: { app.kubernetes.io/name: calendarsync } }
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          nodeTaintsPolicy: Honor
+          labelSelector: { matchLabels: { app.kubernetes.io/name: calendarsync } }
+      containers:
+        - name: app
+          image: taramanji/calendarsync
+          ports:
+            - { name: http, containerPort: 8080 }
+          env:
+            - { name: APP_ENV, value: prod }
+            - { name: PORT, value: ":8080" }
+            # Datadog Agent はノードごと（DaemonSet）。APM と DogStatsD はノードの IP へ送る
+            - name: DD_AGENT_HOST
+              valueFrom: { fieldRef: { fieldPath: status.hostIP } }
+            - name: DD_ENV
+              valueFrom: { fieldRef: { fieldPath: "metadata.labels['tags.datadoghq.com/env']" } }
+            - name: DD_SERVICE
+              valueFrom: { fieldRef: { fieldPath: "metadata.labels['tags.datadoghq.com/service']" } }
+            - name: DD_VERSION
+              valueFrom: { fieldRef: { fieldPath: "metadata.labels['tags.datadoghq.com/version']" } }
+            - { name: DD_LOGS_INJECTION, value: "true" }
+            - { name: DD_RUNTIME_METRICS_ENABLED, value: "true" }
+            # GC をメモリ上限に合わせる（OOMKill の前に GC が頑張る）
+            - name: GOMEMLIMIT
+              valueFrom: { resourceFieldRef: { resource: limits.memory } }
+            - { name: AUTH_URL, value: "https://gws.taramanji.com" }
+            - { name: SYNC_DAYS, value: "90" }
+          envFrom:
+            - secretRef: { name: calendarsync-env }
+          startupProbe:
+            httpGet: { path: /readyz, port: http }
+            periodSeconds: 2
+            failureThreshold: 30
+          readinessProbe:
+            httpGet: { path: /readyz, port: http }
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+            periodSeconds: 10
+            failureThreshold: 3
+          resources:
+            requests: { cpu: 10m, memory: 24Mi }
+            limits: { memory: 256Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: calendarsync
+  labels:
+    app.kubernetes.io/name: calendarsync
+spec:
+  selector:
+    app.kubernetes.io/name: calendarsync
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      # Envoy から h2c（HTTP/2 平文）でつなぐ。gRPC もそのまま通る
+      appProtocol: kubernetes.io/h2c
+---
+# カナリア（新しい版）用。本番のリリース中だけ Argo Rollouts が新しい Pod に向け、HTTPRoute の重みで少しずつ流す
+apiVersion: v1
+kind: Service
+metadata:
+  name: calendarsync-canary
+  labels:
+    app.kubernetes.io/name: calendarsync
+spec:
+  selector:
+    app.kubernetes.io/name: calendarsync
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      # Envoy から h2c（HTTP/2 平文）でつなぐ。gRPC もそのまま通る
+      appProtocol: kubernetes.io/h2c
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: calendarsync
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: calendarsync

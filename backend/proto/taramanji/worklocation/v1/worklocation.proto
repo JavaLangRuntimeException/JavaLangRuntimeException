@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package taramanji.worklocation.v1;
+
+// 勤務場所。日付（YYYY-MM-DD, JST）→ 場所名
+service WorkLocationService {
+  // 公開: 過去の日を消し、今日から 2 か月先まで未登録の日を「未定（お問い合わせください）」で埋めて返す
+  rpc ListWorkLocations(ListWorkLocationsRequest) returns (ListWorkLocationsResponse) {}
+  // 管理者: 登録（1 日または複数日）
+  rpc SetWorkLocations(SetWorkLocationsRequest) returns (SetWorkLocationsResponse) {}
+  // 管理者: 削除
+  rpc DeleteWorkLocation(DeleteWorkLocationRequest) returns (DeleteWorkLocationResponse) {}
+  // 内部（reservation から）: 1 日分
+  rpc GetWorkLocation(GetWorkLocationRequest) returns (GetWorkLocationResponse) {}
+}
+
+// @entity
+// 1 日分の勤務場所
+message WorkLocation {
+  // @pk
+  // YYYY-MM-DD（JST）
+  string date = 1;
+  // @required
+  string location = 2;
+}
+
+message ListWorkLocationsRequest {}
+
+message ListWorkLocationsResponse {
+  map<string, string> locations = 1;
+}
+
+message SetWorkLocationsRequest {
+  repeated string dates = 1;
+  string location = 2;
+}
+
+message SetWorkLocationsResponse {
+  int32 count = 1;
+}
+
+message DeleteWorkLocationRequest {
+  string date = 1;
+}
+
+message DeleteWorkLocationResponse {
+}
+
+message GetWorkLocationRequest {
+  string date = 1;
+}
+
+message GetWorkLocationResponse {
+  // 未登録なら空
+  string location = 1;
+}

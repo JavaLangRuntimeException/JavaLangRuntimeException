@@ -1,0 +1,23 @@
+version: v2
+managed:
+  enabled: true
+  override:
+    - file_option: go_package_prefix
+      value: github.com/javalangruntimeexception/taramanji/backend/gen
+plugins:
+  # pb の型（Connect / gRPC の送受信）
+  - local: protoc-gen-go
+    out: gen
+    opt: paths=source_relative
+  - local: protoc-gen-connect-go
+    out: gen
+    opt: paths=source_relative
+  # 独自プラグイン: Entity / Repository / Mock / Redis 実装 / DTO / Usecase interface / Connect Handler / DI
+  # contexts=true で proto package ごとに internal/<context>/ へ出し分ける（境界づけられたコンテキスト）
+  - local: mss-protoc-gen
+    out: .
+    opt:
+      - go_module=github.com/javalangruntimeexception/taramanji/backend
+      - contexts=true
+      - infra=redis
+      - handler=connect

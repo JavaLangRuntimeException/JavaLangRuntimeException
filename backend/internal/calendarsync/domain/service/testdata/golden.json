@@ -1,0 +1,2578 @@
+[
+ {
+  "source": "ソース@例え.jp",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_0_5",
+   "status": "confirmed",
+   "transparency": "opaque",
+   "start": {
+    "date": "2026-10-02"
+   },
+   "end": {
+    "date": "2026-10-03"
+   },
+   "summary": "普通の予定"
+  },
+  "detailed": false,
+  "private": false,
+  "digest": "fc9d2999128a3e0ee23b1394455a699f70f6f23c4e423435d2689fee19a94497",
+  "id": "be9a0eb10b5fcafcadb884b927b4774d919bee3620d692a1c0052fc2978afe0db",
+  "key": "[\"ソース@例え.jp\",\"ev_0_5\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T10:00:00.000Z",
+  "body": {
+   "summary": "予定あり",
+   "start": {
+    "date": "2026-10-02"
+   },
+   "end": {
+    "date": "2026-10-03"
+   },
+   "transparency": "opaque",
+   "visibility": "private",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "ソース@例え.jp:ev_0_5"
+    }
+   }
+  }
+ },
+ {
+  "source": "src+tag@example.com",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_1_5",
+   "status": "confirmed",
+   "transparency": "transparent",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "summary": "普通の予定",
+   "description": "普通の予定",
+   "location": "普通の予定",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": false,
+  "private": false,
+  "digest": "aabd61b20cf68eb32662fc7d2019af6010606352a102656d344581ce6b315aea",
+  "id": "b6c90c28c128174b15161e9b6141fb958ced5d0f68ed303f4dae524bbe6fc3896",
+  "key": "[\"src+tag@example.com\",\"ev_1_5\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T02:30:00.000Z",
+  "body": {
+   "summary": "予定あり（MTG可能）",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "transparency": "transparent",
+   "visibility": "private",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "src+tag@example.com:ev_1_5"
+    }
+   }
+  }
+ },
+ {
+  "source": "ソース@例え.jp",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_2_5",
+   "status": "confirmed",
+   "transparency": "opaque",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "summary": "普通の予定",
+   "location": "普通の予定",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": true,
+  "private": false,
+  "digest": "817f1812d4f3650312deecda0ed9fca54a4acad1eed7639c879dc62f69f64737",
+  "id": "b058fda5efad12deed0b44da5b97e3a8ef00d4cffcbe54464df7933f44035461d",
+  "key": "[\"ソース@例え.jp\",\"ev_2_5\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T02:30:00.000Z",
+  "body": {
+   "summary": "普通の予定",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "transparency": "opaque",
+   "visibility": "default",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "ソース@例え.jp:ev_2_5"
+    }
+   },
+   "description": "Google Meet: https://meet.google.com/abc-defg-hij\n\n元のカレンダー: ソース@例え.jp",
+   "location": "普通の予定"
+  }
+ },
+ {
+  "source": "src+tag@example.com",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_3_5",
+   "status": "confirmed",
+   "transparency": "transparent",
+   "start": {
+    "date": "2026-10-02"
+   },
+   "end": {
+    "date": "2026-10-03"
+   },
+   "summary": "普通の予定",
+   "description": "普通の予定",
+   "location": "普通の予定",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": true,
+  "private": false,
+  "digest": "408bbfe82299ade8752ea66d3dfb433c88f20ee9bc31bcded7e92803f7ca56eb",
+  "id": "b17879ddbc5b93d6b837aa0e836b859e6260f2876faf1a9ff1c54fc2efd546fc2",
+  "key": "[\"src+tag@example.com\",\"ev_3_5\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T10:00:00.000Z",
+  "body": {
+   "summary": "普通の予定",
+   "start": {
+    "date": "2026-10-02"
+   },
+   "end": {
+    "date": "2026-10-03"
+   },
+   "transparency": "transparent",
+   "visibility": "default",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "src+tag@example.com:ev_3_5"
+    }
+   },
+   "description": "普通の予定\n\nGoogle Meet: https://meet.google.com/abc-defg-hij\n\n元のカレンダー: src+tag@example.com",
+   "location": "普通の予定"
+  }
+ },
+ {
+  "source": "ソース@例え.jp",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_4_5",
+   "status": "confirmed",
+   "transparency": "opaque",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "summary": "普通の予定",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": true,
+  "private": true,
+  "digest": "5f1febddc3a987dd834cda562a60f2b686bb9050c4f612905c16e17516862ee8",
+  "id": "b284d0cd055e9ff43c84ac7a0b638bb01abb3f16530121d8bb25d9b0f4a0de2f8",
+  "key": "[\"ソース@例え.jp\",\"ev_4_5\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T02:30:00.000Z",
+  "body": {
+   "summary": "普通の予定",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "transparency": "opaque",
+   "visibility": "private",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "ソース@例え.jp:ev_4_5"
+    }
+   },
+   "description": "Google Meet: https://meet.google.com/abc-defg-hij\n\n元のカレンダー: ソース@例え.jp"
+  }
+ },
+ {
+  "source": "src+tag@example.com",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_5_5",
+   "status": "confirmed",
+   "transparency": "transparent",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "summary": "普通の予定",
+   "description": "普通の予定",
+   "location": "普通の予定"
+  },
+  "detailed": true,
+  "private": true,
+  "digest": "28c115f8c6fd9745801029511b2413c331bf7a313acaf90d3e6575750dd35615",
+  "id": "b8e6f72f35ca8a266001ffc32cedf081b8894da9d02564a03a3af6cd666c6ab6f",
+  "key": "[\"src+tag@example.com\",\"ev_5_5\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T02:30:00.000Z",
+  "body": {
+   "summary": "普通の予定",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "transparency": "transparent",
+   "visibility": "private",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "src+tag@example.com:ev_5_5"
+    }
+   },
+   "description": "普通の予定\n\n元のカレンダー: src+tag@example.com",
+   "location": "普通の予定"
+  }
+ },
+ {
+  "source": "ソース@例え.jp",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_6_23",
+   "status": "confirmed",
+   "transparency": "opaque",
+   "start": {
+    "date": "2026-10-02"
+   },
+   "end": {
+    "date": "2026-10-03"
+   },
+   "summary": "quote \" and \\ backslash",
+   "location": "quote \" and \\ backslash",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": false,
+  "private": false,
+  "digest": "05a9de5ad2e29238867dda3d7ab0cbc143015132e5b01221544accfec2377cce",
+  "id": "b5ecb9900f8cc36a0d4dc150127a7a9b05c0b0bc5eea45392bdeec22b48607f79",
+  "key": "[\"ソース@例え.jp\",\"ev_6_23\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T10:00:00.000Z",
+  "body": {
+   "summary": "予定あり",
+   "start": {
+    "date": "2026-10-02"
+   },
+   "end": {
+    "date": "2026-10-03"
+   },
+   "transparency": "opaque",
+   "visibility": "private",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "ソース@例え.jp:ev_6_23"
+    }
+   }
+  }
+ },
+ {
+  "source": "src+tag@example.com",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_7_23",
+   "status": "confirmed",
+   "transparency": "transparent",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "summary": "quote \" and \\ backslash",
+   "description": "quote \" and \\ backslash",
+   "location": "quote \" and \\ backslash",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": false,
+  "private": false,
+  "digest": "b39fdccf8d842c035aeb56c9d70ef2c6954a65c776184ff0379dd14d474f1ba1",
+  "id": "b01140fed0a553fb4eb0255c126c86cd2bc8e4d98869621ab68d6300bee0637ab",
+  "key": "[\"src+tag@example.com\",\"ev_7_23\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T02:30:00.000Z",
+  "body": {
+   "summary": "予定あり（MTG可能）",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "transparency": "transparent",
+   "visibility": "private",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "src+tag@example.com:ev_7_23"
+    }
+   }
+  }
+ },
+ {
+  "source": "ソース@例え.jp",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_8_23",
+   "status": "confirmed",
+   "transparency": "opaque",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "summary": "quote \" and \\ backslash",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": true,
+  "private": false,
+  "digest": "6acba6ae2427559fd02fde123cf4ed729e54c473826c8614addd477fbafdb85f",
+  "id": "bde0e645aa3a6f4fdbacd0b286290b3731736b065c5a45b5ac4b79a2af9ee6a49",
+  "key": "[\"ソース@例え.jp\",\"ev_8_23\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T02:30:00.000Z",
+  "body": {
+   "summary": "quote \" and \\ backslash",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "transparency": "opaque",
+   "visibility": "default",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "ソース@例え.jp:ev_8_23"
+    }
+   },
+   "description": "Google Meet: https://meet.google.com/abc-defg-hij\n\n元のカレンダー: ソース@例え.jp"
+  }
+ },
+ {
+  "source": "src+tag@example.com",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_9_23",
+   "status": "confirmed",
+   "transparency": "transparent",
+   "start": {
+    "date": "2026-10-02"
+   },
+   "end": {
+    "date": "2026-10-03"
+   },
+   "summary": "quote \" and \\ backslash",
+   "description": "quote \" and \\ backslash",
+   "location": "quote \" and \\ backslash",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": true,
+  "private": false,
+  "digest": "8b55aa7dfacd3c0fa50bd626323cbda6c7cb01121ced9e20031656201a629d7f",
+  "id": "bc713446286dd285087e8a1cc94225de6c8fceed2590f57d56b2a4b8e5f844534",
+  "key": "[\"src+tag@example.com\",\"ev_9_23\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T10:00:00.000Z",
+  "body": {
+   "summary": "quote \" and \\ backslash",
+   "start": {
+    "date": "2026-10-02"
+   },
+   "end": {
+    "date": "2026-10-03"
+   },
+   "transparency": "transparent",
+   "visibility": "default",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "src+tag@example.com:ev_9_23"
+    }
+   },
+   "description": "quote \" and \\ backslash\n\nGoogle Meet: https://meet.google.com/abc-defg-hij\n\n元のカレンダー: src+tag@example.com",
+   "location": "quote \" and \\ backslash"
+  }
+ },
+ {
+  "source": "ソース@例え.jp",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_10_23",
+   "status": "confirmed",
+   "transparency": "opaque",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "summary": "quote \" and \\ backslash",
+   "location": "quote \" and \\ backslash"
+  },
+  "detailed": true,
+  "private": true,
+  "digest": "715479f628431a3b420763470a2e68f073896120dae3231eb0b4aa99f35b022b",
+  "id": "be6414674eeadef283c39f3322a296df507fff1d9f2e0909d9c617de411bd973c",
+  "key": "[\"ソース@例え.jp\",\"ev_10_23\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T02:30:00.000Z",
+  "body": {
+   "summary": "quote \" and \\ backslash",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "transparency": "opaque",
+   "visibility": "private",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "ソース@例え.jp:ev_10_23"
+    }
+   },
+   "description": "元のカレンダー: ソース@例え.jp",
+   "location": "quote \" and \\ backslash"
+  }
+ },
+ {
+  "source": "src+tag@example.com",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_11_23",
+   "status": "confirmed",
+   "transparency": "transparent",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "summary": "quote \" and \\ backslash",
+   "description": "quote \" and \\ backslash",
+   "location": "quote \" and \\ backslash",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": true,
+  "private": true,
+  "digest": "bbc536dd0b9bcef3b4c8b6509b0837b85dccd34245d47b41d34301f6f71f655c",
+  "id": "bf6eea5d5fa70bfa9dccf1ffd312d6df49993dafd2c060d7e6603b244855dc4b9",
+  "key": "[\"src+tag@example.com\",\"ev_11_23\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T02:30:00.000Z",
+  "body": {
+   "summary": "quote \" and \\ backslash",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "transparency": "transparent",
+   "visibility": "private",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "src+tag@example.com:ev_11_23"
+    }
+   },
+   "description": "quote \" and \\ backslash\n\nGoogle Meet: https://meet.google.com/abc-defg-hij\n\n元のカレンダー: src+tag@example.com",
+   "location": "quote \" and \\ backslash"
+  }
+ },
+ {
+  "source": "ソース@例え.jp",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_12_15",
+   "status": "confirmed",
+   "transparency": "opaque",
+   "start": {
+    "date": "2026-10-02"
+   },
+   "end": {
+    "date": "2026-10-03"
+   },
+   "summary": "line\nbreak\r\ttab",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": false,
+  "private": false,
+  "digest": "010b2b73a3dcc34b6e1631eb85a203bf4944fb6e805b8d4cb1ab060de862d821",
+  "id": "ba8485c2ea3b7bcb7cd0004406890e9fa7a850a75e85d10105f7c4620f12cab54",
+  "key": "[\"ソース@例え.jp\",\"ev_12_15\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T10:00:00.000Z",
+  "body": {
+   "summary": "予定あり",
+   "start": {
+    "date": "2026-10-02"
+   },
+   "end": {
+    "date": "2026-10-03"
+   },
+   "transparency": "opaque",
+   "visibility": "private",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "ソース@例え.jp:ev_12_15"
+    }
+   }
+  }
+ },
+ {
+  "source": "src+tag@example.com",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_13_15",
+   "status": "confirmed",
+   "transparency": "transparent",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "summary": "line\nbreak\r\ttab",
+   "description": "line\nbreak\r\ttab",
+   "location": "line\nbreak\r\ttab",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": false,
+  "private": false,
+  "digest": "e28ce91b7b79b3fd6160360f4899d57a8614de6d06278f4775290dda3ef494bc",
+  "id": "b78b2e1fa0a96d4c5b30753a8a648354fd19402b220fbbbcde3c06a7707a4e9ef",
+  "key": "[\"src+tag@example.com\",\"ev_13_15\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T02:30:00.000Z",
+  "body": {
+   "summary": "予定あり（MTG可能）",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "transparency": "transparent",
+   "visibility": "private",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "src+tag@example.com:ev_13_15"
+    }
+   }
+  }
+ },
+ {
+  "source": "ソース@例え.jp",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_14_15",
+   "status": "confirmed",
+   "transparency": "opaque",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "summary": "line\nbreak\r\ttab",
+   "location": "line\nbreak\r\ttab",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": true,
+  "private": false,
+  "digest": "084ffcb283e834f75cd1a914d400dbf9382715b08341823e73c459d2f9b139ba",
+  "id": "b5e9d33b125d0eebb32554d6394a974272e484c14eb75c22ceb0ecf2c93a5f61a",
+  "key": "[\"ソース@例え.jp\",\"ev_14_15\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T02:30:00.000Z",
+  "body": {
+   "summary": "line\nbreak\r\ttab",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "transparency": "opaque",
+   "visibility": "default",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "ソース@例え.jp:ev_14_15"
+    }
+   },
+   "description": "Google Meet: https://meet.google.com/abc-defg-hij\n\n元のカレンダー: ソース@例え.jp",
+   "location": "line\nbreak\r\ttab"
+  }
+ },
+ {
+  "source": "src+tag@example.com",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_15_15",
+   "status": "confirmed",
+   "transparency": "transparent",
+   "start": {
+    "date": "2026-10-02"
+   },
+   "end": {
+    "date": "2026-10-03"
+   },
+   "summary": "line\nbreak\r\ttab",
+   "description": "line\nbreak\r\ttab",
+   "location": "line\nbreak\r\ttab"
+  },
+  "detailed": true,
+  "private": false,
+  "digest": "81cc2081e5dc21c5ad1bb0828639b0b1b2b552078c3b44f82101b65390621557",
+  "id": "bba484678ffb5a4ecda2d8b922290b4c2160b3d1a423bcbf790b5ef77a8d17f35",
+  "key": "[\"src+tag@example.com\",\"ev_15_15\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T10:00:00.000Z",
+  "body": {
+   "summary": "line\nbreak\r\ttab",
+   "start": {
+    "date": "2026-10-02"
+   },
+   "end": {
+    "date": "2026-10-03"
+   },
+   "transparency": "transparent",
+   "visibility": "default",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "src+tag@example.com:ev_15_15"
+    }
+   },
+   "description": "line\nbreak\r\ttab\n\n元のカレンダー: src+tag@example.com",
+   "location": "line\nbreak\r\ttab"
+  }
+ },
+ {
+  "source": "ソース@例え.jp",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_16_15",
+   "status": "confirmed",
+   "transparency": "opaque",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "summary": "line\nbreak\r\ttab",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": true,
+  "private": true,
+  "digest": "8d9adbd3da29368766b1df84bc79b58260019e20241cbccfb5411e5497359c7c",
+  "id": "b1a77ced7605f44dfd8c52b5e9f65572fe54126b79328d05020acec3f1896c62f",
+  "key": "[\"ソース@例え.jp\",\"ev_16_15\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T02:30:00.000Z",
+  "body": {
+   "summary": "line\nbreak\r\ttab",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "transparency": "opaque",
+   "visibility": "private",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "ソース@例え.jp:ev_16_15"
+    }
+   },
+   "description": "Google Meet: https://meet.google.com/abc-defg-hij\n\n元のカレンダー: ソース@例え.jp"
+  }
+ },
+ {
+  "source": "src+tag@example.com",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_17_15",
+   "status": "confirmed",
+   "transparency": "transparent",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "summary": "line\nbreak\r\ttab",
+   "description": "line\nbreak\r\ttab",
+   "location": "line\nbreak\r\ttab",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": true,
+  "private": true,
+  "digest": "5fbe03499de102b1c2c12967873402e085cf81edc486e116d1f26fe8762730f7",
+  "id": "bcac7ca3dff6ea34f15308ac17da247de156e8682af8fadd9c6123b9a1996aaee",
+  "key": "[\"src+tag@example.com\",\"ev_17_15\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T02:30:00.000Z",
+  "body": {
+   "summary": "line\nbreak\r\ttab",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "transparency": "transparent",
+   "visibility": "private",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "src+tag@example.com:ev_17_15"
+    }
+   },
+   "description": "line\nbreak\r\ttab\n\nGoogle Meet: https://meet.google.com/abc-defg-hij\n\n元のカレンダー: src+tag@example.com",
+   "location": "line\nbreak\r\ttab"
+  }
+ },
+ {
+  "source": "ソース@例え.jp",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_18_17",
+   "status": "confirmed",
+   "transparency": "opaque",
+   "start": {
+    "date": "2026-10-02"
+   },
+   "end": {
+    "date": "2026-10-03"
+   },
+   "summary": "html <b>&amp;</b>",
+   "location": "html <b>&amp;</b>",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": false,
+  "private": false,
+  "digest": "aee244cc99c64bc626370b1f3821e1ef8e7c7b5e080f4ecc3a5401b442fdcfeb",
+  "id": "b1a2022f8b262e02264d0d01d1d482aeb30166f808915a20d93207edc4c7f5d27",
+  "key": "[\"ソース@例え.jp\",\"ev_18_17\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T10:00:00.000Z",
+  "body": {
+   "summary": "予定あり",
+   "start": {
+    "date": "2026-10-02"
+   },
+   "end": {
+    "date": "2026-10-03"
+   },
+   "transparency": "opaque",
+   "visibility": "private",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "ソース@例え.jp:ev_18_17"
+    }
+   }
+  }
+ },
+ {
+  "source": "src+tag@example.com",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_19_17",
+   "status": "confirmed",
+   "transparency": "transparent",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "summary": "html <b>&amp;</b>",
+   "description": "html <b>&amp;</b>",
+   "location": "html <b>&amp;</b>",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": false,
+  "private": false,
+  "digest": "6e2adac6202b5416a35be0e93201cfb18eddffa77ea061f3f6235e3db3d19f7e",
+  "id": "bb3799599b2aae0fd82d3e15978fda30a025c99946684fdfd83bc3547442be690",
+  "key": "[\"src+tag@example.com\",\"ev_19_17\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T02:30:00.000Z",
+  "body": {
+   "summary": "予定あり（MTG可能）",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "transparency": "transparent",
+   "visibility": "private",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "src+tag@example.com:ev_19_17"
+    }
+   }
+  }
+ },
+ {
+  "source": "ソース@例え.jp",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_20_17",
+   "status": "confirmed",
+   "transparency": "opaque",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "summary": "html <b>&amp;</b>"
+  },
+  "detailed": true,
+  "private": false,
+  "digest": "22fafe71653d64dd347a159b253088e97c1a0dea6d72c815f9434e1caf287e97",
+  "id": "b7f8f4a2184855f5776fd2030be1694441152b35934fa9efc37e0239083bb4dc1",
+  "key": "[\"ソース@例え.jp\",\"ev_20_17\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T02:30:00.000Z",
+  "body": {
+   "summary": "html <b>&amp;</b>",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "transparency": "opaque",
+   "visibility": "default",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "ソース@例え.jp:ev_20_17"
+    }
+   },
+   "description": "元のカレンダー: ソース@例え.jp"
+  }
+ },
+ {
+  "source": "src+tag@example.com",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_21_17",
+   "status": "confirmed",
+   "transparency": "transparent",
+   "start": {
+    "date": "2026-10-02"
+   },
+   "end": {
+    "date": "2026-10-03"
+   },
+   "summary": "html <b>&amp;</b>",
+   "description": "html <b>&amp;</b>",
+   "location": "html <b>&amp;</b>",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": true,
+  "private": false,
+  "digest": "1add598655c69e291380bdcff28874c10befaf1ce9c365d9633108209c6600c8",
+  "id": "bb5446994e96c39a37974f7c51926a722e2bb81cd18b7f50baec91d32832f9885",
+  "key": "[\"src+tag@example.com\",\"ev_21_17\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T10:00:00.000Z",
+  "body": {
+   "summary": "html <b>&amp;</b>",
+   "start": {
+    "date": "2026-10-02"
+   },
+   "end": {
+    "date": "2026-10-03"
+   },
+   "transparency": "transparent",
+   "visibility": "default",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "src+tag@example.com:ev_21_17"
+    }
+   },
+   "description": "html <b>&amp;</b>\n\nGoogle Meet: https://meet.google.com/abc-defg-hij\n\n元のカレンダー: src+tag@example.com",
+   "location": "html <b>&amp;</b>"
+  }
+ },
+ {
+  "source": "ソース@例え.jp",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_22_17",
+   "status": "confirmed",
+   "transparency": "opaque",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "summary": "html <b>&amp;</b>",
+   "location": "html <b>&amp;</b>",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": true,
+  "private": true,
+  "digest": "045cc540499157fc640b144e0b5f6432725f7ed78de8ef95b7041cc8ad18c7da",
+  "id": "b21704cbb35436949bbc1ee9418efb88e3812efa92f90830d24455a5e5226babd",
+  "key": "[\"ソース@例え.jp\",\"ev_22_17\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T02:30:00.000Z",
+  "body": {
+   "summary": "html <b>&amp;</b>",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "transparency": "opaque",
+   "visibility": "private",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "ソース@例え.jp:ev_22_17"
+    }
+   },
+   "description": "Google Meet: https://meet.google.com/abc-defg-hij\n\n元のカレンダー: ソース@例え.jp",
+   "location": "html <b>&amp;</b>"
+  }
+ },
+ {
+  "source": "src+tag@example.com",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_23_17",
+   "status": "confirmed",
+   "transparency": "transparent",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "summary": "html <b>&amp;</b>",
+   "description": "html <b>&amp;</b>",
+   "location": "html <b>&amp;</b>",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": true,
+  "private": true,
+  "digest": "ff1cc0917739b6b9fda9d1eaee3f61365f7fb3b7e47daa50299705abba748d4f",
+  "id": "b4540610a406bcf38c97b602848a10cb83e1c31b5125805f476a5d30d28d89059",
+  "key": "[\"src+tag@example.com\",\"ev_23_17\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T02:30:00.000Z",
+  "body": {
+   "summary": "html <b>&amp;</b>",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "transparency": "transparent",
+   "visibility": "private",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "src+tag@example.com:ev_23_17"
+    }
+   },
+   "description": "html <b>&amp;</b>\n\nGoogle Meet: https://meet.google.com/abc-defg-hij\n\n元のカレンダー: src+tag@example.com",
+   "location": "html <b>&amp;</b>"
+  }
+ },
+ {
+  "source": "ソース@例え.jp",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_24_6",
+   "status": "confirmed",
+   "transparency": "opaque",
+   "start": {
+    "date": "2026-10-02"
+   },
+   "end": {
+    "date": "2026-10-03"
+   },
+   "summary": "ls ps ",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": false,
+  "private": false,
+  "digest": "575bda1ac1aa8343300b35c48345d9740de289ece8cec2e89d8d0ca5267efc94",
+  "id": "bfeeb6995e7cdf0937ce441c6d5f554cae706606c08377bf0cafd0d4b74760c23",
+  "key": "[\"ソース@例え.jp\",\"ev_24_6\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T10:00:00.000Z",
+  "body": {
+   "summary": "予定あり",
+   "start": {
+    "date": "2026-10-02"
+   },
+   "end": {
+    "date": "2026-10-03"
+   },
+   "transparency": "opaque",
+   "visibility": "private",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "ソース@例え.jp:ev_24_6"
+    }
+   }
+  }
+ },
+ {
+  "source": "src+tag@example.com",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_25_6",
+   "status": "confirmed",
+   "transparency": "transparent",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "summary": "ls ps ",
+   "description": "ls ps ",
+   "location": "ls ps "
+  },
+  "detailed": false,
+  "private": false,
+  "digest": "53d3d0ebd33c27aa422f6036d9c5f0f06b40c4d464c55b68618353958951b774",
+  "id": "bf25b9c63384515ad364d54e0cad067b80975e0a823e86289212cba76d21ee68b",
+  "key": "[\"src+tag@example.com\",\"ev_25_6\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T02:30:00.000Z",
+  "body": {
+   "summary": "予定あり（MTG可能）",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "transparency": "transparent",
+   "visibility": "private",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "src+tag@example.com:ev_25_6"
+    }
+   }
+  }
+ },
+ {
+  "source": "ソース@例え.jp",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_26_6",
+   "status": "confirmed",
+   "transparency": "opaque",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "summary": "ls ps ",
+   "location": "ls ps ",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": true,
+  "private": false,
+  "digest": "bb7ab4be60889e233688d6e48e0b87356c23b612b0a57e0f6b239f612a057ff6",
+  "id": "b201732fe5a4b3368b00649d3116dc933801c5aa38fa33ed46634e64120046e10",
+  "key": "[\"ソース@例え.jp\",\"ev_26_6\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T02:30:00.000Z",
+  "body": {
+   "summary": "ls ps ",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "transparency": "opaque",
+   "visibility": "default",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "ソース@例え.jp:ev_26_6"
+    }
+   },
+   "description": "Google Meet: https://meet.google.com/abc-defg-hij\n\n元のカレンダー: ソース@例え.jp",
+   "location": "ls ps "
+  }
+ },
+ {
+  "source": "src+tag@example.com",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_27_6",
+   "status": "confirmed",
+   "transparency": "transparent",
+   "start": {
+    "date": "2026-10-02"
+   },
+   "end": {
+    "date": "2026-10-03"
+   },
+   "summary": "ls ps ",
+   "description": "ls ps ",
+   "location": "ls ps ",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": true,
+  "private": false,
+  "digest": "6015ff4c4458c0f1ce28d0f591a89cba1a69b90cd4638c733203423910b3b79f",
+  "id": "b13bc2da9b62c8888fbfc9c862efc2329c377beecbeac41a98b19de3fc6d69d9c",
+  "key": "[\"src+tag@example.com\",\"ev_27_6\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T10:00:00.000Z",
+  "body": {
+   "summary": "ls ps ",
+   "start": {
+    "date": "2026-10-02"
+   },
+   "end": {
+    "date": "2026-10-03"
+   },
+   "transparency": "transparent",
+   "visibility": "default",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "src+tag@example.com:ev_27_6"
+    }
+   },
+   "description": "ls ps \n\nGoogle Meet: https://meet.google.com/abc-defg-hij\n\n元のカレンダー: src+tag@example.com",
+   "location": "ls ps "
+  }
+ },
+ {
+  "source": "ソース@例え.jp",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_28_6",
+   "status": "confirmed",
+   "transparency": "opaque",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "summary": "ls ps ",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": true,
+  "private": true,
+  "digest": "8b9e4f62bed94652656009a8d2ed2ffbe5dd7e0764b50378c6cb26f1a95145cb",
+  "id": "bd16ccabd5156650a5996fb0d0daa24bd2894a6ca13ba6679519e834b1d2fe5ef",
+  "key": "[\"ソース@例え.jp\",\"ev_28_6\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T02:30:00.000Z",
+  "body": {
+   "summary": "ls ps ",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "transparency": "opaque",
+   "visibility": "private",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "ソース@例え.jp:ev_28_6"
+    }
+   },
+   "description": "Google Meet: https://meet.google.com/abc-defg-hij\n\n元のカレンダー: ソース@例え.jp"
+  }
+ },
+ {
+  "source": "src+tag@example.com",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_29_6",
+   "status": "confirmed",
+   "transparency": "transparent",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "summary": "ls ps ",
+   "description": "ls ps ",
+   "location": "ls ps ",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": true,
+  "private": true,
+  "digest": "e6488e8664f35bdfe1b28598f2c4d50354afcdd74c967f7e8e6d148fd685367d",
+  "id": "bd404f0480b82d7ca7aef5aa89f911db341e02c8b0deb42cce66ccee03004539b",
+  "key": "[\"src+tag@example.com\",\"ev_29_6\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T02:30:00.000Z",
+  "body": {
+   "summary": "ls ps ",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "transparency": "transparent",
+   "visibility": "private",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "src+tag@example.com:ev_29_6"
+    }
+   },
+   "description": "ls ps \n\nGoogle Meet: https://meet.google.com/abc-defg-hij\n\n元のカレンダー: src+tag@example.com",
+   "location": "ls ps "
+  }
+ },
+ {
+  "source": "ソース@例え.jp",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_30_7",
+   "status": "confirmed",
+   "transparency": "opaque",
+   "start": {
+    "date": "2026-10-02"
+   },
+   "end": {
+    "date": "2026-10-03"
+   },
+   "summary": "ctrl\u0001\u001f",
+   "location": "ctrl\u0001\u001f"
+  },
+  "detailed": false,
+  "private": false,
+  "digest": "f5d589868a841f9a9da1eb0a687bcf0a888e1933bd986a9e1fc9702b1de00c2f",
+  "id": "b93de1031601cd17b144cb614b8774b81d8018013b238d52e570a6b2de7ecbb7d",
+  "key": "[\"ソース@例え.jp\",\"ev_30_7\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T10:00:00.000Z",
+  "body": {
+   "summary": "予定あり",
+   "start": {
+    "date": "2026-10-02"
+   },
+   "end": {
+    "date": "2026-10-03"
+   },
+   "transparency": "opaque",
+   "visibility": "private",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "ソース@例え.jp:ev_30_7"
+    }
+   }
+  }
+ },
+ {
+  "source": "src+tag@example.com",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_31_7",
+   "status": "confirmed",
+   "transparency": "transparent",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "summary": "ctrl\u0001\u001f",
+   "description": "ctrl\u0001\u001f",
+   "location": "ctrl\u0001\u001f",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": false,
+  "private": false,
+  "digest": "fe5c81b2548bbf83351e9a08423a701d3d17d2ce831e81f86976eb505e41508f",
+  "id": "b92d96399c4fa9e4a1d1405169c2bbb831e05e9a3ba4988880ca3dc63c4802df4",
+  "key": "[\"src+tag@example.com\",\"ev_31_7\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T02:30:00.000Z",
+  "body": {
+   "summary": "予定あり（MTG可能）",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "transparency": "transparent",
+   "visibility": "private",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "src+tag@example.com:ev_31_7"
+    }
+   }
+  }
+ },
+ {
+  "source": "ソース@例え.jp",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_32_7",
+   "status": "confirmed",
+   "transparency": "opaque",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "summary": "ctrl\u0001\u001f",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": true,
+  "private": false,
+  "digest": "9b5d5cd022f0339f687dcfbb872e954cc834f5008847d62ebf5a9bb57a8cf44b",
+  "id": "bf536e693eb2627c89e45177ad41005fc460d5dac4f392bd0d4416db63da727dd",
+  "key": "[\"ソース@例え.jp\",\"ev_32_7\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T02:30:00.000Z",
+  "body": {
+   "summary": "ctrl\u0001\u001f",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "transparency": "opaque",
+   "visibility": "default",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "ソース@例え.jp:ev_32_7"
+    }
+   },
+   "description": "Google Meet: https://meet.google.com/abc-defg-hij\n\n元のカレンダー: ソース@例え.jp"
+  }
+ },
+ {
+  "source": "src+tag@example.com",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_33_7",
+   "status": "confirmed",
+   "transparency": "transparent",
+   "start": {
+    "date": "2026-10-02"
+   },
+   "end": {
+    "date": "2026-10-03"
+   },
+   "summary": "ctrl\u0001\u001f",
+   "description": "ctrl\u0001\u001f",
+   "location": "ctrl\u0001\u001f",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": true,
+  "private": false,
+  "digest": "382e8a07bee3f635f55bef3dadd4d3fe3ee3cd45a121cb8fbfcdbcdeabf4c4c2",
+  "id": "b2a454f6253c92922aa3f647725a878f2e451bc3cb35c1d79a38e83ea4a2b359e",
+  "key": "[\"src+tag@example.com\",\"ev_33_7\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T10:00:00.000Z",
+  "body": {
+   "summary": "ctrl\u0001\u001f",
+   "start": {
+    "date": "2026-10-02"
+   },
+   "end": {
+    "date": "2026-10-03"
+   },
+   "transparency": "transparent",
+   "visibility": "default",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "src+tag@example.com:ev_33_7"
+    }
+   },
+   "description": "ctrl\u0001\u001f\n\nGoogle Meet: https://meet.google.com/abc-defg-hij\n\n元のカレンダー: src+tag@example.com",
+   "location": "ctrl\u0001\u001f"
+  }
+ },
+ {
+  "source": "ソース@例え.jp",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_34_7",
+   "status": "confirmed",
+   "transparency": "opaque",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "summary": "ctrl\u0001\u001f",
+   "location": "ctrl\u0001\u001f",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": true,
+  "private": true,
+  "digest": "506d2a6cb8950c2dd5f6dd63f5cf0dff3c4f7eeefde0ace8d7282c7ddfe6b44f",
+  "id": "bd6a8f3ebf71ea48182a51a05a0669eeccb3b666be5b748fce81d87c365dea479",
+  "key": "[\"ソース@例え.jp\",\"ev_34_7\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T02:30:00.000Z",
+  "body": {
+   "summary": "ctrl\u0001\u001f",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "transparency": "opaque",
+   "visibility": "private",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "ソース@例え.jp:ev_34_7"
+    }
+   },
+   "description": "Google Meet: https://meet.google.com/abc-defg-hij\n\n元のカレンダー: ソース@例え.jp",
+   "location": "ctrl\u0001\u001f"
+  }
+ },
+ {
+  "source": "src+tag@example.com",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_35_7",
+   "status": "confirmed",
+   "transparency": "transparent",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "summary": "ctrl\u0001\u001f",
+   "description": "ctrl\u0001\u001f",
+   "location": "ctrl\u0001\u001f"
+  },
+  "detailed": true,
+  "private": true,
+  "digest": "6d166030121c3df607d16f7e48254f9381f4075f66a09047d22ea04135298d4a",
+  "id": "b5f122cc80cfed4ae699fec1299e52b707a0b690ecacfb20add10bd3e6eab764a",
+  "key": "[\"src+tag@example.com\",\"ev_35_7\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T02:30:00.000Z",
+  "body": {
+   "summary": "ctrl\u0001\u001f",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "transparency": "transparent",
+   "visibility": "private",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "src+tag@example.com:ev_35_7"
+    }
+   },
+   "description": "ctrl\u0001\u001f\n\n元のカレンダー: src+tag@example.com",
+   "location": "ctrl\u0001\u001f"
+  }
+ },
+ {
+  "source": "ソース@例え.jp",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_36_10",
+   "status": "confirmed",
+   "transparency": "opaque",
+   "start": {
+    "date": "2026-10-02"
+   },
+   "end": {
+    "date": "2026-10-03"
+   },
+   "summary": "emoji 😀🍣",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": false,
+  "private": false,
+  "digest": "168e49ddd05cf7453b65b2bdd7f2ef462b0a04307cac6c3b087884271a445a49",
+  "id": "ba67f85aa9329943a6d6c77139f259d8e544a0fc0d8969851ebfbff2f7a13b734",
+  "key": "[\"ソース@例え.jp\",\"ev_36_10\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T10:00:00.000Z",
+  "body": {
+   "summary": "予定あり",
+   "start": {
+    "date": "2026-10-02"
+   },
+   "end": {
+    "date": "2026-10-03"
+   },
+   "transparency": "opaque",
+   "visibility": "private",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "ソース@例え.jp:ev_36_10"
+    }
+   }
+  }
+ },
+ {
+  "source": "src+tag@example.com",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_37_10",
+   "status": "confirmed",
+   "transparency": "transparent",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "summary": "emoji 😀🍣",
+   "description": "emoji 😀🍣",
+   "location": "emoji 😀🍣",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": false,
+  "private": false,
+  "digest": "5b98b25c3edcb4ca17359286fc239f3ae2f784df18692336f5cf5262f8d765a4",
+  "id": "b198eb843acd9f6898d67b995ee6ac559bd5353c5b2fdeae922b685dfbef71217",
+  "key": "[\"src+tag@example.com\",\"ev_37_10\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T02:30:00.000Z",
+  "body": {
+   "summary": "予定あり（MTG可能）",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "transparency": "transparent",
+   "visibility": "private",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "src+tag@example.com:ev_37_10"
+    }
+   }
+  }
+ },
+ {
+  "source": "ソース@例え.jp",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_38_10",
+   "status": "confirmed",
+   "transparency": "opaque",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "summary": "emoji 😀🍣",
+   "location": "emoji 😀🍣",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": true,
+  "private": false,
+  "digest": "f045321ef91255d6eeba38f2261a0f0bf589f7862243797bbc1ddad02f7921f1",
+  "id": "b036c5a87b38543e0fc60f2ec815c72d4663cb4847ce2526a425dfe51c8b339a8",
+  "key": "[\"ソース@例え.jp\",\"ev_38_10\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T02:30:00.000Z",
+  "body": {
+   "summary": "emoji 😀🍣",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "transparency": "opaque",
+   "visibility": "default",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "ソース@例え.jp:ev_38_10"
+    }
+   },
+   "description": "Google Meet: https://meet.google.com/abc-defg-hij\n\n元のカレンダー: ソース@例え.jp",
+   "location": "emoji 😀🍣"
+  }
+ },
+ {
+  "source": "src+tag@example.com",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_39_10",
+   "status": "confirmed",
+   "transparency": "transparent",
+   "start": {
+    "date": "2026-10-02"
+   },
+   "end": {
+    "date": "2026-10-03"
+   },
+   "summary": "emoji 😀🍣",
+   "description": "emoji 😀🍣",
+   "location": "emoji 😀🍣",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": true,
+  "private": false,
+  "digest": "bbf266a4811a56b861449df50a02b6b90f71a1c36c2fc2cedf975beb89c23441",
+  "id": "b6e9585936d5a41d010a41b3c7af854ff23b0605245e3a8ef83b0d9abf66b0581",
+  "key": "[\"src+tag@example.com\",\"ev_39_10\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T10:00:00.000Z",
+  "body": {
+   "summary": "emoji 😀🍣",
+   "start": {
+    "date": "2026-10-02"
+   },
+   "end": {
+    "date": "2026-10-03"
+   },
+   "transparency": "transparent",
+   "visibility": "default",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "src+tag@example.com:ev_39_10"
+    }
+   },
+   "description": "emoji 😀🍣\n\nGoogle Meet: https://meet.google.com/abc-defg-hij\n\n元のカレンダー: src+tag@example.com",
+   "location": "emoji 😀🍣"
+  }
+ },
+ {
+  "source": "ソース@例え.jp",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_40_10",
+   "status": "confirmed",
+   "transparency": "opaque",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "summary": "emoji 😀🍣"
+  },
+  "detailed": true,
+  "private": true,
+  "digest": "baa5ac91ac928016467b71aa5f63b39aa9ccefc86017a61d070894a8c9dbe993",
+  "id": "b90573f6f9624dd28dab83a4acaae519c76e2344542f7e29c42b511acffec025b",
+  "key": "[\"ソース@例え.jp\",\"ev_40_10\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T02:30:00.000Z",
+  "body": {
+   "summary": "emoji 😀🍣",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "transparency": "opaque",
+   "visibility": "private",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "ソース@例え.jp:ev_40_10"
+    }
+   },
+   "description": "元のカレンダー: ソース@例え.jp"
+  }
+ },
+ {
+  "source": "src+tag@example.com",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_41_10",
+   "status": "confirmed",
+   "transparency": "transparent",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "summary": "emoji 😀🍣",
+   "description": "emoji 😀🍣",
+   "location": "emoji 😀🍣",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": true,
+  "private": true,
+  "digest": "dcdf088cb96e3a7f7c8a0d4de13b53a3b5cfa083fc2b662a7156004e24e7ad74",
+  "id": "b1233c1eac02a459f4fe8bb20af8582b01ad3793fede16b2a976cd8eb62f31790",
+  "key": "[\"src+tag@example.com\",\"ev_41_10\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T02:30:00.000Z",
+  "body": {
+   "summary": "emoji 😀🍣",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "transparency": "transparent",
+   "visibility": "private",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "src+tag@example.com:ev_41_10"
+    }
+   },
+   "description": "emoji 😀🍣\n\nGoogle Meet: https://meet.google.com/abc-defg-hij\n\n元のカレンダー: src+tag@example.com",
+   "location": "emoji 😀🍣"
+  }
+ },
+ {
+  "source": "ソース@例え.jp",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_42_0",
+   "status": "confirmed",
+   "transparency": "opaque",
+   "start": {
+    "date": "2026-10-02"
+   },
+   "end": {
+    "date": "2026-10-03"
+   },
+   "location": "",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": false,
+  "private": false,
+  "digest": "7b057fae8dd712de402860c817a64d147e44da7170f807d2e00186a2bf4a1df5",
+  "id": "b90b5fb28a3b443e99d353eaa6924517a67a405c029a3f02660c7ed373e00f69b",
+  "key": "[\"ソース@例え.jp\",\"ev_42_0\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T10:00:00.000Z",
+  "body": {
+   "summary": "予定あり",
+   "start": {
+    "date": "2026-10-02"
+   },
+   "end": {
+    "date": "2026-10-03"
+   },
+   "transparency": "opaque",
+   "visibility": "private",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "ソース@例え.jp:ev_42_0"
+    }
+   }
+  }
+ },
+ {
+  "source": "src+tag@example.com",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_43_0",
+   "status": "confirmed",
+   "transparency": "transparent",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "description": "",
+   "location": "",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": false,
+  "private": false,
+  "digest": "58d3aff28383f237194ca47ab23e1fec9eaa42c4e22980b5a3434075604102b1",
+  "id": "bc5b245eca7cc5000594ed946f64311c81e76b31f9d43e9134566d2f3afc401a4",
+  "key": "[\"src+tag@example.com\",\"ev_43_0\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T02:30:00.000Z",
+  "body": {
+   "summary": "予定あり（MTG可能）",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "transparency": "transparent",
+   "visibility": "private",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "src+tag@example.com:ev_43_0"
+    }
+   }
+  }
+ },
+ {
+  "source": "ソース@例え.jp",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_44_0",
+   "status": "confirmed",
+   "transparency": "opaque",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": true,
+  "private": false,
+  "digest": "6d1f295f7dbb0f667c4cf65ca961d82c8bb09576fe47bd795c62ac2f39961821",
+  "id": "bf84ea0bb099db79abbb48d465b8f8f8c043669a3a91f16ac77c8a7671f32a90e",
+  "key": "[\"ソース@例え.jp\",\"ev_44_0\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T02:30:00.000Z",
+  "body": {
+   "summary": "(タイトルなし)",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "transparency": "opaque",
+   "visibility": "default",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "ソース@例え.jp:ev_44_0"
+    }
+   },
+   "description": "Google Meet: https://meet.google.com/abc-defg-hij\n\n元のカレンダー: ソース@例え.jp"
+  }
+ },
+ {
+  "source": "src+tag@example.com",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_45_0",
+   "status": "confirmed",
+   "transparency": "transparent",
+   "start": {
+    "date": "2026-10-02"
+   },
+   "end": {
+    "date": "2026-10-03"
+   },
+   "description": "",
+   "location": ""
+  },
+  "detailed": true,
+  "private": false,
+  "digest": "08438436918608add615137c310424446aabd3a0ecbe578e985e2a0de1f81e28",
+  "id": "b855cb8667fadaec17c0efcef201c39e583aabd76a30e3a59d8fdc1a0913c90f8",
+  "key": "[\"src+tag@example.com\",\"ev_45_0\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T10:00:00.000Z",
+  "body": {
+   "summary": "(タイトルなし)",
+   "start": {
+    "date": "2026-10-02"
+   },
+   "end": {
+    "date": "2026-10-03"
+   },
+   "transparency": "transparent",
+   "visibility": "default",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "src+tag@example.com:ev_45_0"
+    }
+   },
+   "description": "元のカレンダー: src+tag@example.com"
+  }
+ },
+ {
+  "source": "ソース@例え.jp",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_46_0",
+   "status": "confirmed",
+   "transparency": "opaque",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "location": "",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": true,
+  "private": true,
+  "digest": "d37ec2b292744f0b60a509e6ff0f67b9b515bd319b479ce2e57160b72a72ce7d",
+  "id": "b9b2605713d11209b0291bf6fefe1fb57458a53e5af63c67fd806575b1033e5b6",
+  "key": "[\"ソース@例え.jp\",\"ev_46_0\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T02:30:00.000Z",
+  "body": {
+   "summary": "(タイトルなし)",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "transparency": "opaque",
+   "visibility": "private",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "ソース@例え.jp:ev_46_0"
+    }
+   },
+   "description": "Google Meet: https://meet.google.com/abc-defg-hij\n\n元のカレンダー: ソース@例え.jp"
+  }
+ },
+ {
+  "source": "src+tag@example.com",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_47_0",
+   "status": "confirmed",
+   "transparency": "transparent",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "description": "",
+   "location": "",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": true,
+  "private": true,
+  "digest": "a0566ad18bafd29610129eb88fce18f3bdccfaedec47598a86f409bcc1c3b11d",
+  "id": "b1adc0b57a4fa60c980698f633b6a5e56b61beadcd5066651c9cbe59646ef7783",
+  "key": "[\"src+tag@example.com\",\"ev_47_0\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T02:30:00.000Z",
+  "body": {
+   "summary": "(タイトルなし)",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "transparency": "transparent",
+   "visibility": "private",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "src+tag@example.com:ev_47_0"
+    }
+   },
+   "description": "Google Meet: https://meet.google.com/abc-defg-hij\n\n元のカレンダー: src+tag@example.com"
+  }
+ },
+ {
+  "source": "ソース@例え.jp",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_48_10",
+   "status": "confirmed",
+   "transparency": "opaque",
+   "start": {
+    "date": "2026-10-02"
+   },
+   "end": {
+    "date": "2026-10-03"
+   },
+   "summary": "日本語　全角スペース",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": false,
+  "private": false,
+  "digest": "aa42cc56133b0b19340bbc9925904013b73a13be11e8a461739176a6f551936e",
+  "id": "be2e62e5fdcb43e7f735497dd53c201a2c2bf2507a6e03acd321291617752ad30",
+  "key": "[\"ソース@例え.jp\",\"ev_48_10\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T10:00:00.000Z",
+  "body": {
+   "summary": "予定あり",
+   "start": {
+    "date": "2026-10-02"
+   },
+   "end": {
+    "date": "2026-10-03"
+   },
+   "transparency": "opaque",
+   "visibility": "private",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "ソース@例え.jp:ev_48_10"
+    }
+   }
+  }
+ },
+ {
+  "source": "src+tag@example.com",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_49_10",
+   "status": "confirmed",
+   "transparency": "transparent",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "summary": "日本語　全角スペース",
+   "description": "日本語　全角スペース",
+   "location": "日本語　全角スペース",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": false,
+  "private": false,
+  "digest": "fa7c827ac5c60efde3393a9e1af65a2ee206bc9f6bc2def992a5b0fe9b1eda7c",
+  "id": "b134d8df1d251c9c1c0dd58ca92bf603d20cc38f8614f3ad7f4ab9110db74ab52",
+  "key": "[\"src+tag@example.com\",\"ev_49_10\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T02:30:00.000Z",
+  "body": {
+   "summary": "予定あり（MTG可能）",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "transparency": "transparent",
+   "visibility": "private",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "src+tag@example.com:ev_49_10"
+    }
+   }
+  }
+ },
+ {
+  "source": "ソース@例え.jp",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_50_10",
+   "status": "confirmed",
+   "transparency": "opaque",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "summary": "日本語　全角スペース",
+   "location": "日本語　全角スペース"
+  },
+  "detailed": true,
+  "private": false,
+  "digest": "5d6f124634cb6526b0240a620b73b696ddbe826bd2181e2afd9c280c30105d8d",
+  "id": "bd82714e08cb04c6823138057471de9656dc626c79d519fd1c30e28d06f9bf5b7",
+  "key": "[\"ソース@例え.jp\",\"ev_50_10\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T02:30:00.000Z",
+  "body": {
+   "summary": "日本語　全角スペース",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "transparency": "opaque",
+   "visibility": "default",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "ソース@例え.jp:ev_50_10"
+    }
+   },
+   "description": "元のカレンダー: ソース@例え.jp",
+   "location": "日本語　全角スペース"
+  }
+ },
+ {
+  "source": "src+tag@example.com",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_51_10",
+   "status": "confirmed",
+   "transparency": "transparent",
+   "start": {
+    "date": "2026-10-02"
+   },
+   "end": {
+    "date": "2026-10-03"
+   },
+   "summary": "日本語　全角スペース",
+   "description": "日本語　全角スペース",
+   "location": "日本語　全角スペース",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": true,
+  "private": false,
+  "digest": "eadc8a1fd98b3cb23e02f318a03d1041dc0b4ec482da40d4e1d0ceaf690bf585",
+  "id": "b1dadb6963201b31263e87f11d7440c2f816293291b418a991cfa7f9ef8dc91c7",
+  "key": "[\"src+tag@example.com\",\"ev_51_10\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T10:00:00.000Z",
+  "body": {
+   "summary": "日本語　全角スペース",
+   "start": {
+    "date": "2026-10-02"
+   },
+   "end": {
+    "date": "2026-10-03"
+   },
+   "transparency": "transparent",
+   "visibility": "default",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "src+tag@example.com:ev_51_10"
+    }
+   },
+   "description": "日本語　全角スペース\n\nGoogle Meet: https://meet.google.com/abc-defg-hij\n\n元のカレンダー: src+tag@example.com",
+   "location": "日本語　全角スペース"
+  }
+ },
+ {
+  "source": "ソース@例え.jp",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_52_10",
+   "status": "confirmed",
+   "transparency": "opaque",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "summary": "日本語　全角スペース",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": true,
+  "private": true,
+  "digest": "06ed435609370cfc1bb1ad257f7eea7707a177d054d9b801b46d6bf643395be3",
+  "id": "b11ab297fb81928634ddb479ea2436d112e47d879839b65f07f6f028f127f843a",
+  "key": "[\"ソース@例え.jp\",\"ev_52_10\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T02:30:00.000Z",
+  "body": {
+   "summary": "日本語　全角スペース",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "transparency": "opaque",
+   "visibility": "private",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "ソース@例え.jp:ev_52_10"
+    }
+   },
+   "description": "Google Meet: https://meet.google.com/abc-defg-hij\n\n元のカレンダー: ソース@例え.jp"
+  }
+ },
+ {
+  "source": "src+tag@example.com",
+  "target": "tgt@example.com",
+  "event": {
+   "id": "ev_53_10",
+   "status": "confirmed",
+   "transparency": "transparent",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "summary": "日本語　全角スペース",
+   "description": "日本語　全角スペース",
+   "location": "日本語　全角スペース",
+   "hangoutLink": "https://meet.google.com/abc-defg-hij"
+  },
+  "detailed": true,
+  "private": true,
+  "digest": "4851a5022bcc2c902a20f6a77412e3f3d4b9dd573559ba355808638337d07e1d",
+  "id": "b3b55cbdf15e8fa3dbb9f02fbe158e6fe552d7376cbf9b1bb6a87aa9768b78c0d",
+  "key": "[\"src+tag@example.com\",\"ev_53_10\",\"tgt@example.com\"]",
+  "endAt": "2026-10-02T02:30:00.000Z",
+  "body": {
+   "summary": "日本語　全角スペース",
+   "start": {
+    "dateTime": "2026-10-02T10:00:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "end": {
+    "dateTime": "2026-10-02T11:30:00+09:00",
+    "timeZone": "Asia/Tokyo"
+   },
+   "transparency": "transparent",
+   "visibility": "private",
+   "reminders": {
+    "useDefault": false,
+    "overrides": []
+   },
+   "extendedProperties": {
+    "private": {
+     "busy_sync_origin": "src+tag@example.com:ev_53_10"
+    }
+   },
+   "description": "日本語　全角スペース\n\nGoogle Meet: https://meet.google.com/abc-defg-hij\n\n元のカレンダー: src+tag@example.com",
+   "location": "日本語　全角スペース"
+  }
+ }
+]

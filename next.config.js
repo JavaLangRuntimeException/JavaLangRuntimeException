@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+     // Docker（k8s/Dockerfile）でのビルド時のみ standalone 出力にする。Vercel のビルドには影響しない
+     ...(process.env.NEXT_OUTPUT_STANDALONE === '1' ? { output: 'standalone' } : {}),
      images: {
           remotePatterns: [
                {

@@ -1,0 +1,8 @@
+# GKE の標準 StorageClass と同じ名前。データを消さないよう Retain
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: standard-rwo
+provisioner: rancher.io/local-path
+volumeBindingMode: WaitForFirstConsumer
+reclaimPolicy: Retain

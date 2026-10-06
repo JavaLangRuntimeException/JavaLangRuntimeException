@@ -1,0 +1,23 @@
+; taramanji.com のゾーン（お名前.comの管理画面のエクスポート 2026-10-05 版。NS / SOA 以外すべて）
+; Cloudflare の「DNS レコード → インポート」で取り込む（NS / SOA は Cloudflare が自動で設定するので書かない）
+$ORIGIN taramanji.com.
+
+; Web（Vercel）
+@	3600	IN	A	76.76.21.21
+www	3600	IN	A	76.76.21.21
+
+; メール（Google Workspace / Amazon SES）
+@	3600	IN	MX	1 smtp.google.com.
+@	3600	IN	TXT	"v=spf1 include:_spf.google.com include:amazonses.com ~all"
+@	3600	IN	TXT	"google-site-verification=7JYeyWbR1aPyJucP9PUeeZVt4wGBjs-OJjObnTyoNNI"
+google._domainkey	3600	IN	TXT	"v=DKIM1;k=rsa;p=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAt18DU7ue/uw1IHf9TVmJQR3XQqomWmxtxAfRh0Lt8aEVCiiLItD5pAtaqMvs20OkwNzdmYgSR4Sunsb2ChH7AvejAXNKg50kbFf9wFqdeXycQm9eFWQs9iyVD2eBHuRqcMKq0QfUC5N71v247lkJ1QJe8OEeCDJRBDxHYzUMr3OYiFlgNVQd4ajJ8Mj3SKENKLz" "obDoHkZaj2pNiYajM2uC6UlxA98MiolT2UsvzYm9CfMbxQ+v9FdvNXXDRykIksw7RaM8mkOAEA/n49wQ+o9KjcchzYQKJ2AsjwjUs0LZFJv9gYszpAOlUuxEsEQ7CQPtIqAFutVGeXq3pzswQXwIDAQAB"
+
+; Amazon SES の DKIM（プロキシすると署名検証に失敗するので必ず DNS のみ）
+2rnivulhzoec4ojzxgnoksgynvxyiczp._domainkey	3600	IN	CNAME	2rnivulhzoec4ojzxgnoksgynvxyiczp.dkim.amazonses.com.
+gute5vbziz4cvhpkimsn6ujgiaa5c55z._domainkey	3600	IN	CNAME	gute5vbziz4cvhpkimsn6ujgiaa5c55z.dkim.amazonses.com.
+uscz6v7rh357k7fdjnbi4nqz6dv6gpja._domainkey	3600	IN	CNAME	uscz6v7rh357k7fdjnbi4nqz6dv6gpja.dkim.amazonses.com.
+
+; ドメイン所有確認（Google / Discord / Azure App Service）
+wifgvva2owo3	3600	IN	CNAME	gv-rmogjbrfpt3piv.dv.googlehosted.com.
+_discord	3600	IN	TXT	"dh=7299040c972b6b5c7d2c903b6a37e646c3efecbb"
+asuid	3600	IN	TXT	"1524836F33390A614029A8EDFED4041290383E1882C61EB0ECB8FF0C6C427BAF"

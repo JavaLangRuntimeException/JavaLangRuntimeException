@@ -1,0 +1,19 @@
+# content: Qiita・connpass・ORCID・OGP（外部の取得を待つので長め）
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: content
+  labels:
+    taramanji.com/host-group: site
+spec:
+  parentRefs:
+    - { name: taramanji, namespace: gateway, sectionName: http }
+  # 環境ごとのホスト名はオーバーレイで差し替える
+  hostnames: ["taramanji.com", "www.taramanji.com"]
+  rules:
+    - matches:
+        - { path: { type: PathPrefix, value: /taramanji.content.v1.ContentService/ } }
+      backendRefs:
+        - { name: content, port: 8080, weight: 100 }
+        - { name: content-canary, port: 8080, weight: 0 }
+      timeouts: { request: 60s }

@@ -1,0 +1,113 @@
+syntax = "proto3";
+
+package taramanji.calendarsync.v1;
+
+// 複数 Google アカウントのカレンダー同期（管理者用。RunSync は CronJob からも呼ぶ）
+service CalendarSyncService {
+  rpc GetStatus(GetStatusRequest) returns (GetStatusResponse) {}
+  rpc RunSync(RunSyncRequest) returns (RunSyncResponse) {}
+  rpc UpdateSettings(UpdateSettingsRequest) returns (UpdateSettingsResponse) {}
+  rpc Disconnect(DisconnectRequest) returns (DisconnectResponse) {}
+}
+
+// @entity
+// 接続した Google アカウント（メインカレンダー）
+message CalendarAccount {
+  // @pk
+  string calendar_id = 1;
+  // @required
+  // AES-256-GCM で暗号化した更新トークン（v1:iv:tag:ciphertext）
+  string refresh_token = 2;
+  // マスターに中身を出すとき非公開にする
+  bool private = 3;
+  // @timestamp
+  int64 connected_at_unix = 4;
+  // このアカウントの予定から作った同期予定の色（Google カレンダーの予定の色 "1"〜"11"。全アカウント共通のパレット）
+  string color_id = 5;
+}
+
+// @entity
+// 同期全体の設定（id は "default" の 1 件）
+message SyncSetting {
+  // @pk
+  string id = 1;
+  string master = 2;
+}
+
+// @entity
+// 作った同期予定の記録（key は JSON の [元カレンダー, 元予定 ID, 同期先]）
+message SyncMirror {
+  // @pk
+  string key = 1;
+  // 本文のダイジェスト（変化がなければ書き込まない）
+  string digest = 2;
+  // 元予定の終了時刻（ISO）
+  string end_at = 3;
+}
+
+// 画面に返すアカウント（更新トークンは含めない）
+message AccountView {
+  string calendar_id = 1;
+  bool private = 2;
+  string connected_at = 3;
+  // 同期予定の色（"1"〜"11"）
+  string color_id = 4;
+}
+
+message SyncError {
+  string calendar_id = 1;
+  string error = 2;
+}
+
+message LastRun {
+  int32 source_events = 1;
+  int32 mirrors = 2;
+  int32 writes = 3;
+  int32 deletes = 4;
+  int32 pending = 5;
+  repeated SyncError errors = 6;
+  string at = 7;
+  int64 duration_ms = 8;
+  repeated string reconnect = 9;
+}
+
+message GetStatusRequest {}
+
+message GetStatusResponse {
+  string master = 1;
+  repeated AccountView accounts = 2;
+  // まだ一度も同期していなければ未設定
+  optional LastRun last_run = 3;
+}
+
+message RunSyncRequest {}
+
+message RunSyncResponse {
+  // ok は errors が 0 件のとき true。前の回が実行中なら skipped（CronJob）または error（管理画面）
+  LastRun run = 1;
+  bool skipped = 2;
+}
+
+message UpdateSettingsRequest {
+  // set_master が true のとき master を変更（空ならマスター解除）
+  bool set_master = 1;
+  string master = 2;
+  // 空でなければ、そのアカウントの「マスターで非公開」を private_value にする
+  string private_calendar_id = 3;
+  bool private_value = 4;
+  // 空でなければ、そのアカウントの同期予定の色を color_id（"1"〜"11"）にする
+  string color_calendar_id = 5;
+  string color_id = 6;
+}
+
+message UpdateSettingsResponse {
+}
+
+message DisconnectRequest {
+  string calendar_id = 1;
+}
+
+message DisconnectResponse {
+  int32 deleted = 1;
+  int32 failed = 2;
+}

@@ -1,0 +1,15 @@
+# サービスごとの HTTPRoute（ホスト名と転送先はオーバーレイで環境ごとに差し替える）
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - identity-site.yaml
+  - identity-gws.yaml
+  - inquiry.yaml
+  - reservation.yaml
+  - worklocation.yaml
+  - content.yaml
+  - analytics.yaml
+  - calendarsync.yaml
+  - web-site.yaml
+  - web-gws.yaml
+  - redirects.yaml

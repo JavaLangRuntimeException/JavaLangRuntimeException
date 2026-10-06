@@ -1,0 +1,118 @@
+# Redis（GKE なら Memorystore に置き換える所）。StatefulSet 1 台、AOF で永続化。
+# サービスごとに DB 番号と ACL ユーザーを分け、自分のキー（プレフィックス）以外は触れないようにする。
+# ACL（users.acl）はパスワードを含むので Secret（overlay の make-secrets.sh が作る）。
+# probe と datadog のユーザーはパスワードなしだが PING / INFO などの読み取りしかできない
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-config
+data:
+  redis.conf: |
+    port 6379
+    dir /data
+    appendonly yes
+    appendfsync everysec
+    aclfile /etc/redis/acl/users.acl
+    # データ（予約・同期の記録）を置くので追い出さない。キャッシュは TTL で消える
+    maxmemory 200mb
+    maxmemory-policy noeviction
+    protected-mode no
+    latency-tracking yes
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  labels: { app.kubernetes.io/name: redis }
+spec:
+  clusterIP: None
+  selector: { app.kubernetes.io/name: redis }
+  ports:
+    - name: redis
+      port: 6379
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis
+  labels: { app.kubernetes.io/name: redis }
+spec:
+  serviceName: redis
+  replicas: 1
+  selector:
+    matchLabels: { app.kubernetes.io/name: redis }
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: redis
+        tags.datadoghq.com/service: redis
+      annotations:
+        ad.datadoghq.com/redis.checks: |
+          {"redisdb": {"init_config": {}, "instances": [{"host": "%%host%%", "port": "6379",
+            "username": "datadog", "command_stats": true}]}}
+        ad.datadoghq.com/redis.logs: '[{"source":"redis","service":"redis"}]'
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+        seccompProfile: { type: RuntimeDefault }
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: redis
+          image: redis:8.2-alpine
+          args: ["/etc/redis/conf/redis.conf"]
+          ports:
+            - { name: redis, containerPort: 6379 }
+          readinessProbe:
+            exec: { command: ["sh", "-c", "redis-cli --no-auth-warning --user probe --pass x ping | grep -q PONG"] }
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket: { port: redis }
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests: { cpu: 20m, memory: 64Mi }
+            limits: { memory: 256Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+          volumeMounts:
+            - { name: data, mountPath: /data }
+            - { name: conf, mountPath: /etc/redis/conf, readOnly: true }
+            - { name: acl, mountPath: /etc/redis/acl, readOnly: true }
+      volumes:
+        - name: conf
+          configMap: { name: redis-config }
+        - name: acl
+          secret:
+            secretName: redis-acl
+            items: [{ key: users.acl, path: users.acl }]
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        storageClassName: standard-rwo
+        resources:
+          requests: { storage: 2Gi }
+---
+# Redis に入れるのは、ACL で許可したアプリと Datadog だけ
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: redis
+spec:
+  podSelector:
+    matchLabels: { app.kubernetes.io/name: redis }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { taramanji.com/tier: apps } }
+          podSelector: { matchLabels: { taramanji.com/redis-client: "true" } }
+        - podSelector: { matchLabels: { taramanji.com/redis-client: "true" } }
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: datadog } }
+      ports:
+        - { port: 6379 }

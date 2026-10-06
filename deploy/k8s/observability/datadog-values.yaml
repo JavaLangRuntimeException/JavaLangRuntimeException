@@ -1,0 +1,47 @@
+# Datadog Agent（Helm: datadog/datadog）を kind に入れる設定。install-datadog.sh から使う。
+# GKE でもほぼ同じ（GKE Autopilot なら providers.gke.autopilot: true を足す）
+datadog:
+  apiKeyExistingSecret: datadog-secret
+  site: us5.datadoghq.com
+  clusterName: taramanji-kind
+  tags:
+    - env:prod
+    - host_type:mac-mini
+    - cluster_type:kind
+  # kind の kubelet は自己署名証明書
+  kubelet:
+    tlsVerify: false
+  logs:
+    enabled: true
+    containerCollectAll: true
+  # APM: アプリ（dd-trace-go）はノードの IP の 8126 へ送る
+  apm:
+    portEnabled: true
+    port: 8126
+  # DogStatsD（業務メトリクス・ランタイムメトリクス）: ノードの IP の 8125/udp
+  dogstatsd:
+    useHostPort: true
+    nonLocalTraffic: true
+    originDetection: true
+  kubeStateMetricsCore:
+    enabled: true
+  # ネットワークポリシー・HPA・PDB の状態も Datadog で見る
+  orchestratorExplorer:
+    enabled: true
+  processAgent:
+    processCollection: false
+  # Envoy・Redis・cloudflared のチェックは Pod の注釈（Autodiscovery）で設定している
+clusterAgent:
+  enabled: true
+  metricsProvider:
+    enabled: false
+agents:
+  containers:
+    agent:
+      resources:
+        requests: { cpu: 100m, memory: 256Mi }
+        limits: { memory: 512Mi }
+    traceAgent:
+      resources:
+        requests: { cpu: 20m, memory: 64Mi }
+        limits: { memory: 256Mi }

@@ -1,0 +1,17 @@
+# Argo CD のアプリ（app of apps）。gitops/apps/ にある Application をまとめて同期する
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/JavaLangRuntimeException/JavaLangRuntimeException.git
+    targetRevision: main
+    path: deploy/gitops/apps
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }

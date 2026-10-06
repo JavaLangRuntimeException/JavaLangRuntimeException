@@ -1,0 +1,13 @@
+# Cloudflare Tunnel のルーティング。DNS 側の登録は setup.sh <ホスト名> で行う
+# （ここに書いても DNS を向けるまでは公開されない）
+credentials-file: /etc/cloudflared/creds/credentials.json
+metrics: 0.0.0.0:2000
+no-autoupdate: true
+ingress:
+  - hostname: gws.taramanji.com
+    service: http://calendar-sync.calendar-sync.svc.cluster.local:80
+  - hostname: taramanji.com
+    service: http://portfolio.portfolio.svc.cluster.local:8080
+  - hostname: www.taramanji.com
+    service: http://portfolio.portfolio.svc.cluster.local:8080
+  - service: http_status:404

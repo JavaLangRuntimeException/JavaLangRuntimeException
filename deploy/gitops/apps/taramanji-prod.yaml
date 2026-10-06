@@ -1,0 +1,26 @@
+# 本番。リリース（v* タグ）で CI が overlays/prod の版を書き換え、ここが同期 → Argo Rollouts がカナリアで入れ替える
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: taramanji-prod
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/JavaLangRuntimeException/JavaLangRuntimeException.git
+    targetRevision: main
+    path: deploy/k8s/overlays/prod
+  destination:
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions:
+      - ServerSideApply=true
+  # Rollout が Pod を持つので Deployment の台数（0）と HPA が動かす台数は差分にしない
+  ignoreDifferences:
+    - group: argoproj.io
+      kind: Rollout
+      jsonPointers: [/spec/replicas]
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      jqPathExpressions: [".spec.rules[].backendRefs[].weight"]

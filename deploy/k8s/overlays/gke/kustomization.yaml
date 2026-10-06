@@ -1,0 +1,70 @@
+# GKE 用（作成のみ・未適用）。kind との差分だけをここに書く:
+#  - イメージ: Artifact Registry
+#  - Gateway: GKE Gateway（gke-l7-global-external-managed = グローバル外部 HTTP(S) LB）+ マネージド証明書。Envoy Gateway 固有のリソースは外す
+#  - Redis: Memorystore を使うなら data/ を外して REDIS_URL を差し替える（ここでは StatefulSet のまま）
+#  - Secret: Secret Manager + External Secrets（ここでは参照名だけ）。Pod は Workload Identity で GCP にアクセスする
+#  - cloudflared は不要（LB が直接受ける）
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespaces.yaml
+  - ../../base/gateway
+  - data
+  - apps
+
+images:
+  - { name: taramanji/identity, newName: asia-northeast1-docker.pkg.dev/PROJECT_ID/taramanji/identity, newTag: VERSION }
+  - { name: taramanji/notification, newName: asia-northeast1-docker.pkg.dev/PROJECT_ID/taramanji/notification, newTag: VERSION }
+  - { name: taramanji/inquiry, newName: asia-northeast1-docker.pkg.dev/PROJECT_ID/taramanji/inquiry, newTag: VERSION }
+  - { name: taramanji/reservation, newName: asia-northeast1-docker.pkg.dev/PROJECT_ID/taramanji/reservation, newTag: VERSION }
+  - { name: taramanji/worklocation, newName: asia-northeast1-docker.pkg.dev/PROJECT_ID/taramanji/worklocation, newTag: VERSION }
+  - { name: taramanji/content, newName: asia-northeast1-docker.pkg.dev/PROJECT_ID/taramanji/content, newTag: VERSION }
+  - { name: taramanji/calendarsync, newName: asia-northeast1-docker.pkg.dev/PROJECT_ID/taramanji/calendarsync, newTag: VERSION }
+  - { name: taramanji/analytics, newName: asia-northeast1-docker.pkg.dev/PROJECT_ID/taramanji/analytics, newTag: VERSION }
+  - { name: taramanji/web, newName: asia-northeast1-docker.pkg.dev/PROJECT_ID/taramanji/web, newTag: VERSION }
+
+patches:
+  # Envoy Gateway の EnvoyProxy・ClientTrafficPolicy は GKE では使わない
+  - target: { kind: EnvoyProxy }
+    patch: |-
+      $patch: delete
+      apiVersion: gateway.envoyproxy.io/v1alpha1
+      kind: EnvoyProxy
+      metadata: { name: taramanji, namespace: gateway }
+  - target: { kind: ClientTrafficPolicy }
+    patch: |-
+      $patch: delete
+      apiVersion: gateway.envoyproxy.io/v1alpha1
+      kind: ClientTrafficPolicy
+      metadata: { name: taramanji, namespace: gateway }
+  # GatewayClass を GKE のマネージド LB に。HTTPS で受けて証明書は Certificate Manager
+  - target: { kind: Gateway, name: taramanji }
+    patch: |-
+      - op: replace
+        path: /spec/gatewayClassName
+        value: gke-l7-global-external-managed
+      - op: remove
+        path: /spec/infrastructure
+      - op: add
+        path: /metadata/annotations
+        value:
+          networking.gke.io/certmap: taramanji-certmap
+      - op: add
+        path: /spec/listeners/-
+        value:
+          name: https
+          protocol: HTTPS
+          port: 443
+          allowedRoutes:
+            namespaces:
+              from: Selector
+              selector:
+                matchLabels: { taramanji.com/gateway-access: "true" }
+  # GKE の NetworkPolicy（Dataplane V2）では、LB のヘルスチェックとプロキシは専用の範囲から来る
+  - target: { kind: NetworkPolicy, name: from-gateway }
+    patch: |-
+      - op: replace
+        path: /spec/ingress/0/from
+        value:
+          - ipBlock: { cidr: 35.191.0.0/16 }
+          - ipBlock: { cidr: 130.211.0.0/22 }

@@ -1,0 +1,6 @@
+# クラスターで 1 つのもの（namespace・Gateway）。本番の Argo CD アプリが持つ
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespaces.yaml
+  - ../../../base/gateway

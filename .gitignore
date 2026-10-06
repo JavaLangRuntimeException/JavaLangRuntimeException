@@ -43,3 +43,8 @@ coverage/
 # IDE / エディタ設定
 .project
 
+.vercel
+.env*
+
+# Datadog RUM のクライアントトークン（ブラウザに配る前提の公開値）
+!frontend/.env.production

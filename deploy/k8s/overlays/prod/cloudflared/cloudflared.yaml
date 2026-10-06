@@ -1,0 +1,81 @@
+# staging トンネル（taramanji-kind）: next / dev / dev-gws.taramanji.com。本番のトンネル（taramanji-onprem）は切り替え時に cloudflared-prod として足す
+# Mac mini から Cloudflare へ外向きに接続するだけなので、ルーターのポート開放は不要
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudflared-staging
+  labels:
+    app: cloudflared
+    tunnel: staging
+spec:
+  # 2 本つないでおき、片方の再起動中も公開を止めない
+  replicas: 2
+  selector:
+    matchLabels: { app: cloudflared, tunnel: staging }
+  template:
+    metadata:
+      labels: { app: cloudflared, tunnel: staging }
+      annotations:
+        # Datadog: cloudflared の Prometheus メトリクス（:2000/metrics）のうちトンネルの分だけ集める
+        # （カスタムメトリクスは課金対象なので絞る）
+        ad.datadoghq.com/cloudflared.checks: |
+          {"openmetrics": {"init_config": {}, "instances": [{
+            "openmetrics_endpoint": "http://%%host%%:2000/metrics",
+            "namespace": "cloudflared",
+            "metrics": [
+              "cloudflared_tunnel_total_requests",
+              "cloudflared_tunnel_request_errors",
+              "cloudflared_tunnel_ha_connections",
+              "cloudflared_tunnel_concurrent_requests_per_tunnel",
+              "cloudflared_tunnel_response_by_code"
+            ]
+          }]}}
+        ad.datadoghq.com/cloudflared.logs: '[{"source":"cloudflared","service":"cloudflared"}]'
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        seccompProfile: { type: RuntimeDefault }
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector: { matchLabels: { app: cloudflared, tunnel: staging } }
+      containers:
+        - name: cloudflared
+          image: cloudflare/cloudflared:2026.9.3
+          env:
+            - name: TUNNEL_ID
+              valueFrom:
+                secretKeyRef: { name: tunnel-credentials-staging, key: tunnel-id }
+          args: ["tunnel", "--config", "/etc/cloudflared/config/config.yaml", "run", "$(TUNNEL_ID)"]
+          volumeMounts:
+            - name: config
+              mountPath: /etc/cloudflared/config
+              readOnly: true
+            - name: creds
+              mountPath: /etc/cloudflared/creds
+              readOnly: true
+          livenessProbe:
+            httpGet: { path: /ready, port: 2000 }
+            initialDelaySeconds: 10
+            failureThreshold: 3
+          resources:
+            requests: { cpu: 10m, memory: 32Mi }
+            limits: { memory: 128Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+      volumes:
+        - name: config
+          configMap:
+            name: cloudflared-config
+        # setup.sh が cloudflared tunnel create の認証情報から作る
+        - name: creds
+          secret:
+            secretName: tunnel-credentials-staging
+            items:
+              - key: credentials.json
+                path: credentials.json

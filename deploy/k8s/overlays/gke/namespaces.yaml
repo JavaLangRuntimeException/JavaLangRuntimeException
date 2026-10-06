@@ -1,0 +1,23 @@
+# アプリ（Go サービス・web・CronJob）とデータ（Redis）とゲートウェイを分ける。
+# NetworkPolicy と Gateway の allowedRoutes はこのラベルで相手を選ぶ
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: taramanji
+  labels:
+    taramanji.com/tier: apps
+    taramanji.com/gateway-access: "true"
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: data
+  labels:
+    taramanji.com/tier: data
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: gateway
+  labels:
+    taramanji.com/tier: gateway

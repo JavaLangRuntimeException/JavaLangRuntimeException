@@ -1,0 +1,107 @@
+# 外部からの入口（GKE なら GKE Gateway = Google Cloud のロードバランサー）。
+# kind では Envoy Gateway が Envoy を立て、Service type=LoadBalancer に cloud-provider-kind が IP を付ける
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: taramanji
+  namespace: gateway
+spec:
+  provider:
+    type: Kubernetes
+    kubernetes:
+      envoyDeployment:
+        replicas: 2
+        pod:
+          labels:
+            tags.datadoghq.com/env: prod
+            tags.datadoghq.com/service: gateway
+          annotations:
+            # Datadog: Envoy の Prometheus 指標（ルート・上流ごとのリクエスト数・5xx・レイテンシ）とアクセスログ
+            ad.datadoghq.com/envoy.checks: |
+              {"envoy": {"init_config": {}, "instances": [{
+                "openmetrics_endpoint": "http://%%host%%:19001/stats/prometheus",
+                "tags": ["gateway:taramanji"]
+              }]}}
+            ad.datadoghq.com/envoy.logs: '[{"source":"envoy","service":"gateway"}]'
+          topologySpreadConstraints:
+            - maxSkew: 1
+              topologyKey: kubernetes.io/hostname
+              whenUnsatisfiable: ScheduleAnyway
+              labelSelector:
+                matchLabels: { gateway.envoyproxy.io/owning-gateway-name: taramanji }
+        container:
+          resources:
+            requests: { cpu: 20m, memory: 64Mi }
+            limits: { memory: 256Mi }
+      # Service の名前を固定する（cloudflared の転送先に書く）
+      envoyService:
+        name: taramanji-gateway
+        type: LoadBalancer
+      envoyPDB:
+        minAvailable: 1
+  telemetry:
+    accessLog:
+      settings:
+        - format:
+            type: JSON
+            json:
+              start_time: "%START_TIME%"
+              method: "%REQ(:METHOD)%"
+              path: "%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%"
+              host: "%REQ(:AUTHORITY)%"
+              status: "%RESPONSE_CODE%"
+              response_flags: "%RESPONSE_FLAGS%"
+              duration_ms: "%DURATION%"
+              upstream_service_time: "%RESP(X-ENVOY-UPSTREAM-SERVICE-TIME)%"
+              upstream_cluster: "%UPSTREAM_CLUSTER%"
+              route_name: "%ROUTE_NAME%"
+              bytes_received: "%BYTES_RECEIVED%"
+              bytes_sent: "%BYTES_SENT%"
+              user_agent: "%REQ(USER-AGENT)%"
+              client_ip: "%REQ(CF-CONNECTING-IP)%"
+              request_id: "%REQ(X-REQUEST-ID)%"
+              traceparent: "%REQ(TRACEPARENT)%"
+          sinks:
+            - type: File
+              file: { path: /dev/stdout }
+  shutdown:
+    drainTimeout: 30s
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: taramanji
+  namespace: gateway
+spec:
+  gatewayClassName: eg
+  infrastructure:
+    parametersRef:
+      group: gateway.envoyproxy.io
+      kind: EnvoyProxy
+      name: taramanji
+  listeners:
+    # TLS は Cloudflare で終端し、Tunnel（cloudflared）から平文の HTTP で入る
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels: { taramanji.com/gateway-access: "true" }
+---
+# 利用者の IP は Cloudflare が付ける Cf-Connecting-Ip から取る（アクセスログ・レート制限用）
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: ClientTrafficPolicy
+metadata:
+  name: taramanji
+  namespace: gateway
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: taramanji
+  clientIPDetection:
+    customHeader:
+      name: Cf-Connecting-Ip
+      failClosed: false
