@@ -42,7 +42,7 @@ spec:
           - name: service
             value: identity
           - name: version
-            value: v0.1.1
+            value: v0.1.2
       steps:
         - setWeight: 10
         - pause: { duration: 5m }
@@ -81,7 +81,7 @@ spec:
           - name: service
             value: notification
           - name: version
-            value: v0.1.1
+            value: v0.1.2
       steps:
         - setWeight: 10
         - pause: { duration: 5m }
@@ -128,7 +128,7 @@ spec:
           - name: service
             value: inquiry
           - name: version
-            value: v0.1.1
+            value: v0.1.2
       steps:
         - setWeight: 10
         - pause: { duration: 5m }
@@ -175,7 +175,7 @@ spec:
           - name: service
             value: reservation
           - name: version
-            value: v0.1.1
+            value: v0.1.2
       steps:
         - setWeight: 10
         - pause: { duration: 5m }
@@ -222,7 +222,7 @@ spec:
           - name: service
             value: worklocation
           - name: version
-            value: v0.1.1
+            value: v0.1.2
       steps:
         - setWeight: 10
         - pause: { duration: 5m }
@@ -269,7 +269,7 @@ spec:
           - name: service
             value: content
           - name: version
-            value: v0.1.1
+            value: v0.1.2
       steps:
         - setWeight: 10
         - pause: { duration: 5m }
@@ -316,7 +316,7 @@ spec:
           - name: service
             value: calendarsync
           - name: version
-            value: v0.1.1
+            value: v0.1.2
       steps:
         - setWeight: 10
         - pause: { duration: 5m }
@@ -363,7 +363,7 @@ spec:
           - name: service
             value: analytics
           - name: version
-            value: v0.1.1
+            value: v0.1.2
       steps:
         - setWeight: 10
         - pause: { duration: 5m }
@@ -411,7 +411,7 @@ spec:
           - name: service
             value: web
           - name: version
-            value: v0.1.1
+            value: v0.1.2
       steps:
         - setWeight: 10
         - pause: { duration: 5m }
