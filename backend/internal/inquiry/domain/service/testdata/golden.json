@@ -1,0 +1,483 @@
+{
+ "contact": [
+  {
+   "input": {
+    "email": "user@example.com",
+    "name": "山田太郎",
+    "organization": "株式会社○○",
+    "subject": "件名テスト",
+    "purpose": "taramanji",
+    "message": "1行目\n2行目",
+    "files": [
+     "資料.pdf (2048KB)",
+     "photo.png (13KB)"
+    ]
+   },
+   "adminSubject": "本ページに関するお問い合わせ_山田太郎様x棚橋(taramanji)",
+   "adminMessage": "お問い合わせ内容: 本ページに関するお問い合わせ\n件名: 件名テスト\n\n=== お問い合わせ内容 ===\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: 山田太郎\nメールアドレス: user@example.com\nご所属: 株式会社○○\n\n=== 添付ファイル ===\n• 資料.pdf (2048KB)\n• photo.png (13KB)",
+   "userMessage": "お問い合わせありがとうございます。\n\ntaramanji.comの自動応答システムです。\n\n以下の内容でお問い合わせを受け付けました。\n\n=== お問い合わせ内容 ===\n件名: 件名テスト\nお問い合わせ要件: 本ページに関するお問い合わせ\nお問い合わせ内容:\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: 山田太郎\nメールアドレス: user@example.com\nご所属: 株式会社○○\n\n=== 添付ファイル ===\n• 資料.pdf (2048KB)\n• photo.png (13KB)\n\n※このメールは送信専用です。1週間以内にこちらから再度連絡いたします。\n\n今後ともよろしくお願いいたします。"
+  },
+  {
+   "input": {
+    "email": "user@example.com",
+    "name": "",
+    "subject": "件名テスト",
+    "purpose": "taramanji",
+    "message": "1行目\n2行目",
+    "files": []
+   },
+   "adminSubject": "本ページに関するお問い合わせ_ゲスト様x棚橋(taramanji)",
+   "adminMessage": "お問い合わせ内容: 本ページに関するお問い合わせ\n件名: 件名テスト\n\n=== お問い合わせ内容 ===\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: \nメールアドレス: user@example.com",
+   "userMessage": "お問い合わせありがとうございます。\n\ntaramanji.comの自動応答システムです。\n\n以下の内容でお問い合わせを受け付けました。\n\n=== お問い合わせ内容 ===\n件名: 件名テスト\nお問い合わせ要件: 本ページに関するお問い合わせ\nお問い合わせ内容:\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: \nメールアドレス: user@example.com\n※このメールは送信専用です。1週間以内にこちらから再度連絡いたします。\n\n今後ともよろしくお願いいたします。"
+  },
+  {
+   "input": {
+    "email": "user@example.com",
+    "name": "山田太郎",
+    "organization": "株式会社○○",
+    "subject": "件名テスト",
+    "purpose": "Ask Me",
+    "message": "1行目\n2行目",
+    "eventId": "abc123",
+    "files": [
+     "資料.pdf (2048KB)",
+     "photo.png (13KB)"
+    ]
+   },
+   "adminSubject": "面談予約の変更・取消について_山田太郎様x棚橋(taramanji)",
+   "adminMessage": "お問い合わせ内容: 面談予約の変更・取消について\n件名: 件名テスト\n\n=== お問い合わせ内容 ===\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: 山田太郎\nメールアドレス: user@example.com\nご所属: 株式会社○○\nEventID: abc123\n\n=== 添付ファイル ===\n• 資料.pdf (2048KB)\n• photo.png (13KB)",
+   "userMessage": "お問い合わせありがとうございます。\n\ntaramanji.comの自動応答システムです。\n\n以下の内容でお問い合わせを受け付けました。\n\n=== お問い合わせ内容 ===\n件名: 件名テスト\nお問い合わせ要件: 面談予約の変更・取消について\nお問い合わせ内容:\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: 山田太郎\nメールアドレス: user@example.com\nご所属: 株式会社○○\nEventID: abc123\n\n=== 添付ファイル ===\n• 資料.pdf (2048KB)\n• photo.png (13KB)\n\n※このメールは送信専用です。1週間以内にこちらから再度連絡いたします。\n\n今後ともよろしくお願いいたします。"
+  },
+  {
+   "input": {
+    "email": "user@example.com",
+    "name": "",
+    "subject": "件名テスト",
+    "purpose": "Ask Me",
+    "message": "1行目\n2行目",
+    "eventId": "abc123",
+    "files": []
+   },
+   "adminSubject": "面談予約の変更・取消について_ゲスト様x棚橋(taramanji)",
+   "adminMessage": "お問い合わせ内容: 面談予約の変更・取消について\n件名: 件名テスト\n\n=== お問い合わせ内容 ===\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: \nメールアドレス: user@example.com\nEventID: abc123",
+   "userMessage": "お問い合わせありがとうございます。\n\ntaramanji.comの自動応答システムです。\n\n以下の内容でお問い合わせを受け付けました。\n\n=== お問い合わせ内容 ===\n件名: 件名テスト\nお問い合わせ要件: 面談予約の変更・取消について\nお問い合わせ内容:\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: \nメールアドレス: user@example.com\nEventID: abc123\n※このメールは送信専用です。1週間以内にこちらから再度連絡いたします。\n\n今後ともよろしくお願いいたします。"
+  },
+  {
+   "input": {
+    "email": "user@example.com",
+    "name": "山田太郎",
+    "organization": "株式会社○○",
+    "subject": "件名テスト",
+    "purpose": "TechSelect+",
+    "message": "1行目\n2行目",
+    "files": [
+     "資料.pdf (2048KB)",
+     "photo.png (13KB)"
+    ]
+   },
+   "adminSubject": "TS+ご相談_山田太郎様x棚橋(taramanji)",
+   "adminMessage": "お問い合わせ内容: TechSelect+について\n件名: 件名テスト\n\n=== お問い合わせ内容 ===\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: 山田太郎\nメールアドレス: user@example.com\nご所属: 株式会社○○\n\n=== 添付ファイル ===\n• 資料.pdf (2048KB)\n• photo.png (13KB)",
+   "userMessage": "お問い合わせありがとうございます。\n\ntaramanji.comの自動応答システムです。\n\n以下の内容でお問い合わせを受け付けました。\n\n=== お問い合わせ内容 ===\n件名: 件名テスト\nお問い合わせ要件: TechSelect+について\nお問い合わせ内容:\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: 山田太郎\nメールアドレス: user@example.com\nご所属: 株式会社○○\n\n=== 添付ファイル ===\n• 資料.pdf (2048KB)\n• photo.png (13KB)\n\n※このメールは送信専用です。1週間以内にこちらから再度連絡いたします。\n\n今後ともよろしくお願いいたします。"
+  },
+  {
+   "input": {
+    "email": "user@example.com",
+    "name": "",
+    "subject": "件名テスト",
+    "purpose": "TechSelect+",
+    "message": "1行目\n2行目",
+    "files": []
+   },
+   "adminSubject": "TS+ご相談_ゲスト様x棚橋(taramanji)",
+   "adminMessage": "お問い合わせ内容: TechSelect+について\n件名: 件名テスト\n\n=== お問い合わせ内容 ===\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: \nメールアドレス: user@example.com",
+   "userMessage": "お問い合わせありがとうございます。\n\ntaramanji.comの自動応答システムです。\n\n以下の内容でお問い合わせを受け付けました。\n\n=== お問い合わせ内容 ===\n件名: 件名テスト\nお問い合わせ要件: TechSelect+について\nお問い合わせ内容:\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: \nメールアドレス: user@example.com\n※このメールは送信専用です。1週間以内にこちらから再度連絡いたします。\n\n今後ともよろしくお願いいたします。"
+  },
+  {
+   "input": {
+    "email": "user@example.com",
+    "name": "山田太郎",
+    "organization": "株式会社○○",
+    "subject": "件名テスト",
+    "purpose": "STECH",
+    "message": "1行目\n2行目",
+    "files": [
+     "資料.pdf (2048KB)",
+     "photo.png (13KB)"
+    ]
+   },
+   "adminSubject": "STECHご相談_山田太郎様x棚橋(taramanji)",
+   "adminMessage": "お問い合わせ内容: 学生エンジニアコミュニティSTECHについてのお問い合わせ\n件名: 件名テスト\n\n=== お問い合わせ内容 ===\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: 山田太郎\nメールアドレス: user@example.com\nご所属: 株式会社○○\n\n=== 添付ファイル ===\n• 資料.pdf (2048KB)\n• photo.png (13KB)",
+   "userMessage": "お問い合わせありがとうございます。\n\ntaramanji.comの自動応答システムです。\n\n以下の内容でお問い合わせを受け付けました。\n\n=== お問い合わせ内容 ===\n件名: 件名テスト\nお問い合わせ要件: 学生エンジニアコミュニティSTECHについてのお問い合わせ\nお問い合わせ内容:\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: 山田太郎\nメールアドレス: user@example.com\nご所属: 株式会社○○\n\n=== 添付ファイル ===\n• 資料.pdf (2048KB)\n• photo.png (13KB)\n\n※このメールは送信専用です。1週間以内にこちらから再度連絡いたします。\n\n今後ともよろしくお願いいたします。"
+  },
+  {
+   "input": {
+    "email": "user@example.com",
+    "name": "",
+    "subject": "件名テスト",
+    "purpose": "STECH",
+    "message": "1行目\n2行目",
+    "files": []
+   },
+   "adminSubject": "STECHご相談_ゲスト様x棚橋(taramanji)",
+   "adminMessage": "お問い合わせ内容: 学生エンジニアコミュニティSTECHについてのお問い合わせ\n件名: 件名テスト\n\n=== お問い合わせ内容 ===\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: \nメールアドレス: user@example.com",
+   "userMessage": "お問い合わせありがとうございます。\n\ntaramanji.comの自動応答システムです。\n\n以下の内容でお問い合わせを受け付けました。\n\n=== お問い合わせ内容 ===\n件名: 件名テスト\nお問い合わせ要件: 学生エンジニアコミュニティSTECHについてのお問い合わせ\nお問い合わせ内容:\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: \nメールアドレス: user@example.com\n※このメールは送信専用です。1週間以内にこちらから再度連絡いたします。\n\n今後ともよろしくお願いいたします。"
+  },
+  {
+   "input": {
+    "email": "user@example.com",
+    "name": "山田太郎",
+    "organization": "株式会社○○",
+    "subject": "件名テスト",
+    "purpose": "JINEN",
+    "message": "1行目\n2行目",
+    "files": [
+     "資料.pdf (2048KB)",
+     "photo.png (13KB)"
+    ]
+   },
+   "adminSubject": "コミュニティご相談_山田太郎様x棚橋(taramanji)",
+   "adminMessage": "お問い合わせ内容: コミュニティ運営全般や学生エンジニア向けイベントについてのお問い合わせ(JINEN)\n件名: 件名テスト\n\n=== お問い合わせ内容 ===\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: 山田太郎\nメールアドレス: user@example.com\nご所属: 株式会社○○\n\n=== 添付ファイル ===\n• 資料.pdf (2048KB)\n• photo.png (13KB)",
+   "userMessage": "お問い合わせありがとうございます。\n\ntaramanji.comの自動応答システムです。\n\n以下の内容でお問い合わせを受け付けました。\n\n=== お問い合わせ内容 ===\n件名: 件名テスト\nお問い合わせ要件: コミュニティ運営全般や学生エンジニア向けイベントについてのお問い合わせ(JINEN)\nお問い合わせ内容:\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: 山田太郎\nメールアドレス: user@example.com\nご所属: 株式会社○○\n\n=== 添付ファイル ===\n• 資料.pdf (2048KB)\n• photo.png (13KB)\n\n※このメールは送信専用です。1週間以内にこちらから再度連絡いたします。\n\n今後ともよろしくお願いいたします。"
+  },
+  {
+   "input": {
+    "email": "user@example.com",
+    "name": "",
+    "subject": "件名テスト",
+    "purpose": "JINEN",
+    "message": "1行目\n2行目",
+    "files": []
+   },
+   "adminSubject": "コミュニティご相談_ゲスト様x棚橋(taramanji)",
+   "adminMessage": "お問い合わせ内容: コミュニティ運営全般や学生エンジニア向けイベントについてのお問い合わせ(JINEN)\n件名: 件名テスト\n\n=== お問い合わせ内容 ===\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: \nメールアドレス: user@example.com",
+   "userMessage": "お問い合わせありがとうございます。\n\ntaramanji.comの自動応答システムです。\n\n以下の内容でお問い合わせを受け付けました。\n\n=== お問い合わせ内容 ===\n件名: 件名テスト\nお問い合わせ要件: コミュニティ運営全般や学生エンジニア向けイベントについてのお問い合わせ(JINEN)\nお問い合わせ内容:\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: \nメールアドレス: user@example.com\n※このメールは送信専用です。1週間以内にこちらから再度連絡いたします。\n\n今後ともよろしくお願いいたします。"
+  },
+  {
+   "input": {
+    "email": "user@example.com",
+    "name": "山田太郎",
+    "organization": "株式会社○○",
+    "subject": "件名テスト",
+    "purpose": "NxTEND_Event",
+    "message": "1行目\n2行目",
+    "files": [
+     "資料.pdf (2048KB)",
+     "photo.png (13KB)"
+    ]
+   },
+   "adminSubject": "NxTEND_Eventご相談_山田太郎様x棚橋(taramanji)",
+   "adminMessage": "お問い合わせ内容: NxTEND主催のイベントやコミュニティについてのお問い合わせ\n件名: 件名テスト\n\n=== お問い合わせ内容 ===\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: 山田太郎\nメールアドレス: user@example.com\nご所属: 株式会社○○\n\n=== 添付ファイル ===\n• 資料.pdf (2048KB)\n• photo.png (13KB)",
+   "userMessage": "お問い合わせありがとうございます。\n\ntaramanji.comの自動応答システムです。\n\n以下の内容でお問い合わせを受け付けました。\n\n=== お問い合わせ内容 ===\n件名: 件名テスト\nお問い合わせ要件: NxTEND主催のイベントやコミュニティについてのお問い合わせ\nお問い合わせ内容:\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: 山田太郎\nメールアドレス: user@example.com\nご所属: 株式会社○○\n\n=== 添付ファイル ===\n• 資料.pdf (2048KB)\n• photo.png (13KB)\n\n※このメールは送信専用です。1週間以内にこちらから再度連絡いたします。\n\n今後ともよろしくお願いいたします。"
+  },
+  {
+   "input": {
+    "email": "user@example.com",
+    "name": "",
+    "subject": "件名テスト",
+    "purpose": "NxTEND_Event",
+    "message": "1行目\n2行目",
+    "files": []
+   },
+   "adminSubject": "NxTEND_Eventご相談_ゲスト様x棚橋(taramanji)",
+   "adminMessage": "お問い合わせ内容: NxTEND主催のイベントやコミュニティについてのお問い合わせ\n件名: 件名テスト\n\n=== お問い合わせ内容 ===\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: \nメールアドレス: user@example.com",
+   "userMessage": "お問い合わせありがとうございます。\n\ntaramanji.comの自動応答システムです。\n\n以下の内容でお問い合わせを受け付けました。\n\n=== お問い合わせ内容 ===\n件名: 件名テスト\nお問い合わせ要件: NxTEND主催のイベントやコミュニティについてのお問い合わせ\nお問い合わせ内容:\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: \nメールアドレス: user@example.com\n※このメールは送信専用です。1週間以内にこちらから再度連絡いたします。\n\n今後ともよろしくお願いいたします。"
+  },
+  {
+   "input": {
+    "email": "user@example.com",
+    "name": "山田太郎",
+    "organization": "株式会社○○",
+    "subject": "件名テスト",
+    "purpose": "NxTEND_Organize",
+    "message": "1行目\n2行目",
+    "files": [
+     "資料.pdf (2048KB)",
+     "photo.png (13KB)"
+    ]
+   },
+   "adminSubject": "NxTEND_Organizeご相談_山田太郎様x棚橋(taramanji)",
+   "adminMessage": "お問い合わせ内容: NxTEND運営参加についてのお問い合わせ\n件名: 件名テスト\n\n=== お問い合わせ内容 ===\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: 山田太郎\nメールアドレス: user@example.com\nご所属: 株式会社○○\n\n=== 添付ファイル ===\n• 資料.pdf (2048KB)\n• photo.png (13KB)",
+   "userMessage": "お問い合わせありがとうございます。\n\ntaramanji.comの自動応答システムです。\n\n以下の内容でお問い合わせを受け付けました。\n\n=== お問い合わせ内容 ===\n件名: 件名テスト\nお問い合わせ要件: NxTEND運営参加についてのお問い合わせ\nお問い合わせ内容:\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: 山田太郎\nメールアドレス: user@example.com\nご所属: 株式会社○○\n\n=== 添付ファイル ===\n• 資料.pdf (2048KB)\n• photo.png (13KB)\n\n※このメールは送信専用です。1週間以内にこちらから再度連絡いたします。\n\n今後ともよろしくお願いいたします。"
+  },
+  {
+   "input": {
+    "email": "user@example.com",
+    "name": "",
+    "subject": "件名テスト",
+    "purpose": "NxTEND_Organize",
+    "message": "1行目\n2行目",
+    "files": []
+   },
+   "adminSubject": "NxTEND_Organizeご相談_ゲスト様x棚橋(taramanji)",
+   "adminMessage": "お問い合わせ内容: NxTEND運営参加についてのお問い合わせ\n件名: 件名テスト\n\n=== お問い合わせ内容 ===\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: \nメールアドレス: user@example.com",
+   "userMessage": "お問い合わせありがとうございます。\n\ntaramanji.comの自動応答システムです。\n\n以下の内容でお問い合わせを受け付けました。\n\n=== お問い合わせ内容 ===\n件名: 件名テスト\nお問い合わせ要件: NxTEND運営参加についてのお問い合わせ\nお問い合わせ内容:\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: \nメールアドレス: user@example.com\n※このメールは送信専用です。1週間以内にこちらから再度連絡いたします。\n\n今後ともよろしくお願いいたします。"
+  },
+  {
+   "input": {
+    "email": "user@example.com",
+    "name": "山田太郎",
+    "organization": "株式会社○○",
+    "subject": "件名テスト",
+    "purpose": "biwako.go",
+    "message": "1行目\n2行目",
+    "files": [
+     "資料.pdf (2048KB)",
+     "photo.png (13KB)"
+    ]
+   },
+   "adminSubject": "biwako.goご相談_山田太郎様x棚橋(taramanji)",
+   "adminMessage": "お問い合わせ内容: biwako.goのイベントについてのお問い合わせ\n件名: 件名テスト\n\n=== お問い合わせ内容 ===\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: 山田太郎\nメールアドレス: user@example.com\nご所属: 株式会社○○\n\n=== 添付ファイル ===\n• 資料.pdf (2048KB)\n• photo.png (13KB)",
+   "userMessage": "お問い合わせありがとうございます。\n\ntaramanji.comの自動応答システムです。\n\n以下の内容でお問い合わせを受け付けました。\n\n=== お問い合わせ内容 ===\n件名: 件名テスト\nお問い合わせ要件: biwako.goのイベントについてのお問い合わせ\nお問い合わせ内容:\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: 山田太郎\nメールアドレス: user@example.com\nご所属: 株式会社○○\n\n=== 添付ファイル ===\n• 資料.pdf (2048KB)\n• photo.png (13KB)\n\n※このメールは送信専用です。1週間以内にこちらから再度連絡いたします。\n\n今後ともよろしくお願いいたします。"
+  },
+  {
+   "input": {
+    "email": "user@example.com",
+    "name": "",
+    "subject": "件名テスト",
+    "purpose": "biwako.go",
+    "message": "1行目\n2行目",
+    "files": []
+   },
+   "adminSubject": "biwako.goご相談_ゲスト様x棚橋(taramanji)",
+   "adminMessage": "お問い合わせ内容: biwako.goのイベントについてのお問い合わせ\n件名: 件名テスト\n\n=== お問い合わせ内容 ===\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: \nメールアドレス: user@example.com",
+   "userMessage": "お問い合わせありがとうございます。\n\ntaramanji.comの自動応答システムです。\n\n以下の内容でお問い合わせを受け付けました。\n\n=== お問い合わせ内容 ===\n件名: 件名テスト\nお問い合わせ要件: biwako.goのイベントについてのお問い合わせ\nお問い合わせ内容:\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: \nメールアドレス: user@example.com\n※このメールは送信専用です。1週間以内にこちらから再度連絡いたします。\n\n今後ともよろしくお願いいたします。"
+  },
+  {
+   "input": {
+    "email": "user@example.com",
+    "name": "山田太郎",
+    "organization": "株式会社○○",
+    "subject": "件名テスト",
+    "purpose": "kyoto.go",
+    "message": "1行目\n2行目",
+    "files": [
+     "資料.pdf (2048KB)",
+     "photo.png (13KB)"
+    ]
+   },
+   "adminSubject": "kyoto.goご相談_山田太郎様x棚橋(taramanji)",
+   "adminMessage": "お問い合わせ内容: kyoto.goのイベントについてのお問い合わせ\n件名: 件名テスト\n\n=== お問い合わせ内容 ===\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: 山田太郎\nメールアドレス: user@example.com\nご所属: 株式会社○○\n\n=== 添付ファイル ===\n• 資料.pdf (2048KB)\n• photo.png (13KB)",
+   "userMessage": "お問い合わせありがとうございます。\n\ntaramanji.comの自動応答システムです。\n\n以下の内容でお問い合わせを受け付けました。\n\n=== お問い合わせ内容 ===\n件名: 件名テスト\nお問い合わせ要件: kyoto.goのイベントについてのお問い合わせ\nお問い合わせ内容:\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: 山田太郎\nメールアドレス: user@example.com\nご所属: 株式会社○○\n\n=== 添付ファイル ===\n• 資料.pdf (2048KB)\n• photo.png (13KB)\n\n※このメールは送信専用です。1週間以内にこちらから再度連絡いたします。\n\n今後ともよろしくお願いいたします。"
+  },
+  {
+   "input": {
+    "email": "user@example.com",
+    "name": "",
+    "subject": "件名テスト",
+    "purpose": "kyoto.go",
+    "message": "1行目\n2行目",
+    "files": []
+   },
+   "adminSubject": "kyoto.goご相談_ゲスト様x棚橋(taramanji)",
+   "adminMessage": "お問い合わせ内容: kyoto.goのイベントについてのお問い合わせ\n件名: 件名テスト\n\n=== お問い合わせ内容 ===\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: \nメールアドレス: user@example.com",
+   "userMessage": "お問い合わせありがとうございます。\n\ntaramanji.comの自動応答システムです。\n\n以下の内容でお問い合わせを受け付けました。\n\n=== お問い合わせ内容 ===\n件名: 件名テスト\nお問い合わせ要件: kyoto.goのイベントについてのお問い合わせ\nお問い合わせ内容:\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: \nメールアドレス: user@example.com\n※このメールは送信専用です。1週間以内にこちらから再度連絡いたします。\n\n今後ともよろしくお願いいたします。"
+  },
+  {
+   "input": {
+    "email": "user@example.com",
+    "name": "山田太郎",
+    "organization": "株式会社○○",
+    "subject": "件名テスト",
+    "purpose": "開発委託/相談",
+    "message": "1行目\n2行目",
+    "files": [
+     "資料.pdf (2048KB)",
+     "photo.png (13KB)"
+    ]
+   },
+   "adminSubject": "開発ご相談_山田太郎様x棚橋(taramanji)",
+   "adminMessage": "お問い合わせ内容: プロダクトやシステム開発に関するご依頼やご相談\n件名: 件名テスト\n\n=== お問い合わせ内容 ===\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: 山田太郎\nメールアドレス: user@example.com\nご所属: 株式会社○○\n\n=== 添付ファイル ===\n• 資料.pdf (2048KB)\n• photo.png (13KB)",
+   "userMessage": "お問い合わせありがとうございます。\n\ntaramanji.comの自動応答システムです。\n\n以下の内容でお問い合わせを受け付けました。\n\n=== お問い合わせ内容 ===\n件名: 件名テスト\nお問い合わせ要件: プロダクトやシステム開発に関するご依頼やご相談\nお問い合わせ内容:\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: 山田太郎\nメールアドレス: user@example.com\nご所属: 株式会社○○\n\n=== 添付ファイル ===\n• 資料.pdf (2048KB)\n• photo.png (13KB)\n\n※このメールは送信専用です。1週間以内にこちらから再度連絡いたします。\n\n今後ともよろしくお願いいたします。"
+  },
+  {
+   "input": {
+    "email": "user@example.com",
+    "name": "",
+    "subject": "件名テスト",
+    "purpose": "開発委託/相談",
+    "message": "1行目\n2行目",
+    "files": []
+   },
+   "adminSubject": "開発ご相談_ゲスト様x棚橋(taramanji)",
+   "adminMessage": "お問い合わせ内容: プロダクトやシステム開発に関するご依頼やご相談\n件名: 件名テスト\n\n=== お問い合わせ内容 ===\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: \nメールアドレス: user@example.com",
+   "userMessage": "お問い合わせありがとうございます。\n\ntaramanji.comの自動応答システムです。\n\n以下の内容でお問い合わせを受け付けました。\n\n=== お問い合わせ内容 ===\n件名: 件名テスト\nお問い合わせ要件: プロダクトやシステム開発に関するご依頼やご相談\nお問い合わせ内容:\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: \nメールアドレス: user@example.com\n※このメールは送信専用です。1週間以内にこちらから再度連絡いたします。\n\n今後ともよろしくお願いいたします。"
+  },
+  {
+   "input": {
+    "email": "user@example.com",
+    "name": "山田太郎",
+    "organization": "株式会社○○",
+    "subject": "件名テスト",
+    "purpose": "出張撮影/写真相談",
+    "message": "1行目\n2行目",
+    "files": [
+     "資料.pdf (2048KB)",
+     "photo.png (13KB)"
+    ]
+   },
+   "adminSubject": "ご相談_山田太郎様x棚橋(taramanji)",
+   "adminMessage": "お問い合わせ内容: 出張撮影などカメラ・写真全般に関するご相談\n件名: 件名テスト\n\n=== お問い合わせ内容 ===\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: 山田太郎\nメールアドレス: user@example.com\nご所属: 株式会社○○\n\n=== 添付ファイル ===\n• 資料.pdf (2048KB)\n• photo.png (13KB)",
+   "userMessage": "お問い合わせありがとうございます。\n\ntaramanji.comの自動応答システムです。\n\n以下の内容でお問い合わせを受け付けました。\n\n=== お問い合わせ内容 ===\n件名: 件名テスト\nお問い合わせ要件: 出張撮影などカメラ・写真全般に関するご相談\nお問い合わせ内容:\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: 山田太郎\nメールアドレス: user@example.com\nご所属: 株式会社○○\n\n=== 添付ファイル ===\n• 資料.pdf (2048KB)\n• photo.png (13KB)\n\n※このメールは送信専用です。1週間以内にこちらから再度連絡いたします。\n\n今後ともよろしくお願いいたします。"
+  },
+  {
+   "input": {
+    "email": "user@example.com",
+    "name": "",
+    "subject": "件名テスト",
+    "purpose": "出張撮影/写真相談",
+    "message": "1行目\n2行目",
+    "files": []
+   },
+   "adminSubject": "ご相談_ゲスト様x棚橋(taramanji)",
+   "adminMessage": "お問い合わせ内容: 出張撮影などカメラ・写真全般に関するご相談\n件名: 件名テスト\n\n=== お問い合わせ内容 ===\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: \nメールアドレス: user@example.com",
+   "userMessage": "お問い合わせありがとうございます。\n\ntaramanji.comの自動応答システムです。\n\n以下の内容でお問い合わせを受け付けました。\n\n=== お問い合わせ内容 ===\n件名: 件名テスト\nお問い合わせ要件: 出張撮影などカメラ・写真全般に関するご相談\nお問い合わせ内容:\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: \nメールアドレス: user@example.com\n※このメールは送信専用です。1週間以内にこちらから再度連絡いたします。\n\n今後ともよろしくお願いいたします。"
+  },
+  {
+   "input": {
+    "email": "user@example.com",
+    "name": "山田太郎",
+    "organization": "株式会社○○",
+    "subject": "件名テスト",
+    "purpose": "RCC",
+    "message": "1行目\n2行目",
+    "files": [
+     "資料.pdf (2048KB)",
+     "photo.png (13KB)"
+    ]
+   },
+   "adminSubject": "RCCご相談_山田太郎様x棚橋(taramanji)",
+   "adminMessage": "お問い合わせ内容: 立命館コンピュータクラブに関するお問い合わせ(RCC)\n件名: 件名テスト\n\n=== お問い合わせ内容 ===\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: 山田太郎\nメールアドレス: user@example.com\nご所属: 株式会社○○\n\n=== 添付ファイル ===\n• 資料.pdf (2048KB)\n• photo.png (13KB)",
+   "userMessage": "お問い合わせありがとうございます。\n\ntaramanji.comの自動応答システムです。\n\n以下の内容でお問い合わせを受け付けました。\n\n=== お問い合わせ内容 ===\n件名: 件名テスト\nお問い合わせ要件: 立命館コンピュータクラブに関するお問い合わせ(RCC)\nお問い合わせ内容:\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: 山田太郎\nメールアドレス: user@example.com\nご所属: 株式会社○○\n\n=== 添付ファイル ===\n• 資料.pdf (2048KB)\n• photo.png (13KB)\n\n※このメールは送信専用です。1週間以内にこちらから再度連絡いたします。\n\n今後ともよろしくお願いいたします。"
+  },
+  {
+   "input": {
+    "email": "user@example.com",
+    "name": "",
+    "subject": "件名テスト",
+    "purpose": "RCC",
+    "message": "1行目\n2行目",
+    "files": []
+   },
+   "adminSubject": "RCCご相談_ゲスト様x棚橋(taramanji)",
+   "adminMessage": "お問い合わせ内容: 立命館コンピュータクラブに関するお問い合わせ(RCC)\n件名: 件名テスト\n\n=== お問い合わせ内容 ===\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: \nメールアドレス: user@example.com",
+   "userMessage": "お問い合わせありがとうございます。\n\ntaramanji.comの自動応答システムです。\n\n以下の内容でお問い合わせを受け付けました。\n\n=== お問い合わせ内容 ===\n件名: 件名テスト\nお問い合わせ要件: 立命館コンピュータクラブに関するお問い合わせ(RCC)\nお問い合わせ内容:\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: \nメールアドレス: user@example.com\n※このメールは送信専用です。1週間以内にこちらから再度連絡いたします。\n\n今後ともよろしくお願いいたします。"
+  },
+  {
+   "input": {
+    "email": "user@example.com",
+    "name": "山田太郎",
+    "organization": "株式会社○○",
+    "subject": "件名テスト",
+    "purpose": "RM2C",
+    "message": "1行目\n2行目",
+    "files": [
+     "資料.pdf (2048KB)",
+     "photo.png (13KB)"
+    ]
+   },
+   "adminSubject": "RM2Cご相談_山田太郎様x棚橋(taramanji)",
+   "adminMessage": "お問い合わせ内容: 研究に関するお問い合わせ(RM2C)\n件名: 件名テスト\n\n=== お問い合わせ内容 ===\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: 山田太郎\nメールアドレス: user@example.com\nご所属: 株式会社○○\n\n=== 添付ファイル ===\n• 資料.pdf (2048KB)\n• photo.png (13KB)",
+   "userMessage": "お問い合わせありがとうございます。\n\ntaramanji.comの自動応答システムです。\n\n以下の内容でお問い合わせを受け付けました。\n\n=== お問い合わせ内容 ===\n件名: 件名テスト\nお問い合わせ要件: 研究に関するお問い合わせ(RM2C)\nお問い合わせ内容:\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: 山田太郎\nメールアドレス: user@example.com\nご所属: 株式会社○○\n\n=== 添付ファイル ===\n• 資料.pdf (2048KB)\n• photo.png (13KB)\n\n※このメールは送信専用です。1週間以内にこちらから再度連絡いたします。\n\n今後ともよろしくお願いいたします。"
+  },
+  {
+   "input": {
+    "email": "user@example.com",
+    "name": "",
+    "subject": "件名テスト",
+    "purpose": "RM2C",
+    "message": "1行目\n2行目",
+    "files": []
+   },
+   "adminSubject": "RM2Cご相談_ゲスト様x棚橋(taramanji)",
+   "adminMessage": "お問い合わせ内容: 研究に関するお問い合わせ(RM2C)\n件名: 件名テスト\n\n=== お問い合わせ内容 ===\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: \nメールアドレス: user@example.com",
+   "userMessage": "お問い合わせありがとうございます。\n\ntaramanji.comの自動応答システムです。\n\n以下の内容でお問い合わせを受け付けました。\n\n=== お問い合わせ内容 ===\n件名: 件名テスト\nお問い合わせ要件: 研究に関するお問い合わせ(RM2C)\nお問い合わせ内容:\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: \nメールアドレス: user@example.com\n※このメールは送信専用です。1週間以内にこちらから再度連絡いたします。\n\n今後ともよろしくお願いいたします。"
+  },
+  {
+   "input": {
+    "email": "user@example.com",
+    "name": "山田太郎",
+    "organization": "株式会社○○",
+    "subject": "件名テスト",
+    "purpose": "その他",
+    "message": "1行目\n2行目",
+    "files": [
+     "資料.pdf (2048KB)",
+     "photo.png (13KB)"
+    ]
+   },
+   "adminSubject": "ご相談_山田太郎様x棚橋(taramanji)",
+   "adminMessage": "お問い合わせ内容: その他お問い合わせ\n件名: 件名テスト\n\n=== お問い合わせ内容 ===\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: 山田太郎\nメールアドレス: user@example.com\nご所属: 株式会社○○\n\n=== 添付ファイル ===\n• 資料.pdf (2048KB)\n• photo.png (13KB)",
+   "userMessage": "お問い合わせありがとうございます。\n\ntaramanji.comの自動応答システムです。\n\n以下の内容でお問い合わせを受け付けました。\n\n=== お問い合わせ内容 ===\n件名: 件名テスト\nお問い合わせ要件: その他お問い合わせ\nお問い合わせ内容:\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: 山田太郎\nメールアドレス: user@example.com\nご所属: 株式会社○○\n\n=== 添付ファイル ===\n• 資料.pdf (2048KB)\n• photo.png (13KB)\n\n※このメールは送信専用です。1週間以内にこちらから再度連絡いたします。\n\n今後ともよろしくお願いいたします。"
+  },
+  {
+   "input": {
+    "email": "user@example.com",
+    "name": "",
+    "subject": "件名テスト",
+    "purpose": "その他",
+    "message": "1行目\n2行目",
+    "files": []
+   },
+   "adminSubject": "ご相談_ゲスト様x棚橋(taramanji)",
+   "adminMessage": "お問い合わせ内容: その他お問い合わせ\n件名: 件名テスト\n\n=== お問い合わせ内容 ===\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: \nメールアドレス: user@example.com",
+   "userMessage": "お問い合わせありがとうございます。\n\ntaramanji.comの自動応答システムです。\n\n以下の内容でお問い合わせを受け付けました。\n\n=== お問い合わせ内容 ===\n件名: 件名テスト\nお問い合わせ要件: その他お問い合わせ\nお問い合わせ内容:\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: \nメールアドレス: user@example.com\n※このメールは送信専用です。1週間以内にこちらから再度連絡いたします。\n\n今後ともよろしくお願いいたします。"
+  },
+  {
+   "input": {
+    "email": "user@example.com",
+    "name": "山田太郎",
+    "organization": "株式会社○○",
+    "subject": "件名テスト",
+    "purpose": "unknown-purpose",
+    "message": "1行目\n2行目",
+    "files": [
+     "資料.pdf (2048KB)",
+     "photo.png (13KB)"
+    ]
+   },
+   "adminSubject": "ご相談_山田太郎様x棚橋(taramanji)",
+   "adminMessage": "お問い合わせ内容: unknown-purpose\n件名: 件名テスト\n\n=== お問い合わせ内容 ===\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: 山田太郎\nメールアドレス: user@example.com\nご所属: 株式会社○○\n\n=== 添付ファイル ===\n• 資料.pdf (2048KB)\n• photo.png (13KB)",
+   "userMessage": "お問い合わせありがとうございます。\n\ntaramanji.comの自動応答システムです。\n\n以下の内容でお問い合わせを受け付けました。\n\n=== お問い合わせ内容 ===\n件名: 件名テスト\nお問い合わせ要件: unknown-purpose\nお問い合わせ内容:\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: 山田太郎\nメールアドレス: user@example.com\nご所属: 株式会社○○\n\n=== 添付ファイル ===\n• 資料.pdf (2048KB)\n• photo.png (13KB)\n\n※このメールは送信専用です。1週間以内にこちらから再度連絡いたします。\n\n今後ともよろしくお願いいたします。"
+  },
+  {
+   "input": {
+    "email": "user@example.com",
+    "name": "",
+    "subject": "件名テスト",
+    "purpose": "unknown-purpose",
+    "message": "1行目\n2行目",
+    "files": []
+   },
+   "adminSubject": "ご相談_ゲスト様x棚橋(taramanji)",
+   "adminMessage": "お問い合わせ内容: unknown-purpose\n件名: 件名テスト\n\n=== お問い合わせ内容 ===\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: \nメールアドレス: user@example.com",
+   "userMessage": "お問い合わせありがとうございます。\n\ntaramanji.comの自動応答システムです。\n\n以下の内容でお問い合わせを受け付けました。\n\n=== お問い合わせ内容 ===\n件名: 件名テスト\nお問い合わせ要件: unknown-purpose\nお問い合わせ内容:\n1行目\n2行目\n\n=== お客様情報 ===\nお名前: \nメールアドレス: user@example.com\n※このメールは送信専用です。1週間以内にこちらから再度連絡いたします。\n\n今後ともよろしくお願いいたします。"
+  }
+ ],
+ "questionnaire": {
+  "input": {
+   "name": "回答者",
+   "vrUsage": "weekly",
+   "height": 172,
+   "trialPattern": "fours_bearRolling",
+   "r1": 2,
+   "r2": 3,
+   "r3": 4,
+   "r4": 5,
+   "r5": 6,
+   "r6": 7,
+   "r7": 1,
+   "r8": 2,
+   "r9": 3,
+   "r10": 4,
+   "r11": 5,
+   "r12": 6,
+   "r13": 7,
+   "r14": 1,
+   "r15": 2,
+   "r16": 3,
+   "r17": 4,
+   "r18": 5
+  },
+  "body": "実験アンケート回答\n\n━━━━━━━━━━━━━━━━━━━━━\n■ 回答者情報\n━━━━━━━━━━━━━━━━━━━━━\nお名前: 回答者\nVR使用頻度: 週に数回\n身長: 172cm\n\n━━━━━━━━━━━━━━━━━━━━━\n■ 試行パターン\n━━━━━━━━━━━━━━━━━━━━━\nクマの腕振りで四つん這い姿勢(fours_bearRolling)\n\n━━━━━━━━━━━━━━━━━━━━━\n■ R1-R6: 身体所有感・身体運動感覚 (7段階)\n━━━━━━━━━━━━━━━━━━━━━\n【R1】ある時点で、私(現実)の身体が、見ているバーチャルの身体(アバタ)の姿勢や形状になり始めているかのように感じた。\n回答: 2\n\n【R2】バーチャルの身体(アバタ)が、私自身の身体であるかのように感じた。\n回答: 3\n\n【R3】私自身の身体が、仮想の身体(アバタ)が見えている場所にあるかのように感じた。\n回答: 4\n\n【R4】仮想の身体(アバタ)を、まるで自分自身の身体であるかのように制御できると感じた。\n回答: 5\n\n【R5】仮想の身体(クマの前足)が地面に触れるのを見たとき、その触れた場所で、実際にその感触を感じるように感じた。\n回答: 6\n\n【R6】仮想の身体(アバタ)の動きが、私自身の(現実の)動きに影響を与えているように感じた。\n回答: 7\n\n━━━━━━━━━━━━━━━━━━━━━\n■ R7-R12: NASA-TLX (20段階)\n━━━━━━━━━━━━━━━━━━━━━\n【R7】どの程度の知的・知覚的活動を必要としましたか?\n回答: 1\n\n【R8】どの程度、身体的活動が必要でしたか?\n回答: 2\n\n【R9】タスクのペースや課題が発生する頻度のために感じる時間的切迫感はどの程度でしたか。\n回答: 3\n\n【R10】作業指示者によって設定されたタスクの目標をどの程度達成できたと思いますか?\n回答: 4\n\n【R11】作業成績のレベルを達成・維持するために、精神的・身体的にどの程度いっしょうけんめいに作業しなければなりませんでしたか。\n回答: 5\n\n【R12】作業中に、不安感、落胆、いらいら、ストレス、悩みをどの程度感じましたか。\n回答: 6\n\n━━━━━━━━━━━━━━━━━━━━━\n■ R13-R18: その他の評価 (7段階)\n━━━━━━━━━━━━━━━━━━━━━\n【R13】このタスクをとても楽しんでできた。\n回答: 7\n\n【R14】私は、この活動がかなり得意で、熟練していると思う。\n回答: 1\n\n【R15】バーチャルの身体(アバタ)なら、普段よりも速く走れると感じた。\n回答: 2\n\n【R16】実験中、自分の身体(現実)が普段よりも大きく感じた。\n回答: 3\n\n【R17】実験中、自分の身体(現実)が普段よりも重く感じた。\n回答: 4\n\n【R18】バーチャルの身体(アバタ)に対して、力強さを感じた。\n回答: 5\n\n━━━━━━━━━━━━━━━━━━━━━"
+ }
+}

@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package taramanji.identity.v1;
+
+// 管理者のセッション（ログイン・ログアウトは /api/auth/* の HTTP で行う）
+service IdentityService {
+  rpc GetSession(GetSessionRequest) returns (GetSessionResponse) {}
+}
+
+message GetSessionRequest {}
+
+message User {
+  string email = 1;
+  string name = 2;
+  string picture = 3;
+}
+
+message GetSessionResponse {
+  // 未ログインなら未設定
+  optional User user = 1;
+}

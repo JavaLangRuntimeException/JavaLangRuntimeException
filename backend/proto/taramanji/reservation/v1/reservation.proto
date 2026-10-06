@@ -1,0 +1,140 @@
+syntax = "proto3";
+
+package taramanji.reservation.v1;
+
+// お打ち合わせ予約（Google Calendar / Google Apps Script のウェブフック）と空き時間
+service ReservationService {
+  rpc CreateReservation(CreateReservationRequest) returns (CreateReservationResponse) {}
+  rpc GetReservation(GetReservationRequest) returns (GetReservationResponse) {}
+  rpc CancelReservation(CancelReservationRequest) returns (CancelReservationResponse) {}
+  // 1 週間分の埋まっている時間（iCal を合成。前後 30 分の余白付き）
+  rpc GetBusy(GetBusyRequest) returns (GetBusyResponse) {}
+  // Google マップの共有リンクから場所名を得る
+  rpc ResolveMapsUrl(ResolveMapsUrlRequest) returns (ResolveMapsUrlResponse) {}
+  // 研究用の予約（定員に達したため常に capacity_reached）
+  rpc ReserveResearch(ReserveResearchRequest) returns (ReserveResearchResponse) {}
+  // 管理者: iCal ソースごとの予定
+  rpc ListIcalSources(ListIcalSourcesRequest) returns (ListIcalSourcesResponse) {}
+}
+
+message ClockTime {
+  int32 hour = 1;
+  int32 minute = 2;
+}
+
+message CreateReservationRequest {
+  int32 year = 1;
+  int32 month = 2;
+  int32 day = 3;
+  string weekday = 4;
+  ClockTime start = 5;
+  ClockTime end = 6;
+  string name = 7;
+  string email = 8;
+  string purpose = 9;
+  // meet / discord / slack / other / offline
+  string contact_method = 10;
+  string discord_name = 11;
+  string discord_server = 12;
+  string slack_name = 13;
+  string slack_workspace = 14;
+  string other_note = 15;
+  string offline_place_link = 16;
+  string offline_place_name = 17;
+  string offline_place_detail = 18;
+  string meeting_note = 19;
+  string location = 20;
+}
+
+message CreateReservationResponse {
+  string event_id = 1;
+  string html_link = 2;
+  string meet_link = 3;
+  bool invited = 4;
+  string note = 5;
+  int32 status = 6;
+}
+
+message GetReservationRequest {
+  string event_id = 1;
+}
+
+message GetReservationResponse {
+  string event_id = 1;
+  string html_link = 2;
+  string meet_link = 3;
+}
+
+message CancelReservationRequest {
+  string event_id = 1;
+}
+
+message CancelReservationResponse {
+  bool deleted = 1;
+  string suggestion = 2;
+  int32 status = 3;
+}
+
+message GetBusyRequest {
+  // 週の始まり（月曜 0:00）の ISO 時刻。空なら今週
+  string week_start_iso = 1;
+  bool no_buffer = 2;
+  bool debug = 3;
+}
+
+message Interval {
+  // ISO 時刻（UTC）
+  string start = 1;
+  string end = 2;
+}
+
+message IcalSourceStatus {
+  string url = 1;
+  string name = 2;
+  bool ok = 3;
+  int32 status = 4;
+  int32 length = 5;
+  int32 event_count = 6;
+}
+
+message GetBusyResponse {
+  repeated Interval busy = 1;
+  int32 source_count = 2;
+  repeated IcalSourceStatus sources = 3;
+}
+
+message ResolveMapsUrlRequest {
+  string url = 1;
+}
+
+message ResolveMapsUrlResponse {
+  // 取得できなければ空
+  string name = 1;
+  string final_url = 2;
+  string error = 3;
+}
+
+message ReserveResearchRequest {}
+
+message ReserveResearchResponse {
+}
+
+message ListIcalSourcesRequest {
+  string week_start_iso = 1;
+}
+
+message IcalEvent {
+  string start = 1;
+  string end = 2;
+  string summary = 3;
+  string source = 4;
+  string source_url = 5;
+}
+
+message ListIcalSourcesResponse {
+  // url はホスト名以降を伏せたもの
+  repeated IcalSourceStatus sources = 1;
+  repeated IcalEvent events = 2;
+  string week_start = 3;
+  string week_end = 4;
+}

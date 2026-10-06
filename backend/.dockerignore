@@ -1,0 +1,7 @@
+bin/
+*.md
+docs/
+.github/
+docker-compose.yml
+**/*_test.go
+**/testdata/
