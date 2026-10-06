@@ -34,8 +34,10 @@ type CalendarAccount struct {
 	Private bool `protobuf:"varint,3,opt,name=private,proto3" json:"private,omitempty"`
 	// @timestamp
 	ConnectedAtUnix int64 `protobuf:"varint,4,opt,name=connected_at_unix,json=connectedAtUnix,proto3" json:"connected_at_unix,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
+	// このアカウントの予定から作った同期予定の色（Google カレンダーの予定の色 "1"〜"11"。全アカウント共通のパレット）
+	ColorId       string `protobuf:"bytes,5,opt,name=color_id,json=colorId,proto3" json:"color_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *CalendarAccount) Reset() {
@@ -94,6 +96,13 @@ func (x *CalendarAccount) GetConnectedAtUnix() int64 {
 		return x.ConnectedAtUnix
 	}
 	return 0
+}
+
+func (x *CalendarAccount) GetColorId() string {
+	if x != nil {
+		return x.ColorId
+	}
+	return ""
 }
 
 // @entity
@@ -218,10 +227,12 @@ func (x *SyncMirror) GetEndAt() string {
 
 // 画面に返すアカウント（更新トークンは含めない）
 type AccountView struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CalendarId    string                 `protobuf:"bytes,1,opt,name=calendar_id,json=calendarId,proto3" json:"calendar_id,omitempty"`
-	Private       bool                   `protobuf:"varint,2,opt,name=private,proto3" json:"private,omitempty"`
-	ConnectedAt   string                 `protobuf:"bytes,3,opt,name=connected_at,json=connectedAt,proto3" json:"connected_at,omitempty"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	CalendarId  string                 `protobuf:"bytes,1,opt,name=calendar_id,json=calendarId,proto3" json:"calendar_id,omitempty"`
+	Private     bool                   `protobuf:"varint,2,opt,name=private,proto3" json:"private,omitempty"`
+	ConnectedAt string                 `protobuf:"bytes,3,opt,name=connected_at,json=connectedAt,proto3" json:"connected_at,omitempty"`
+	// 同期予定の色（"1"〜"11"）
+	ColorId       string `protobuf:"bytes,4,opt,name=color_id,json=colorId,proto3" json:"color_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -273,6 +284,13 @@ func (x *AccountView) GetPrivate() bool {
 func (x *AccountView) GetConnectedAt() string {
 	if x != nil {
 		return x.ConnectedAt
+	}
+	return ""
+}
+
+func (x *AccountView) GetColorId() string {
+	if x != nil {
+		return x.ColorId
 	}
 	return ""
 }
@@ -631,8 +649,11 @@ type UpdateSettingsRequest struct {
 	// 空でなければ、そのアカウントの「マスターで非公開」を private_value にする
 	PrivateCalendarId string `protobuf:"bytes,3,opt,name=private_calendar_id,json=privateCalendarId,proto3" json:"private_calendar_id,omitempty"`
 	PrivateValue      bool   `protobuf:"varint,4,opt,name=private_value,json=privateValue,proto3" json:"private_value,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
+	// 空でなければ、そのアカウントの同期予定の色を color_id（"1"〜"11"）にする
+	ColorCalendarId string `protobuf:"bytes,5,opt,name=color_calendar_id,json=colorCalendarId,proto3" json:"color_calendar_id,omitempty"`
+	ColorId         string `protobuf:"bytes,6,opt,name=color_id,json=colorId,proto3" json:"color_id,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
 }
 
 func (x *UpdateSettingsRequest) Reset() {
@@ -691,6 +712,20 @@ func (x *UpdateSettingsRequest) GetPrivateValue() bool {
 		return x.PrivateValue
 	}
 	return false
+}
+
+func (x *UpdateSettingsRequest) GetColorCalendarId() string {
+	if x != nil {
+		return x.ColorCalendarId
+	}
+	return ""
+}
+
+func (x *UpdateSettingsRequest) GetColorId() string {
+	if x != nil {
+		return x.ColorId
+	}
+	return ""
 }
 
 type UpdateSettingsResponse struct {
@@ -829,13 +864,14 @@ var File_taramanji_calendarsync_v1_calendarsync_proto protoreflect.FileDescripto
 
 const file_taramanji_calendarsync_v1_calendarsync_proto_rawDesc = "" +
 	"\n" +
-	",taramanji/calendarsync/v1/calendarsync.proto\x12\x19taramanji.calendarsync.v1\"\x9d\x01\n" +
+	",taramanji/calendarsync/v1/calendarsync.proto\x12\x19taramanji.calendarsync.v1\"\xb8\x01\n" +
 	"\x0fCalendarAccount\x12\x1f\n" +
 	"\vcalendar_id\x18\x01 \x01(\tR\n" +
 	"calendarId\x12#\n" +
 	"\rrefresh_token\x18\x02 \x01(\tR\frefreshToken\x12\x18\n" +
 	"\aprivate\x18\x03 \x01(\bR\aprivate\x12*\n" +
-	"\x11connected_at_unix\x18\x04 \x01(\x03R\x0fconnectedAtUnix\"5\n" +
+	"\x11connected_at_unix\x18\x04 \x01(\x03R\x0fconnectedAtUnix\x12\x19\n" +
+	"\bcolor_id\x18\x05 \x01(\tR\acolorId\"5\n" +
 	"\vSyncSetting\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
 	"\x06master\x18\x02 \x01(\tR\x06master\"M\n" +
@@ -843,12 +879,13 @@ const file_taramanji_calendarsync_v1_calendarsync_proto_rawDesc = "" +
 	"SyncMirror\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x16\n" +
 	"\x06digest\x18\x02 \x01(\tR\x06digest\x12\x15\n" +
-	"\x06end_at\x18\x03 \x01(\tR\x05endAt\"k\n" +
+	"\x06end_at\x18\x03 \x01(\tR\x05endAt\"\x86\x01\n" +
 	"\vAccountView\x12\x1f\n" +
 	"\vcalendar_id\x18\x01 \x01(\tR\n" +
 	"calendarId\x12\x18\n" +
 	"\aprivate\x18\x02 \x01(\bR\aprivate\x12!\n" +
-	"\fconnected_at\x18\x03 \x01(\tR\vconnectedAt\"B\n" +
+	"\fconnected_at\x18\x03 \x01(\tR\vconnectedAt\x12\x19\n" +
+	"\bcolor_id\x18\x04 \x01(\tR\acolorId\"B\n" +
 	"\tSyncError\x12\x1f\n" +
 	"\vcalendar_id\x18\x01 \x01(\tR\n" +
 	"calendarId\x12\x14\n" +
@@ -873,13 +910,15 @@ const file_taramanji_calendarsync_v1_calendarsync_proto_rawDesc = "" +
 	"\x0eRunSyncRequest\"a\n" +
 	"\x0fRunSyncResponse\x124\n" +
 	"\x03run\x18\x01 \x01(\v2\".taramanji.calendarsync.v1.LastRunR\x03run\x12\x18\n" +
-	"\askipped\x18\x02 \x01(\bR\askipped\"\xa3\x01\n" +
+	"\askipped\x18\x02 \x01(\bR\askipped\"\xea\x01\n" +
 	"\x15UpdateSettingsRequest\x12\x1d\n" +
 	"\n" +
 	"set_master\x18\x01 \x01(\bR\tsetMaster\x12\x16\n" +
 	"\x06master\x18\x02 \x01(\tR\x06master\x12.\n" +
 	"\x13private_calendar_id\x18\x03 \x01(\tR\x11privateCalendarId\x12#\n" +
-	"\rprivate_value\x18\x04 \x01(\bR\fprivateValue\"\x18\n" +
+	"\rprivate_value\x18\x04 \x01(\bR\fprivateValue\x12*\n" +
+	"\x11color_calendar_id\x18\x05 \x01(\tR\x0fcolorCalendarId\x12\x19\n" +
+	"\bcolor_id\x18\x06 \x01(\tR\acolorId\"\x18\n" +
 	"\x16UpdateSettingsResponse\"4\n" +
 	"\x11DisconnectRequest\x12\x1f\n" +
 	"\vcalendar_id\x18\x01 \x01(\tR\n" +

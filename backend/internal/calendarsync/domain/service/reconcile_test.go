@@ -437,3 +437,51 @@ func copyMirrors(m Mirrors) Mirrors {
 	}
 	return out
 }
+
+func TestColorsAreSameAcrossTargets(t *testing.T) {
+	s := setup()
+	c := newFake("c@example.com", event("e3"))
+	s.state.Master = s.b.id
+	colors := map[string]string{s.a.id: "9", s.b.id: "6"} // c は色なし
+	s.sync(t, []gateway.Calendar{s.a, s.b, c}, Options{Colors: colors})
+	// a の予定は、b（マスター・中身あり）にも c（予定ありだけ）にも同じ色で書かれる
+	if got := s.b.written(MirrorID(s.a.id, "e1", s.b.id)).ColorID; got != "9" {
+		t.Fatalf("a→b color %q", got)
+	}
+	if got := c.written(MirrorID(s.a.id, "e1", c.id)).ColorID; got != "9" {
+		t.Fatalf("a→c color %q", got)
+	}
+	if got := s.a.written(MirrorID(s.b.id, "e2", s.a.id)).ColorID; got != "6" {
+		t.Fatalf("b→a color %q", got)
+	}
+	// 色のないアカウントの同期予定には colorId を送らない（旧実装と同じ本文）
+	body := s.a.written(MirrorID(c.id, "e3", s.a.id))
+	if _, ok := BodyMap(*body)["colorId"]; ok {
+		t.Fatal("colorId should be absent")
+	}
+	// 色を変えると、その元アカウントの同期予定だけが書き直される
+	before := len(s.a.writes) + len(s.b.writes) + len(c.writes)
+	colors[s.a.id] = "11"
+	s.sync(t, []gateway.Calendar{s.a, s.b, c}, Options{Colors: colors})
+	if after := len(s.a.writes) + len(s.b.writes) + len(c.writes); after-before != 2 {
+		t.Fatalf("rewrites %d, want 2 (a→b, a→c)", after-before)
+	}
+}
+
+func TestNextColor(t *testing.T) {
+	if got := NextColor(nil); got != ColorOrder[0] {
+		t.Fatal(got)
+	}
+	if got := NextColor([]string{"9", "6"}); got != "10" {
+		t.Fatal(got)
+	}
+	// 11 色を使い切ったら、使われている数が一番少ない色
+	used := append([]string{}, ColorOrder...)
+	used = append(used, "9", "6")
+	if got := NextColor(used); got != "10" {
+		t.Fatal(got)
+	}
+	if ValidColor("12") || ValidColor("") || !ValidColor("11") {
+		t.Fatal("ValidColor")
+	}
+}

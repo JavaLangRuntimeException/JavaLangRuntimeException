@@ -22,6 +22,8 @@ message CalendarAccount {
   bool private = 3;
   // @timestamp
   int64 connected_at_unix = 4;
+  // このアカウントの予定から作った同期予定の色（Google カレンダーの予定の色 "1"〜"11"。全アカウント共通のパレット）
+  string color_id = 5;
 }
 
 // @entity
@@ -48,6 +50,8 @@ message AccountView {
   string calendar_id = 1;
   bool private = 2;
   string connected_at = 3;
+  // 同期予定の色（"1"〜"11"）
+  string color_id = 4;
 }
 
 message SyncError {
@@ -91,6 +95,9 @@ message UpdateSettingsRequest {
   // 空でなければ、そのアカウントの「マスターで非公開」を private_value にする
   string private_calendar_id = 3;
   bool private_value = 4;
+  // 空でなければ、そのアカウントの同期予定の色を color_id（"1"〜"11"）にする
+  string color_calendar_id = 5;
+  string color_id = 6;
 }
 
 message UpdateSettingsResponse {

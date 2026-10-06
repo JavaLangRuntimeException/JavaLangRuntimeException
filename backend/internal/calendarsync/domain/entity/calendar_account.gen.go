@@ -13,6 +13,7 @@ type CalendarAccount struct {
 	RefreshToken string    `gorm:"column:refresh_token;not null"`
 	Private      bool      `gorm:"column:private;not null"`
 	ConnectedAt  time.Time `gorm:"column:connected_at;not null"`
+	ColorID      string    `gorm:"column:color_id;not null"`
 }
 
 func (CalendarAccount) TableName() string { return "calendarAccounts" }
@@ -22,6 +23,7 @@ func NewCalendarAccount(
 	refreshToken string,
 	private bool,
 	connectedAt time.Time,
+	colorId string,
 ) (*CalendarAccount, error) {
 	if calendarId == "" {
 		return nil, errors.New("calendar_id is required")
@@ -35,6 +37,7 @@ func NewCalendarAccount(
 		RefreshToken: refreshToken,
 		Private:      private,
 		ConnectedAt:  connectedAt,
+		ColorID:      colorId,
 	}, nil
 }
 

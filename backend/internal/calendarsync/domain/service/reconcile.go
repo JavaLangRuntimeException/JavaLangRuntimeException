@@ -58,6 +58,8 @@ type Options struct {
 	// Deadline を過ぎたら新しい書き込みをやめる（ゼロ値は期限なし）
 	Deadline    time.Time
 	Unavailable []string
+	// Colors は元アカウント → 同期予定の色（どのアカウントに書いても同じ色）
+	Colors      map[string]string
 	Concurrency int
 	// Clock は期限の判定に使う「いま」（テスト用）
 	Clock func() time.Time
@@ -116,10 +118,10 @@ func SourceEvents(events []gateway.Event) []gateway.Event {
 func strPtr(s string) *string { return &s }
 
 // BuildMirrorBody は同期予定の本文。マスター宛て（detailed）には中身を、それ以外には「予定あり」だけを書く
-func BuildMirrorBody(sourceID string, e gateway.Event, detailed, private bool) gateway.MirrorBody {
+func BuildMirrorBody(sourceID string, e gateway.Event, detailed, private bool, colorID string) gateway.MirrorBody {
 	b := gateway.MirrorBody{
 		Summary: busy, Start: e.Start, End: e.End, Transparency: "opaque", Visibility: "private",
-		Marker: map[string]string{Marker: sourceID + ":" + e.ID},
+		Marker: map[string]string{Marker: sourceID + ":" + e.ID}, ColorID: colorID,
 	}
 	if e.Transparency == "transparent" {
 		// マスターの空き時間は、他のカレンダーへ打ち合わせ可能な枠として出す
@@ -193,6 +195,10 @@ func BodyMap(b gateway.MirrorBody) map[string]any {
 	}
 	if b.Location != nil {
 		m["location"] = *b.Location
+	}
+	// 色がなければ本文は旧実装と同じ（ダイジェストも同じ）
+	if b.ColorID != "" {
+		m["colorId"] = b.ColorID
 	}
 	return m
 }
@@ -304,7 +310,7 @@ func Reconcile(ctx context.Context, calendars []gateway.Calendar, state *State, 
 				if e.ICalUID != "" && uids[target.ID()][e.ICalUID] {
 					continue // 同じ招待が同期先にもある
 				}
-				body := BuildMirrorBody(source.ID(), e, target.ID() == state.Master && state.Master != "", opt.PrivateSources[source.ID()])
+				body := BuildMirrorBody(source.ID(), e, target.ID() == state.Master && state.Master != "", opt.PrivateSources[source.ID()], opt.Colors[source.ID()])
 				digest := Digest(body)
 				key := MirrorKey(source.ID(), e.ID, target.ID())
 				if prev, ok := previous[key]; ok && prev.Digest == digest {

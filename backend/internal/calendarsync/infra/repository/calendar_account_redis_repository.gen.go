@@ -23,6 +23,7 @@ type redisCalendarAccountRecord struct {
 	RefreshToken string    `json:"refresh_token"`
 	Private      bool      `json:"private"`
 	ConnectedAt  time.Time `json:"connected_at"`
+	ColorID      string    `json:"color_id"`
 }
 
 func toCalendarAccountRecord(e *entity.CalendarAccount) redisCalendarAccountRecord {
@@ -31,6 +32,7 @@ func toCalendarAccountRecord(e *entity.CalendarAccount) redisCalendarAccountReco
 		RefreshToken: e.RefreshToken,
 		Private:      e.Private,
 		ConnectedAt:  e.ConnectedAt,
+		ColorID:      e.ColorID,
 	}
 }
 
@@ -40,6 +42,7 @@ func (r redisCalendarAccountRecord) toEntity() *entity.CalendarAccount {
 		RefreshToken: r.RefreshToken,
 		Private:      r.Private,
 		ConnectedAt:  r.ConnectedAt,
+		ColorID:      r.ColorID,
 	}
 }
 

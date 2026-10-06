@@ -115,12 +115,37 @@ func (u *CalendarSyncUsecaseImpl) GetStatus(ctx context.Context, _ GetStatusInpu
 	if err != nil {
 		return nil, errs.NewInternalError(err)
 	}
+	if err := u.ensureColors(ctx, list); err != nil {
+		return nil, errs.NewInternalError(err)
+	}
 	out := &GetStatusOutput{Master: master, Accounts: []*AccountView{}, LastRun: toLastRun(last)}
 	for _, a := range list {
 		// 更新トークンは返さない
-		out.Accounts = append(out.Accounts, &AccountView{CalendarID: a.CalendarID, Private: a.Private, ConnectedAt: service.FormatISO(a.ConnectedAt)})
+		out.Accounts = append(out.Accounts, &AccountView{CalendarID: a.CalendarID, Private: a.Private,
+			ConnectedAt: service.FormatISO(a.ConnectedAt), ColorID: a.ColorID})
 	}
 	return out, nil
+}
+
+// ensureColors は色が決まっていないアカウントに、接続した順で使われていない色を割り当てて保存する
+func (u *CalendarSyncUsecaseImpl) ensureColors(ctx context.Context, list []*entity.CalendarAccount) error {
+	var used []string
+	for _, a := range list {
+		if a.ColorID != "" {
+			used = append(used, a.ColorID)
+		}
+	}
+	for _, a := range list {
+		if a.ColorID != "" {
+			continue
+		}
+		a.ColorID = service.NextColor(used)
+		used = append(used, a.ColorID)
+		if err := u.d.Accounts.Upsert(ctx, a); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // withLock は同期と接続解除を同時に走らせない（同期の記録を上書きし合うため）
@@ -238,16 +263,21 @@ func (u *CalendarSyncUsecaseImpl) runLocked(ctx context.Context, budget time.Dur
 	if err != nil {
 		return nil, err
 	}
+	if err := u.ensureColors(ctx, list); err != nil {
+		return nil, err
+	}
 	cals, reconnect, connErrors := u.connectAll(ctx, list)
 	private := map[string]bool{}
+	colors := map[string]string{}
 	for _, a := range list {
 		if a.Private {
 			private[a.CalendarID] = true
 		}
+		colors[a.CalendarID] = a.ColorID
 	}
 	state := &service.State{Master: master, Mirrors: before}
 	res, err := service.Reconcile(ctx, cals, state, service.Options{
-		Now: started, Days: u.d.Days, PrivateSources: private, Deadline: started.Add(budget),
+		Now: started, Days: u.d.Days, PrivateSources: private, Colors: colors, Deadline: started.Add(budget),
 		Unavailable: reconnect, Clock: u.d.Clock,
 	})
 	if err != nil {
@@ -315,6 +345,19 @@ func (u *CalendarSyncUsecaseImpl) UpdateSettings(ctx context.Context, in UpdateS
 			return notConnected(in.Master)
 		}
 		if err := u.d.Settings.Upsert(ctx, &entity.SyncSetting{ID: settingID, Master: in.Master}); err != nil {
+			return errs.NewInternalError(err)
+		}
+	}
+	if in.ColorCalendarID != "" {
+		a := find(in.ColorCalendarID)
+		if a == nil {
+			return notConnected(in.ColorCalendarID)
+		}
+		if !service.ValidColor(in.ColorID) {
+			return errs.NewValidationError("color_id", "色は 1〜11 のどれかを選んでください").WithCode("invalid_color")
+		}
+		a.ColorID = in.ColorID
+		if err := u.d.Accounts.Upsert(ctx, a); err != nil {
 			return errs.NewInternalError(err)
 		}
 	}
@@ -415,8 +458,19 @@ func (u *CalendarSyncUsecaseImpl) FinishConnect(ctx context.Context, state, code
 	}
 	account := &entity.CalendarAccount{CalendarID: calendarID, RefreshToken: sealed, ConnectedAt: u.d.Clock()}
 	if existing != nil {
-		// 再接続: トークンだけ入れ替え、設定は残す
+		// 再接続: トークンだけ入れ替え、設定（非公開・色）は残す
 		account.Private = existing.Private
+		account.ColorID = existing.ColorID
+	} else {
+		list, err := u.accounts(ctx)
+		if err != nil {
+			return "", err
+		}
+		var used []string
+		for _, a := range list {
+			used = append(used, a.ColorID)
+		}
+		account.ColorID = service.NextColor(used)
 	}
 	if err := u.d.Accounts.Upsert(ctx, account); err != nil {
 		return "", err

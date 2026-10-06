@@ -55,6 +55,8 @@ type MirrorBody struct {
 	Marker       map[string]string
 	Description  *string
 	Location     *string
+	// ColorID は Google カレンダーの予定の色（"1"〜"11"）。空なら色を付けない
+	ColorID string
 }
 
 // Calendar は接続したアカウントのメインカレンダー（ID はメールアドレス）

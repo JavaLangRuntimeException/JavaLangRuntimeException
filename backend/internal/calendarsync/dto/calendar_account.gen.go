@@ -15,6 +15,7 @@ type CalendarAccountDTO struct {
 	RefreshToken    string `json:"refresh_token"`
 	Private         bool   `json:"private"`
 	ConnectedAtUnix int64  `json:"connected_at_unix"`
+	ColorID         string `json:"color_id"`
 }
 
 // FromCalendarAccount は entity.CalendarAccount を CalendarAccountDTO に変換する。
@@ -28,6 +29,7 @@ func FromCalendarAccount(e *entity.CalendarAccount) *CalendarAccountDTO {
 		RefreshToken:    e.RefreshToken,
 		Private:         e.Private,
 		ConnectedAtUnix: e.ConnectedAt.Unix(),
+		ColorID:         e.ColorID,
 	}
 }
 

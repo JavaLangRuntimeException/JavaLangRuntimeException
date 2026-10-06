@@ -56,6 +56,8 @@ func (h *CalendarSyncHandler) UpdateSettings(ctx context.Context, req *connect.R
 		Master:            req.Msg.GetMaster(),
 		PrivateCalendarID: req.Msg.GetPrivateCalendarId(),
 		PrivateValue:      req.Msg.GetPrivateValue(),
+		ColorCalendarID:   req.Msg.GetColorCalendarId(),
+		ColorID:           req.Msg.GetColorId(),
 	}); err != nil {
 		return nil, errs.ToConnect(ctx, err)
 	}
@@ -80,6 +82,7 @@ func calendarSyncPbToAccountView(p *calendarsyncv1.AccountView) *usecase.Account
 		CalendarID:  p.GetCalendarId(),
 		Private:     p.GetPrivate(),
 		ConnectedAt: p.GetConnectedAt(),
+		ColorID:     p.GetColorId(),
 	}
 }
 
@@ -91,6 +94,7 @@ func calendarSyncAccountViewToPb(u *usecase.AccountView) *calendarsyncv1.Account
 		CalendarId:  u.CalendarID,
 		Private:     u.Private,
 		ConnectedAt: u.ConnectedAt,
+		ColorId:     u.ColorID,
 	}
 }
 

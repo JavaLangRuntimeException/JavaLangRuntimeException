@@ -25,7 +25,7 @@ func TestGoldenMatchesLegacy(t *testing.T) {
 		t.Fatal(err)
 	}
 	for i, c := range cases {
-		body := BuildMirrorBody(c.Source, c.Event, c.Detailed, c.Private)
+		body := BuildMirrorBody(c.Source, c.Event, c.Detailed, c.Private, "")
 		if got := Digest(body); got != c.Digest {
 			gotJSON, _ := json.Marshal(BodyMap(body))
 			wantJSON, _ := json.Marshal(c.Body)

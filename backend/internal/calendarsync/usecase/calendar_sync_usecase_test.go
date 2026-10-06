@@ -251,3 +251,31 @@ func TestOAuthConnectKeepsSettingsOnReconnect(t *testing.T) {
 		t.Fatalf("reuse err %v", err)
 	}
 }
+
+func TestColorsAssignedAndEditable(t *testing.T) {
+	f := setup(t)
+	ctx := context.Background()
+	t0 := time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC)
+	f.connect(t, "a@example.com", "ta", false, t0)
+	f.connect(t, "b@example.com", "tb", false, t0.Add(time.Hour))
+	status, err := f.uc.GetStatus(ctx, GetStatusInput{})
+	if err != nil || status.Accounts[0].ColorID != "9" || status.Accounts[1].ColorID != "6" {
+		t.Fatalf("status %+v %v", status.Accounts, err)
+	}
+	if err := f.uc.UpdateSettings(ctx, UpdateSettingsInput{ColorCalendarID: "a@example.com", ColorID: "12"}); code(err) != "invalid_color" {
+		t.Fatalf("err %v", err)
+	}
+	if err := f.uc.UpdateSettings(ctx, UpdateSettingsInput{ColorCalendarID: "a@example.com", ColorID: "3"}); err != nil {
+		t.Fatal(err)
+	}
+	// 再接続しても色は残る
+	target, _ := f.uc.StartConnect(ctx, "")
+	state := strings.Split(strings.Split(target, "state=")[1], "&")[0]
+	if _, err := f.uc.FinishConnect(ctx, state, "code"); err != nil {
+		t.Fatal(err)
+	}
+	a, _ := f.uc.d.Accounts.SelectByPK(ctx, "a@example.com")
+	if a.ColorID != "3" {
+		t.Fatalf("color after reconnect %q", a.ColorID)
+	}
+}

@@ -5,6 +5,8 @@ import { Checkbox } from "@/components/base/checkbox/checkbox";
 import { calendarSyncApi } from "@/shared/api/clients";
 import { toApiError } from "@/shared/api/errors";
 import { AdminNotice, AdminPanel } from "@/shared/ui/admin";
+import { colorOf } from "../model/colors";
+import { ColorSelect } from "./ColorSelect";
 
 type Notice = { ok: boolean; message: string };
 
@@ -63,6 +65,11 @@ export function CalendarSyncAdmin() {
       await calendarSyncApi.updateSettings({ privateCalendarId: calendarId, privateValue: value });
       return "変更しました";
     });
+  const setColor = (calendarId: string, colorId: string) =>
+    call("color", async () => {
+      await calendarSyncApi.updateSettings({ colorCalendarId: calendarId, colorId });
+      return `同期予定の色を「${colorOf(colorId)?.name ?? colorId}」にしました。次回の同期で、このアカウントの同期予定が書き換わります`;
+    });
   const remove = (calendarId: string) => {
     if (!confirm(`${calendarId} の接続を解除し、このカレンダーにある同期予定を削除します。よろしいですか？`)) return;
     void call(`remove:${calendarId}`, async () => {
@@ -108,6 +115,7 @@ export function CalendarSyncAdmin() {
                 <li key={a.calendarId} className="flex flex-wrap items-center justify-between gap-3 py-3">
                   <div className="min-w-0">
                     <p className="flex flex-wrap items-center gap-2 text-body-medium break-all text-text-primary">
+                      <span aria-hidden="true" className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: colorOf(a.colorId)?.hex ?? "transparent" }} />
                       {a.calendarId}
                       {isMaster && <span className="rounded-md bg-accent-500/15 px-2 py-0.5 text-caption-1-semibold text-accent-300">マスター</span>}
                       {reconnect.has(a.calendarId) && (
@@ -122,6 +130,7 @@ export function CalendarSyncAdmin() {
                     <p className="text-caption-1-regular text-text-tertiary">接続: {new Date(a.connectedAt).toLocaleString("ja-JP")}</p>
                   </div>
                   <div className="flex flex-wrap items-center gap-3">
+                    <ColorSelect value={a.colorId} onChange={(id) => setColor(a.calendarId, id)} isDisabled={!!busy} />
                     <span title="マスターに中身を出すとき、予定を非公開にします">
                       <Checkbox size="sm" isSelected={a.private} isDisabled={!!busy} onChange={(v) => setPrivate(a.calendarId, v)}>
                         マスターで非公開
@@ -130,7 +139,7 @@ export function CalendarSyncAdmin() {
                     <Button variant="secondary" size="small" onClick={() => setMaster(isMaster ? null : a.calendarId)} disabled={!!busy}>
                       {isMaster ? "マスター解除" : "マスターにする"}
                     </Button>
-                    <Button variant="ghost" size="small" className="text-text-error-primary" onClick={() => remove(a.calendarId)} disabled={!!busy}>
+                    <Button variant="secondary" size="small" className="text-text-error-primary" onClick={() => remove(a.calendarId)} disabled={!!busy}>
                       {busy === `remove:${a.calendarId}` ? "解除中..." : "解除"}
                     </Button>
                   </div>
@@ -142,6 +151,7 @@ export function CalendarSyncAdmin() {
         <p className="mt-4 text-caption-1-regular leading-relaxed text-text-tertiary">
           マスターには他のアカウントの予定が中身付き（タイトル・場所・説明・Meet の URL）で入り、それ以外のアカウントには「予定あり」だけが入ります。
           参加者はコピーしません。過去 1 日から 90 日先までを 5 分ごとに同期します。
+          同期予定はアカウントごとの色で書かれ、どのアカウントに書かれた予定でも同じ色になります（どのカレンダーの予定か見分けられます）。
         </p>
       </AdminPanel>
 

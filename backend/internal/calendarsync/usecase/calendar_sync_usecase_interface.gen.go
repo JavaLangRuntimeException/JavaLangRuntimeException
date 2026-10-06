@@ -15,6 +15,8 @@ type UpdateSettingsInput struct {
 	Master            string
 	PrivateCalendarID string
 	PrivateValue      bool
+	ColorCalendarID   string
+	ColorID           string
 }
 
 type DisconnectInput struct {
@@ -41,6 +43,7 @@ type AccountView struct {
 	CalendarID  string `json:"calendar_id"`
 	Private     bool   `json:"private"`
 	ConnectedAt string `json:"connected_at"`
+	ColorID     string `json:"color_id"`
 }
 
 type LastRun struct {
