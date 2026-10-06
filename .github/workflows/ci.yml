@@ -147,7 +147,8 @@ jobs:
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
           cache-from: type=gha,scope=${{ matrix.service }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+          # main と PR のビルドが同時に同じキャッシュへ書くと失敗することがあるので、キャッシュの書き込み失敗はビルドの失敗にしない
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }},ignore-error=true
 
   deploy-dev:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
