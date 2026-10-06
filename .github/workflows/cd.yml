@@ -1,0 +1,184 @@
+# cd: 環境の版を書き換えて main にコミットする（Argo CD がそれを見て同期する）
+#   main への PR       → build が成功したら dev（同じリポジトリのブランチからの PR だけ。フォークは書き込めない）
+#   main への push     → build が成功したら stg
+#   手動実行           → 選んだブランチを lint・test・security・build してから dev か stg
+#   タグ（v*）の push  → 本番（prod）。stg に出ているのと同じイメージに版のタグを付け、Argo Rollouts がカナリアで入れ替える
+# build の成功で動くとき（workflow_run）は、同じコミットの lint・test・security が成功したことも確かめてから反映する
+name: cd
+
+on:
+  workflow_run:
+    workflows: [build]
+    types: [completed]
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 反映する環境
+        type: choice
+        options: [dev, stg]
+        default: dev
+
+permissions:
+  contents: read
+
+env:
+  REGISTRY: ghcr.io/javalangruntimeexception
+
+jobs:
+  # build の成功を受けて、どの環境に何を出すかを決める
+  gate:
+    if: >-
+      github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' && (
+        (github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.head_repository.full_name == github.repository) ||
+        (github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main')
+      )
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+    outputs:
+      environment: ${{ steps.target.outputs.environment }}
+      sha: ${{ github.event.workflow_run.head_sha }}
+      source: ${{ steps.target.outputs.source }}
+    steps:
+      - name: Target
+        id: target
+        env:
+          EVENT: ${{ github.event.workflow_run.event }}
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+          PR: ${{ github.event.workflow_run.pull_requests[0].number }}
+        run: |
+          if [ "$EVENT" = pull_request ]; then
+            echo "environment=dev" >> "$GITHUB_OUTPUT"
+            echo "source=${PR:+https://github.com/$GITHUB_REPOSITORY/pull/$PR}${PR:-$BRANCH}" >> "$GITHUB_OUTPUT"
+          else
+            echo "environment=stg" >> "$GITHUB_OUTPUT"
+            echo "source=$BRANCH" >> "$GITHUB_OUTPUT"
+          fi
+      - name: lint・test・security of the same commit succeeded
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+          EVENT: ${{ github.event.workflow_run.event }}
+        run: |
+          for wf in lint test security; do
+            for i in $(seq 1 60); do
+              res=$(gh run list -R "$GITHUB_REPOSITORY" --workflow "$wf.yml" --commit "$SHA" --event "$EVENT" -L 1 \
+                --json status,conclusion -q '.[0] | "\(.status) \(.conclusion)"')
+              case "$res" in "completed "*) break ;; esac
+              echo "$wf を待っています ($i/60): ${res:-まだ始まっていない}"; sleep 20
+            done
+            [ "$res" = "completed success" ] || { echo "::error::$wf が成功していません（$res）"; exit 1; }
+            echo "$wf: OK"
+          done
+
+  # 手動実行: 選んだブランチをその場で確かめてイメージを作る
+  lint:
+    if: github.event_name == 'workflow_dispatch'
+    uses: ./.github/workflows/lint.yml
+  test:
+    if: github.event_name == 'workflow_dispatch'
+    uses: ./.github/workflows/test.yml
+  security:
+    if: github.event_name == 'workflow_dispatch'
+    uses: ./.github/workflows/security.yml
+  build:
+    if: github.event_name == 'workflow_dispatch'
+    needs: [lint, test, security]
+    uses: ./.github/workflows/build.yml
+    permissions:
+      contents: read
+      packages: write
+
+  deploy-dev:
+    needs: [gate, build]
+    if: >-
+      !cancelled() && (
+        (needs.gate.result == 'success' && needs.gate.outputs.environment == 'dev') ||
+        (needs.build.result == 'success' && inputs.environment == 'dev')
+      )
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: deploy-manifests
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Bump dev
+        env:
+          SHA: ${{ needs.gate.outputs.sha || github.sha }}
+          SOURCE: ${{ needs.gate.outputs.source || github.ref_name }}
+        run: deploy/k8s/scripts/bump-and-push.sh dev "sha-${SHA::7}" "$SOURCE"
+
+  deploy-stg:
+    needs: [gate, build]
+    if: >-
+      !cancelled() && (
+        (needs.gate.result == 'success' && needs.gate.outputs.environment == 'stg') ||
+        (needs.build.result == 'success' && inputs.environment == 'stg')
+      )
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: deploy-manifests
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Bump stg
+        env:
+          SHA: ${{ needs.gate.outputs.sha || github.sha }}
+          SOURCE: ${{ needs.gate.outputs.source || github.ref_name }}
+        run: deploy/k8s/scripts/bump-and-push.sh stg "sha-${SHA::7}" "$SOURCE"
+
+  deploy-prod:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    concurrency:
+      group: deploy-manifests
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: The tag must be on main
+        run: |
+          git fetch origin main
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main || { echo "::error::タグは main のコミットに打ってください"; exit 1; }
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Wait for the images of this commit
+        run: |
+          SRC="sha-${GITHUB_SHA::7}"
+          for i in $(seq 1 60); do
+            if docker buildx imagetools inspect "$REGISTRY/taramanji-web:$SRC" >/dev/null 2>&1; then exit 0; fi
+            echo "build のイメージを待っています ($i/60)"; sleep 30
+          done
+          echo "::error::$SRC のイメージがありません（main の build が成功しているか確認）"; exit 1
+      - name: Tag images with the release version
+        run: |
+          SRC="sha-${GITHUB_SHA::7}"
+          for s in identity notification inquiry reservation worklocation content calendarsync analytics web; do
+            docker buildx imagetools create -t "$REGISTRY/taramanji-$s:$GITHUB_REF_NAME" "$REGISTRY/taramanji-$s:$SRC"
+          done
+      - name: Bump prod
+        run: |
+          git checkout main
+          git pull origin main
+          deploy/k8s/scripts/bump-and-push.sh prod "$GITHUB_REF_NAME"
+      - name: GitHub Release
+        run: gh release create "$GITHUB_REF_NAME" --generate-notes --verify-tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

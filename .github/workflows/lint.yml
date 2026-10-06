@@ -1,0 +1,96 @@
+# lint: 書式・静的解析・生成コードの鮮度・マニフェストの検証
+name: lint
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lint-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+      - name: Install buf and mss-protoc-gen
+        run: make install-tools
+      - name: proto lint
+        run: PATH="$(go env GOPATH)/bin:$PATH" buf lint
+      - name: Generated code is up to date
+        run: |
+          make proto-gen
+          if [ -n "$(git status --porcelain .)" ]; then
+            echo "::error::生成コードが古い。make proto-gen を実行してコミットしてください"
+            git --no-pager diff --stat .
+            exit 1
+          fi
+      - name: go mod tidy is clean
+        run: |
+          go mod tidy
+          git diff --exit-code go.mod go.sum
+      - name: gofmt
+        run: test -z "$(gofmt -l .)" || (gofmt -l . && exit 1)
+      - run: go vet ./...
+
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - name: Generated API types are up to date
+        run: |
+          npm run gen
+          if [ -n "$(git status --porcelain src/shared/api/gen)" ]; then
+            echo "::error::connect-es の型が古い。npm run gen を実行してコミットしてください"
+            exit 1
+          fi
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run lint:fsd
+
+  manifests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install kubeconform
+        run: |
+          curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.7.0/kubeconform-linux-amd64.tar.gz | tar xz -C /usr/local/bin kubeconform
+      - name: Render and validate (dev / stg / prod / gke)
+        run: |
+          for env in dev stg prod gke; do
+            echo "== $env"
+            kubectl kustomize deploy/k8s/overlays/$env > /tmp/$env.yaml
+            kubeconform -strict -summary -ignore-missing-schemas \
+              -schema-location default \
+              -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+              /tmp/$env.yaml
+          done
+      - name: No plaintext Secret in the repo
+        run: |
+          if grep -rlE '^kind: Secret$' deploy/k8s/overlays deploy/k8s/base; then
+            echo "::error::平文の Secret があります。scripts/seal.sh で SealedSecret にしてください"
+            exit 1
+          fi
