@@ -24,7 +24,8 @@ spec:
             errors: sum:trace.http.server.request.errors{env:prod,service:{{args.service}},version:{{args.version}}}.as_count()
             hits: sum:trace.http.server.request.hits{env:prod,service:{{args.service}},version:{{args.version}}}.as_count()
           formula: "default_zero(errors) / (default_zero(hits) + 0.000001)"
-    # p95 が 3 秒を超えたら失敗（GAS や外部 API を待つ RPC があるので余裕を持たせる）
+    # p95 が 3 秒を超えたら失敗（GAS や外部 API を待つ RPC があるので余裕を持たせる）。
+    # calendarsync の RunSync（5 分ごとの同期。数十秒かかるのが正常）はレイテンシの判定から外す（エラー率には含める）
     - name: p95-latency
       interval: 1m
       count: 15
@@ -35,5 +36,5 @@ spec:
           apiVersion: v2
           interval: 5m
           queries:
-            p95: p95:trace.http.server.request{env:prod,service:{{args.service}},version:{{args.version}}}
+            p95: p95:trace.http.server.request{env:prod,service:{{args.service}},version:{{args.version}},!resource_name:post_/taramanji.calendarsync.v1.calendarsyncservice/runsync}
           formula: "default_zero(p95)"
