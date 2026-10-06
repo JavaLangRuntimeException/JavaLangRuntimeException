@@ -33,8 +33,10 @@ fmt: ## フォーマット
 tidy: ## go.sum 整理
 	go mod tidy
 
-install-tools: ## buf + mss-protoc-gen をインストール
+install-tools: ## buf・protoc-gen-go・protoc-gen-connect-go（go.mod と同じ版）・mss-protoc-gen をインストール
 	go install github.com/bufbuild/buf/cmd/buf@$(BUF_VERSION)
+	go install google.golang.org/protobuf/cmd/protoc-gen-go
+	go install connectrpc.com/connect/cmd/protoc-gen-connect-go
 	go install ./cmd/mss-protoc-gen
 
 proto-gen: ## proto から Go コードを生成（gen/ 配下）

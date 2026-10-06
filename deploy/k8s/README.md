@@ -21,35 +21,70 @@ ns: datadog    Datadog Agent（APM・DogStatsD・ログ・Envoy/Redis のチェ�
 | ディレクトリ | 中身 |
 | --- | --- |
 | `../kind/` | クラスター（コントロールプレーン 1 + ワーカー 2）、ローカルレジストリ、Envoy Gateway・metrics-server |
-| `base/` | 共通のマニフェスト（namespace・Redis・アプリ・Gateway・HPA・PDB・NetworkPolicy） |
-| `overlays/kind/` | 本番（Mac mini）。`make-secrets.sh`・`deploy.sh`・cloudflared |
+| `../gitops/` | Argo CD・Argo Rollouts・Sealed Secrets の導入（bootstrap.sh）と Argo CD のアプリ定義 |
+| `base/apps` `base/data` `base/routes` `base/gateway` | 環境に依存しないマニフェスト（namespace とホスト名はオーバーレイで決める） |
+| `overlays/prod/` | 本番（namespace: taramanji / data）。Argo Rollouts のカナリアと Datadog の自動判定、cloudflared |
+| `overlays/dev/` | dev（namespace: taramanji-dev）。1 台ずつ・HPA/PDB なし・dev.taramanji.com |
 | `overlays/gke/` | GKE に載せるときの差分（未適用） |
+| `scripts/` | `make-secrets.sh`（平文を secrets/ に作る）・`seal.sh`（暗号化して sealed/ に）・`set-version.sh`（版の書き換え） |
 | `observability/` | Datadog Agent の設定、ダッシュボード、モニター |
+
+## リリースの流れ（GitOps）
+
+```
+PR ──▶ CI（Go / TS / マニフェスト / gitleaks / イメージのビルド）
+main にマージ ──▶ イメージを GHCR に push（sha-xxxxxxx、arm64 + amd64）
+             ──▶ CI が overlays/dev の版を書き換えてコミット ──▶ Argo CD が dev に同期（約 3 分以内）
+dev で確認して git tag v1.2.3 && git push origin v1.2.3
+             ──▶ release ワークフロー: イメージに v1.2.3 を付け、overlays/prod の版を書き換えてコミット
+             ──▶ Argo CD が prod に同期 ──▶ Argo Rollouts がカナリア
+                 10%（5 分）→ 25%（5 分）→ 50%（5 分）→ 100%
+                 その間ずっと Datadog で新しい版の 5xx 率（< 5%）と p95（< 3 秒）を判定し、2 回外れたら自動で元の版に戻す
+```
+
+```bash
+# カナリアの様子
+kubectl argo rollouts --context kind-taramanji -n taramanji get rollout reservation --watch
+# 途中で止める・すぐ全部に出す・中止して戻す
+kubectl argo rollouts --context kind-taramanji -n taramanji pause reservation
+kubectl argo rollouts --context kind-taramanji -n taramanji promote reservation --full
+kubectl argo rollouts --context kind-taramanji -n taramanji abort reservation
+# 前の版に戻す（Git が正）: 版を書き換えたコミットを revert するか、前のタグでもう一度リリースする
+deploy/k8s/scripts/set-version.sh prod v1.2.2 && git commit -am "deploy(prod): rollback to v1.2.2" && git push
+
+# Argo CD の画面
+kubectl --context kind-taramanji -n argocd port-forward svc/argocd-server 8080:80   # http://localhost:8080
+```
+
+## Secret
+
+Git（public）には暗号化した SealedSecret だけを置く。平文は `secrets/<env>/`（git に入らない）。
+
+```bash
+deploy/k8s/scripts/make-secrets.sh dev     # 平文を作る / 作り直す（パスワードは前回の値を使い回す）
+deploy/k8s/scripts/seal.sh dev             # overlays/dev/sealed/ に暗号化して書く → コミット
+```
+
+Secret を変えたら Pod を作り直す（`kubectl rollout restart` / Rollout は `kubectl argo rollouts restart`）。
+
+## dev 環境
+
+- https://dev.taramanji.com と https://dev-gws.taramanji.com（staging トンネル経由）。Cloudflare Access で本人だけに制限する
+- データは dev 専用の Redis（同じ namespace）。カレンダー同期の CronJob は止めてある（実在のカレンダーを書き換えないため）
+- 予約・お問い合わせは本物の GAS・SES に届くので、試すときは自分宛てに
 
 ## よく使う操作
 
 ```bash
-# デプロイ（イメージをビルドして push → 適用 → ロールアウト待ち）
-deploy/k8s/overlays/kind/deploy.sh
-# マニフェストだけ
-SKIP_BUILD=1 deploy/k8s/overlays/kind/deploy.sh
-
-# 状態
 kubectl --context kind-taramanji -n taramanji get pods -o wide
 kubectl --context kind-taramanji get gateway,httproute -A
-kubectl --context kind-taramanji -n taramanji get hpa,pdb
-
-# ログ（JSON。trace_id で Datadog のトレースとつながる）
-kubectl --context kind-taramanji -n taramanji logs deploy/reservation --tail=50
-
-# ロールバック
-kubectl --context kind-taramanji -n taramanji rollout undo deploy/<name>
+kubectl --context kind-taramanji -n taramanji get hpa,pdb,rollout
+kubectl --context kind-taramanji -n taramanji logs deploy/reservation --tail=50   # JSON。trace_id で Datadog のトレースへ
 
 # ワーカーを 1 台止めてもサイトが止まらないことの確認
 kubectl --context kind-taramanji drain taramanji-worker --ignore-daemonsets --delete-emptydir-data
 kubectl --context kind-taramanji uncordon taramanji-worker
 
-# Datadog
 python3 deploy/k8s/observability/dashboard.py
 python3 deploy/k8s/observability/monitors.py
 ```
@@ -69,7 +104,7 @@ python3 deploy/k8s/observability/monitors.py
 
 ## データ
 
-- Redis: `kubectl --context kind-taramanji -n data exec -it redis-0 -- redis-cli --user admin --pass <secrets/generated.env の REDIS_PASSWORD_ADMIN>`
+- Redis: `kubectl --context kind-taramanji -n data exec -it redis-0 -- redis-cli --user admin --pass <deploy/k8s/secrets/prod/generated.env の REDIS_PASSWORD_ADMIN>`
 - DB 番号: 0 = worklocation、1 = content（キャッシュ）、2 = calendarsync
 - PV は Mac の `~/taramanji-data/worker*` にあり、クラスターを作り直しても残る（StorageClass は Retain）
 - 旧構成からの移行: `backend/cmd/migrate-legacy`（`-apply` なしは確認だけ、`-verify-sync` は同期が書き込む件数を読むだけで確かめる）
