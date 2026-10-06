@@ -1,0 +1,14 @@
+# seal.sh が作る（暗号化済み。復号できるのはクラスターの Sealed Secrets コントローラーだけ）
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - calendarsync-env.yaml
+  - content-env.yaml
+  - datadog.yaml
+  - identity-env.yaml
+  - inquiry-env.yaml
+  - notification-env.yaml
+  - redis-acl.yaml
+  - reservation-env.yaml
+  - tunnel-credentials-staging.yaml
+  - worklocation-env.yaml

@@ -1,0 +1,421 @@
+# 本番のカナリア（Argo Rollouts）。Deployment はそのまま（workloadRef）で、Pod の入れ替えを Rollout が行う。
+#   10% → 25% → 50% → 100%（各 5 分）。その間ずっと Datadog で新しい版の 5xx 率と p95 を見て、悪ければ自動で元に戻す。
+# 公開しているサービスは HTTPRoute の重み（Gateway API プラグイン）、notification（内部専用）は Pod の数の比で流す。
+# version の値は deploy/k8s/scripts/set-version.sh がリリースごとに書き換える
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: identity
+  labels:
+    app.kubernetes.io/name: identity
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: identity
+  workloadRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: identity
+    scaleDown: progressively
+  strategy:
+    canary:
+      canaryService: identity-canary
+      stableService: identity
+      trafficRouting:
+        plugins:
+          argoproj-labs/gatewayAPI:
+            namespace: taramanji
+            httpRoutes:
+            - name: identity-site
+            - name: identity-gws
+      maxSurge: 1
+      maxUnavailable: 0
+      analysis:
+        templates:
+          - clusterScope: true
+            templateName: canary-health
+        startingStep: 1
+        args:
+          - name: service
+            value: identity
+          - name: version
+            value: bootstrap
+      steps:
+        - setWeight: 10
+        - pause: { duration: 5m }
+        - setWeight: 25
+        - pause: { duration: 5m }
+        - setWeight: 50
+        - pause: { duration: 5m }
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: notification
+  labels:
+    app.kubernetes.io/name: notification
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: notification
+  workloadRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: notification
+    scaleDown: progressively
+  strategy:
+    canary:
+      maxSurge: 1
+      maxUnavailable: 0
+      analysis:
+        templates:
+          - clusterScope: true
+            templateName: canary-health
+        startingStep: 1
+        args:
+          - name: service
+            value: notification
+          - name: version
+            value: bootstrap
+      steps:
+        - setWeight: 10
+        - pause: { duration: 5m }
+        - setWeight: 25
+        - pause: { duration: 5m }
+        - setWeight: 50
+        - pause: { duration: 5m }
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: inquiry
+  labels:
+    app.kubernetes.io/name: inquiry
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: inquiry
+  workloadRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: inquiry
+    scaleDown: progressively
+  strategy:
+    canary:
+      canaryService: inquiry-canary
+      stableService: inquiry
+      trafficRouting:
+        plugins:
+          argoproj-labs/gatewayAPI:
+            namespace: taramanji
+            httpRoutes:
+            - name: inquiry
+      maxSurge: 1
+      maxUnavailable: 0
+      analysis:
+        templates:
+          - clusterScope: true
+            templateName: canary-health
+        startingStep: 1
+        args:
+          - name: service
+            value: inquiry
+          - name: version
+            value: bootstrap
+      steps:
+        - setWeight: 10
+        - pause: { duration: 5m }
+        - setWeight: 25
+        - pause: { duration: 5m }
+        - setWeight: 50
+        - pause: { duration: 5m }
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: reservation
+  labels:
+    app.kubernetes.io/name: reservation
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: reservation
+  workloadRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: reservation
+    scaleDown: progressively
+  strategy:
+    canary:
+      canaryService: reservation-canary
+      stableService: reservation
+      trafficRouting:
+        plugins:
+          argoproj-labs/gatewayAPI:
+            namespace: taramanji
+            httpRoutes:
+            - name: reservation
+      maxSurge: 1
+      maxUnavailable: 0
+      analysis:
+        templates:
+          - clusterScope: true
+            templateName: canary-health
+        startingStep: 1
+        args:
+          - name: service
+            value: reservation
+          - name: version
+            value: bootstrap
+      steps:
+        - setWeight: 10
+        - pause: { duration: 5m }
+        - setWeight: 25
+        - pause: { duration: 5m }
+        - setWeight: 50
+        - pause: { duration: 5m }
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: worklocation
+  labels:
+    app.kubernetes.io/name: worklocation
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: worklocation
+  workloadRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: worklocation
+    scaleDown: progressively
+  strategy:
+    canary:
+      canaryService: worklocation-canary
+      stableService: worklocation
+      trafficRouting:
+        plugins:
+          argoproj-labs/gatewayAPI:
+            namespace: taramanji
+            httpRoutes:
+            - name: worklocation
+      maxSurge: 1
+      maxUnavailable: 0
+      analysis:
+        templates:
+          - clusterScope: true
+            templateName: canary-health
+        startingStep: 1
+        args:
+          - name: service
+            value: worklocation
+          - name: version
+            value: bootstrap
+      steps:
+        - setWeight: 10
+        - pause: { duration: 5m }
+        - setWeight: 25
+        - pause: { duration: 5m }
+        - setWeight: 50
+        - pause: { duration: 5m }
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: content
+  labels:
+    app.kubernetes.io/name: content
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: content
+  workloadRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: content
+    scaleDown: progressively
+  strategy:
+    canary:
+      canaryService: content-canary
+      stableService: content
+      trafficRouting:
+        plugins:
+          argoproj-labs/gatewayAPI:
+            namespace: taramanji
+            httpRoutes:
+            - name: content
+      maxSurge: 1
+      maxUnavailable: 0
+      analysis:
+        templates:
+          - clusterScope: true
+            templateName: canary-health
+        startingStep: 1
+        args:
+          - name: service
+            value: content
+          - name: version
+            value: bootstrap
+      steps:
+        - setWeight: 10
+        - pause: { duration: 5m }
+        - setWeight: 25
+        - pause: { duration: 5m }
+        - setWeight: 50
+        - pause: { duration: 5m }
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: calendarsync
+  labels:
+    app.kubernetes.io/name: calendarsync
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: calendarsync
+  workloadRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: calendarsync
+    scaleDown: progressively
+  strategy:
+    canary:
+      canaryService: calendarsync-canary
+      stableService: calendarsync
+      trafficRouting:
+        plugins:
+          argoproj-labs/gatewayAPI:
+            namespace: taramanji
+            httpRoutes:
+            - name: calendarsync
+      maxSurge: 1
+      maxUnavailable: 0
+      analysis:
+        templates:
+          - clusterScope: true
+            templateName: canary-health
+        startingStep: 1
+        args:
+          - name: service
+            value: calendarsync
+          - name: version
+            value: bootstrap
+      steps:
+        - setWeight: 10
+        - pause: { duration: 5m }
+        - setWeight: 25
+        - pause: { duration: 5m }
+        - setWeight: 50
+        - pause: { duration: 5m }
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: analytics
+  labels:
+    app.kubernetes.io/name: analytics
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: analytics
+  workloadRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: analytics
+    scaleDown: progressively
+  strategy:
+    canary:
+      canaryService: analytics-canary
+      stableService: analytics
+      trafficRouting:
+        plugins:
+          argoproj-labs/gatewayAPI:
+            namespace: taramanji
+            httpRoutes:
+            - name: analytics
+      maxSurge: 1
+      maxUnavailable: 0
+      analysis:
+        templates:
+          - clusterScope: true
+            templateName: canary-health
+        startingStep: 1
+        args:
+          - name: service
+            value: analytics
+          - name: version
+            value: bootstrap
+      steps:
+        - setWeight: 10
+        - pause: { duration: 5m }
+        - setWeight: 25
+        - pause: { duration: 5m }
+        - setWeight: 50
+        - pause: { duration: 5m }
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: web
+  labels:
+    app.kubernetes.io/name: web
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: web
+  workloadRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: web
+    scaleDown: progressively
+  strategy:
+    canary:
+      canaryService: web-canary
+      stableService: web
+      trafficRouting:
+        plugins:
+          argoproj-labs/gatewayAPI:
+            namespace: taramanji
+            httpRoutes:
+            - name: web-site
+            - name: web-gws
+      maxSurge: 1
+      maxUnavailable: 0
+      analysis:
+        templates:
+          - clusterScope: true
+            templateName: canary-health
+        startingStep: 1
+        args:
+          - name: service
+            value: web
+          - name: version
+            value: bootstrap
+      steps:
+        - setWeight: 10
+        - pause: { duration: 5m }
+        - setWeight: 25
+        - pause: { duration: 5m }
+        - setWeight: 50
+        - pause: { duration: 5m }

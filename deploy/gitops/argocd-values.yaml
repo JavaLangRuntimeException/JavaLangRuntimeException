@@ -1,0 +1,30 @@
+# Argo CD: GitHub（public リポジトリ）を 3 分ごとに見て、クラスターをマニフェストに合わせる（Pull 型。Mac mini への入口は要らない）
+global:
+  domain: argocd.local
+configs:
+  params:
+    server.insecure: true
+  cm:
+    timeout.reconciliation: 180s
+server:
+  resources:
+    requests: { cpu: 20m, memory: 64Mi }
+    limits: { memory: 256Mi }
+repoServer:
+  resources:
+    requests: { cpu: 20m, memory: 64Mi }
+    limits: { memory: 512Mi }
+controller:
+  resources:
+    requests: { cpu: 50m, memory: 128Mi }
+    limits: { memory: 768Mi }
+applicationSet:
+  enabled: false
+notifications:
+  enabled: false
+dex:
+  enabled: false
+redis:
+  resources:
+    requests: { cpu: 10m, memory: 32Mi }
+    limits: { memory: 128Mi }

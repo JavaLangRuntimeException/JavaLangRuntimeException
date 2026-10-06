@@ -1,0 +1,9 @@
+# 本番（kind / Mac mini）。Argo CD の taramanji-prod アプリがこのディレクトリを同期する
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - platform
+  - data
+  - apps
+  - cloudflared
+  - sealed

@@ -1,0 +1,38 @@
+# カナリアの自動判定（Datadog の APM 指標を新しい版 version:<タグ> で絞って見る）。
+# トラフィックが少ない時間は件数 0 になるので、0 件は「問題なし」として扱う（default_zero）
+apiVersion: argoproj.io/v1alpha1
+kind: ClusterAnalysisTemplate
+metadata:
+  name: canary-health
+spec:
+  args:
+    - name: service
+    - name: version
+  metrics:
+    # 5xx 相当（APM のエラー）の割合が 5% 以上なら失敗
+    - name: error-rate
+      interval: 1m
+      count: 15
+      failureLimit: 2
+      successCondition: default(result, 0) < 0.05
+      provider:
+        datadog:
+          apiVersion: v2
+          interval: 5m
+          queries:
+            errors: sum:trace.http.request.errors{env:prod,service:{{args.service}},version:{{args.version}}}.as_count()
+            hits: sum:trace.http.request.hits{env:prod,service:{{args.service}},version:{{args.version}}}.as_count()
+          formula: "default_zero(errors) / (default_zero(hits) + 0.000001)"
+    # p95 が 3 秒を超えたら失敗（GAS や外部 API を待つ RPC があるので余裕を持たせる）
+    - name: p95-latency
+      interval: 1m
+      count: 15
+      failureLimit: 2
+      successCondition: default(result, 0) < 3
+      provider:
+        datadog:
+          apiVersion: v2
+          interval: 5m
+          queries:
+            p95: p95:trace.http.request{env:prod,service:{{args.service}},version:{{args.version}}}
+          formula: "default_zero(p95)"

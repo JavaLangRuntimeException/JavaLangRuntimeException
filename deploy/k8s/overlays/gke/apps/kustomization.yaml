@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: taramanji
+resources:
+  - ../../../base/apps
+  - ../../../base/routes
+  - service-accounts.yaml
+  - http-to-https.yaml
+patches:
+  # Pod の ServiceAccount（Workload Identity で GCP の SA に紐づける）
+  - target: { kind: Deployment }
+    patch: |-
+      - op: add
+        path: /spec/template/spec/serviceAccountName
+        value: taramanji-app

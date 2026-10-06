@@ -1,0 +1,48 @@
+# 負荷で増えるもの（公開ページから呼ばれる回数が多い）。metrics-server の CPU 使用率で判断
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: web
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: web }
+  minReplicas: 2
+  maxReplicas: 4
+  # 起動直後の CPU の跳ねで増やさない。減らすのは 5 分落ち着いてから
+  behavior:
+    scaleUp: { stabilizationWindowSeconds: 60 }
+    scaleDown: { stabilizationWindowSeconds: 300 }
+  metrics:
+    - type: Resource
+      resource: { name: cpu, target: { type: Utilization, averageUtilization: 70 } }
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: reservation
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: reservation }
+  minReplicas: 2
+  maxReplicas: 4
+  # 起動直後の CPU の跳ねで増やさない。減らすのは 5 分落ち着いてから
+  behavior:
+    scaleUp: { stabilizationWindowSeconds: 60 }
+    scaleDown: { stabilizationWindowSeconds: 300 }
+  metrics:
+    - type: Resource
+      resource: { name: cpu, target: { type: Utilization, averageUtilization: 70 } }
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: content
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: content }
+  minReplicas: 2
+  maxReplicas: 4
+  # 起動直後の CPU の跳ねで増やさない。減らすのは 5 分落ち着いてから
+  behavior:
+    scaleUp: { stabilizationWindowSeconds: 60 }
+    scaleDown: { stabilizationWindowSeconds: 300 }
+  metrics:
+    - type: Resource
+      resource: { name: cpu, target: { type: Utilization, averageUtilization: 70 } }

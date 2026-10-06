@@ -1,0 +1,10 @@
+# Cloudflare Tunnel → Envoy Gateway。トンネルの認証情報（Secret tunnel-credentials）は setup.sh が作る
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: cloudflared
+resources:
+  - namespace.yaml
+  - cloudflared.yaml
+configMapGenerator:
+  - name: cloudflared-config
+    files: [config.yaml]

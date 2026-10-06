@@ -1,0 +1,19 @@
+# dev。main へのマージで CI が overlays/dev の版を書き換え、ここが同期する
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: taramanji-dev
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/JavaLangRuntimeException/JavaLangRuntimeException.git
+    targetRevision: main
+    path: deploy/k8s/overlays/dev
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: taramanji-dev
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions:
+      - ServerSideApply=true

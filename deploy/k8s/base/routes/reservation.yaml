@@ -1,0 +1,19 @@
+# reservation: 予約（GAS の応答を待つので長め）
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: reservation
+  labels:
+    taramanji.com/host-group: site
+spec:
+  parentRefs:
+    - { name: taramanji, namespace: gateway, sectionName: http }
+  # 環境ごとのホスト名はオーバーレイで差し替える
+  hostnames: ["taramanji.com", "www.taramanji.com"]
+  rules:
+    - matches:
+        - { path: { type: PathPrefix, value: /taramanji.reservation.v1.ReservationService/ } }
+      backendRefs:
+        - { name: reservation, port: 8080, weight: 100 }
+        - { name: reservation-canary, port: 8080, weight: 0 }
+      timeouts: { request: 60s }

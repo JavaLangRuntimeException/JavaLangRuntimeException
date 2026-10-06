@@ -1,0 +1,49 @@
+# 5 分ごとにカレンダー同期（calendarsync の RunSync を Connect の JSON で呼ぶ）
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: calendarsync-run
+spec:
+  schedule: "*/5 * * * *"
+  timeZone: Asia/Tokyo
+  # 前の回が動いていたら新しい回は始めない（サービス側にもロックがある）
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 290
+      ttlSecondsAfterFinished: 3600
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: calendarsync-run
+            app.kubernetes.io/part-of: taramanji
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 100
+            seccompProfile: { type: RuntimeDefault }
+          containers:
+            - name: sync
+              image: curlimages/curl:8.16.0
+              env:
+                - name: TOKEN
+                  valueFrom:
+                    secretKeyRef: { name: calendarsync-env, key: CALENDAR_SYNC_CRON_TOKEN }
+              command: ["sh", "-c"]
+              args:
+                - >-
+                  curl -sS --fail-with-body --max-time 280 -X POST
+                  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{}'
+                  http://calendarsync:8080/taramanji.calendarsync.v1.CalendarSyncService/RunSync
+              resources:
+                requests: { cpu: 5m, memory: 8Mi }
+                limits: { memory: 32Mi }
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: { drop: ["ALL"] }

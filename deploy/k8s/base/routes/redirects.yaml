@@ -1,0 +1,36 @@
+# 転送（旧 middleware.ts と同じ）
+# taramanji.com の /admin/calendar-sync はカレンダー同期の管理画面（gws）へ
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: site-redirects
+  labels:
+    taramanji.com/host-group: site
+spec:
+  parentRefs:
+    - { name: taramanji, namespace: gateway, sectionName: http }
+  hostnames: ["taramanji.com", "www.taramanji.com"]
+  rules:
+    - matches:
+        - { path: { type: Exact, value: /admin/calendar-sync } }
+      filters:
+        - type: RequestRedirect
+          requestRedirect: { scheme: https, hostname: gws.taramanji.com, path: { type: ReplaceFullPath, replaceFullPath: /admin }, statusCode: 302 }
+---
+# gws.taramanji.com は管理画面専用。他のルートに当たらないパスは taramanji.com へ 308
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: gws-redirects
+  labels:
+    taramanji.com/host-group: gws
+spec:
+  parentRefs:
+    - { name: taramanji, namespace: gateway, sectionName: http }
+  hostnames: ["gws.taramanji.com"]
+  rules:
+    - matches:
+        - { path: { type: PathPrefix, value: / } }
+      filters:
+        - type: RequestRedirect
+          requestRedirect: { scheme: https, hostname: taramanji.com, statusCode: 308 }

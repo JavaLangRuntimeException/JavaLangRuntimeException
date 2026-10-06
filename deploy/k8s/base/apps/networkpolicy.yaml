@@ -1,0 +1,68 @@
+# 既定は受信を全部拒否し、必要な経路だけ開ける
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+---
+# Envoy Gateway（envoy-gateway-system の Envoy）→ 公開するサービスと web
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: from-gateway
+spec:
+  podSelector:
+    matchLabels: { taramanji.com/public: "true" }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: envoy-gateway-system } }
+      ports:
+        - { port: 8080 }
+---
+# notification は内部専用。呼べるのは inquiry だけ
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: notification-from-inquiry
+spec:
+  podSelector:
+    matchLabels: { app.kubernetes.io/name: notification }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: { matchLabels: { app.kubernetes.io/name: inquiry } }
+      ports:
+        - { port: 8080 }
+---
+# reservation → worklocation（予約できない日の確認）
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: worklocation-from-reservation
+spec:
+  podSelector:
+    matchLabels: { app.kubernetes.io/name: worklocation }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: { matchLabels: { app.kubernetes.io/name: reservation } }
+      ports:
+        - { port: 8080 }
+---
+# CronJob → calendarsync
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: calendarsync-from-cron
+spec:
+  podSelector:
+    matchLabels: { app.kubernetes.io/name: calendarsync }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: { matchLabels: { app.kubernetes.io/name: calendarsync-run } }
+      ports:
+        - { port: 8080 }
