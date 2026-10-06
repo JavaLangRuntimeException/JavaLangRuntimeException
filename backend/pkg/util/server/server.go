@@ -36,9 +36,14 @@ func Run(service string, mount func(mux *http.ServeMux)) error {
 	mount(mux)
 
 	// APM: リソース名は「メソッド + パス」（Connect なら /パッケージ.サービス/RPC 名）
-	handler := httptrace.WrapHandler(mux, service, "", httptrace.WithResourceNamer(func(r *http.Request) string {
-		return r.Method + " " + r.URL.Path
-	}))
+	handler := httptrace.WrapHandler(mux, service, "",
+		httptrace.WithResourceNamer(func(r *http.Request) string {
+			return r.Method + " " + r.URL.Path
+		}),
+		// k8s のヘルスチェック（数秒ごと）はトレースしない。混ぜると p95 やエラー率が実際の利用と離れ、
+		// カナリアの自動判定（Datadog の trace.http.request.*）が実態を見なくなる
+		httptrace.WithIgnoreRequest(isHealthCheck),
+	)
 
 	protocols := new(http.Protocols)
 	protocols.SetHTTP1(true)
@@ -92,3 +97,7 @@ func InternalClientOptions() []connect.ClientOption {
 
 // InternalHTTPClient はサービス間通信用の HTTP クライアント
 func InternalHTTPClient() *http.Client { return internalHTTPClient() }
+
+func isHealthCheck(r *http.Request) bool {
+	return r.URL.Path == "/healthz" || r.URL.Path == "/readyz"
+}
