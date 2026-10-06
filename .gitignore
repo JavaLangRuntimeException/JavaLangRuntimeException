@@ -3,7 +3,6 @@ node_modules/
 npm-debug.log
 yarn-debug.log
 yarn-error.log
-.next/
 
 # ローカルのビルドファイル
 dist/
@@ -43,8 +42,17 @@ coverage/
 # IDE / エディタ設定
 .project
 
-.vercel
 .env*
 
 # Datadog RUM のクライアントトークン（ブラウザに配る前提の公開値）
 !frontend/.env.production
+
+# Claude Code の個人設定
+.claude/settings.local.json
+**/.claude/settings.local.json
+
+# Vercel のローカル設定
+.vercel
+
+# 旧 OrbStack 構成の手元の平文 Secret（切り戻し用に手元にだけ残す。git には入れない）
+/k8s/
