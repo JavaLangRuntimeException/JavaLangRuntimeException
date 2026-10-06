@@ -1,4 +1,4 @@
 # set-version.sh が書き換える
 - op: add
   path: /spec/template/metadata/labels/tags.datadoghq.com~1version
-  value: sha-b76b8e0
+  value: sha-6f1a8c8
