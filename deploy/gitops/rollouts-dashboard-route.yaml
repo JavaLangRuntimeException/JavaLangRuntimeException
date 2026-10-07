@@ -20,3 +20,68 @@ spec:
   rules:
     - backendRefs:
         - { name: argo-rollouts-dashboard, port: 3100 }
+---
+# 画面を開いたままにすると、ダッシュボードが CPU を上限（500m）まで使い切って応答しなくなることがある
+# （watch の張り直しが溜まる。チャートに probe の設定がない）。5 分ごとに見て、30 秒あけて 2 回とも 400m 以上なら再起動する
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: dashboard-watchdog
+  namespace: argo-rollouts
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: dashboard-watchdog
+  namespace: argo-rollouts
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    resourceNames: ["argo-rollouts-dashboard"]
+    verbs: ["get", "patch"]
+  - apiGroups: ["metrics.k8s.io"]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: dashboard-watchdog
+  namespace: argo-rollouts
+roleRef: { apiGroup: rbac.authorization.k8s.io, kind: Role, name: dashboard-watchdog }
+subjects:
+  - { kind: ServiceAccount, name: dashboard-watchdog, namespace: argo-rollouts }
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: dashboard-watchdog
+  namespace: argo-rollouts
+spec:
+  schedule: "*/5 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      ttlSecondsAfterFinished: 600
+      template:
+        spec:
+          serviceAccountName: dashboard-watchdog
+          restartPolicy: Never
+          securityContext: { runAsNonRoot: true, runAsUser: 65534 }
+          containers:
+            - name: watchdog
+              image: alpine/k8s:1.34.1
+              resources:
+                requests: { cpu: 10m, memory: 32Mi }
+                limits: { memory: 128Mi }
+              command: ["sh", "-c"]
+              args:
+                - |
+                  cpu() { kubectl -n argo-rollouts top pod -l app.kubernetes.io/component=rollouts-dashboard --no-headers | awk '{sub("m","",$2); print $2+0}'; }
+                  a=$(cpu); sleep 30; b=$(cpu); echo "cpu: ${a}m ${b}m"
+                  if [ "${a:-0}" -ge 400 ] && [ "${b:-0}" -ge 400 ]; then
+                    kubectl -n argo-rollouts rollout restart deploy/argo-rollouts-dashboard
+                  fi
