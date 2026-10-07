@@ -1,1 +1,1 @@
-export { linkCards, CALENDAR_SYNC_URL, type LinkCard } from "./model/links";
+export { linkCards, type LinkCard } from "./model/links";

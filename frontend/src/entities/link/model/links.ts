@@ -6,9 +6,6 @@ export type LinkCard = {
   backText: string;
 };
 
-// 複数アカウントのカレンダー同期の管理画面（gws.taramanji.com は /admin 専用。k8s/calendar-sync/README.md）
-export const CALENDAR_SYNC_URL = "https://gws.taramanji.com/admin";
-
 export const linkCards: LinkCard[] = [
   // Portfolio → Home
   { href: "/", imgSrc: "/image.png", title: "Home", description: "ホームの画面へ", backText: "ホームへ" },
@@ -32,8 +29,6 @@ export const linkCards: LinkCard[] = [
   { href: "https://teratail.com/users/JavaLangRuntime", imgSrc: "/teratail.png", title: "Teratail", description: "@JavaLangRuntime", backText: "Q&A" },
   // 1on1予約
   { href: "/reserve", imgSrc: "/image2.png", title: "お打ち合わせ予約", description: "お打ち合わせのの予約はこちら", backText: "なんでも話しましょう！" },
-  // カレンダー同期（オンプレ k8s）
-  { href: CALENDAR_SYNC_URL, imgSrc: "/gws-calendar.svg", title: "カレンダー同期", description: "複数の Google カレンダーを同期", backText: "仕事も個人も、すべての\nカレンダーの予定を\nひとつにまとめます。\n\n（管理者のみ）" },
   {
     title: "お問い合わせ",
     description: "Contact Form",
