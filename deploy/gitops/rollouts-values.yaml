@@ -11,4 +11,5 @@ dashboard:
   enabled: true
   resources:
     requests: { cpu: 10m, memory: 32Mi }
-    limits: { memory: 128Mi }
+    # 画面を開いたままだと CPU を使い切ることがあった（4 コア）。ほかを巻き込まないよう上限を付ける
+    limits: { cpu: 500m, memory: 128Mi }

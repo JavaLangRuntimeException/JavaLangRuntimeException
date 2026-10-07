@@ -19,6 +19,7 @@ spec:
     automated: { prune: true, selfHeal: true }
     syncOptions:
       - ServerSideApply=true
+      - RespectIgnoreDifferences=true   # 自動同期でも ignoreDifferences の項目を上書きしない
   # Rollout が Pod を持つので Deployment の台数（0）と HPA が動かす台数は差分にしない
   ignoreDifferences:
     - group: argoproj.io
@@ -27,3 +28,7 @@ spec:
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
       jqPathExpressions: [".spec.rules[].backendRefs[].weight"]
+    # カナリア中は Argo Rollouts が Service の selector に rollouts-pod-template-hash を足す（stable / canary の振り分け）
+    - group: ""
+      kind: Service
+      jqPathExpressions: ['.spec.selector["rollouts-pod-template-hash"]']
