@@ -85,7 +85,7 @@ src/
 
 ## 利用可能な skill / subagent
 
-`.claude/skills/` と `.claude/agents/` に配置済み（全文は `.claude/all-skills-and-subagents.md`）。**skill / subagent 本体は技術非依存の workflow** であり、React / Vite / FSD / BoardUI / connect-es といった**具体はこの CLAUDE.md と AGENTS.md から読み取られる**前提で書かれている。したがって技術スタックや規約の変更はこの 2 ファイルだけで吸収でき、skill 本体を書き換えることはない。
+`.claude/skills/` と `.claude/agents/` に配置済み。**skill / subagent 本体は技術非依存の workflow** であり、React / Vite / FSD / BoardUI / connect-es といった**具体はこの CLAUDE.md と AGENTS.md から読み取られる**前提で書かれている。したがって技術スタックや規約の変更はこの 2 ファイルだけで吸収でき、skill 本体を書き換えることはない。
 
 ### Skills（15）
 
