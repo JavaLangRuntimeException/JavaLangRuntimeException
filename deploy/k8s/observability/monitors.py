@@ -102,6 +102,35 @@ MONITORS = [
         "query": "sum(last_1h):sum:email.sent{status:failed}.as_count() >= 1",
         "message": msg("SES でのメール送信が {{value}} 回失敗しました（お問い合わせが届いていない可能性）。"),
         "options": {"thresholds": {"critical": 1}, "notify_no_data": False},
+    },    {
+        "name": "[taramanji] {{instance.name}} に外からつながらない",
+        "type": "service check",
+        "query": '"http.can_connect".over("*").by("instance").last(3).count_by_status()',
+        "message": msg("HTTP Check（Cloudflare 経由）で {{instance.name}} に 3 回続けてつながりません。cloudflared・Envoy Gateway・web を確認してください。"),
+        "options": {"thresholds": {"critical": 3, "ok": 1}, "notify_no_data": True, "no_data_timeframe": 10},
+    },
+    {
+        "name": "[taramanji] TLS 証明書の期限が近い",
+        "type": "query alert",
+        "query": "min(last_1h):min:http.ssl.days_left{*} by {instance} < 14",
+        "message": msg("{{instance.name}} の証明書の残りが {{value}} 日です（Cloudflare の Edge 証明書を確認）。"),
+        "options": {"thresholds": {"critical": 14, "warning": 21}, "notify_no_data": False},
+    },
+    {
+        "name": "[taramanji] Argo CD: {{name.name}} が Healthy でない",
+        "type": "query alert",
+        "query": "max(last_15m):sum:argocd.app_controller.app.info{health_status:degraded} by {name} + "
+                 "sum:argocd.app_controller.app.info{health_status:missing} by {name} >= 1",
+        "message": msg("Argo CD の Application {{name.name}} が Degraded / Missing です（argocd app get で確認）。"),
+        "options": {"thresholds": {"critical": 1}, "notify_no_data": False},
+    },
+    {
+        "name": "[taramanji] Argo Rollouts: {{argo_rollouts_name.name}} が中止・失敗した",
+        "type": "query alert",
+        "query": "max(last_5m):sum:argo_rollouts.rollout.phase{phase:abort} by {argo_rollouts_name} + "
+                 "sum:argo_rollouts.rollout.phase{phase:error} by {argo_rollouts_name} >= 1",
+        "message": msg("Rollout {{argo_rollouts_name.name}} が Abort / Error です（分析の失敗など。kubectl argo rollouts get rollout で確認）。"),
+        "options": {"thresholds": {"critical": 1}, "notify_no_data": False},
     },
 ]
 

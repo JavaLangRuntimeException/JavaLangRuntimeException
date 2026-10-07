@@ -14,6 +14,14 @@ datadog:
   logs:
     enabled: true
     containerCollectAll: true
+  # kind の内部（kube-system・local-path-storage）と dev・stg のコンテナは監視しない（コンテナ数の課金を減らす）。
+  # dev・stg のトレース（APM）はノードの 8126 に送られるので、今までどおり届く
+  containerExclude: "kube_namespace:^kube-system$ kube_namespace:^local-path-storage$ kube_namespace:^taramanji-dev$ kube_namespace:^taramanji-stg$"
+  # ログは本番のアプリ（taramanji）・cloudflared・Redis だけ送る。
+  # Envoy のアクセスログ・kindnet・Argo・Datadog 自身などの基盤のログは量が多いわりに見ないので送らない
+  # （Envoy のリクエスト数・5xx はメトリクスで取れている。基盤は kubectl logs で見る）。include が exclude より優先
+  containerExcludeLogs: "kube_namespace:.*"
+  containerIncludeLogs: "kube_namespace:^taramanji$ kube_namespace:^cloudflared$ kube_namespace:^data$"
   # APM: アプリ（dd-trace-go）はノードの IP の 8126 へ送る
   apm:
     portEnabled: true
@@ -25,6 +33,11 @@ datadog:
     originDetection: true
   kubeStateMetricsCore:
     enabled: true
+  # Kubernetes のイベント（再起動・スケジュール失敗・Rollout など）
+  collectEvents: true
+  # クラスター全体で 1 回だけ動かすチェック（下の http_check）
+  clusterChecks:
+    enabled: true
   # ネットワークポリシー・HPA・PDB の状態も Datadog で見る
   orchestratorExplorer:
     enabled: true
@@ -33,6 +46,15 @@ datadog:
   # Envoy・Redis・cloudflared のチェックは Pod の注釈（Autodiscovery）で設定している
 clusterAgent:
   enabled: true
+  # 外から見た死活とレイテンシ（Cloudflare 経由で本番の URL を叩く）。クラスターで 1 回だけ動く
+  confd:
+    http_check.yaml: |-
+      cluster_check: true
+      init_config:
+      instances:
+        - { name: taramanji.com, url: "https://taramanji.com/", timeout: 10, tags: ["site:taramanji.com"] }
+        - { name: gws.taramanji.com, url: "https://gws.taramanji.com/admin", timeout: 10, tags: ["site:gws.taramanji.com"] }
+        - { name: taramanji.com/blogs, url: "https://taramanji.com/blogs", timeout: 10, tags: ["site:taramanji.com"] }
   metricsProvider:
     enabled: false
 agents:

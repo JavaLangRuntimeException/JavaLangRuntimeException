@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Datadog に「taramanji.com — kind (GKE-style)」ダッシュボードを作る / 更新する（同じタイトルがあれば上書き）。
-実務で見る順に並べる: 利用者から見た状態（RED）→ 入口（Envoy）→ 各サービス（APM・Go ランタイム）→ 依存先（Redis・外部 API）→ 業務 → 基盤（k8s）。
+実務で見る順に並べる: 外形監視 → 入口（cloudflared・Envoy・nginx）→ 各サービス（APM・Go）→ 依存先（Redis・外部 API）→ 業務 → 基盤（k8s・Argo）。
 
   python3 deploy/k8s/observability/dashboard.py
 
@@ -95,6 +95,12 @@ def group(title, widgets, color="vivid_blue"):
     return {"definition": {"type": "group", "title": title, "layout_type": "ordered", "background_color": color, "widgets": widgets}}
 
 
+def events(title, query):
+    return {"definition": {"type": "list_stream", "title": title, "requests": [{
+        "query": {"data_source": "event_stream", "query_string": query, "event_size": "s"},
+        "columns": [{"field": "stream", "width": "auto"}], "response_format": "event_list"}]}}
+
+
 def service_map():
     return {"definition": {"type": "servicemap", "title": "サービスマップ（APM）", "service": "reservation",
                            "filters": ["env:prod"]}}
@@ -109,7 +115,23 @@ def dashboard():
         "layout_type": "ordered",
         "template_variables": [{"name": "service", "prefix": "service", "available_values": SERVICES, "default": "*"}],
         "widgets": [
-            group("利用者から見た状態（入口: Envoy Gateway）", [
+            group("HTTP Check", [
+                value("taramanji.com", "min:network.http.can_connect{instance:taramanji.com}", "last"),
+                value("gws.taramanji.com", "min:network.http.can_connect{instance:gws.taramanji.com}", "last"),
+                value("証明書の残り日数", "min:http.ssl.days_left{*}", "last"),
+                ts("応答時間（秒）", ["avg:network.http.response_time{*} by {url}"]),
+                ts("接続失敗", ["sum:network.http.cant_connect{*} by {url}"], "bars"),
+            ], "vivid_blue"),
+            group("cloudflared", [
+                value("トンネルの接続数", "sum:cloudflared.cloudflared_tunnel_ha_connections{*}"),
+                ts("リクエスト数", ["sum:cloudflared.cloudflared_tunnel_total_requests.count{*}.as_count()",
+                                  "sum:cloudflared.cloudflared_tunnel_request_errors.count{*}.as_count()"], "bars",
+                   [{"formula": "q0", "alias": "リクエスト"}, {"formula": "q1", "alias": "エラー"}]),
+                ts("ステータスコード別", ["sum:cloudflared.cloudflared_tunnel_response_by_code.count{*} by {status_code}.as_count()"], "bars"),
+                ts("同時リクエスト", ["max:cloudflared.cloudflared_tunnel_concurrent_requests_per_tunnel{*}"]),
+                ts("トンネルの接続数", ["sum:cloudflared.cloudflared_tunnel_ha_connections{*}"]),
+            ], "vivid_orange"),
+            group("Envoy Gateway", [
                 ratio("5xx の割合（直近）", "sum:envoy.cluster.upstream_rq.count{" + CLUSTER + ",envoy_response_code_class:5}.as_count()",
                       "sum:envoy.cluster.upstream_rq.count{" + CLUSTER + "}.as_count()"),
                 value("リクエスト/秒", "sum:envoy.cluster.upstream_rq.count{" + CLUSTER + "}.as_rate()", "avg", precision=2),
@@ -121,7 +143,17 @@ def dashboard():
                     "sum:envoy.cluster.upstream_rq_timeout.count{" + CLUSTER + "}.as_count()"], "bars",
                    [{"formula": "q0", "alias": "接続失敗"}, {"formula": "q1", "alias": "タイムアウト"}]),
             ], "vivid_blue"),
-            group("サービス（APM の RED: Rate / Errors / Duration）", [
+            group("nginx", [
+                ts("リクエスト/秒", [f"sum:nginx.net.request_per_s{{{APP_NS}}}"]),
+                ts("接続（active / reading / writing / waiting）", [
+                    f"sum:nginx.net.connections{{{APP_NS}}}", f"sum:nginx.net.reading{{{APP_NS}}}",
+                    f"sum:nginx.net.writing{{{APP_NS}}}", f"sum:nginx.net.waiting{{{APP_NS}}}"],
+                   formulas=[{"formula": "q0", "alias": "active"}, {"formula": "q1", "alias": "reading"},
+                             {"formula": "q2", "alias": "writing"}, {"formula": "q3", "alias": "waiting"}]),
+                ts("接続の受付・取りこぼし", [f"sum:nginx.net.conn_opened_per_s{{{APP_NS}}}", f"sum:nginx.net.conn_dropped_per_s{{{APP_NS}}}"],
+                   formulas=[{"formula": "q0", "alias": "opened/s"}, {"formula": "q1", "alias": "dropped/s"}]),
+            ], "vivid_blue"),
+            group("APM", [
                 service_map(),
                 ts("リクエスト数（サービス別）", [f"sum:{http}.hits{{{svc_filter}}} by {{service}}.as_count()"], "bars"),
                 ts("エラー数（サービス別）", [f"sum:{http}.errors{{{svc_filter}}} by {{service}}.as_count()"], "bars"),
@@ -131,23 +163,29 @@ def dashboard():
                 toplist("エラーの多い RPC", f"sum:{http}.errors{{{svc_filter}}} by {{service,resource_name}}.as_count()"),
                 ts("Apdex", [f"avg:{http}.apdex{{{svc_filter}}} by {{service}}"]),
             ], "vivid_purple"),
-            group("Go ランタイム", [
+            group("Go Runtime", [
                 ts("goroutine 数", ["avg:runtime.go.num_goroutine{env:prod,$service} by {service}"]),
                 ts("ヒープ（bytes）", ["avg:runtime.go.mem_stats.heap_alloc{env:prod,$service} by {service}"]),
                 ts("GC 停止時間 p75（秒）", ["max:runtime.go.gc_stats.pause_quantiles.75p{env:prod,$service} by {service}"]),
             ], "gray"),
-            group("依存先", [
+            group("External API", [
                 ts("外部 API のレイテンシ（content: Qiita / connpass / ORCID / OGP, ms）",
                    ["avg:content.external.duration.avg{*} by {source}", "max:content.external.duration.95percentile{*} by {source}"]),
                 ts("外部 API の失敗（content）", ["sum:content.external.requests{status:error} by {source}.as_count()"], "bars"),
                 ts("予約の外部呼び出し（GAS / Google Calendar, ms）",
                    ["avg:reservation.calendar.latency.avg{*} by {via,op}", "max:reservation.calendar.latency.95percentile{*} by {via,op}"]),
                 ts("iCal の取得（ms）", ["max:reservation.ical.latency.95percentile{*} by {source,status}"]),
+            ], "vivid_orange"),
+            group("Redis", [
                 ts("Redis コマンド p95（APM, 秒）", ["p95:trace.redis.command{env:prod} by {service}"]),
                 ts("Redis メモリ", [f"max:redis.mem.used{{{CLUSTER}}}", f"max:redis.mem.maxmemory{{{CLUSTER}}}"]),
                 ts("Redis 接続数", [f"max:redis.net.clients{{{CLUSTER}}}"]),
-            ], "vivid_orange"),
-            group("業務", [
+                ts("ops/秒", [f"sum:redis.net.instantaneous_ops_per_sec{{{CLUSTER}}} by {{kube_namespace}}"]),
+                ts("キー数", [f"sum:redis.keys{{{CLUSTER}}} by {{kube_namespace}}"]),
+                ts("キャッシュヒット率（%）", [f"sum:redis.stats.keyspace_hits{{{CLUSTER}}}", f"sum:redis.stats.keyspace_misses{{{CLUSTER}}}"],
+                   formulas=[{"formula": "100 * q0 / (q0 + q1)"}]),
+            ], "orange"),
+            group("DogStatsD", [
                 value("予約（期間内）", "sum:reservation.created{status:ok}.as_count()", "sum"),
                 value("予約の失敗", "sum:reservation.created{status:failed}.as_count()", "sum"),
                 value("お問い合わせ", "sum:inquiry.contact{status:ok}.as_count()", "sum"),
@@ -162,7 +200,7 @@ def dashboard():
                 toplist("よく見られているページ", "sum:web.pageviews{*} by {page}.as_count()"),
                 ts("管理者ログイン", ["sum:identity.login{*} by {status}.as_count()"], "bars"),
             ], "vivid_green"),
-            group("カレンダー同期", [
+            group("calendarsync", [
                 value("同期中の予定", "max:calendar_sync.mirrors{*}"),
                 value("接続アカウント", "max:calendar_sync.accounts{*}"),
                 value("要再接続", "max:calendar_sync.accounts.reconnect_needed{*}"),
@@ -172,7 +210,7 @@ def dashboard():
                    formulas=[{"formula": "q0", "alias": "平均"}, {"formula": "q1", "alias": "p95"}]),
                 ts("実行結果", ["sum:calendar_sync.run{*} by {status}.as_count()"], "bars"),
             ], "vivid_yellow"),
-            group("基盤（kind / k8s）", [
+            group("Kubernetes", [
                 value("Ready の Pod", f"sum:kubernetes_state.pod.ready{{{CLUSTER},condition:true}}"),
                 ts("CPU（デプロイ別, millicores）", [f"sum:container.cpu.usage{{{CLUSTER},{APP_NS}}} by {{kube_deployment}}"],
                    formulas=[{"formula": "q0 / 1000000"}]),
@@ -183,9 +221,27 @@ def dashboard():
                     f"max:kubernetes_state.hpa.desired_replicas{{{CLUSTER}}} by {{horizontalpodautoscaler}}"]),
                 ts("PDB: 止められる Pod の数", [f"min:kubernetes_state.pdb.disruptions_allowed{{{CLUSTER}}} by {{kube_namespace,poddisruptionbudget}}"]),
                 ts("ノードの CPU（%）", [f"avg:system.cpu.user{{{CLUSTER}}} by {{host}}"]),
-                ts("トンネルの接続数（cloudflared）", ["sum:cloudflared.cloudflared_tunnel_ha_connections{kube_cluster_name:taramanji-kind}"]),
+                events("Kubernetes Events", "source:kubernetes"),
             ], "gray"),
-            group("ログ（エラー）", [
+            group("Argo CD", [
+                toplist("Application（sync / health）", "max:argocd.app_controller.app.info{*} by {name,sync_status,health_status}", "last"),
+                ts("Sync（結果別）", ["sum:argocd.app_controller.app.sync.count{*} by {name,phase}.as_count()"], "bars"),
+                ts("Reconcile 時間 p95（秒）", ["p95:argocd.app_controller.app.reconcile{*} by {name}"]),
+                ts("git fetch / ls-remote", ["sum:argocd.repo_server.git.request.count{*} by {request_type}.as_count()"], "bars"),
+                ts("git にかかった時間（平均, 秒）", ["sum:argocd.repo_server.git.request.duration.seconds.sum{*}.as_count()",
+                                                "sum:argocd.repo_server.git.request.duration.seconds.count{*}.as_count()"],
+                   formulas=[{"formula": "q0 / q1"}]),
+                ts("workqueue の深さ", ["max:argocd.app_controller.workqueue.depth{*} by {name}"]),
+            ], "vivid_purple"),
+            group("Argo Rollouts", [
+                toplist("Rollout の状態", "max:argo_rollouts.rollout.phase{*} by {argo_rollouts_name,phase}", "last"),
+                ts("レプリカ（available / desired）", [
+                    "sum:argo_rollouts.rollout.info.replicas.available{*} by {argo_rollouts_name}",
+                    "sum:argo_rollouts.rollout.info.replicas.desired{*} by {argo_rollouts_name}"]),
+                ts("AnalysisRun（結果別）", ["sum:argo_rollouts.analysis.run.phase{*} by {phase}"], "bars"),
+                ts("Rollout のイベント", ["sum:argo_rollouts.rollout.events.count{*} by {argo_rollouts_name,reason}.as_count()"], "bars"),
+            ], "vivid_pink"),
+            group("Logs", [
                 {"definition": {"type": "log_stream", "title": "エラーログ（全サービス）",
                                 "query": f"{CLUSTER} status:error",
                                 "columns": ["host", "service"], "indexes": [], "message_display": "expanded-md",

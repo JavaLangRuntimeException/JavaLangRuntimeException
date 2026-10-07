@@ -13,7 +13,7 @@
 ns: taramanji  Go サービス 8 つ（各 2 Pod・PDB・ゾーン分散）+ web + CronJob（5 分ごとの同期）
                inquiry ─gRPC→ notification（内部専用） / reservation ─gRPC→ worklocation
 ns: data       Redis StatefulSet（AOF・PVC standard-rwo・サービスごとの ACL と DB 番号）
-ns: datadog    Datadog Agent（APM・DogStatsD・ログ・Envoy/Redis のチェック）
+ns: datadog    Datadog Agent（APM・DogStatsD・ログ・イベント・Envoy/Redis/nginx/cloudflared/Argo CD/Argo Rollouts・HTTP Check）
 ```
 
 ## 構成
