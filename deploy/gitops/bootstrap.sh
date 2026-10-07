@@ -22,6 +22,8 @@ k apply -f rollouts-dashboard-route.yaml
 helm --kube-context "$CTX" upgrade --install argocd argo/argo-cd --version 10.9.6 \
   -n argocd --create-namespace -f argocd-values.yaml --wait --timeout 15m
 
+# リポジトリは private。読み取り専用の Deploy key（SSH）を SealedSecret で渡す（鍵は deploy/k8s/secrets/argocd/、git に入らない）
+k apply -f sealed/repo-taramanji.yaml
 k apply -f root.yaml
 echo
 echo "Argo CD の画面: kubectl --context $CTX -n argocd port-forward svc/argocd-server 8080:80 → http://localhost:8080"
