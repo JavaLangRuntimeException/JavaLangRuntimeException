@@ -48,3 +48,7 @@ coverage/
 
 # Datadog RUM のクライアントトークン（ブラウザに配る前提の公開値）
 !frontend/.env.production
+
+# Python のキャッシュ
+__pycache__/
+*.pyc
