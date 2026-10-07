@@ -56,3 +56,7 @@ coverage/
 
 # 旧 OrbStack 構成の手元の平文 Secret（切り戻し用に手元にだけ残す。git には入れない）
 /k8s/
+
+# Python のキャッシュ
+__pycache__/
+*.pyc
