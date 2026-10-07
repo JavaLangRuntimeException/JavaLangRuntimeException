@@ -4,7 +4,7 @@ kind（`../kind`）と同じ base を GKE に載せるときの差分。`kubectl
 
 | kind（Mac mini） | GKE |
 | --- | --- |
-| ローカルレジストリ localhost:5001 | Artifact Registry |
+| GHCR（ghcr.io/javalangruntimeexception） | Artifact Registry |
 | Envoy Gateway（GatewayClass `eg`）+ cloud-provider-kind | GKE Gateway（`gke-l7-global-external-managed`） |
 | Cloudflare Tunnel + Cloudflare の証明書 | Google のグローバル LB + Certificate Manager |
 | StorageClass `standard-rwo`（local-path） | `standard-rwo`（PD balanced） |

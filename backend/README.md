@@ -44,7 +44,7 @@ curl -s -XPOST localhost:8080/taramanji.worklocation.v1.WorkLocationService/List
 ## イメージ
 
 ```bash
-make docker-push                                                  # 全サービスを localhost:5001/taramanji/<service>:<git sha> に
+make docker-build                                                 # 全サービスを手元でビルド（GHCR への push は CI の build）
 docker build --build-arg SERVICE=reservation -t reservation .     # 1 つだけ
 ```
 

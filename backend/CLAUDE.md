@@ -111,7 +111,7 @@ backend/
 - `make proto-gen` — proto 変更後は必須
 - `make build` / `make run SERVICE=reservation`
 - `make test` / `make lint` / `make fmt`
-- `make docker-build` / `make docker-push`（`REGISTRY=localhost:5001/taramanji`、kind のローカルレジストリ）
+- `make docker-build`（手元でビルドするだけ。GHCR への push は CI の build ワークフロー）
 - 本番との比較: `go test -tags live ./internal/<ctx>/...`（必要な環境変数はテストの先頭に記載）
 
 ## 規約上の禁則
