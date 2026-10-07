@@ -1,5 +1,6 @@
 # 本番のカナリア（Argo Rollouts）。Deployment はそのまま（workloadRef）で、Pod の入れ替えを Rollout が行う。
-#   10% → 25% → 50% → 100%（各 5 分）。その間ずっと Datadog で新しい版の 5xx 率と p95 を見て、悪ければ自動で元に戻す。
+#   10% で止まって手動の promote を待ち、そのあと 25% → 50% → 100%（各 5 分）。web だけは新旧を混ぜず一度に切り替える。
+#   その間ずっと Datadog で新しい版の 5xx 率と p95 を見て、悪ければ自動で元に戻す（10% で待っている間も）。
 # 公開しているサービスは HTTPRoute の重み（Gateway API プラグイン）、notification（内部専用）は Pod の数の比で流す。
 # version の値は deploy/k8s/scripts/set-version.sh がリリースごとに書き換える
 ---
@@ -45,7 +46,7 @@ spec:
             value: v0.1.4
       steps:
         - setWeight: 10
-        - pause: { duration: 5m }
+        - pause: {}               # 10% で止まり、promote されるまで待つ（その間も Datadog の判定は続く）
         - setWeight: 25
         - pause: { duration: 5m }
         - setWeight: 50
@@ -84,7 +85,7 @@ spec:
             value: v0.1.4
       steps:
         - setWeight: 10
-        - pause: { duration: 5m }
+        - pause: {}               # 10% で止まり、promote されるまで待つ（その間も Datadog の判定は続く）
         - setWeight: 25
         - pause: { duration: 5m }
         - setWeight: 50
@@ -131,7 +132,7 @@ spec:
             value: v0.1.4
       steps:
         - setWeight: 10
-        - pause: { duration: 5m }
+        - pause: {}               # 10% で止まり、promote されるまで待つ（その間も Datadog の判定は続く）
         - setWeight: 25
         - pause: { duration: 5m }
         - setWeight: 50
@@ -178,7 +179,7 @@ spec:
             value: v0.1.4
       steps:
         - setWeight: 10
-        - pause: { duration: 5m }
+        - pause: {}               # 10% で止まり、promote されるまで待つ（その間も Datadog の判定は続く）
         - setWeight: 25
         - pause: { duration: 5m }
         - setWeight: 50
@@ -225,7 +226,7 @@ spec:
             value: v0.1.4
       steps:
         - setWeight: 10
-        - pause: { duration: 5m }
+        - pause: {}               # 10% で止まり、promote されるまで待つ（その間も Datadog の判定は続く）
         - setWeight: 25
         - pause: { duration: 5m }
         - setWeight: 50
@@ -272,7 +273,7 @@ spec:
             value: v0.1.4
       steps:
         - setWeight: 10
-        - pause: { duration: 5m }
+        - pause: {}               # 10% で止まり、promote されるまで待つ（その間も Datadog の判定は続く）
         - setWeight: 25
         - pause: { duration: 5m }
         - setWeight: 50
@@ -319,7 +320,7 @@ spec:
             value: v0.1.4
       steps:
         - setWeight: 10
-        - pause: { duration: 5m }
+        - pause: {}               # 10% で止まり、promote されるまで待つ（その間も Datadog の判定は続く）
         - setWeight: 25
         - pause: { duration: 5m }
         - setWeight: 50
@@ -366,7 +367,7 @@ spec:
             value: v0.1.4
       steps:
         - setWeight: 10
-        - pause: { duration: 5m }
+        - pause: {}               # 10% で止まり、promote されるまで待つ（その間も Datadog の判定は続く）
         - setWeight: 25
         - pause: { duration: 5m }
         - setWeight: 50
@@ -402,20 +403,6 @@ spec:
             - name: web-gws
       maxSurge: 1
       maxUnavailable: 0
-      analysis:
-        templates:
-          - clusterScope: true
-            templateName: canary-health
-        startingStep: 1
-        args:
-          - name: service
-            value: web
-          - name: version
-            value: v0.1.4
-      steps:
-        - setWeight: 10
-        - pause: { duration: 5m }
-        - setWeight: 25
-        - pause: { duration: 5m }
-        - setWeight: 50
-        - pause: { duration: 5m }
+      # web は新旧を混ぜない（混ぜると古い画面から読んだ JS のファイルが新しい Pod に無く 404 になる）。
+      # 新しい Pod がそろったら一度に切り替える。nginx には APM がなく、カナリアの判定もできないため
+      steps: []
