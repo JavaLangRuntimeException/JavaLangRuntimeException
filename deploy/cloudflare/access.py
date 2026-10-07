@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-dev / stg を Cloudflare Access で守る。何度実行しても同じ結果になる。
+dev / stg と Argo Rollouts の画面を Cloudflare Access で守る。何度実行しても同じ結果になる。
 Cloudflare の入口でログインを求め、ADMIN_EMAIL のアカウントだけを通す（GKE なら IAP にあたる）。
 ログイン方法は既定でワンタイム PIN（そのメールアドレスに届くコードを入れる。Google 側の設定は要らない）。
 --google を付けると Google ログインにする（下の Google のリダイレクト URI の登録が必要）。
@@ -29,6 +29,8 @@ SECRETS = os.path.join(HERE, "..", "k8s", "secrets", "prod", "identity.env")
 APPS = {
     "taramanji-dev": ["dev.taramanji.com", "dev-gws.taramanji.com"],
     "taramanji-stg": ["stg.taramanji.com", "stg-gws.taramanji.com"],
+    # Argo Rollouts の画面（本番のカナリアの Promote / Abort）。画面自体にログインがないので必ずここで守る
+    "taramanji-rollouts": ["rollouts.taramanji.com"],
 }
 
 
