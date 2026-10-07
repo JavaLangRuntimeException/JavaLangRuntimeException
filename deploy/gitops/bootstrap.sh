@@ -16,6 +16,8 @@ helm --kube-context "$CTX" upgrade --install argo-rollouts argo/argo-rollouts --
   -n argo-rollouts --create-namespace -f rollouts-values.yaml --wait --timeout 15m
 # プラグインが HTTPRoute を書き換えられるようにする
 k apply -f rollouts-gatewayapi-rbac.yaml
+# Argo Rollouts の画面を rollouts.taramanji.com で開く（Cloudflare Access の後ろ）
+k apply -f rollouts-dashboard-route.yaml
 
 helm --kube-context "$CTX" upgrade --install argocd argo/argo-cd --version 10.9.6 \
   -n argocd --create-namespace -f argocd-values.yaml --wait --timeout 15m
