@@ -38,87 +38,31 @@
 
 ### インフラ
 
-```mermaid
-flowchart LR
-    user["利用者"] --> cf["Cloudflare<br/>DNS・HTTPS"]
-    cf -- "本番" --> t1["Tunnel<br/>taramanji-onprem"]
-    cf -- "dev / stg / rollouts" --> access["Cloudflare Access<br/>管理者だけ"] --> t2["Tunnel<br/>taramanji-kind"]
-    me["自分の端末"] -- "Tailscale + SSH" --> mac
+<img alt="インフラ構成図" src="docs/images/infra.png" width="100%" />
 
-    subgraph mac["Mac mini（kind：control-plane + worker × 2）"]
-        cfd["cloudflared × 2"] --> gw["Envoy Gateway<br/>Gateway API"]
-        gw --> prod["taramanji（本番）<br/>web + 8 サービス × 2<br/>Argo Rollouts でカナリア"]
-        gw --> stg["taramanji-stg"]
-        gw --> dev["taramanji-dev"]
-        prod --> redis[("Redis<br/>namespace: data")]
-        argocd["Argo CD"]
-        dd["Datadog Agent"]
-    end
+- 利用者のアクセスは Cloudflare から Tunnel を通って家に届く。ルーターのポートは 1 つも開けていない
+- dev・stg・Argo Rollouts の画面は Cloudflare Access で管理者だけに制限
+- 外からの作業は Tailscale ＋ SSH
 
-    t1 --> cfd
-    t2 --> cfd
-    github["GitHub<br/>Actions・GHCR"] -. "Git を見て同期" .- argocd
-    dd -. "メトリクス・トレース・ログ" .-> datadog["Datadog"]
-```
+### 使っている技術
 
-- ルーターのポートは開けていない（cloudflared・Argo CD・Datadog Agent はすべて家の中から外へ接続）
-- 秘密は Sealed Secrets で暗号化して Git に置く。Pod 同士の通信は NetworkPolicy で必要な分だけ許可
+<img alt="使っている技術" src="docs/images/tech.png" width="100%" />
 
 ### リリースの流れ（CI / CD）
 
-```mermaid
-flowchart LR
-    pr["PR を出す"] --> ci["CI<br/>lint・test・security・build"]
-    merge["main にマージ"] --> ci
-    ci --> ghcr["GHCR<br/>イメージ"]
-    ci --> cd["CD<br/>版を書き換えて main にコミット"]
-    tag["タグ v*"] --> cd
-    cd --> argocd["Argo CD<br/>Git に合わせる"]
-    argocd -- "PR" --> dev["dev"]
-    argocd -- "マージ" --> stg["stg"]
-    argocd -- "タグ" --> prod["本番<br/>10% で止まり Promote 待ち<br/>→ 25% → 50% → 100%"]
-    prod -. "5xx 率・p95 を判定" .- datadog["Datadog"]
-```
+<img alt="CI / CD" src="docs/images/cicd.png" width="100%" />
+
+- PR → dev、main にマージ → stg、タグ（`v*`）→ 本番
+- 本番はカナリア：10% で止まって Promote を待ち、25% → 50% → 100%。Datadog で 5xx 率と p95 を見て、悪ければ自動で元に戻す
 
 ### バックエンド（`backend/`：Go・Connect / gRPC）
 
-```mermaid
-flowchart LR
-    gw["Envoy Gateway"] --> identity & content & reservation & worklocation & inquiry & calendarsync & analytics
-    reservation -- "gRPC" --> worklocation
-    inquiry -- "gRPC" --> notification["notification<br/>（内部専用）"]
+<img alt="バックエンドのサービス" src="docs/images/backend-services.png" width="100%" />
 
-    identity["identity<br/>管理者ログイン"] -.-> google["Google OAuth"]
-    content["content<br/>記事・イベント・論文"] -.-> ext["Qiita・connpass・ORCID"]
-    reservation["reservation<br/>予約・空き時間"] -.-> gas["Google Apps Script・iCal"]
-    notification -.-> ses["Amazon SES"]
-    calendarsync["calendarsync<br/>カレンダー同期（5 分ごと）"] -.-> gcal["Google Calendar API"]
-    analytics["analytics<br/>ページビュー"] -.-> dogstatsd["DogStatsD"]
-    worklocation["worklocation<br/>勤務場所"]
+各サービスは同じ層の形（DDD ＋ クリーンアーキテクチャ）です。
 
-    worklocation & content & calendarsync --> redis[("Redis<br/>サービスごとに DB を分ける")]
-```
+<img alt="バックエンドの層" src="docs/images/backend-layers.png" width="100%" />
 
-各サービスは同じ層の形（DDD + クリーンアーキテクチャ）で、`proto/` から型とハンドラーを生成しています。
+### フロントエンド（`frontend/`：React ＋ Vite ＋ TypeScript）
 
-```mermaid
-flowchart LR
-    handler["handler<br/>Connect / gRPC・HTTP"] --> usecase["usecase<br/>アプリケーションの処理"] --> domain["domain<br/>エンティティ・ルール"]
-    infra["infra<br/>Redis・外部 API"] -- "インターフェースを実装" --> domain
-    di["di<br/>組み立て"] --> handler & usecase & infra
-```
-
-### フロントエンド（`frontend/`：React + Vite + TypeScript・FSD）
-
-```mermaid
-flowchart LR
-    app["app<br/>ルーター・Provider・スタイル"] --> pages["pages<br/>URL ごとの画面（13）"]
-    pages --> widgets["widgets<br/>ヘッダー・プロフィール<br/>記事一覧・週の予定…"]
-    widgets --> features["features<br/>予約・お問い合わせ<br/>ブログ検索・同期の管理…"]
-    features --> entities["entities<br/>記事・イベント<br/>勤務場所・予約枠…"]
-    entities --> shared["shared<br/>API クライアント（connect-es）<br/>UI（BoardUI）・設定"]
-    shared -- "Connect（HTTP）" --> gw["Envoy Gateway → backend"]
-```
-
-- 上の層は下の層だけを使う（Feature-Sliced Design。`npm run lint:fsd` で確認）
-- ビルドした静的ファイルを nginx のコンテナで配る。リリースで JS のファイル名が変わっても、古いタブは 1 回だけ読み直して新しい版に切り替わる
+<img alt="フロントエンドの構成" src="docs/images/frontend.png" width="100%" />
