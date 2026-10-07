@@ -59,6 +59,8 @@ kubectl argo rollouts --context kind-taramanji -n taramanji abort reservation
 # 前の版に戻す（Git が正）: 版を書き換えたコミットを revert するか、前のタグでもう一度リリースする
 deploy/k8s/scripts/set-version.sh prod v1.2.2 && git commit -am "deploy(prod): rollback to v1.2.2" && git push
 
+# Argo Rollouts の画面: https://rollouts.taramanji.com（Cloudflare Access で管理者だけ）。Promote / Abort をボタンで
+
 # Argo CD の画面
 kubectl --context kind-taramanji -n argocd port-forward svc/argocd-server 8080:80   # http://localhost:8080
 ```
