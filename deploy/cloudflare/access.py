@@ -1,17 +1,19 @@
 #!/usr/bin/env python3
 """
-dev / stg を Cloudflare Access で守る。何度実行しても同じ結果になる。
-Cloudflare の入口で Google ログインを求め、ADMIN_EMAIL のアカウントだけを通す（GKE なら IAP にあたる）。
+dev / stg と Argo Rollouts の画面を Cloudflare Access で守る。何度実行しても同じ結果になる。
+Cloudflare の入口でログインを求め、ADMIN_EMAIL のアカウントだけを通す（GKE なら IAP にあたる）。
+ログイン方法は既定でワンタイム PIN（そのメールアドレスに届くコードを入れる。Google 側の設定は要らない）。
+--google を付けると Google ログインにする（下の Google のリダイレクト URI の登録が必要）。
 
-  python3 deploy/cloudflare/access.py ~/Downloads/cf-access-token.txt
+  python3 deploy/cloudflare/access.py ~/Downloads/cf-access-token.txt [--google]
 
 必要なもの:
   - API トークン（ファイルで渡す。中身は表示しない）。権限: Account › Access: Apps and Policies › Edit、
     Account › Access: Organizations, Identity Providers, and Groups › Edit
   - Zero Trust の初期設定（チーム名の決定）が済んでいること
-  - Google の OAuth クライアント（taramanji-calendar-sync）の「承認済みのリダイレクト URI」に
+  - --google のときだけ: Google の OAuth クライアント（taramanji-calendar-sync）の「承認済みのリダイレクト URI」に
     https://<チーム名>.cloudflareaccess.com/cdn-cgi/access/callback を足してあること
-Google の OAuth クライアントの ID とシークレットは deploy/k8s/secrets/prod/identity.env から読む。
+ADMIN_EMAIL（と --google のときの Google の OAuth クライアントの ID・シークレット）は deploy/k8s/secrets/prod/identity.env から読む。
 """
 import json
 import os
@@ -27,6 +29,8 @@ SECRETS = os.path.join(HERE, "..", "k8s", "secrets", "prod", "identity.env")
 APPS = {
     "taramanji-dev": ["dev.taramanji.com", "dev-gws.taramanji.com"],
     "taramanji-stg": ["stg.taramanji.com", "stg-gws.taramanji.com"],
+    # Argo Rollouts の画面（本番のカナリアの Promote / Abort）。画面自体にログインがないので必ずここで守る
+    "taramanji-rollouts": ["rollouts.taramanji.com"],
 }
 
 
@@ -53,21 +57,25 @@ def main():
     if len(sys.argv) < 2:
         sys.exit(__doc__)
     token = open(os.path.expanduser(sys.argv[1])).read().strip()
+    use_google = "--google" in sys.argv[2:]
     env = load_env(SECRETS)
     emails = [e.strip() for e in env["ADMIN_EMAIL"].split(",") if e.strip()]
 
     org = call(token, "GET", "/organizations")
     team = org.get("auth_domain", "")
     print("Zero Trust のチーム:", team)
-    print("Google の OAuth クライアントのリダイレクト URI に必要:", f"https://{team}/cdn-cgi/access/callback")
 
-    # Google のログイン（IdP）
+    # ログイン方法（IdP）
     idps = call(token, "GET", "/identity_providers")
-    google = next((i for i in idps if i["type"] == "google"), None)
-    idp_body = {"name": "Google", "type": "google",
-                "config": {"client_id": env["GOOGLE_CLIENT_ID"], "client_secret": env["GOOGLE_CLIENT_SECRET"]}}
-    google = call(token, "PUT", f"/identity_providers/{google['id']}", idp_body) if google else call(token, "POST", "/identity_providers", idp_body)
-    print("IdP: Google", google["id"])
+    if use_google:
+        print("Google の OAuth クライアントのリダイレクト URI に必要:", f"https://{team}/cdn-cgi/access/callback")
+        idp_body = {"name": "Google", "type": "google",
+                    "config": {"client_id": env["GOOGLE_CLIENT_ID"], "client_secret": env["GOOGLE_CLIENT_SECRET"]}}
+    else:
+        idp_body = {"name": "One-time PIN", "type": "onetimepin", "config": {}}
+    idp = next((i for i in idps if i["type"] == idp_body["type"]), None)
+    idp = call(token, "PUT", f"/identity_providers/{idp['id']}", idp_body) if idp else call(token, "POST", "/identity_providers", idp_body)
+    print("IdP:", idp_body["name"], idp["id"])
 
     # 本人だけを通すポリシー（使い回せるポリシー）
     policies = call(token, "GET", "/policies")
@@ -84,7 +92,7 @@ def main():
             "name": name, "type": "self_hosted",
             "domain": hosts[0],
             "destinations": [{"type": "public", "uri": h} for h in hosts],
-            "allowed_idps": [google["id"]],
+            "allowed_idps": [idp["id"]],
             "auto_redirect_to_identity": True,
             "session_duration": "24h",
             "app_launcher_visible": False,
