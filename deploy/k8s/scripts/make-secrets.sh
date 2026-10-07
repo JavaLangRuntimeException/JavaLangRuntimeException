@@ -27,9 +27,9 @@ def load(path):
     return d
 
 portfolio = load(f"{legacy}/portfolio/secret.env")
-vercel = load(f"{legacy}/portfolio/vercel.env")
 cal = load(f"{legacy}/calendar-sync/secret.env")
 state = load(f"{out}/generated.env")
+prev_inquiry = load(f"{out}/inquiry.env")
 
 def gen(key, n=32):
     if key not in state:
@@ -53,8 +53,8 @@ def redis_url(svc):
 files = {
     "identity": {**auth, **google},
     "notification": {k: portfolio[k] for k in ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_REGION", "FROM_EMAIL"]},
-    # お問い合わせの通知先は旧構成の値（Vercel 時代の ADMIN_EMAIL）
-    "inquiry": {**auth, "INQUIRY_NOTIFY_EMAIL": vercel.get("ADMIN_EMAIL", cal["ADMIN_EMAIL"])},
+    # お問い合わせの通知先（作り直しても前回の値を使い回す。初回は管理者のアドレス）
+    "inquiry": {**auth, "INQUIRY_NOTIFY_EMAIL": prev_inquiry.get("INQUIRY_NOTIFY_EMAIL", cal["ADMIN_EMAIL"])},
     "reservation": {**auth, **{k: portfolio[k] for k in ["GCAL_CALENDAR_ID", "GCAL_WEBHOOK_URL", "ICAL_URLS"]}},
     "worklocation": {**auth, "REDIS_URL": redis_url("worklocation")},
     "content": {"REDIS_URL": redis_url("content")},
