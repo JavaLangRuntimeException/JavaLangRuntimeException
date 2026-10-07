@@ -24,6 +24,8 @@ spec:
         taramanji.com/public: "true"
       annotations:
         ad.datadoghq.com/web.logs: '[{"source":"nginx","service":"web"}]'
+        ad.datadoghq.com/web.checks: |
+          {"nginx": {"init_config": {}, "instances": [{"nginx_status_url": "http://%%host%%:8081/nginx_status"}]}}
     spec:
       automountServiceAccountToken: false
       enableServiceLinks: false
@@ -43,6 +45,7 @@ spec:
           image: taramanji/web
           ports:
             - { name: http, containerPort: 8080 }
+            - { name: metrics, containerPort: 8081 }
           readinessProbe:
             httpGet: { path: /healthz, port: http }
             periodSeconds: 5

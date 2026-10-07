@@ -66,3 +66,18 @@ spec:
         - podSelector: { matchLabels: { app.kubernetes.io/name: calendarsync-run } }
       ports:
         - { port: 8080 }
+---
+# Datadog Agent → web の nginx（stub_status）
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: web-metrics-from-datadog
+spec:
+  podSelector:
+    matchLabels: { app.kubernetes.io/name: web }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: datadog } }
+      ports:
+        - { port: 8081 }

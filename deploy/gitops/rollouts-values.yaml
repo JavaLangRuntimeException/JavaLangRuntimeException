@@ -1,6 +1,10 @@
 # Argo Rollouts: 本番のカナリア。Gateway API の HTTPRoute の重みを動かすプラグインを読み込む
 controller:
   replicas: 1
+  # Datadog の argo_rollouts チェック（Autodiscovery）
+  podAnnotations:
+    ad.datadoghq.com/argo-rollouts.checks: |
+      {"argo_rollouts": {"init_config": {}, "instances": [{"openmetrics_endpoint": "http://%%host%%:8090/metrics"}]}}
   trafficRouterPlugins:
     - name: argoproj-labs/gatewayAPI
       location: https://github.com/argoproj-labs/rollouts-plugin-trafficrouter-gatewayapi/releases/download/v0.17.0/gatewayapi-plugin-linux-arm64

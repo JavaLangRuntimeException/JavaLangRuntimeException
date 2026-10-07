@@ -1,4 +1,4 @@
-# Argo CD: GitHub（public リポジトリ）を 3 分ごとに見て、クラスターをマニフェストに合わせる（Pull 型。Mac mini への入口は要らない）
+# Argo CD: GitHub のリポジトリを 3 分ごとに見て、クラスターをマニフェストに合わせる（Pull 型。Mac mini への入口は要らない）
 global:
   domain: argocd.local
 configs:
@@ -8,11 +8,18 @@ configs:
     controller.repo.server.timeout.seconds: "300"
   cm:
     timeout.reconciliation: 180s
+# Datadog の argocd チェック（Autodiscovery）。メトリクスのポートは Argo CD の NetworkPolicy で開いている
 server:
+  podAnnotations:
+    ad.datadoghq.com/server.checks: |
+      {"argocd": {"init_config": {}, "instances": [{"api_server_endpoint": "http://%%host%%:8083/metrics"}]}}
   resources:
     requests: { cpu: 20m, memory: 64Mi }
     limits: { memory: 256Mi }
 repoServer:
+  podAnnotations:
+    ad.datadoghq.com/repo-server.checks: |
+      {"argocd": {"init_config": {}, "instances": [{"repo_server_endpoint": "http://%%host%%:8084/metrics"}]}}
   env:
     - name: ARGOCD_EXEC_TIMEOUT
       value: 5m
@@ -20,6 +27,9 @@ repoServer:
     requests: { cpu: 20m, memory: 64Mi }
     limits: { memory: 512Mi }
 controller:
+  podAnnotations:
+    ad.datadoghq.com/application-controller.checks: |
+      {"argocd": {"init_config": {}, "instances": [{"app_controller_endpoint": "http://%%host%%:8082/metrics"}]}}
   resources:
     requests: { cpu: 50m, memory: 128Mi }
     limits: { memory: 768Mi }
@@ -30,6 +40,9 @@ notifications:
 dex:
   enabled: false
 redis:
+  # Argo CD 内部の Redis は Datadog の redisdb 自動検出から外す（NetworkPolicy で届かず、エラーになるだけ）
+  podAnnotations:
+    ad.datadoghq.com/metrics_exclude: "true"
   resources:
     requests: { cpu: 10m, memory: 32Mi }
     limits: { memory: 128Mi }
