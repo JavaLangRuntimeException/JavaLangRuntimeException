@@ -16,9 +16,6 @@ coverage/
 # Claude Code の個人設定
 **/.claude/settings.local.json
 
-# Vercel のローカル設定
-.vercel
-
 # 旧 OrbStack 構成の手元の平文 Secret（切り戻し用に手元にだけ残す。git には入れない）
 /k8s/
 
