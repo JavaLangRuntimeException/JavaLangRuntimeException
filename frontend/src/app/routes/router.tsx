@@ -2,9 +2,10 @@ import { createBrowserRouter, Navigate } from "react-router";
 import { SiteLayout } from "@/app/layouts/SiteLayout";
 import { isCalendarHost } from "@/shared/config/site";
 import { NotFoundPage } from "@/pages/not-found";
+import { loadChunk } from "@/shared/lib/stale-chunk";
 
-// ページはルートごとに分割して読み込む
-const page = (load: () => Promise<{ default: React.ComponentType }>) => async () => ({ Component: (await load()).default });
+// ページはルートごとに分割して読み込む（リリース直後の古いタブでチャンクが消えていたら 1 回だけ読み直す）
+const page = (load: () => Promise<{ default: React.ComponentType }>) => async () => ({ Component: (await loadChunk(load)).default });
 
 // gws.taramanji.com はカレンダー同期の管理画面専用（旧 middleware.ts と同じ振る舞い）
 const calendarHostRoutes = [
