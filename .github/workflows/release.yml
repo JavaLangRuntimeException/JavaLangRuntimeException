@@ -37,9 +37,14 @@ jobs:
       - name: Wait for CI images of this commit
         run: |
           SRC="sha-${GITHUB_SHA::7}"
+          # 9 つのイメージは並行にビルドされ、終わる順番がばらばらなので、全部そろうまで待つ
           for i in $(seq 1 60); do
-            if docker buildx imagetools inspect "$REGISTRY/taramanji-web:$SRC" >/dev/null 2>&1; then exit 0; fi
-            echo "CI のイメージを待っています ($i/60)"; sleep 30
+            missing=""
+            for s in identity notification inquiry reservation worklocation content calendarsync analytics web; do
+              docker buildx imagetools inspect "$REGISTRY/taramanji-$s:$SRC" >/dev/null 2>&1 || missing="$missing $s"
+            done
+            [ -z "$missing" ] && exit 0
+            echo "CI のイメージを待っています ($i/60):$missing"; sleep 30
           done
           echo "::error::$SRC のイメージがありません（main の CI が成功しているか確認）"; exit 1
       - name: Tag images with the release version
