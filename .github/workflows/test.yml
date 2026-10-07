@@ -43,3 +43,14 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - run: npm test
+
+  # 「変わったファイル → 作り直すサービス」の判定（共通部分を変えたときに取りこぼさないか）
+  changed-services:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+      - run: deploy/k8s/scripts/changed-services_test.sh

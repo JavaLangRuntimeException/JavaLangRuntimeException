@@ -1,4 +1,6 @@
-# build: サービスごとのコンテナイメージをビルドし、GHCR に sha-xxxxxxx で push する
+# build: 変わったサービスだけコンテナイメージをビルドし、GHCR に sha-xxxxxxx で push する
+#   どのサービスを作るかは deploy/k8s/scripts/changed-services.py が決める（Go は依存関係で判定。共通部分を変えたら使っている全サービス）
+#   sha は PR なら PR の先頭のコミット、push なら push したコミット（cd が同じ sha で版を書き換える）
 # 成功すると cd ワークフローが動く（workflow_run）
 name: build
 
@@ -22,7 +24,38 @@ env:
   PUSH: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.c.outputs.services }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+      - name: Services to build
+        id: c
+        env:
+          EVENT: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          case "$EVENT" in
+            pull_request) BASE="$(git merge-base "$PR_BASE" HEAD)" ;;
+            push) BASE="$BEFORE" ;;
+            *) BASE="" ;;   # 手動実行（cd から呼ばれる）は全部作る
+          esac
+          list="$(deploy/k8s/scripts/changed-services.py --base "$BASE" --head HEAD)"
+          echo "作るサービス: ${list:-（なし）}"
+          # shellcheck disable=SC2086
+          echo "services=$(python3 -c 'import json,sys; print(json.dumps(sys.argv[1:]))' $list)" >> "$GITHUB_OUTPUT"
+
   image:
+    needs: changes
+    if: needs.changes.outputs.services != '[]'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -30,7 +63,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: [identity, notification, inquiry, reservation, worklocation, content, calendarsync, analytics, web]
+        service: ${{ fromJSON(needs.changes.outputs.services) }}
     steps:
       - uses: actions/checkout@v4
       - uses: docker/setup-buildx-action@v3
@@ -42,7 +75,9 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Version
         id: v
-        run: echo "tag=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+        env:
+          SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: echo "tag=sha-${SHA::7}" >> "$GITHUB_OUTPUT"
       # Go も Vite もビルドする側のアーキテクチャで動き、実行イメージはコピーだけなので QEMU なしで 2 アーキテクチャ作れる
       # arm64 は Mac mini の kind、amd64 は GKE 用
       - uses: docker/build-push-action@v6
@@ -56,7 +91,7 @@ jobs:
           tags: ${{ env.REGISTRY }}/taramanji-${{ matrix.service }}:${{ steps.v.outputs.tag }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.revision=${{ github.event.pull_request.head.sha || github.sha }}
           cache-from: type=gha,scope=${{ matrix.service }}
           # main と PR のビルドが同時に同じキャッシュへ書くと失敗することがあるので、キャッシュの書き込み失敗はビルドの失敗にしない
           cache-to: type=gha,mode=max,scope=${{ matrix.service }},ignore-error=true

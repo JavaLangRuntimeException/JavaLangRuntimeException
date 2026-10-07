@@ -26,7 +26,7 @@ ns: datadog    Datadog Agent（APM・DogStatsD・ログ・Envoy/Redis のチェ�
 | `overlays/prod/` | 本番（namespace: taramanji / data）。Argo Rollouts のカナリアと Datadog の自動判定、cloudflared |
 | `overlays/dev/` | dev（namespace: taramanji-dev）。1 台ずつ・HPA/PDB なし・dev.taramanji.com |
 | `overlays/gke/` | GKE に載せるときの差分（未適用） |
-| `scripts/` | `make-secrets.sh`（平文を secrets/ に作る）・`seal.sh`（暗号化して sealed/ に）・`set-version.sh`（版の書き換え） |
+| `scripts/` | `make-secrets.sh`（平文を secrets/ に作る）・`seal.sh`（暗号化して sealed/ に）・`set-version.sh`（版の書き換え）・`changed-services.py`（作り直すサービスの判定） |
 | `observability/` | Datadog Agent の設定、ダッシュボード、モニター |
 
 ## リリースの流れ（GitOps）
@@ -53,6 +53,18 @@ stg で確認して git tag v1.2.3 <そのコミット> && git push origin v1.2.
 手動実行             ──▶ GitHub の Actions → cd → Run workflow で、ブランチと dev / stg を選ぶ（その場で lint・test・security・build してから反映）
 ```
 
+**変わったサービスだけ作り直して入れ替える。**
+
+- build：変わったファイルから、作り直すサービスを決める（`scripts/changed-services.py`）
+  - `backend/internal/<サービス>/`・`backend/cmd/<サービス>/` → そのサービス
+  - Go の共通部分（`backend/pkg/`・生成コード `backend/gen/` など）→ Go の依存関係（`go list -deps`）で、使っている全サービス
+  - `go.mod`・Dockerfile・`proto/` など判断できないもの → Go の 8 つ全部。`frontend/` → web
+  - ドキュメント・テスト・マニフェストだけの変更 → 作り直さない
+  - 判定のテスト：`scripts/changed-services_test.sh`（CI の test で実行）
+- cd（dev / stg）：そのコミットのイメージがあるサービス（＝作り直したサービス）だけ版を書き換える
+- 本番：前のタグから変わったサービスだけに、新しい版のタグを付けて書き換える（`scripts/release-images.sh`）。変わっていないサービスは入れ替わらない
+- 各サービスの版（Datadog の version）は、overlay の `replacements` でそのサービスのイメージのタグから取る
+
 ```bash
 # カナリアの様子
 kubectl argo rollouts --context kind-taramanji -n taramanji get rollout reservation --watch
@@ -63,7 +75,7 @@ kubectl argo rollouts --context kind-taramanji -n taramanji pause reservation
 kubectl argo rollouts --context kind-taramanji -n taramanji promote reservation --full
 kubectl argo rollouts --context kind-taramanji -n taramanji abort reservation
 # 前の版に戻す（Git が正）: 版を書き換えたコミットを revert するか、前のタグでもう一度リリースする
-deploy/k8s/scripts/set-version.sh prod v1.2.2 && git commit -am "deploy(prod): rollback to v1.2.2" && git push
+deploy/k8s/scripts/set-version.sh prod v1.2.2 reservation && git commit -am "deploy(prod): rollback reservation to v1.2.2" && git push   # サービスを省くと全部
 
 # Argo Rollouts の画面: https://rollouts.taramanji.com（Cloudflare Access で管理者だけ）。Promote / Abort をボタンで
 
