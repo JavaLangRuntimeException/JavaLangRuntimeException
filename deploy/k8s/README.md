@@ -31,6 +31,8 @@ ns: datadog    Datadog Agent（APM・DogStatsD・ログ・Envoy/Redis のチェ�
 
 ## リリースの流れ（GitOps）
 
+ワークフロー（`.github/workflows/`）: CI は `lint` `test` `security` `build`、反映（CD）は `cd` だけ。
+
 | 環境 | 反映のきっかけ | URL |
 | --- | --- | --- |
 | dev | main への PR（同じリポジトリのブランチ）／手動実行 | dev.taramanji.com・dev-gws.taramanji.com |
@@ -38,15 +40,17 @@ ns: datadog    Datadog Agent（APM・DogStatsD・ログ・Envoy/Redis のチェ�
 | prod | タグ `v*` の push | taramanji.com・gws.taramanji.com |
 
 ```
-PR を出す・更新する ──▶ CI（Go / TS / マニフェスト / gitleaks）──▶ イメージを GHCR に push（sha-xxxxxxx、arm64 + amd64）
-                     ──▶ overlays/dev の版を書き換えて main にコミット ──▶ Argo CD が dev に同期（PR ごとに dev が入れ替わる）
-main にマージ        ──▶ 同じくイメージを push ──▶ overlays/stg を書き換え ──▶ Argo CD が stg に同期
+PR を出す・更新する ──▶ CI: lint（書式・静的解析・生成コード・マニフェスト）/ test（単体テスト）/ security（gitleaks）
+                          / build（イメージを GHCR に push。sha-xxxxxxx、arm64 + amd64）
+                     ──▶ CD: build の成功で動き、同じコミットの lint・test・security の成功も確かめてから
+                          overlays/dev の版を書き換えて main にコミット ──▶ Argo CD が dev に同期（PR ごとに dev が入れ替わる）
+main にマージ        ──▶ 同じく CI ──▶ CD が overlays/stg を書き換え ──▶ Argo CD が stg に同期
 stg で確認して git tag v1.2.3 <そのコミット> && git push origin v1.2.3
-                     ──▶ release ワークフロー: イメージに v1.2.3 を付け、overlays/prod の版を書き換えてコミット
+                     ──▶ CD（deploy-prod）: イメージに v1.2.3 を付け、overlays/prod の版を書き換えてコミット、GitHub Release を作る
                      ──▶ Argo CD が prod に同期 ──▶ Argo Rollouts がカナリア
                          10%（5 分）→ 25%（5 分）→ 50%（5 分）→ 100%
                          その間ずっと Datadog で新しい版の 5xx 率（< 5%）と p95（< 3 秒、RunSync は除く）を判定し、2 回外れたら自動で元の版に戻す
-手動実行             ──▶ GitHub の Actions → ci → Run workflow で、ブランチと dev / stg を選ぶ
+手動実行             ──▶ GitHub の Actions → cd → Run workflow で、ブランチと dev / stg を選ぶ（その場で lint・test・security・build してから反映）
 ```
 
 ```bash
