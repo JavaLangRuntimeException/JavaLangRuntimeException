@@ -36,17 +36,12 @@
 
 ポートフォリオサイト [taramanji.com](https://taramanji.com) は、自宅の Mac mini（M4）1 台の中の Kubernetes（kind）で動いています。
 
-### インフラ
-
-<img alt="インフラ構成図" src="docs/images/infra.png" width="100%" />
-
-- 利用者のアクセスは Cloudflare から Tunnel を通って家に届く。ルーターのポートは 1 つも開けていない
-- dev・stg・Argo Rollouts の画面は Cloudflare Access で管理者だけに制限
-- 外からの作業は Tailscale ＋ SSH
-
-### 使っている技術
+### インフラ・使っている技術
 
 <img alt="使っている技術" src="docs/images/tech.png" width="100%" />
+
+- 利用者のアクセスは Cloudflare Tunnel を通って家に届く。ルーターのポートは 1 つも開けていない
+- dev・stg・Argo Rollouts の画面は Cloudflare Access で管理者だけに制限。外からの作業は Tailscale ＋ SSH
 
 ### リリースの流れ（CI / CD）
 
