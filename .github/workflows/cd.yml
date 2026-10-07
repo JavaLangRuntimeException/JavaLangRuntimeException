@@ -53,7 +53,8 @@ jobs:
         run: |
           if [ "$EVENT" = pull_request ]; then
             echo "environment=dev" >> "$GITHUB_OUTPUT"
-            echo "source=${PR:+https://github.com/$GITHUB_REPOSITORY/pull/$PR}${PR:-$BRANCH}" >> "$GITHUB_OUTPUT"
+            if [ -n "$PR" ]; then SRC="https://github.com/$GITHUB_REPOSITORY/pull/$PR"; else SRC="$BRANCH"; fi
+            echo "source=$SRC" >> "$GITHUB_OUTPUT"
           else
             echo "environment=stg" >> "$GITHUB_OUTPUT"
             echo "source=$BRANCH" >> "$GITHUB_OUTPUT"
