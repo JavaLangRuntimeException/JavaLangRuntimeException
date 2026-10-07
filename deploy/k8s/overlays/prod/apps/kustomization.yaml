@@ -21,9 +21,6 @@ images:
   - { name: taramanji/web, newName: ghcr.io/javalangruntimeexception/taramanji-web, newTag: v0.1.5 }
 
 patches:
-  # Pod の版（Datadog の version タグ。カナリアの判定もこれで新旧を分ける）
-  - path: version.yaml
-    target: { kind: Deployment }
   # Pod は Rollout が持つので、Deployment 自体は 0 台（workloadRef の作法）
   - target: { kind: Deployment }
     patch: |-
@@ -57,3 +54,68 @@ patches:
       - op: replace
         path: /spec/hostnames
         value: ["taramanji.com", "www.taramanji.com"]
+
+# 各サービスの版（Datadog の version タグ）は、そのサービスのイメージのタグから取る。
+# 変わったサービスだけ images の newTag を書き換えれば、そのサービスだけが入れ替わる（カナリアの判定に渡す version も同じ）
+replacements:
+  - source: { kind: Deployment, name: identity, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
+    targets:
+      - select: { kind: Deployment, name: identity }
+        fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
+        options: { create: true }
+      - select: { kind: Rollout, name: identity }
+        fieldPaths: ["spec.strategy.canary.analysis.args.[name=version].value"]
+  - source: { kind: Deployment, name: notification, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
+    targets:
+      - select: { kind: Deployment, name: notification }
+        fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
+        options: { create: true }
+      - select: { kind: Rollout, name: notification }
+        fieldPaths: ["spec.strategy.canary.analysis.args.[name=version].value"]
+  - source: { kind: Deployment, name: inquiry, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
+    targets:
+      - select: { kind: Deployment, name: inquiry }
+        fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
+        options: { create: true }
+      - select: { kind: Rollout, name: inquiry }
+        fieldPaths: ["spec.strategy.canary.analysis.args.[name=version].value"]
+  - source: { kind: Deployment, name: reservation, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
+    targets:
+      - select: { kind: Deployment, name: reservation }
+        fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
+        options: { create: true }
+      - select: { kind: Rollout, name: reservation }
+        fieldPaths: ["spec.strategy.canary.analysis.args.[name=version].value"]
+  - source: { kind: Deployment, name: worklocation, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
+    targets:
+      - select: { kind: Deployment, name: worklocation }
+        fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
+        options: { create: true }
+      - select: { kind: Rollout, name: worklocation }
+        fieldPaths: ["spec.strategy.canary.analysis.args.[name=version].value"]
+  - source: { kind: Deployment, name: content, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
+    targets:
+      - select: { kind: Deployment, name: content }
+        fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
+        options: { create: true }
+      - select: { kind: Rollout, name: content }
+        fieldPaths: ["spec.strategy.canary.analysis.args.[name=version].value"]
+  - source: { kind: Deployment, name: calendarsync, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
+    targets:
+      - select: { kind: Deployment, name: calendarsync }
+        fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
+        options: { create: true }
+      - select: { kind: Rollout, name: calendarsync }
+        fieldPaths: ["spec.strategy.canary.analysis.args.[name=version].value"]
+  - source: { kind: Deployment, name: analytics, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
+    targets:
+      - select: { kind: Deployment, name: analytics }
+        fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
+        options: { create: true }
+      - select: { kind: Rollout, name: analytics }
+        fieldPaths: ["spec.strategy.canary.analysis.args.[name=version].value"]
+  - source: { kind: Deployment, name: web, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
+    targets:
+      - select: { kind: Deployment, name: web }
+        fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
+        options: { create: true }

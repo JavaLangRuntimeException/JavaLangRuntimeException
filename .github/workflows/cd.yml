@@ -2,7 +2,9 @@
 #   main への PR       → build が成功したら dev（同じリポジトリのブランチからの PR だけ。フォークは書き込めない）
 #   main への push     → build が成功したら stg
 #   手動実行           → 選んだブランチを lint・test・security・build してから dev か stg
-#   タグ（v*）の push  → 本番（prod）。stg に出ているのと同じイメージに版のタグを付け、Argo Rollouts がカナリアで入れ替える
+#   タグ（v*）の push  → 本番（prod）。前のタグから変わったサービスだけ、stg に出ているのと同じイメージに版のタグを付け、
+#                        Argo Rollouts がカナリアで入れ替える
+# 版を書き換えるのは、そのコミットで作り直したサービスだけ（変わっていないサービスは今の版のまま＝入れ替わらない）
 # build の成功で動くとき（workflow_run）は、同じコミットの lint・test・security が成功したことも確かめてから反映する
 name: cd
 
@@ -51,7 +53,8 @@ jobs:
         run: |
           if [ "$EVENT" = pull_request ]; then
             echo "environment=dev" >> "$GITHUB_OUTPUT"
-            echo "source=${PR:+https://github.com/$GITHUB_REPOSITORY/pull/$PR}${PR:-$BRANCH}" >> "$GITHUB_OUTPUT"
+            if [ -n "$PR" ]; then SRC="https://github.com/$GITHUB_REPOSITORY/pull/$PR"; else SRC="$BRANCH"; fi
+            echo "source=$SRC" >> "$GITHUB_OUTPUT"
           else
             echo "environment=stg" >> "$GITHUB_OUTPUT"
             echo "source=$BRANCH" >> "$GITHUB_OUTPUT"
@@ -104,6 +107,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      packages: read
     concurrency:
       group: deploy-manifests
       cancel-in-progress: false
@@ -111,11 +115,22 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: main
-      - name: Bump dev
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Bump dev（作り直したサービスだけ）
         env:
           SHA: ${{ needs.gate.outputs.sha || github.sha }}
           SOURCE: ${{ needs.gate.outputs.source || github.ref_name }}
-        run: deploy/k8s/scripts/bump-and-push.sh dev "sha-${SHA::7}" "$SOURCE"
+        run: |
+          TAG="sha-${SHA::7}"
+          services="$(deploy/k8s/scripts/built-services.sh "$TAG")"
+          echo "版を書き換えるサービス: ${services:-（なし）}"
+          [ -n "$services" ] || exit 0
+          # shellcheck disable=SC2086
+          deploy/k8s/scripts/bump-and-push.sh dev "$TAG" "$SOURCE" $services
 
   deploy-stg:
     needs: [gate, build]
@@ -127,6 +142,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      packages: read
     concurrency:
       group: deploy-manifests
       cancel-in-progress: false
@@ -134,11 +150,22 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: main
-      - name: Bump stg
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Bump stg（作り直したサービスだけ）
         env:
           SHA: ${{ needs.gate.outputs.sha || github.sha }}
           SOURCE: ${{ needs.gate.outputs.source || github.ref_name }}
-        run: deploy/k8s/scripts/bump-and-push.sh stg "sha-${SHA::7}" "$SOURCE"
+        run: |
+          TAG="sha-${SHA::7}"
+          services="$(deploy/k8s/scripts/built-services.sh "$TAG")"
+          echo "版を書き換えるサービス: ${services:-（なし）}"
+          [ -n "$services" ] || exit 0
+          # shellcheck disable=SC2086
+          deploy/k8s/scripts/bump-and-push.sh stg "$TAG" "$SOURCE" $services
 
   deploy-prod:
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
@@ -146,6 +173,7 @@ jobs:
     permissions:
       contents: write
       packages: write
+      actions: read
     concurrency:
       group: deploy-manifests
       cancel-in-progress: false
@@ -162,31 +190,38 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Wait for the images of this commit
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+      - name: Wait for the build of this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          SRC="sha-${GITHUB_SHA::7}"
-          # 9 つのイメージは並行にビルドされ、終わる順番がばらばらなので、全部そろうまで待つ
+          # タグと同時に main の build が走っていることがある。終わる前に探すと古いイメージを使ってしまうので待つ
           for i in $(seq 1 60); do
-            missing=""
-            for s in identity notification inquiry reservation worklocation content calendarsync analytics web; do
-              docker buildx imagetools inspect "$REGISTRY/taramanji-$s:$SRC" >/dev/null 2>&1 || missing="$missing $s"
-            done
-            [ -z "$missing" ] && exit 0
-            echo "build のイメージを待っています ($i/60):$missing"; sleep 30
+            res="$(gh run list -R "$GITHUB_REPOSITORY" --workflow build.yml --commit "$GITHUB_SHA" --event push -L 1 --json status,conclusion -q '.[0] | "\(.status) \(.conclusion)"')"
+            case "$res" in "" ) echo "このコミットの build はない"; exit 0 ;; "completed success") exit 0 ;; completed*) echo "::error::build が失敗しています（$res）"; exit 1 ;; esac
+            echo "build を待っています ($i/60): $res"; sleep 30
           done
-          echo "::error::$SRC のイメージがありません（main の build が成功しているか確認）"; exit 1
-      - name: Tag images with the release version
+          exit 1
+      - name: Tag images of the changed services
+        id: rel
         run: |
-          SRC="sha-${GITHUB_SHA::7}"
-          for s in identity notification inquiry reservation worklocation content calendarsync analytics web; do
-            docker buildx imagetools create -t "$REGISTRY/taramanji-$s:$GITHUB_REF_NAME" "$REGISTRY/taramanji-$s:$SRC"
-          done
-      - name: Bump prod
+          services="$(deploy/k8s/scripts/release-images.sh "$GITHUB_REF_NAME" "$GITHUB_SHA")"
+          echo "services=$services" >> "$GITHUB_OUTPUT"
+      - name: Bump prod（変わったサービスだけ）
+        env:
+          SERVICES: ${{ steps.rel.outputs.services }}
         run: |
+          [ -n "$SERVICES" ] || { echo "変わったサービスはない"; exit 0; }
           git checkout main
           git pull origin main
-          deploy/k8s/scripts/bump-and-push.sh prod "$GITHUB_REF_NAME"
+          # shellcheck disable=SC2086
+          deploy/k8s/scripts/bump-and-push.sh prod "$GITHUB_REF_NAME" "" $SERVICES
       - name: GitHub Release
-        run: gh release create "$GITHUB_REF_NAME" --generate-notes --verify-tag
+        run: |
+          gh release create "$GITHUB_REF_NAME" --generate-notes --verify-tag --notes "リリースしたサービス: ${SERVICES:-（なし）}"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SERVICES: ${{ steps.rel.outputs.services }}

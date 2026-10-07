@@ -23,8 +23,6 @@ images:
   - { name: taramanji/web, newName: ghcr.io/javalangruntimeexception/taramanji-web, newTag: sha-d30139d }
 
 patches:
-  - path: version.yaml
-    target: { kind: Deployment }
   - target: { kind: Deployment }
     patch: |-
       - op: replace
@@ -115,3 +113,52 @@ patches:
               - name: app
                 env:
                   - { name: AUTH_URL, value: "https://dev-gws.taramanji.com" }
+
+# 各サービスの版（Datadog の version タグ）は、そのサービスのイメージのタグから取る。
+# 変わったサービスだけ images の newTag を書き換えれば、そのサービスだけが入れ替わる
+replacements:
+  - source: { kind: Deployment, name: identity, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
+    targets:
+      - select: { kind: Deployment, name: identity }
+        fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
+        options: { create: true }
+  - source: { kind: Deployment, name: notification, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
+    targets:
+      - select: { kind: Deployment, name: notification }
+        fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
+        options: { create: true }
+  - source: { kind: Deployment, name: inquiry, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
+    targets:
+      - select: { kind: Deployment, name: inquiry }
+        fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
+        options: { create: true }
+  - source: { kind: Deployment, name: reservation, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
+    targets:
+      - select: { kind: Deployment, name: reservation }
+        fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
+        options: { create: true }
+  - source: { kind: Deployment, name: worklocation, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
+    targets:
+      - select: { kind: Deployment, name: worklocation }
+        fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
+        options: { create: true }
+  - source: { kind: Deployment, name: content, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
+    targets:
+      - select: { kind: Deployment, name: content }
+        fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
+        options: { create: true }
+  - source: { kind: Deployment, name: calendarsync, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
+    targets:
+      - select: { kind: Deployment, name: calendarsync }
+        fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
+        options: { create: true }
+  - source: { kind: Deployment, name: analytics, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
+    targets:
+      - select: { kind: Deployment, name: analytics }
+        fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
+        options: { create: true }
+  - source: { kind: Deployment, name: web, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
+    targets:
+      - select: { kind: Deployment, name: web }
+        fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
+        options: { create: true }
