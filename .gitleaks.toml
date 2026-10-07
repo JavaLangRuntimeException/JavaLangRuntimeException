@@ -7,6 +7,7 @@ description = "暗号化済み・公開前提のもの"
 paths = [
   # Sealed Secrets（クラスターの鍵でしか復号できない暗号文）
   '''deploy/k8s/overlays/.+/sealed/.+\.yaml''',
+  '''deploy/gitops/sealed/.+\.yaml''',
   # Datadog RUM のクライアントトークン（ブラウザに配る公開値）
   '''frontend/\.env\.production''',
   # テスト専用に作った使い捨ての鍵（本番の鍵ではない）
