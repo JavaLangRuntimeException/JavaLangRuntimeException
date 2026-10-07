@@ -4,7 +4,7 @@ BUF_VERSION := v1.45.0
 
 .DEFAULT_GOAL := help
 # サービス一覧（cmd/ 以下。mss-protoc-gen はコード生成ツールなので除く）
-SERVICES := $(filter-out mss-protoc-gen migrate-legacy,$(notdir $(wildcard cmd/*)))
+SERVICES := $(filter-out mss-protoc-gen,$(notdir $(wildcard cmd/*)))
 REGISTRY ?= localhost:5001/taramanji
 VERSION  ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo dev)
 

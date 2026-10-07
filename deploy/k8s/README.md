@@ -5,7 +5,7 @@
                                               │ http://taramanji-gateway.envoy-gateway-system
                                               ▼
                        Envoy Gateway（Gateway API。Service type=LoadBalancer）
-     HTTPRoute site: taramanji.com / www / next  ─┬─ /taramanji.<svc>.v1.*  → 各 Go サービス（Connect）
+     HTTPRoute site: taramanji.com / www         ─┬─ /taramanji.<svc>.v1.*  → 各 Go サービス（Connect）
                                                    ├─ /api/auth/*            → identity
                                                    ├─ /api/metrics/pageview  → analytics
                                                    └─ /                      → web（nginx + React）
@@ -116,4 +116,3 @@ python3 deploy/k8s/observability/monitors.py
 - Redis: `kubectl --context kind-taramanji -n data exec -it redis-0 -- redis-cli --user admin --pass <deploy/k8s/secrets/prod/generated.env の REDIS_PASSWORD_ADMIN>`
 - DB 番号: 0 = worklocation、1 = content（キャッシュ）、2 = calendarsync
 - PV は Mac の `~/taramanji-data/worker*` にあり、クラスターを作り直しても残る（StorageClass は Retain）
-- 旧構成からの移行: `backend/cmd/migrate-legacy`（`-apply` なしは確認だけ、`-verify-sync` は同期が書き込む件数を読むだけで確かめる）

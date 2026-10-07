@@ -1,8 +1,0 @@
-node_modules
-.next
-.git
-out
-.env*
-k8s/**/secret.env
-k8s/**/config.json
-tsconfig.tsbuildinfo
