@@ -14,6 +14,11 @@ datadog:
   logs:
     enabled: true
     containerCollectAll: true
+  # ログは自分のアプリ（taramanji / -dev / -stg）・cloudflared・Redis だけ送る。
+  # Envoy のアクセスログ・kindnet・Argo・Datadog 自身などの基盤のログは量が多いわりに見ないので送らない
+  # （Envoy のリクエスト数・5xx はメトリクスで取れている。基盤は kubectl logs で見る）。include が exclude より優先
+  containerExcludeLogs: "kube_namespace:.*"
+  containerIncludeLogs: "kube_namespace:^taramanji kube_namespace:^cloudflared$ kube_namespace:^data$"
   # APM: アプリ（dd-trace-go）はノードの IP の 8126 へ送る
   apm:
     portEnabled: true
