@@ -43,7 +43,7 @@ spec:
           - name: service
             value: identity
           - name: version
-            value: v0.1.4
+            value: v0.1.5
       steps:
         - setWeight: 10
         - pause: {}               # 10% で止まり、promote されるまで待つ（その間も Datadog の判定は続く）
@@ -82,7 +82,7 @@ spec:
           - name: service
             value: notification
           - name: version
-            value: v0.1.4
+            value: v0.1.5
       steps:
         - setWeight: 10
         - pause: {}               # 10% で止まり、promote されるまで待つ（その間も Datadog の判定は続く）
@@ -129,7 +129,7 @@ spec:
           - name: service
             value: inquiry
           - name: version
-            value: v0.1.4
+            value: v0.1.5
       steps:
         - setWeight: 10
         - pause: {}               # 10% で止まり、promote されるまで待つ（その間も Datadog の判定は続く）
@@ -176,7 +176,7 @@ spec:
           - name: service
             value: reservation
           - name: version
-            value: v0.1.4
+            value: v0.1.5
       steps:
         - setWeight: 10
         - pause: {}               # 10% で止まり、promote されるまで待つ（その間も Datadog の判定は続く）
@@ -223,7 +223,7 @@ spec:
           - name: service
             value: worklocation
           - name: version
-            value: v0.1.4
+            value: v0.1.5
       steps:
         - setWeight: 10
         - pause: {}               # 10% で止まり、promote されるまで待つ（その間も Datadog の判定は続く）
@@ -270,7 +270,7 @@ spec:
           - name: service
             value: content
           - name: version
-            value: v0.1.4
+            value: v0.1.5
       steps:
         - setWeight: 10
         - pause: {}               # 10% で止まり、promote されるまで待つ（その間も Datadog の判定は続く）
@@ -317,7 +317,7 @@ spec:
           - name: service
             value: calendarsync
           - name: version
-            value: v0.1.4
+            value: v0.1.5
       steps:
         - setWeight: 10
         - pause: {}               # 10% で止まり、promote されるまで待つ（その間も Datadog の判定は続く）
@@ -364,7 +364,7 @@ spec:
           - name: service
             value: analytics
           - name: version
-            value: v0.1.4
+            value: v0.1.5
       steps:
         - setWeight: 10
         - pause: {}               # 10% で止まり、promote されるまで待つ（その間も Datadog の判定は続く）
