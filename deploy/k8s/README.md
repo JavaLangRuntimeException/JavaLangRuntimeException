@@ -48,7 +48,7 @@ main にマージ        ──▶ 同じく CI ──▶ CD が overlays/stg �
 stg で確認して git tag v1.2.3 <そのコミット> && git push origin v1.2.3
                      ──▶ CD（deploy-prod）: イメージに v1.2.3 を付け、overlays/prod の版を書き換えてコミット、GitHub Release を作る
                      ──▶ Argo CD が prod に同期 ──▶ Argo Rollouts がカナリア
-                         10%（5 分）→ 25%（5 分）→ 50%（5 分）→ 100%
+                         10%（ここで止まる。promote で先へ）→ 25%（5 分）→ 50%（5 分）→ 100%（web は混ぜずに一度に切り替え）
                          その間ずっと Datadog で新しい版の 5xx 率（< 5%）と p95（< 3 秒、RunSync は除く）を判定し、2 回外れたら自動で元の版に戻す
 手動実行             ──▶ GitHub の Actions → cd → Run workflow で、ブランチと dev / stg を選ぶ（その場で lint・test・security・build してから反映）
 ```
@@ -56,6 +56,8 @@ stg で確認して git tag v1.2.3 <そのコミット> && git push origin v1.2.
 ```bash
 # カナリアの様子
 kubectl argo rollouts --context kind-taramanji -n taramanji get rollout reservation --watch
+# 10% で待っているものを先へ進める（25% → 50% → 100% は自動）。画面なら https://rollouts.taramanji.com
+kubectl argo rollouts --context kind-taramanji -n taramanji promote reservation
 # 途中で止める・すぐ全部に出す・中止して戻す
 kubectl argo rollouts --context kind-taramanji -n taramanji pause reservation
 kubectl argo rollouts --context kind-taramanji -n taramanji promote reservation --full
