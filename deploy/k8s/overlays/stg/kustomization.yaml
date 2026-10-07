@@ -13,15 +13,15 @@ resources:
 
 # set-version.sh が書き換える（CI の deploy-stg ジョブ）
 images:
-  - { name: taramanji/identity, newName: ghcr.io/javalangruntimeexception/taramanji-identity, newTag: sha-a9d7fdd }
-  - { name: taramanji/notification, newName: ghcr.io/javalangruntimeexception/taramanji-notification, newTag: sha-a9d7fdd }
-  - { name: taramanji/inquiry, newName: ghcr.io/javalangruntimeexception/taramanji-inquiry, newTag: sha-a9d7fdd }
-  - { name: taramanji/reservation, newName: ghcr.io/javalangruntimeexception/taramanji-reservation, newTag: sha-a9d7fdd }
-  - { name: taramanji/worklocation, newName: ghcr.io/javalangruntimeexception/taramanji-worklocation, newTag: sha-a9d7fdd }
-  - { name: taramanji/content, newName: ghcr.io/javalangruntimeexception/taramanji-content, newTag: sha-a9d7fdd }
-  - { name: taramanji/calendarsync, newName: ghcr.io/javalangruntimeexception/taramanji-calendarsync, newTag: sha-a9d7fdd }
-  - { name: taramanji/analytics, newName: ghcr.io/javalangruntimeexception/taramanji-analytics, newTag: sha-a9d7fdd }
-  - { name: taramanji/web, newName: ghcr.io/javalangruntimeexception/taramanji-web, newTag: sha-a9d7fdd }
+  - { name: taramanji/identity, newName: ghcr.io/javalangruntimeexception/taramanji-identity, newTag: sha-c734aae }
+  - { name: taramanji/notification, newName: ghcr.io/javalangruntimeexception/taramanji-notification, newTag: sha-c734aae }
+  - { name: taramanji/inquiry, newName: ghcr.io/javalangruntimeexception/taramanji-inquiry, newTag: sha-c734aae }
+  - { name: taramanji/reservation, newName: ghcr.io/javalangruntimeexception/taramanji-reservation, newTag: sha-c734aae }
+  - { name: taramanji/worklocation, newName: ghcr.io/javalangruntimeexception/taramanji-worklocation, newTag: sha-c734aae }
+  - { name: taramanji/content, newName: ghcr.io/javalangruntimeexception/taramanji-content, newTag: sha-c734aae }
+  - { name: taramanji/calendarsync, newName: ghcr.io/javalangruntimeexception/taramanji-calendarsync, newTag: sha-c734aae }
+  - { name: taramanji/analytics, newName: ghcr.io/javalangruntimeexception/taramanji-analytics, newTag: sha-c734aae }
+  - { name: taramanji/web, newName: ghcr.io/javalangruntimeexception/taramanji-web, newTag: sha-c734aae }
 
 patches:
   - path: version.yaml
