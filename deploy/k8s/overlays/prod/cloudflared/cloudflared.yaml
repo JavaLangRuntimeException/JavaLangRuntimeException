@@ -1,4 +1,4 @@
-# staging トンネル（taramanji-kind）: stg / stg-gws / dev / dev-gws.taramanji.com（と切り替え前の確認用の next）
+# staging トンネル（taramanji-kind）: stg / stg-gws / dev / dev-gws.taramanji.com
 # Mac mini から Cloudflare へ外向きに接続するだけなので、ルーターのポート開放は不要
 apiVersion: apps/v1
 kind: Deployment

@@ -81,7 +81,7 @@ src/
 - `npm run dev` — 開発サーバー（API は kind の Gateway へプロキシ。`GATEWAY_URL` で変更可）
 - `npm run gen` — proto（../backend/proto）から connect-es の型を生成
 - `npm run typecheck` / `npm run build` / `npm test` / `npm run lint:fsd`
-- `npm run check:contrast [URL]` — 全ページの文字のコントラスト（既定は http://localhost:5173。staging なら https://next.taramanji.com）
+- `npm run check:contrast [URL]` — 全ページの文字のコントラスト（既定は http://localhost:5173）
 
 ## 利用可能な skill / subagent
 

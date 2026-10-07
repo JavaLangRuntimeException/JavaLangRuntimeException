@@ -5,12 +5,11 @@ Datadog に「taramanji.com — kind (GKE-style)」ダッシュボードを作�
 
   python3 deploy/k8s/observability/dashboard.py
 
-キーはクラスターの Secret から読む（API キー: kind の datadog/datadog-secret、Application Key: datadog/datadog-app-key。
-kind に無ければ旧 OrbStack から読む）。標準ライブラリだけで動く。
+キーは deploy/k8s/secrets/prod/datadog-api-key と datadog-app-key（git に入らない。seal.sh と同じファイル）から読む。
+標準ライブラリだけで動く。
 """
-import base64
 import json
-import subprocess
+import os
 import sys
 import urllib.error
 import urllib.request
@@ -23,17 +22,18 @@ APP_NS = "kube_namespace:taramanji"
 SERVICES = ["identity", "inquiry", "reservation", "worklocation", "content", "calendarsync", "analytics", "notification"]
 
 
-def secret(name, key):
-    for ctx in ("kind-taramanji", "orbstack"):
-        r = subprocess.run(["kubectl", "--context", ctx, "-n", "datadog", "get", "secret", name, "-o", f"jsonpath={{.data.{key}}}"],
-                           capture_output=True, text=True)
-        if r.returncode == 0 and r.stdout:
-            return base64.b64decode(r.stdout).decode().strip()
-    sys.exit(f"Secret datadog/{name} が見つかりません")
+SECRETS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "secrets", "prod")
+
+
+def secret(name):
+    path = os.path.join(SECRETS, name)
+    if not os.path.exists(path):
+        sys.exit(f"{os.path.normpath(path)} がありません（Datadog のキーを置いてください）")
+    return open(path).read().strip()
 
 
 def keys():
-    return secret("datadog-secret", "api-key"), secret("datadog-app-key", "app-key")
+    return secret("datadog-api-key"), secret("datadog-app-key")
 
 
 def call(method, path, k, body=None):

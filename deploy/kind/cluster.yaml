@@ -24,8 +24,3 @@ nodes:
     extraMounts:
       - hostPath: /Users/taramanji_macmini/taramanji-data/worker2
         containerPath: /var/local-path-provisioner
-# ローカルレジストリ（Artifact Registry の代わり）を containerd に教える
-containerdConfigPatches:
-  - |-
-    [plugins."io.containerd.grpc.v1.cri".registry]
-      config_path = "/etc/containerd/certs.d"
