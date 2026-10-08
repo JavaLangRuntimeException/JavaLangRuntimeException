@@ -1,15 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { tagline } from "@/entities/profile";
 
 // 1 回のセッションで 1 度だけ出す
 const SEEN_KEY = "intro-seen";
 
 const COMMAND = "java -jar taramanji.jar";
-const COPY: { text: string; accent: [number, number] }[] = [
-  { text: "技術を価値に、", accent: [3, 5] }, // 価値
-  { text: "好きを居場所に。", accent: [3, 6] }, // 居場所
-];
-const SUBTITLE = "好きな技術を、誰かの価値と居場所に変えられる技術者へ。";
+const COPY = tagline.lines;
+const SUBTITLE = tagline.subtitle;
 
 // 時間（ms）
 const T = {
