@@ -1,6 +1,7 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useOutlet } from "react-router";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { IntroSplash } from "@/widgets/intro";
 import { SiteHeader } from "@/widgets/site-header";
 import { sendPageview } from "@/shared/lib/pageview";
 import { TerminalBackground } from "@/shared/ui/terminal";
@@ -17,6 +18,8 @@ export function SiteLayout() {
   const outlet = useOutlet();
   const reduced = useReducedMotion();
   const isAdmin = pathname === "/admin" || pathname.startsWith("/admin/");
+  // 入り口の演出はトップから入ったときだけ（途中でトップへ移っても出さない）
+  const [enteredAtHome] = useState(() => pathname === "/");
 
   useEffect(() => {
     sendPageview(pathname);
@@ -43,6 +46,7 @@ export function SiteLayout() {
 
   return (
     <div className="relative min-h-dvh bg-background-full">
+      {enteredAtHome && <IntroSplash />}
       {TERMINAL_PAGES.includes(pathname) && <TerminalBackground />}
       {!isAdmin && !NO_HEADER.includes(pathname) && <SiteHeader />}
       {/* ページ遷移: 前のページはふっと消え、次のページはぼかしから浮かび上がる */}
