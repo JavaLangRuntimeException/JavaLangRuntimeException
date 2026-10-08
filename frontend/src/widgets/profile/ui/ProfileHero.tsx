@@ -10,9 +10,7 @@ export function ProfileHero() {
         className="size-32 shrink-0 rounded-full object-cover ring-1 ring-separator-border sm:size-44"
       />
       <div className="flex min-w-0 flex-col gap-3">
-        <p className="meta tracking-[0.08em] text-accent-300">JavaLangRuntimeException</p>
         <h1 className="text-[3rem] font-semibold leading-none tracking-[-0.02em] text-text-primary sm:text-[4rem]">taramanji</h1>
-        <p className="text-[1.0625rem] text-text-secondary">Engineer • Researcher • Photographer • Community Director</p>
         <div className="mt-4 flex flex-col gap-2 border-s-2 border-accent-400 ps-4 text-start">
           <p className="text-[1.5rem] font-semibold leading-[1.4] tracking-[0.01em] text-text-primary [font-feature-settings:'palt'_1] sm:text-[1.75rem]">
             {tagline.lines.map((line) => (
