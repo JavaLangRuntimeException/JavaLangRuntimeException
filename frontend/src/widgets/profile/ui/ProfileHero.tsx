@@ -1,4 +1,4 @@
-import { socialLinks } from "@/entities/profile";
+import { socialLinks, tagline } from "@/entities/profile";
 
 /** トップの名前とプロフィール（旧 HeroBackground のイントロ・ProfileHeader の文言をまとめて表示） */
 export function ProfileHero() {
@@ -10,9 +10,19 @@ export function ProfileHero() {
         className="size-32 shrink-0 rounded-full object-cover ring-1 ring-separator-border sm:size-44"
       />
       <div className="flex min-w-0 flex-col gap-3">
-        <p className="meta tracking-[0.08em] text-accent-300">JavaLangRuntimeException</p>
         <h1 className="text-[3rem] font-semibold leading-none tracking-[-0.02em] text-text-primary sm:text-[4rem]">taramanji</h1>
-        <p className="text-[1.0625rem] text-text-secondary">Engineer • Researcher • Photographer • Community Director</p>
+        <div className="mt-4 flex flex-col gap-2 border-s-2 border-accent-400 ps-4 text-start">
+          <p className="text-[1.5rem] font-semibold leading-[1.4] tracking-[0.01em] text-text-primary [font-feature-settings:'palt'_1] sm:text-[1.75rem]">
+            {tagline.lines.map((line) => (
+              <span key={line.text} className="block">
+                {line.text.slice(0, line.accent[0])}
+                <span className="text-accent-300">{line.text.slice(line.accent[0], line.accent[1])}</span>
+                {line.text.slice(line.accent[1])}
+              </span>
+            ))}
+          </p>
+          <p className="text-[0.9375rem] leading-[1.8] text-text-secondary [word-break:auto-phrase]">{tagline.subtitle}</p>
+        </div>
         <div className="mt-3 flex flex-col gap-1">
           <p className="text-[1.125rem] font-semibold text-text-primary">Shuta Tanahashi</p>
           <p className="text-[0.9375rem] leading-[1.9] text-text-secondary">

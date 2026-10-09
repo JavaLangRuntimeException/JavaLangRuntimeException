@@ -1,1 +1,1 @@
-export { socialLinks, type SocialLink } from "./model/profile";
+export { socialLinks, tagline, type SocialLink, type TaglineLine } from "./model/profile";

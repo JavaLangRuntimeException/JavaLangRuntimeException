@@ -33,3 +33,18 @@ export const socialLinks: SocialLink[] = [
     label: "ORCID",
   },
 ];
+
+export type TaglineLine = {
+  text: string;
+  // アクセント色にする文字の範囲 [start, end)
+  accent: [number, number];
+};
+
+// キャッチコピー（入り口の演出とトップのプロフィールで使う）
+export const tagline: { lines: TaglineLine[]; subtitle: string } = {
+  lines: [
+    { text: "技術を価値に、", accent: [3, 5] }, // 価値
+    { text: "好きを居場所に。", accent: [3, 6] }, // 居場所
+  ],
+  subtitle: "好きな技術を、誰かの価値と居場所に変えられる技術者へ。",
+};
