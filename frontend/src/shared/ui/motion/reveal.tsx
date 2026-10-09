@@ -7,7 +7,7 @@ import { CURTAIN_EASE, EASE, itemVariants, itemVariantsReduced, listVariants } f
 //  - ぼかしから浮かび上がる（Reveal / RevealList）
 //  - 細い線が左から伸びる（Rule）
 //  - 幕が上へ開く（Curtain）
-// すべて 1 回だけ。動きを減らす設定ではフェードだけ、または何もしない
+// すべて 1 回だけ。動きを減らす設定では隠さず、最初から出しておく
 
 const VIEWPORT = { once: true, margin: "0px 0px -10% 0px" } as const;
 
@@ -17,7 +17,8 @@ const VIEWPORT = { once: true, margin: "0px 0px -10% 0px" } as const;
 function useShow(show: boolean | undefined) {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, VIEWPORT);
-  return [ref, show ?? inView] as const;
+  const reduced = useReducedMotion();
+  return [ref, Boolean(reduced) || (show ?? inView)] as const;
 }
 
 /**
@@ -27,7 +28,7 @@ function useShow(show: boolean | undefined) {
 export function Reveal({ children, className, delay = 0, y = 18, show }: { children: ReactNode; className?: string; delay?: number; y?: number; show?: boolean }) {
   const reduced = useReducedMotion();
   const [ref, visible] = useShow(show);
-  const hidden = reduced ? { opacity: 0 } : { opacity: 0, y, filter: "blur(8px)" };
+  const hidden = { opacity: 0, y, filter: "blur(8px)" };
   const shown = reduced ? { opacity: 1 } : { opacity: 1, y: 0, filter: "blur(0px)", transitionEnd: { filter: "none", transform: "none" } };
   return (
     <motion.div
@@ -35,7 +36,7 @@ export function Reveal({ children, className, delay = 0, y = 18, show }: { child
       className={className}
       initial={hidden}
       animate={visible ? shown : hidden}
-      transition={visible ? { duration: reduced ? 0.2 : 0.8, ease: EASE, delay } : { duration: 0 }}
+      transition={visible && !reduced ? { duration: 0.8, ease: EASE, delay } : { duration: 0 }}
     >
       {children}
     </motion.div>
@@ -47,9 +48,10 @@ export function RevealList({ children, className, as = "div", stagger = 0.06, ..
   const Comp = motion[as];
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, VIEWPORT);
+  const reduced = useReducedMotion();
   return (
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- motion[as] の ref の型が要素ごとに違う
-    <Comp ref={ref as any} className={className} variants={listVariants} custom={stagger} initial="hidden" animate={inView ? "shown" : "hidden"} {...rest}>
+    <Comp ref={ref as any} className={className} variants={listVariants} custom={stagger} initial="hidden" animate={inView || reduced ? "shown" : "hidden"} {...rest}>
       {children}
     </Comp>
   );
