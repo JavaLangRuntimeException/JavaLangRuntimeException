@@ -1,5 +1,6 @@
 import type { ElementType, ReactNode } from "react";
 import { cx } from "@/utils/cx";
+import { DecodeText, Reveal, Rule } from "./motion";
 
 // サイト全体の見た目の基本。暗い面 + アクセント 1 色。区切りは細い線と余白、見出しは文字の大きさで見せる
 // （カードで何でも囲まない・飾りのアイコンを付けない）
@@ -24,9 +25,20 @@ export function PageHeader({ eyebrow, title, description, actions }: { eyebrow?:
   return (
     <header className="mb-12 flex flex-col gap-5 pb-2 sm:flex-row sm:items-end sm:justify-between">
       <div className="flex flex-col gap-3">
-        {eyebrow && <p className="meta tracking-[0.08em] text-accent-300">{eyebrow}</p>}
-        <h1 className="text-[2rem] font-semibold leading-[1.25] tracking-[-0.01em] text-text-primary sm:text-[2.5rem]">{title}</h1>
-        {description && <div className="prose-ja max-w-2xl">{description}</div>}
+        {eyebrow && (
+          <Reveal y={6}>
+            <p className="meta tracking-[0.08em] text-accent-300">{eyebrow}</p>
+          </Reveal>
+        )}
+        <h1 className="text-[2rem] font-semibold leading-[1.25] tracking-[-0.01em] text-text-primary sm:text-[2.5rem]">
+          {typeof title === "string" ? <DecodeText text={title} delay={80} /> : title}
+        </h1>
+        <Rule className="w-16 bg-accent-400" delay={0.25} />
+        {description && (
+          <Reveal delay={0.3}>
+            <div className="prose-ja max-w-2xl">{description}</div>
+          </Reveal>
+        )}
       </div>
       {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
     </header>
@@ -35,17 +47,32 @@ export function PageHeader({ eyebrow, title, description, actions }: { eyebrow?:
 
 export function Section({ title, description, actions, children, className, id }: { title?: ReactNode; description?: ReactNode; actions?: ReactNode; children: ReactNode; className?: string; id?: string }) {
   return (
-    <section id={id} className={cx("flex flex-col gap-6 border-t border-separator-border py-12 first:border-t-0", className)}>
+    <section id={id} className={cx("group/section relative flex flex-col gap-6 py-12", className)}>
+      {/* 区切りの線は、画面に入ると左から伸びる（先頭だけアクセント色。入り口の演出の線と同じ） */}
+      <div aria-hidden="true" className="absolute inset-x-0 top-0 group-first/section:hidden">
+        <Rule className="bg-separator-border" duration={1.1} />
+        <Rule className="absolute start-0 top-0 w-12 bg-accent-400" delay={0.1} duration={0.6} />
+      </div>
       {(title || actions) && (
         <div className="flex items-end justify-between gap-4">
           <div className="flex flex-col gap-1.5">
-            {title && <h2 className="text-[1.375rem] font-semibold leading-snug tracking-[-0.005em] text-text-primary">{title}</h2>}
-            {description && <p className="prose-ja">{description}</p>}
+            {title && (
+              <h2 className="text-[1.375rem] font-semibold leading-snug tracking-[-0.005em] text-text-primary">
+                {typeof title === "string" ? <DecodeText text={title} delay={150} /> : title}
+              </h2>
+            )}
+            {description && (
+              <Reveal delay={0.2} y={8}>
+                <p className="prose-ja">{description}</p>
+              </Reveal>
+            )}
           </div>
           {actions}
         </div>
       )}
-      {children}
+      <Reveal delay={0.15}>
+        <div className="flex flex-col gap-6">{children}</div>
+      </Reveal>
     </section>
   );
 }
