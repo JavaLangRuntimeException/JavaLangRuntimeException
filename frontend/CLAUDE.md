@@ -53,6 +53,12 @@ API は Go のマイクロサービスを Connect（connect-es）で呼ぶ。Boa
 - `lift`: カード・タグ。ホバーで 1.025 倍に浮き、アクセント色の淡い影をまとう。`Card` の `interactive` で付く
 - `press`: ボタン・タブ・リンク。押した瞬間に 0.97 倍。`role="tab"` には全体で効く
 - ページ遷移: `SiteLayout` の `AnimatePresence`（前のページは上へ消え、次はぼかしから浮かぶ。約 280ms）
+- 入り口の演出（`widgets/intro`）とスクロールの演出は同じ語彙でそろえる（`@/shared/ui/motion`）
+  - `DecodeText`: 記号から 1 文字ずつ定まる文字（`PageHeader` / `Section` の見出し、トップのキャッチコピー）
+  - `Reveal` / `RevealList`: 画面に入るとぼかしから浮かぶ（セクションの中身、ナビのカード）
+  - `Rule`: 左から伸びる細い線（`Section` の区切り。先頭だけアクセント色）
+  - `ScrollProgress`: 画面上端のアクセント色の線で読んだ位置を出す
+  - トップのプロフィールは、入り口の演出の幕が開いてから動く（`introPlayingAtom`）
 - すべて `prefers-reduced-motion` で止まる（ページ遷移はフェードだけ、背景のコマンドは出さない）
 - Tailwind v4 の `translate-*` と干渉しないよう、拡大縮小は `transform` ではなく `scale` プロパティで書く。`lift` / `press` と `transition-colors` を同じ要素に付けない（transition が上書きされる）
 

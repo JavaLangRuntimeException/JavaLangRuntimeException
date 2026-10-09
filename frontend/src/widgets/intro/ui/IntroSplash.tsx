@@ -1,6 +1,9 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { useSetAtom } from "jotai";
 import { tagline } from "@/entities/profile";
+import { introPlayingAtom } from "@/shared/model/intro";
+import { CURTAIN_EASE, DecodeChars, EASE, useElapsed } from "@/shared/ui/motion";
 
 // 1 回のセッションで 1 度だけ出す
 const SEEN_KEY = "intro-seen";
@@ -18,12 +21,22 @@ const T = {
   charSettle: 300,
   rule: 2550,
   subtitle: 2750,
+  // コマンドを打ち終えたら jar を読み込む（ログが流れ、バーが伸び、起動して幕が開く）
+  load: 1100,
+  loaded: 4100,
   exit: 4700,
 };
 
-// 文字が定まるまでに流れる記号（全角でそろえ、幅が揺れないようにする）
-const GLYPHS = "アイウエオカキクケコサシスセソタチツテトナニヌネノ０１＜＞／＝＋＊＃％｛｝";
-const EASE = [0.22, 1, 0.36, 1] as const;
+// 読み込みのログ（コマンドの下に、時間が来たものから出す）
+const LOAD_LOG: { at: number; text: string }[] = [
+  { at: T.load, text: "Unpacking taramanji.jar" },
+  { at: T.load + 350, text: "Loading jp.taramanji.engineer" },
+  { at: T.load + 1000, text: "Loading jp.taramanji.researcher" },
+  { at: T.load + 1650, text: "Loading jp.taramanji.photographer" },
+  { at: T.load + 2300, text: "Loading jp.taramanji.community" },
+];
+const CLASS_COUNT = 447;
+const BAR_CELLS = 24;
 
 function shouldShow() {
   try {
@@ -41,50 +54,41 @@ function markSeen() {
   }
 }
 
-/** 表示し始めてからの経過時間（ms）。毎フレーム更新する */
-function useElapsed(active: boolean) {
-  const [elapsed, setElapsed] = useState(0);
-  useEffect(() => {
-    if (!active) return;
-    const start = performance.now();
-    let id = requestAnimationFrame(function tick(now) {
-      setElapsed(now - start);
-      id = requestAnimationFrame(tick);
-    });
-    return () => cancelAnimationFrame(id);
-  }, [active]);
-  return elapsed;
+/** キャッチコピーの 1 行（記号から左→右へ 1 文字ずつ定まる） */
+function DecodeLine({ text, accent, start, elapsed }: { text: string; accent: [number, number]; start: number; elapsed: number }) {
+  return (
+    <span aria-hidden="true" className="block whitespace-nowrap text-text-primary">
+      <DecodeChars text={text} accent={accent} start={start} elapsed={elapsed} timing={{ stagger: T.charStagger, settle: T.charSettle }} />
+    </span>
+  );
 }
 
-/** 1 文字ずつ記号が流れ、左から順に本来の文字に定まる */
-function DecodeLine({ text, accent, start, elapsed }: { text: string; accent: [number, number]; start: number; elapsed: number }) {
-  const bucket = Math.floor(elapsed / 55);
+/** 打ち込んだコマンドの下に流れる読み込みのログと、伸びていくバー */
+function LoadingLog({ elapsed }: { elapsed: number }) {
+  if (elapsed < T.load) return null;
+  const p = Math.min(1, (elapsed - T.load) / (T.loaded - T.load));
+  // 最初は速く、終わりはゆっくり（読み込みらしく）
+  const eased = 1 - Math.pow(1 - p, 2.2);
+  const filled = Math.round(eased * BAR_CELLS);
+  const logs = LOAD_LOG.filter((l) => elapsed >= l.at).slice(-3);
   return (
-    <span aria-hidden="true" className="block whitespace-nowrap">
-      {Array.from(text).map((ch, i) => {
-        const t = elapsed - start - i * T.charStagger;
-        const isAccent = i >= accent[0] && i < accent[1];
-        if (t < 0) {
-          return (
-            <span key={i} className="opacity-0">
-              {ch}
-            </span>
-          );
-        }
-        if (t < T.charSettle && ch !== "、" && ch !== "。") {
-          return (
-            <span key={i} className="text-text-tertiary">
-              {GLYPHS[(i * 7 + bucket * 13 + i * bucket) % GLYPHS.length]}
-            </span>
-          );
-        }
-        return (
-          <span key={i} className={isAccent ? "text-accent-300" : "text-text-primary"}>
-            {ch}
-          </span>
-        );
-      })}
-    </span>
+    <div className="mt-1 flex flex-col">
+      {logs.map((l) => (
+        <span key={l.text} className="truncate">
+          {l.text}
+        </span>
+      ))}
+      <span className="whitespace-pre">
+        <span className="text-text-secondary">{"█".repeat(filled)}</span>
+        <span className="text-text-tertiary/50">{"░".repeat(BAR_CELLS - filled)}</span>
+        {`  ${String(Math.round(eased * 100)).padStart(3)}%  ${String(Math.round(eased * CLASS_COUNT)).padStart(3)}/${CLASS_COUNT} classes`}
+      </span>
+      {p >= 1 && (
+        <span>
+          <span className="text-emerald-400">Started</span> taramanji in {(T.loaded / 1000).toFixed(1)}s
+        </span>
+      )}
+    </div>
   );
 }
 
@@ -97,6 +101,12 @@ export function IntroSplash() {
   const [visible, setVisible] = useState(() => shouldShow());
   const active = visible && !reduced;
   const elapsed = useElapsed(active);
+  const setPlaying = useSetAtom(introPlayingAtom);
+
+  // 幕が開くまでは、トップのキャッチコピーを動かさない
+  useLayoutEffect(() => {
+    setPlaying(active);
+  }, [active, setPlaying]);
 
   const finish = useCallback(() => {
     markSeen();
@@ -135,15 +145,17 @@ export function IntroSplash() {
           className="fixed inset-0 z-[100] flex flex-col bg-background-full"
           initial={{ clipPath: "inset(0% 0% 0% 0%)" }}
           exit={{ clipPath: "inset(0% 0% 100% 0%)" }}
-          transition={{ duration: 0.75, ease: [0.76, 0, 0.24, 1] }}
+          transition={{ duration: 0.75, ease: CURTAIN_EASE }}
         >
           {/* 上端: 打ち込まれるコマンド */}
           <div aria-hidden="true" className="px-4 pt-6 font-mono text-[0.8125rem] text-text-tertiary sm:px-10 sm:pt-8">
             <span className="text-emerald-400">$</span>
             <span className="text-text-secondary"> {typed}</span>
-            <span
-              className={`ms-px inline-block h-[1em] w-[0.5em] translate-y-[0.15em] bg-emerald-400/80 ${typing ? "" : "animate-pulse"}`}
-            />
+            {/* 読み込みが始まったらカーソルは消す */}
+            {elapsed < T.load && (
+              <span className={`ms-px inline-block h-[1em] w-[0.5em] translate-y-[0.15em] bg-emerald-400/80 ${typing ? "" : "animate-pulse"}`} />
+            )}
+            <LoadingLog elapsed={elapsed} />
           </div>
 
           {/* 中央: キャッチコピーとサブタイトル */}

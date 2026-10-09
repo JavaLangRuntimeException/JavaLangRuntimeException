@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { IntroSplash } from "@/widgets/intro";
 import { SiteHeader } from "@/widgets/site-header";
 import { sendPageview } from "@/shared/lib/pageview";
+import { ScrollProgress } from "@/shared/ui/motion";
 import { TerminalBackground } from "@/shared/ui/terminal";
 
 // ヘッダーを出さないページ（旧 ConditionalHeader と同じ）
@@ -47,6 +48,7 @@ export function SiteLayout() {
   return (
     <div className="relative min-h-dvh bg-background-full">
       {enteredAtHome && <IntroSplash />}
+      {!isAdmin && !reduced && <ScrollProgress />}
       {TERMINAL_PAGES.includes(pathname) && <TerminalBackground />}
       {!isAdmin && !NO_HEADER.includes(pathname) && <SiteHeader />}
       {/* ページ遷移: 前のページはふっと消え、次のページはぼかしから浮かび上がる */}
