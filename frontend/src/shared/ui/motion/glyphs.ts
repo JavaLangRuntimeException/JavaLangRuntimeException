@@ -6,5 +6,12 @@ export const KEEP = new Set(["、", "。", " ", "　", "・", "/"]);
 
 export function glyphFor(ch: string, i: number, bucket: number) {
   const set = ch.charCodeAt(0) < 0x7f ? ASCII_GLYPHS : GLYPHS;
-  return set[(i * 7 + bucket * 13 + i * bucket) % set.length];
+  // 位置と時間を混ぜて散らす（単純な掛け算だと、時間によっては 2 種類の記号の繰り返しになる）
+  let h = (Math.imul(i, 0x9e3779b1) + Math.imul(bucket, 0x85ebca6b)) | 0;
+  h ^= h >>> 16;
+  h = Math.imul(h, 0x85ebca6b);
+  h ^= h >>> 13;
+  h = Math.imul(h, 0xc2b2ae35);
+  h ^= h >>> 16;
+  return set[(h >>> 0) % set.length];
 }

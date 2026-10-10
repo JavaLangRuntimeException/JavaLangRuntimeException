@@ -1,6 +1,6 @@
 import { useState, type ElementType, type ReactNode } from "react";
 import { cx } from "@/utils/cx";
-import { DecodeText, Reveal, Rule } from "./motion";
+import { DecodeReveal, DecodeText, Reveal, Rule } from "./motion";
 
 // サイト全体の見た目の基本。暗い面 + アクセント 1 色。区切りは細い線と余白、見出しは文字の大きさで見せる
 // （カードで何でも囲まない・飾りのアイコンを付けない）
@@ -39,9 +39,9 @@ export function PageHeader({ eyebrow, title, description, actions }: { eyebrow?:
         </h1>
         <Rule className="w-16 bg-accent-400" show={after} />
         {description && (
-          <Reveal show={after} delay={0.1}>
+          <DecodeReveal show={after} delay={0.1}>
             <div className="prose-ja max-w-2xl">{description}</div>
-          </Reveal>
+          </DecodeReveal>
         )}
       </div>
       {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
@@ -50,7 +50,7 @@ export function PageHeader({ eyebrow, title, description, actions }: { eyebrow?:
 }
 
 export function Section({ title, description, actions, children, className, id }: { title?: ReactNode; description?: ReactNode; actions?: ReactNode; children: ReactNode; className?: string; id?: string }) {
-  // スクロールで見出しが出終わってから、説明と中身を順に出す（見出しが文字でないときは画面に入ったら）
+  // スクロールで見出しが出終わってから、説明と中身の文字を順に記号から定めて出す（見出しが文字でないときは画面に入ったら）
   const decoded = typeof title === "string";
   const [titleShown, setTitleShown] = useState(false);
   const after = decoded ? titleShown : undefined;
@@ -70,17 +70,17 @@ export function Section({ title, description, actions, children, className, id }
               </h2>
             )}
             {description && (
-              <Reveal show={after} y={8}>
+              <DecodeReveal show={after}>
                 <p className="prose-ja">{description}</p>
-              </Reveal>
+              </DecodeReveal>
             )}
           </div>
           {actions}
         </div>
       )}
-      <Reveal show={after} delay={description ? 0.18 : 0.06}>
+      <DecodeReveal show={after} delay={description ? 0.18 : 0.06}>
         <div className="flex flex-col gap-6">{children}</div>
-      </Reveal>
+      </DecodeReveal>
     </section>
   );
 }

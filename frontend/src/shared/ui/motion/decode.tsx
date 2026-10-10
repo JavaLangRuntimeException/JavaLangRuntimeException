@@ -108,7 +108,7 @@ export function DecodeText({
 
   const done = elapsed >= total;
   return (
-    <span ref={ref} className={cx("relative", className)}>
+    <span ref={ref} data-decode className={cx("relative", className)}>
       <span className="sr-only">{text}</span>
       <span aria-hidden="true">
         {done && !accent ? text : <DecodeChars text={text} elapsed={elapsed} start={delay} accent={accent} timing={timing} />}
