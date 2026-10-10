@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { withEnvTitle } from "@/shared/config/site";
 
 // 見た目用のクラス（文言は旧サイトと 1 文字も変えない。Google の OAuth 審査に登録済み）
 const link = "text-accent-300 underline underline-offset-2 hover:text-accent-200";
@@ -20,7 +21,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export default function PrivacyPage() {
   return (
     <>
-      <title>{"プライバシーポリシー / Privacy Policy | taramanji.com"}</title>
+      <title>{withEnvTitle("プライバシーポリシー / Privacy Policy | taramanji.com")}</title>
       <meta name="description" content={"taramanji.com と taramanji Calendar Sync のプライバシーポリシー / Privacy Policy for taramanji.com and taramanji Calendar Sync"} />
     <main className="px-4 pb-24 pt-12 sm:px-6">
       <article className="mx-auto max-w-3xl space-y-10">

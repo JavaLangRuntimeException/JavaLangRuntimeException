@@ -30,3 +30,9 @@ export function envName(): "prod" | "stg" | "dev" {
   const e = ENVS.find((x) => host === x.site || host === x.calendar);
   return e ? e.prefix : "prod";
 }
+
+/** タブのタイトル。dev・stg では先頭に [DEV] / [STG] を付け、本番と見分けられるようにする */
+export function withEnvTitle(title: string) {
+  const env = envName();
+  return env === "prod" ? title : `[${env.toUpperCase()}] ${title}`;
+}
