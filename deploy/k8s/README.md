@@ -100,12 +100,88 @@ Secret を変えたら Pod を作り直す（`kubectl rollout restart` / Rollout
 
 ## dev 環境（dev01〜03）
 
+### 全体の流れ
+
+```mermaid
+flowchart LR
+  subgraph GH["GitHub"]
+    PR1["PR A"]
+    PR2["PR B"]
+    PR3["PR C"]
+    MAIN["main（マージ）"]
+    TAG["タグ v*"]
+  end
+  CD{{"cd ワークフロー<br/>overlays の版を書き換えて main にコミット"}}
+  PR1 & PR2 & PR3 --> CD
+  MAIN --> CD
+  TAG --> CD
+  CD -->|"Argo CD が同期"| D1 & D2 & D3 & STG & PROD
+  subgraph K["kind クラスター"]
+    D1["taramanji-dev01<br/>dev01.taramanji.com"]
+    D2["taramanji-dev02<br/>dev02.taramanji.com"]
+    D3["taramanji-dev03<br/>dev03.taramanji.com"]
+    STG["taramanji-stg<br/>stg.taramanji.com"]
+    PROD["taramanji（本番）<br/>taramanji.com<br/>カナリア"]
+  end
+  RO["Rollouts の画面<br/>rollouts.taramanji.com<br/>名前空間を切り替えて見る"]
+  D1 & D2 & D3 & STG & PROD -.-> RO
+```
+
+### PR をどの devN に出すか（`scripts/pick-dev.sh`）
+
+```mermaid
+flowchart TD
+  A["PR に push → build・lint・test・security が成功"] --> B{"その PR がいま入っている<br/>devN がある？<br/>（最後の deploy(devNN) コミットの from で判断）"}
+  B -->|ある| C["同じ devN に出し直す"]
+  B -->|ない| D["一番前に使われた devN<br/>（まだ使っていないものが最優先）"]
+  C & D --> E["stg（main の最新）の版にそろえる<br/>（copy-versions.sh）"]
+  E --> F["その PR で作り直したサービスだけ<br/>PR の版に書き換えてコミット"]
+  F --> G["Argo CD が同期 → Rollout が 1 台ずつ入れ替える"]
+  F --> H["PR に「devN に出しました」とコメント"]
+```
+
+### 例: PR が 4 つあるとき
+
+| 順番 | できごと | dev01 | dev02 | dev03 |
+| --- | --- | --- | --- | --- |
+| 1 | PR A を push | **A** | （空き） | （空き） |
+| 2 | PR B を push | A | **B** | （空き） |
+| 3 | PR C を push | A | B | **C** |
+| 4 | PR A に追加の push | **A**（同じ場所に出し直し） | B | C |
+| 5 | PR D を push（空きなし） | A | **D**（一番前に使われた B を上書き） | C |
+| 6 | PR B に追加の push | A | D | **B**（一番前に使われた C を上書き） |
+
 - https://dev01.taramanji.com と https://dev01-gws.taramanji.com（02・03 も同じ。staging トンネル経由）。Cloudflare Access で本人だけに制限する
 - PR が 3 つより多いときは、一番前に使われた devN を次の PR が使う（前の PR は、次に push したときに別の devN へ出し直される）
 - どの devN に何が出ているか: main の `git log --grep '^deploy(dev0'`、PR のコメント、Argo CD の画面（taramanji-dev01〜03）
 - 入れ替わりの様子は Rollouts の画面（rollouts.taramanji.com）で、名前空間を taramanji-devNN / taramanji-stg に切り替えて見る
 - データは devN ごとの Redis（同じ namespace）。カレンダー同期の CronJob は止めてある（実在のカレンダーを書き換えないため）
 - 予約・お問い合わせは本物の GAS・SES に届くので、試すときは自分宛てに
+
+### 環境ごとの外側の設定
+
+環境（ホスト名）を足すときは、クラスターの外にも次の設定がいる。
+
+| 設定 | 本番 | stg | dev01〜03 |
+| --- | --- | --- | --- |
+| DNS（Cloudflare Tunnel） | prod トンネル（taramanji-onprem） | staging トンネル（taramanji-kind） | staging トンネル（taramanji-kind） |
+| Cloudflare Access（`deploy/cloudflare/access.py`） | なし（公開） | `taramanji-stg` | `taramanji-dev01`〜`03` |
+| Datadog の監視（`observability/datadog-values.yaml`） | 対象 | 対象外 | 対象外 |
+
+```bash
+# DNS（staging トンネルへ向ける）
+cloudflared tunnel route dns taramanji-kind dev01.taramanji.com
+# Access（管理者だけ）
+python3 deploy/cloudflare/access.py <API トークンのファイル>
+```
+
+Google の OAuth クライアント（taramanji-calendar-sync）の「承認済みのリダイレクト URI」。ログインは identity の `LOGIN_HOSTS` のホストごと、カレンダー同期は calendarsync の `AUTH_URL`（gws）に要る:
+
+| 環境 | リダイレクト URI |
+| --- | --- |
+| 本番 | `https://taramanji.com/api/auth/callback/google`・`https://www.taramanji.com/api/auth/callback/google`・`https://gws.taramanji.com/api/auth/callback/google`・`https://gws.taramanji.com/api/calendar-sync/callback` |
+| stg | `https://stg.taramanji.com/api/auth/callback/google`・`https://stg-gws.taramanji.com/api/auth/callback/google`・`https://stg-gws.taramanji.com/api/calendar-sync/callback` |
+| dev01〜03 | `https://devNN.taramanji.com/api/auth/callback/google`・`https://devNN-gws.taramanji.com/api/auth/callback/google`・`https://devNN-gws.taramanji.com/api/calendar-sync/callback`（NN = 01〜03） |
 
 ## よく使う操作
 
