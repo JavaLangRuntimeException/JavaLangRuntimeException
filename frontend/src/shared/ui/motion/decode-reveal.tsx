@@ -3,26 +3,32 @@ import { motion, useInView, useReducedMotion } from "motion/react";
 import { glyphFor, KEEP } from "./glyphs";
 import { EASE } from "./variants";
 
-// 中身（任意の要素）の文字を、見出しと同じく記号から 1 文字ずつ定まって出す。
+// 中身（任意の要素）の短い文字（カードの題名・ラベルなど）を、見出しと同じく記号から 1 文字ずつ定まって出す。
+// 長い文（説明文など）は記号にせず、全体のフェードだけで出す（全部を記号にすると騒がしい）。
 // 子の作りに手を入れずに済むよう、描かれた文字（テキストノード）を直接書き換え、終わったら元に戻す
 
 const VIEWPORT = { once: true, margin: "0px 0px -10% 0px" } as const;
 // 書き換えない要素（入力欄や、見出しの DecodeText のように自前で動かしているもの）
 const SKIP = "script, style, textarea, input, select, option, pre, code, .sr-only, [data-decode]";
-// 1 つ目の文が動き出してから、最後の文が動き出すまでの上限（文が多くても長く待たせない）
-const LINE_STAGGER = 40;
-const LINE_STAGGER_TOTAL = 600;
-// 1 文の中で、先頭から最後の文字が定まり始めるまでの上限
+// 記号にするのはこの文字数までの短い文字だけ
+const MAX_CHARS = 20;
+// 1 つ目が動き出してから、最後が動き出すまでの上限（数が多くても長く待たせない）
+const LINE_STAGGER = 30;
+const LINE_STAGGER_TOTAL = 360;
+// 1 つの中で、先頭から最後の文字が定まり始めるまでの上限
 const CHAR_STAGGER = 18;
-const CHAR_STAGGER_TOTAL = 500;
-const SETTLE = 220;
+const CHAR_STAGGER_TOTAL = 260;
+const SETTLE = 140;
 
 type Line = { node: Text; original: string; chars: string[]; written: string; start: number; step: number; offset: number };
 
 /** root の中の文字を記号にし、先頭から順に元の文字へ戻していく。戻す関数を返す */
 function scramble(root: HTMLElement, delay: number) {
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
-    acceptNode: (n) => (n.nodeValue?.trim() && !n.parentElement?.closest(SKIP) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT),
+    acceptNode: (n) => {
+      const text = n.nodeValue?.trim() ?? "";
+      return text && Array.from(text).length <= MAX_CHARS && !n.parentElement?.closest(SKIP) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+    },
   });
   const lines: Line[] = [];
   let offset = 0;
