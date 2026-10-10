@@ -33,7 +33,7 @@ export function envName(): "prod" | (typeof ENVS)[number]["prefix"] {
   return e ? e.prefix : "prod";
 }
 
-/** タブのタイトル。dev・stg では先頭に [DEV] / [STG] を付け、本番と見分けられるようにする */
+/** タブのタイトル。dev01〜03・stg では先頭に [DEV01] / [STG] などを付け、本番と見分けられるようにする */
 export function withEnvTitle(title: string) {
   const env = envName();
   return env === "prod" ? title : `[${env.toUpperCase()}] ${title}`;
