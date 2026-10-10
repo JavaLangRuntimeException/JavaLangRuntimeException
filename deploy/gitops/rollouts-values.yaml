@@ -13,6 +13,8 @@ controller:
     limits: { memory: 256Mi }
 dashboard:
   enabled: true
+  # 何も付けないと、開いたときの名前空間が自分の置き場（argo-rollouts。中身なし）になり一覧が空に見える
+  extraArgs: ["--namespace=taramanji"]
   resources:
     requests: { cpu: 10m, memory: 32Mi }
     # 画面を開いたままだと CPU を使い切ることがあった（4 コア）。ほかを巻き込まないよう上限を付ける

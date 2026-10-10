@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { withEnvTitle } from "@/shared/config/site";
 
 // 見た目用のクラス（文言は旧サイトと 1 文字も変えない。Google の OAuth 審査に登録済み）
 const link = "text-accent-300 underline underline-offset-2 hover:text-accent-200";
@@ -10,7 +11,7 @@ const APP_NAME = "taramanji Calendar Sync";
 export default function CalendarSyncHome() {
   return (
     <>
-      <title>{`${APP_NAME} | taramanji.com`}</title>
+      <title>{withEnvTitle(`${APP_NAME} | taramanji.com`)}</title>
       <meta name="description" content={`${APP_NAME} は、複数の Google アカウントのカレンダーの予定を相互に同期するアプリです。`} />
     <main className="px-4 pb-24 pt-12 sm:px-6">
       <article className="mx-auto max-w-3xl space-y-10 text-body-regular text-text-secondary">

@@ -11,7 +11,8 @@ export const itemVariants = {
   hidden: { opacity: 0, y: 14, filter: "blur(6px)" },
   shown: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.7, ease: EASE }, transitionEnd: { filter: "none", transform: "none" } },
 };
-export const itemVariantsReduced = { hidden: { opacity: 0 }, shown: { opacity: 1, transition: { duration: 0.2 } } };
+// 動きを減らす設定では隠さない
+export const itemVariantsReduced = { hidden: { opacity: 1 }, shown: { opacity: 1 } };
 
 /** RevealList の子にする要素の variants（Link など、RevealItem で包めない要素に付ける） */
 export function useRevealItemVariants() {

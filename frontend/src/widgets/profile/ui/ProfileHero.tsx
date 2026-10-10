@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAtomValue } from "jotai";
 import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
 import { socialLinks, tagline } from "@/entities/profile";
@@ -13,7 +13,15 @@ import { CURTAIN_EASE, DecodeText, EASE } from "@/shared/ui/motion";
 export function ProfileHero() {
   const ref = useRef<HTMLElement>(null);
   const reduced = useReducedMotion();
-  const ready = !useAtomValue(introPlayingAtom);
+  const introPlaying = useAtomValue(introPlayingAtom);
+  // 描いた次のフレームから動かす。ページ遷移の AnimatePresence（initial={false}）の中では最初の initial が
+  // 無視されるので、「隠す」→「出す」を animate の切り替えで表す
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+  const ready = mounted && !introPlaying;
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
   const y = useTransform(scrollYProgress, [0, 1], [0, reduced ? 0 : -80]);
   const opacity = useTransform(scrollYProgress, [0, 0.9], [1, reduced ? 1 : 0.25]);
@@ -23,8 +31,8 @@ export function ProfileHero() {
       ? {}
       : {
           initial: { opacity: 0, y: 12, filter: "blur(6px)" },
-          animate: ready ? { opacity: 1, y: 0, filter: "blur(0px)", transitionEnd: { filter: "none" } } : undefined,
-          transition: { duration: 0.8, ease: EASE, delay },
+          animate: ready ? { opacity: 1, y: 0, filter: "blur(0px)", transitionEnd: { filter: "none" } } : { opacity: 0, y: 12, filter: "blur(6px)" },
+          transition: ready ? { duration: 0.8, ease: EASE, delay } : { duration: 0 },
         };
 
   return (
@@ -36,8 +44,8 @@ export function ProfileHero() {
       <motion.div
         className="shrink-0"
         initial={reduced ? undefined : { clipPath: "inset(100% 0% 0% 0%)" }}
-        animate={ready && !reduced ? { clipPath: "inset(0% 0% 0% 0%)", transitionEnd: { clipPath: "none" } } : undefined}
-        transition={{ duration: 0.9, ease: CURTAIN_EASE, delay: 0.15 }}
+        animate={reduced ? undefined : ready ? { clipPath: "inset(0% 0% 0% 0%)", transitionEnd: { clipPath: "none" } } : { clipPath: "inset(100% 0% 0% 0%)" }}
+        transition={ready ? { duration: 0.9, ease: CURTAIN_EASE, delay: 0.15 } : { duration: 0 }}
       >
         <img src="/image.png" alt="棚橋 柊太" className="size-32 rounded-full object-cover ring-1 ring-separator-border sm:size-44" />
       </motion.div>
@@ -51,8 +59,8 @@ export function ProfileHero() {
             aria-hidden="true"
             className="absolute inset-y-0 start-0 w-0.5 origin-top bg-accent-400"
             initial={{ scaleY: reduced ? 1 : 0 }}
-            animate={ready ? { scaleY: 1 } : undefined}
-            transition={{ duration: 0.9, ease: EASE, delay: 0.5 }}
+            animate={{ scaleY: reduced || ready ? 1 : 0 }}
+            transition={ready ? { duration: 0.9, ease: EASE, delay: 0.5 } : { duration: 0 }}
           />
           <p className="text-[1.5rem] font-semibold leading-[1.4] tracking-[0.01em] text-text-primary [font-feature-settings:'palt'_1] sm:text-[1.75rem]">
             {tagline.lines.map((line, i) => (
