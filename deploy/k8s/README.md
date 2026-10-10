@@ -158,6 +158,31 @@ flowchart TD
 - データは devN ごとの Redis（同じ namespace）。カレンダー同期の CronJob は止めてある（実在のカレンダーを書き換えないため）
 - 予約・お問い合わせは本物の GAS・SES に届くので、試すときは自分宛てに
 
+### 環境ごとの外側の設定
+
+環境（ホスト名）を足すときは、クラスターの外にも次の設定がいる。
+
+| 設定 | 本番 | stg | dev01〜03 |
+| --- | --- | --- | --- |
+| DNS（Cloudflare Tunnel） | prod トンネル（taramanji-onprem） | staging トンネル（taramanji-kind） | staging トンネル（taramanji-kind） |
+| Cloudflare Access（`deploy/cloudflare/access.py`） | なし（公開） | `taramanji-stg` | `taramanji-dev01`〜`03` |
+| Datadog の監視（`observability/datadog-values.yaml`） | 対象 | 対象外 | 対象外 |
+
+```bash
+# DNS（staging トンネルへ向ける）
+cloudflared tunnel route dns taramanji-kind dev01.taramanji.com
+# Access（管理者だけ）
+python3 deploy/cloudflare/access.py <API トークンのファイル>
+```
+
+Google の OAuth クライアント（taramanji-calendar-sync）の「承認済みのリダイレクト URI」。ログインは identity の `LOGIN_HOSTS` のホストごと、カレンダー同期は calendarsync の `AUTH_URL`（gws）に要る:
+
+| 環境 | リダイレクト URI |
+| --- | --- |
+| 本番 | `https://taramanji.com/api/auth/callback/google`・`https://www.taramanji.com/api/auth/callback/google`・`https://gws.taramanji.com/api/auth/callback/google`・`https://gws.taramanji.com/api/calendar-sync/callback` |
+| stg | `https://stg.taramanji.com/api/auth/callback/google`・`https://stg-gws.taramanji.com/api/auth/callback/google`・`https://stg-gws.taramanji.com/api/calendar-sync/callback` |
+| dev01〜03 | `https://devNN.taramanji.com/api/auth/callback/google`・`https://devNN-gws.taramanji.com/api/auth/callback/google`・`https://devNN-gws.taramanji.com/api/calendar-sync/callback`（NN = 01〜03） |
+
 ## よく使う操作
 
 ```bash
