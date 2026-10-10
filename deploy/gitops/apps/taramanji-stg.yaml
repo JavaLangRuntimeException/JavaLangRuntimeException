@@ -1,4 +1,4 @@
-# stg。main への push（と手動実行）で CI が overlays/stg の版を書き換え、ここが同期する
+# stg。main への push（と手動実行）で CI が overlays/stg の版を書き換え、ここが同期する（Pod は Argo Rollouts が持つ。カナリアはなし）
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:

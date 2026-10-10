@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: taramanji-dev02
+  labels:
+    taramanji.com/tier: apps
+    taramanji.com/gateway-access: "true"

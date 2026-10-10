@@ -1,9 +1,11 @@
-# stg（同じ kind の taramanji-stg namespace）。main への push（と手動実行）で CI が版を書き換え、Argo CD が同期する。
-# 本番に出す直前の版（main の最新）を、本番と同じイメージで確かめる場所。本番は stg で確かめたコミットにタグを打って出す。
-# 本番との違い: components/nonprod（1 台ずつ・HPA/PDB なし・カナリアなし）・ホスト名 stg.taramanji.com / stg-gws.taramanji.com（Cloudflare Access で本人だけ）・Redis も同じ namespace
+# dev02（同じ kind の taramanji-dev02 namespace）。dev は dev01〜03 の 3 つあり、main への PR（と手動実行）で
+# CI が「その PR がいま入っている devN」か、なければ「一番前に使われた devN」を選び、版を書き換えて Argo CD が同期する。
+# 版は stg（main の最新）に、その PR で作り直したサービスだけを重ねたもの。
+# 本番との違い: components/nonprod（1 台ずつ・HPA/PDB なし・カナリアなし）・ホスト名 dev02.taramanji.com / dev02-gws.taramanji.com
+# （Cloudflare Access で本人だけ）・Redis も同じ namespace
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: taramanji-stg
+namespace: taramanji-dev02
 resources:
   - namespace.yaml
   - ../../base/apps
@@ -14,7 +16,7 @@ components:
   # 1 台ずつ・HPA/PDB なし・Rollout（カナリアなし）・CronJob 停止
   - ../../components/nonprod
 
-# set-version.sh が書き換える（CI の deploy-stg ジョブ）
+# set-version.sh / copy-versions.sh が書き換える（CI の deploy-dev ジョブ）
 images:
   - { name: taramanji/identity, newName: ghcr.io/javalangruntimeexception/taramanji-identity, newTag: sha-bb6c8f2 }
   - { name: taramanji/notification, newName: ghcr.io/javalangruntimeexception/taramanji-notification, newTag: sha-bb6c8f2 }
@@ -31,8 +33,8 @@ patches:
     patch: |-
       - op: replace
         path: /spec/template/metadata/labels/tags.datadoghq.com~1env
-        value: stg
-  # Go サービスの APP_ENV（web は nginx なので除く。Go 側が受け付ける値は local / dev / staging / prod）
+        value: dev02
+  # Go サービスの APP_ENV（web は nginx なので除く）
   - target: { kind: Deployment, labelSelector: "app.kubernetes.io/name!=web" }
     patch: |-
       apiVersion: apps/v1
@@ -44,33 +46,33 @@ patches:
             containers:
               - name: app
                 env:
-                  - { name: APP_ENV, value: staging }
+                  - { name: APP_ENV, value: dev }
   - target: { kind: StatefulSet }
     patch: |-
       - op: replace
         path: /spec/template/metadata/labels/tags.datadoghq.com~1service
-        value: redis-stg
+        value: redis-dev02
   # ホスト名と転送先
   - target: { kind: HTTPRoute, labelSelector: "taramanji.com/host-group=site" }
     patch: |-
       - op: replace
         path: /spec/hostnames
-        value: ["stg.taramanji.com"]
+        value: ["dev02.taramanji.com"]
   - target: { kind: HTTPRoute, labelSelector: "taramanji.com/host-group=gws" }
     patch: |-
       - op: replace
         path: /spec/hostnames
-        value: ["stg-gws.taramanji.com"]
+        value: ["dev02-gws.taramanji.com"]
   - target: { kind: HTTPRoute, name: site-redirects }
     patch: |-
       - op: replace
         path: /spec/rules/0/filters/0/requestRedirect/hostname
-        value: stg-gws.taramanji.com
+        value: dev02-gws.taramanji.com
   - target: { kind: HTTPRoute, name: gws-redirects }
     patch: |-
       - op: replace
         path: /spec/rules/0/filters/0/requestRedirect/hostname
-        value: stg.taramanji.com
+        value: dev02.taramanji.com
   # ログインを受けるホストと、カレンダー同期の戻り先
   # 名前で書き換える（番号で指すと、env を足したときに別の項目を上書きしてしまう）
   - patch: |-
@@ -83,7 +85,7 @@ patches:
             containers:
               - name: app
                 env:
-                  - { name: LOGIN_HOSTS, value: "stg.taramanji.com,stg-gws.taramanji.com" }
+                  - { name: LOGIN_HOSTS, value: "dev02.taramanji.com,dev02-gws.taramanji.com" }
   - patch: |-
       apiVersion: apps/v1
       kind: Deployment
@@ -94,7 +96,7 @@ patches:
             containers:
               - name: app
                 env:
-                  - { name: AUTH_URL, value: "https://stg-gws.taramanji.com" }
+                  - { name: AUTH_URL, value: "https://dev02-gws.taramanji.com" }
 
 # 各サービスの版（Datadog の version タグ）は、そのサービスのイメージのタグから取る。
 # 変わったサービスだけ images の newTag を書き換えれば、そのサービスだけが入れ替わる

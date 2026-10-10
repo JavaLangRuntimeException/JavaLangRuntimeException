@@ -1,0 +1,201 @@
+# dev01〜03・stg の Rollout。Deployment はそのまま（workloadRef）で、Pod を Argo Rollouts が持つ。
+# カナリアの段や Datadog の判定はなく、1 台ずつ入れ替えるだけ（Deployment の RollingUpdate と同じ動き）。
+# Rollouts の画面（rollouts.taramanji.com）で、各環境に出ている版と入れ替えの様子を本番と同じように見るため
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: identity
+  labels:
+    app.kubernetes.io/name: identity
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: identity
+  workloadRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: identity
+    scaleDown: onsuccess
+  strategy:
+    canary:
+      maxSurge: 1
+      maxUnavailable: 0
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: notification
+  labels:
+    app.kubernetes.io/name: notification
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: notification
+  workloadRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: notification
+    scaleDown: onsuccess
+  strategy:
+    canary:
+      maxSurge: 1
+      maxUnavailable: 0
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: inquiry
+  labels:
+    app.kubernetes.io/name: inquiry
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: inquiry
+  workloadRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: inquiry
+    scaleDown: onsuccess
+  strategy:
+    canary:
+      maxSurge: 1
+      maxUnavailable: 0
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: reservation
+  labels:
+    app.kubernetes.io/name: reservation
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: reservation
+  workloadRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: reservation
+    scaleDown: onsuccess
+  strategy:
+    canary:
+      maxSurge: 1
+      maxUnavailable: 0
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: worklocation
+  labels:
+    app.kubernetes.io/name: worklocation
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: worklocation
+  workloadRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: worklocation
+    scaleDown: onsuccess
+  strategy:
+    canary:
+      maxSurge: 1
+      maxUnavailable: 0
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: content
+  labels:
+    app.kubernetes.io/name: content
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: content
+  workloadRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: content
+    scaleDown: onsuccess
+  strategy:
+    canary:
+      maxSurge: 1
+      maxUnavailable: 0
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: calendarsync
+  labels:
+    app.kubernetes.io/name: calendarsync
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: calendarsync
+  workloadRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: calendarsync
+    scaleDown: onsuccess
+  strategy:
+    canary:
+      maxSurge: 1
+      maxUnavailable: 0
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: analytics
+  labels:
+    app.kubernetes.io/name: analytics
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: analytics
+  workloadRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: analytics
+    scaleDown: onsuccess
+  strategy:
+    canary:
+      maxSurge: 1
+      maxUnavailable: 0
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: web
+  labels:
+    app.kubernetes.io/name: web
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: web
+  workloadRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: web
+    scaleDown: onsuccess
+  strategy:
+    canary:
+      maxSurge: 1
+      maxUnavailable: 0

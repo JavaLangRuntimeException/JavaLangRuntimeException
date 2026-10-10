@@ -24,7 +24,9 @@ ns: datadog    Datadog Agent（APM・DogStatsD・ログ・イベント・Envoy/R
 | `../gitops/` | Argo CD・Argo Rollouts・Sealed Secrets の導入（bootstrap.sh）と Argo CD のアプリ定義 |
 | `base/apps` `base/data` `base/routes` `base/gateway` | 環境に依存しないマニフェスト（namespace とホスト名はオーバーレイで決める） |
 | `overlays/prod/` | 本番（namespace: taramanji / data）。Argo Rollouts のカナリアと Datadog の自動判定、cloudflared |
-| `overlays/dev/` | dev（namespace: taramanji-dev）。1 台ずつ・HPA/PDB なし・dev.taramanji.com |
+| `overlays/dev01〜03/` | dev（namespace: taramanji-dev01〜03）。PR ごとに空いているものを使う。dev01.taramanji.com など |
+| `overlays/stg/` | stg（namespace: taramanji-stg）。main の最新 |
+| `components/nonprod/` | dev01〜03・stg の共通部分。1 台ずつ・HPA/PDB なし・Rollout（カナリアなし。Rollouts の画面で見るため）・CronJob 停止 |
 | `overlays/gke/` | GKE に載せるときの差分（未適用） |
 | `scripts/` | `make-secrets.sh`（平文を secrets/ に作る）・`seal.sh`（暗号化して sealed/ に）・`set-version.sh`（版の書き換え）・`changed-services.py`（作り直すサービスの判定） |
 | `observability/` | Datadog Agent の設定、ダッシュボード、モニター |
@@ -35,7 +37,7 @@ ns: datadog    Datadog Agent（APM・DogStatsD・ログ・イベント・Envoy/R
 
 | 環境 | 反映のきっかけ | URL |
 | --- | --- | --- |
-| dev | main への PR（同じリポジトリのブランチ）／手動実行 | dev.taramanji.com・dev-gws.taramanji.com |
+| dev01〜03 | main への PR（同じリポジトリのブランチ）／手動実行 | dev01.taramanji.com・dev01-gws.taramanji.com（02・03 も同じ形） |
 | stg | main への push（マージ）／手動実行 | stg.taramanji.com・stg-gws.taramanji.com |
 | prod | タグ `v*` の push | taramanji.com・gws.taramanji.com |
 
@@ -43,7 +45,9 @@ ns: datadog    Datadog Agent（APM・DogStatsD・ログ・イベント・Envoy/R
 PR を出す・更新する ──▶ CI: lint（書式・静的解析・生成コード・マニフェスト）/ test（単体テスト）/ security（gitleaks）
                           / build（イメージを GHCR に push。sha-xxxxxxx、arm64 + amd64）
                      ──▶ CD: build の成功で動き、同じコミットの lint・test・security の成功も確かめてから
-                          overlays/dev の版を書き換えて main にコミット ──▶ Argo CD が dev に同期（PR ごとに dev が入れ替わる）
+                          dev01〜03 から出す先を選び（その PR がいま入っている devN、なければ一番前に使われた devN）、
+                          stg の版にそろえてから作り直したサービスだけ書き換えて main にコミット ──▶ Argo CD がその devN に同期
+                          （PR に「devN に出しました」とコメントが付く）
 main にマージ        ──▶ 同じく CI ──▶ CD が overlays/stg を書き換え ──▶ Argo CD が stg に同期
 stg で確認して git tag v1.2.3 <そのコミット> && git push origin v1.2.3
                      ──▶ CD（deploy-prod）: イメージに v1.2.3 を付け、overlays/prod の版を書き換えてコミット、GitHub Release を作る
@@ -89,15 +93,18 @@ Git（public）には暗号化した SealedSecret だけを置く。平文は `s
 
 ```bash
 deploy/k8s/scripts/make-secrets.sh dev     # 平文を作る / 作り直す（パスワードは前回の値を使い回す）
-deploy/k8s/scripts/seal.sh dev             # overlays/dev/sealed/ に暗号化して書く → コミット
+for e in dev01 dev02 dev03; do deploy/k8s/scripts/seal.sh $e; done   # secrets/dev/ を各 devN の namespace 向けに暗号化 → コミット
 ```
 
 Secret を変えたら Pod を作り直す（`kubectl rollout restart` / Rollout は `kubectl argo rollouts restart`）。
 
-## dev 環境
+## dev 環境（dev01〜03）
 
-- https://dev.taramanji.com と https://dev-gws.taramanji.com（staging トンネル経由）。Cloudflare Access で本人だけに制限する
-- データは dev 専用の Redis（同じ namespace）。カレンダー同期の CronJob は止めてある（実在のカレンダーを書き換えないため）
+- https://dev01.taramanji.com と https://dev01-gws.taramanji.com（02・03 も同じ。staging トンネル経由）。Cloudflare Access で本人だけに制限する
+- PR が 3 つより多いときは、一番前に使われた devN を次の PR が使う（前の PR は、次に push したときに別の devN へ出し直される）
+- どの devN に何が出ているか: main の `git log --grep '^deploy(dev0'`、PR のコメント、Argo CD の画面（taramanji-dev01〜03）
+- 入れ替わりの様子は Rollouts の画面（rollouts.taramanji.com）で、名前空間を taramanji-devNN / taramanji-stg に切り替えて見る
+- データは devN ごとの Redis（同じ namespace）。カレンダー同期の CronJob は止めてある（実在のカレンダーを書き換えないため）
 - 予約・お問い合わせは本物の GAS・SES に届くので、試すときは自分宛てに
 
 ## よく使う操作
