@@ -40,16 +40,19 @@
 
 <img alt="使っている技術" src="docs/images/tech.png" width="100%" />
 
-- 利用者のアクセスは Cloudflare Tunnel を通って家に届く。ルーターのポートは 1 つも開けていない
-- dev・stg・Argo Rollouts の画面は Cloudflare Access で管理者だけに制限。外からの作業は Tailscale ＋ SSH
+- アクセスは Cloudflare Tunnel で家に届く（ルーターのポートは開けていない）
+- dev・stg・Argo Rollouts の画面は Cloudflare Access で管理者だけ
+- 外からの作業は Tailscale ＋ SSH
 
 ### リリースの流れ（CI / CD）
 
 <img alt="CI / CD" src="docs/images/cicd.png" width="100%" />
 
-- PR → dev01〜03 のどれか（その PR が入っている dev、なければ一番前に使われた dev）、main にマージ → stg、タグ（`v*`）→ 本番
-- 本番はカナリア：10% で止まって Promote を待ち、25% → 50% → 100%。Datadog で 5xx 率と p95 を見て、悪ければ自動で元に戻す
-- **変わったサービスだけ**ビルドして入れ替える。Go は依存関係（`go list -deps`）で判定するので、共通部分を変えたら使っている全サービスが対象になる（判定は CI でテスト）
+- PR → dev01〜03、main にマージ → stg、タグ（`v*`）→ 本番
+- 本番はカナリア：10%（Promote 待ち）→ 25% → 50% → 100%
+- Datadog で 5xx 率と p95 を見て、悪ければ自動で元に戻す
+- **変わったサービスだけ**ビルドして入れ替える
+- Go は依存関係（`go list -deps`）で判定し、共通部分の変更は使う全サービスが対象
 
 ### 環境と管理画面
 
