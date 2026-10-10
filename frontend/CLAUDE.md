@@ -55,7 +55,8 @@ API は Go のマイクロサービスを Connect（connect-es）で呼ぶ。Boa
 - ページ遷移: `SiteLayout` の `AnimatePresence`（前のページは上へ消え、次はぼかしから浮かぶ。約 280ms）
 - 入り口の演出（`widgets/intro`）とスクロールの演出は同じ語彙でそろえる（`@/shared/ui/motion`）
   - `DecodeText`: 記号から 1 文字ずつ定まる文字（`PageHeader` / `Section` の見出し、トップのキャッチコピー）
-  - `Reveal` / `RevealList`: 画面に入るとぼかしから浮かぶ（セクションの中身、ナビのカード）
+  - `DecodeReveal`: 中身の文字も記号から定まって出す（`PageHeader` / `Section` の説明と中身、ナビのカード）。描かれた文字を直接書き換えて元に戻すので、子に手を入れなくてよい。入力欄・`code`・`[data-decode]` は触らない
+  - `Reveal`: 画面に入るとぼかしから浮かぶ（見出しの上の小さなラベルなど）
   - `Rule`: 左から伸びる細い線（`Section` の区切り。先頭だけアクセント色）
   - `ScrollProgress`: 画面上端のアクセント色の線で読んだ位置を出す
   - トップのプロフィールは、入り口の演出の幕が開いてから動く（`introPlayingAtom`）

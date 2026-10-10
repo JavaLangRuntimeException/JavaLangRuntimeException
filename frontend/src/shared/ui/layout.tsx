@@ -1,6 +1,6 @@
-import type { ElementType, ReactNode } from "react";
+import { useState, type ElementType, type ReactNode } from "react";
 import { cx } from "@/utils/cx";
-import { DecodeText, Reveal, Rule } from "./motion";
+import { DecodeReveal, DecodeText, Reveal, Rule } from "./motion";
 
 // サイト全体の見た目の基本。暗い面 + アクセント 1 色。区切りは細い線と余白、見出しは文字の大きさで見せる
 // （カードで何でも囲まない・飾りのアイコンを付けない）
@@ -22,6 +22,10 @@ export function PageContainer({ children, className, width = "default" }: { chil
 }
 
 export function PageHeader({ eyebrow, title, description, actions }: { eyebrow?: ReactNode; title: ReactNode; description?: ReactNode; actions?: ReactNode }) {
+  // 見出しが出終わってから、下の線と説明を出す（見出しが文字でないときは画面に入ったら）
+  const decoded = typeof title === "string";
+  const [titleShown, setTitleShown] = useState(false);
+  const after = decoded ? titleShown : undefined;
   return (
     <header className="mb-12 flex flex-col gap-5 pb-2 sm:flex-row sm:items-end sm:justify-between">
       <div className="flex flex-col gap-3">
@@ -31,13 +35,13 @@ export function PageHeader({ eyebrow, title, description, actions }: { eyebrow?:
           </Reveal>
         )}
         <h1 className="text-[2rem] font-semibold leading-[1.25] tracking-[-0.01em] text-text-primary sm:text-[2.5rem]">
-          {typeof title === "string" ? <DecodeText text={title} delay={80} /> : title}
+          {decoded ? <DecodeText text={title} delay={80} onShown={() => setTitleShown(true)} /> : title}
         </h1>
-        <Rule className="w-16 bg-accent-400" delay={0.25} />
+        <Rule className="w-16 bg-accent-400" show={after} />
         {description && (
-          <Reveal delay={0.3}>
+          <DecodeReveal show={after} delay={0.1}>
             <div className="prose-ja max-w-2xl">{description}</div>
-          </Reveal>
+          </DecodeReveal>
         )}
       </div>
       {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
@@ -46,6 +50,10 @@ export function PageHeader({ eyebrow, title, description, actions }: { eyebrow?:
 }
 
 export function Section({ title, description, actions, children, className, id }: { title?: ReactNode; description?: ReactNode; actions?: ReactNode; children: ReactNode; className?: string; id?: string }) {
+  // スクロールで見出しが出終わってから、説明と中身の文字を順に記号から定めて出す（見出しが文字でないときは画面に入ったら）
+  const decoded = typeof title === "string";
+  const [titleShown, setTitleShown] = useState(false);
+  const after = decoded ? titleShown : undefined;
   return (
     <section id={id} className={cx("group/section relative flex flex-col gap-6 py-12", className)}>
       {/* 区切りの線は、画面に入ると左から伸びる（先頭だけアクセント色。入り口の演出の線と同じ） */}
@@ -58,21 +66,21 @@ export function Section({ title, description, actions, children, className, id }
           <div className="flex flex-col gap-1.5">
             {title && (
               <h2 className="text-[1.375rem] font-semibold leading-snug tracking-[-0.005em] text-text-primary">
-                {typeof title === "string" ? <DecodeText text={title} delay={150} /> : title}
+                {decoded ? <DecodeText text={title} delay={150} onShown={() => setTitleShown(true)} /> : title}
               </h2>
             )}
             {description && (
-              <Reveal delay={0.2} y={8}>
+              <DecodeReveal show={after}>
                 <p className="prose-ja">{description}</p>
-              </Reveal>
+              </DecodeReveal>
             )}
           </div>
           {actions}
         </div>
       )}
-      <Reveal delay={0.15}>
+      <DecodeReveal show={after} delay={description ? 0.18 : 0.06}>
         <div className="flex flex-col gap-6">{children}</div>
-      </Reveal>
+      </DecodeReveal>
     </section>
   );
 }

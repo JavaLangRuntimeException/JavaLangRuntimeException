@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useInView, useReducedMotion } from "motion/react";
 import { cx } from "@/utils/cx";
 import { glyphFor, KEEP } from "./glyphs";
@@ -67,6 +67,7 @@ export function DecodeText({
   delay = 0,
   ready = true,
   timing = { stagger: 45, settle: 260 },
+  onShown,
 }: {
   text: string;
   accent?: [number, number];
@@ -74,12 +75,20 @@ export function DecodeText({
   delay?: number;
   ready?: boolean;
   timing?: DecodeTiming;
+  /** 最後の文字まで出たとき（定まりきる少し前）に 1 回呼ぶ。見出しのあとに中身を出すのに使う */
+  onShown?: () => void;
 }) {
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true, margin: "0px 0px -8% 0px" });
   const reduced = useReducedMotion();
   const total = delay + Array.from(text).length * timing.stagger + timing.settle;
-  const elapsed = useElapsed(inView && ready && !reduced, total);
+  const active = inView && ready;
+  const elapsed = useElapsed(active && !reduced, total);
+  const shown = active && (reduced || elapsed >= delay + Array.from(text).length * timing.stagger);
+  // 呼び出し側は状態を true にするだけなので、何度呼ばれても同じ
+  useEffect(() => {
+    if (shown) onShown?.();
+  }, [shown, onShown]);
 
   if (reduced) {
     return (
@@ -99,7 +108,7 @@ export function DecodeText({
 
   const done = elapsed >= total;
   return (
-    <span ref={ref} className={cx("relative", className)}>
+    <span ref={ref} data-decode className={cx("relative", className)}>
       <span className="sr-only">{text}</span>
       <span aria-hidden="true">
         {done && !accent ? text : <DecodeChars text={text} elapsed={elapsed} start={delay} accent={accent} timing={timing} />}
