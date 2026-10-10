@@ -53,22 +53,7 @@
 
 ### 環境と管理画面
 
-| 環境 | URL（サイト / 管理画面） | namespace | Argo CD のアプリ | 出るきっかけ |
-| --- | --- | --- | --- | --- |
-| 本番 | [taramanji.com](https://taramanji.com) / [gws.taramanji.com](https://gws.taramanji.com) | `taramanji` | `taramanji-prod` | タグ `v*` の push（カナリア） |
-| stg | [stg.taramanji.com](https://stg.taramanji.com) / [stg-gws.taramanji.com](https://stg-gws.taramanji.com) | `taramanji-stg` | `taramanji-stg` | main へのマージ |
-| dev01 | [dev01.taramanji.com](https://dev01.taramanji.com) / [dev01-gws.taramanji.com](https://dev01-gws.taramanji.com) | `taramanji-dev01` | `taramanji-dev01` | PR（空いている dev を自動で選ぶ） |
-| dev02 | [dev02.taramanji.com](https://dev02.taramanji.com) / [dev02-gws.taramanji.com](https://dev02-gws.taramanji.com) | `taramanji-dev02` | `taramanji-dev02` | 〃 |
-| dev03 | [dev03.taramanji.com](https://dev03.taramanji.com) / [dev03-gws.taramanji.com](https://dev03-gws.taramanji.com) | `taramanji-dev03` | `taramanji-dev03` | 〃 |
-
-- stg・dev01〜03 は Cloudflare Access で管理者だけ。タブのタイトルの先頭に `[STG]` / `[DEV01]` などが付く
-- PR がどの dev に出たかは、PR に付くコメント（「dev02 に出しました」）で分かる。選び方の図は [deploy/k8s/README.md](deploy/k8s/README.md#dev-環境dev0103)
-
-| 管理画面 | 開き方 | 見られるもの |
-| --- | --- | --- |
-| Argo CD | `kubectl --context kind-taramanji -n argocd port-forward svc/argocd-server 8080:80` → http://localhost:8080 | 各環境のアプリ（root・taramanji-prod・taramanji-stg・taramanji-dev01〜03）の同期の状態 |
-| Argo Rollouts | [rollouts.taramanji.com](https://rollouts.taramanji.com)（Cloudflare Access） | 各環境の Rollout と入れ替えの様子。上部の名前空間で `taramanji` / `taramanji-stg` / `taramanji-dev01〜03` を切り替える。本番のカナリアの Promote / Abort |
-| Datadog | us5.datadoghq.com | 本番のメトリクス・APM・ログ（stg・dev は対象外） |
+<img alt="環境と管理画面" src="docs/images/environments.png" width="100%" />
 
 ### バックエンド（`backend/`：Go・Connect / gRPC）
 
