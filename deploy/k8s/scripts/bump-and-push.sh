@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 環境の版を書き換えて main にコミットする（CI 用）。Argo CD がそのコミットを見て同期する。
-# 使い方: bump-and-push.sh dev|stg|prod <tag> [どこから（PR の URL やブランチ名）] [サービス ...]
+# 使い方: bump-and-push.sh dev01|dev02|dev03|stg|prod <tag> [どこから（PR の URL やブランチ名）] [サービス ...]
 #   サービスを渡すと、そのサービスだけ版を書き換える（ほかは今の版のまま＝入れ替わらない）
 set -euo pipefail
 ENV="$1"; TAG="$2"; FROM="${3:-}"

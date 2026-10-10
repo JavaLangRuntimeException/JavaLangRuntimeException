@@ -27,7 +27,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 SECRETS = os.path.join(HERE, "..", "k8s", "secrets", "prod", "identity.env")
 
 APPS = {
-    "taramanji-dev": ["dev.taramanji.com", "dev-gws.taramanji.com"],
+    "taramanji-dev01": ["dev01.taramanji.com", "dev01-gws.taramanji.com"],
+    "taramanji-dev02": ["dev02.taramanji.com", "dev02-gws.taramanji.com"],
+    "taramanji-dev03": ["dev03.taramanji.com", "dev03-gws.taramanji.com"],
     "taramanji-stg": ["stg.taramanji.com", "stg-gws.taramanji.com"],
     # Argo Rollouts の画面（本番のカナリアの Promote / Abort）。画面自体にログインがないので必ずここで守る
     "taramanji-rollouts": ["rollouts.taramanji.com"],
