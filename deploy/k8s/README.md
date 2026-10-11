@@ -59,15 +59,16 @@ stg で確認して git tag v1.2.3 <そのコミット> && git push origin v1.2.
 
 **変わったサービスだけ作り直して入れ替える。**
 
-- build：変わったファイルから、作り直すサービスを決める（`scripts/changed-services.py`）
+- build：変わったファイルから作り直すサービスを決める（`scripts/changed-services.py`）
   - `backend/internal/<サービス>/`・`backend/cmd/<サービス>/` → そのサービス
-  - Go の共通部分（`backend/pkg/`・生成コード `backend/gen/` など）→ Go の依存関係（`go list -deps`）で、使っている全サービス
-  - `go.mod`・Dockerfile・`proto/` など判断できないもの → Go の 8 つ全部。`frontend/` → web
+  - Go の共通部分（`backend/pkg/`・`backend/gen/` など）→ 使っている全サービス（`go list -deps`）
+  - `go.mod`・Dockerfile・`proto/` など → Go の 8 つ全部
+  - `frontend/` → web
   - ドキュメント・テスト・マニフェストだけの変更 → 作り直さない
   - 判定のテスト：`scripts/changed-services_test.sh`（CI の test で実行）
-- cd（dev / stg）：そのコミットのイメージがあるサービス（＝作り直したサービス）だけ版を書き換える
-- 本番：前のタグから変わったサービスだけに、新しい版のタグを付けて書き換える（`scripts/release-images.sh`）。変わっていないサービスは入れ替わらない
-- 各サービスの版（Datadog の version）は、overlay の `replacements` でそのサービスのイメージのタグから取る
+- cd（dev / stg）：作り直したサービスだけ版を書き換える
+- 本番：前のタグから変わったサービスだけ新しい版にする（`scripts/release-images.sh`）
+- 各サービスの版（Datadog の version）はイメージのタグから取る（overlay の `replacements`）
 
 ```bash
 # カナリアの様子
@@ -151,11 +152,12 @@ flowchart TD
 | 5 | PR D を push（空きなし） | A | **D**（一番前に使われた B を上書き） | C |
 | 6 | PR B に追加の push | A | D | **B**（一番前に使われた C を上書き） |
 
-- https://dev01.taramanji.com と https://dev01-gws.taramanji.com（02・03 も同じ。staging トンネル経由）。Cloudflare Access で本人だけに制限する
-- PR が 3 つより多いときは、一番前に使われた devN を次の PR が使う（前の PR は、次に push したときに別の devN へ出し直される）
-- どの devN に何が出ているか: main の `git log --grep '^deploy(dev0'`、PR のコメント、Argo CD の画面（taramanji-dev01〜03）
-- 入れ替わりの様子は Rollouts の画面（rollouts.taramanji.com）で、名前空間を taramanji-devNN / taramanji-stg に切り替えて見る
-- データは devN ごとの Redis（同じ namespace）。カレンダー同期の CronJob は止めてある（実在のカレンダーを書き換えないため）
+- dev01〜03 は staging トンネル経由で、Cloudflare Access で本人だけ
+- PR が 4 つ以上なら、一番前に使われた devN を次の PR が上書きする
+- どこに何が出ているか：PR のコメント、Argo CD の画面、`git log --grep '^deploy(dev0'`
+- 入れ替わりは Rollouts の画面で、名前空間を切り替えて見る
+- データは devN ごとの Redis（同じ namespace）
+- カレンダー同期の CronJob は止めてある（実在のカレンダーを書き換えないため）
 - 予約・お問い合わせは本物の GAS・SES に届くので、試すときは自分宛てに
 
 ### 環境ごとの外側の設定
@@ -214,6 +216,10 @@ python3 deploy/k8s/observability/monitors.py
 
 ## データ
 
-- Redis: `kubectl --context kind-taramanji -n data exec -it redis-0 -- redis-cli --user admin --pass <deploy/k8s/secrets/prod/generated.env の REDIS_PASSWORD_ADMIN>`
 - DB 番号: 0 = worklocation、1 = content（キャッシュ）、2 = calendarsync
-- PV は Mac の `~/taramanji-data/worker*` にあり、クラスターを作り直しても残る（StorageClass は Retain）
+- PV は Mac の `~/taramanji-data/worker*`（Retain なので作り直しても残る）
+
+```bash
+# Redis に入る（パスワードは deploy/k8s/secrets/prod/generated.env の REDIS_PASSWORD_ADMIN）
+kubectl --context kind-taramanji -n data exec -it redis-0 -- redis-cli --user admin --pass <パスワード>
+```

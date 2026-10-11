@@ -50,5 +50,6 @@ docker build --build-arg SERVICE=reservation -t reservation .     # 1 つだけ
 
 ## 旧実装（Next.js）との同一性
 
-- メール文面（inquiry）・予約の件名と説明文（reservation）・同期予定の ID とダイジェスト（calendarsync）は、旧 TypeScript を Node で実行して作った `testdata/golden.json` と照合する
+- メール文面・予約の件名と説明文・同期予定の ID は `testdata/golden.json` と照合する
+- `golden.json` は旧 TypeScript を Node で実行して作った
 - 公開データ（content・reservation の空き時間）は `go test -tags live` で本番の旧 API と比較する
