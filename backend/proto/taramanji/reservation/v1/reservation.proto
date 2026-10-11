@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package taramanji.reservation.v1;
 
-// お打ち合わせ予約（Google Calendar / Google Apps Script のウェブフック）と空き時間
+// お打ち合わせ予約（Google Calendar API）と空き時間
 service ReservationService {
   rpc CreateReservation(CreateReservationRequest) returns (CreateReservationResponse) {}
   rpc GetReservation(GetReservationRequest) returns (GetReservationResponse) {}

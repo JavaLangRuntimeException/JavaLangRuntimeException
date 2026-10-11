@@ -14,8 +14,6 @@ type Event struct {
 	Start, End  time.Time
 	Attendees   []string
 	CreateMeet  bool
-	// ContactMethod は GAS ウェブフックにそのまま渡す（Meet を作るかの判断に使う）
-	ContactMethod string
 }
 
 // Created は予約の作成・取得の結果。EventID が空なら、作成はできたが ID を確かめられなかった
@@ -27,7 +25,7 @@ type Created struct {
 	Note     string
 }
 
-// Calendar は予約を書き込む先（Google Calendar API か Google Apps Script のウェブフック）。
+// Calendar は予約を書き込む先（Google Calendar API）。
 // 失敗は errs.DomainError（ErrorTypeUpstream と旧 API のエラーコード）で返す。
 type Calendar interface {
 	Name() string

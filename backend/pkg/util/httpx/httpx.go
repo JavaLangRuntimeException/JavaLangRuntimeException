@@ -15,11 +15,3 @@ const ChromeUA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/53
 func New(timeout time.Duration) *http.Client {
 	return httptrace.WrapClient(&http.Client{Timeout: timeout})
 }
-
-// NoRedirect はリダイレクトを自分で扱うためのクライアント（GAS のウェブフック用）
-func NoRedirect(timeout time.Duration) *http.Client {
-	return httptrace.WrapClient(&http.Client{
-		Timeout:       timeout,
-		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
-	})
-}

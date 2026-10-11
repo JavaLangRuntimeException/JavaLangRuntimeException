@@ -42,7 +42,7 @@ taramanji.com のバックエンド。Go + DDD + クリーンアーキテクチ�
   <Name>UsecaseImpl (手書き) → domain/service (手書き) → domain/repository (生成 interface)
                              → domain/gateway (手書き interface) ← infra/gateway (手書き: 外部 API・他サービスの gRPC クライアント)
   ```
-- **gateway**: 外部（Google・GAS・SES・Qiita など）と他サービスは `domain/gateway` に interface を置き、`infra/gateway` で実装する。usecase は interface だけを知る
+- **gateway**: 外部（Google・SES・Qiita など）と他サービスは `domain/gateway` に interface を置き、`infra/gateway` で実装する。usecase は interface だけを知る
 - **依存方向**: 常に内側へ。Entity と domain/service は infra・handler を import しない
 - **DI**: コンストラクタ注入。ワイヤリングは `cmd/<service>/main.go` だけ
 - **エラー**（manji-standard-server の PR #8 を移植）: `pkg/util/errs`
@@ -60,7 +60,7 @@ taramanji.com のバックエンド。Go + DDD + クリーンアーキテクチ�
 | identity | Connect + HTTP `/api/auth/*` | Google ログイン、セッション |
 | notification | **内部 gRPC のみ** | SES でメール送信 |
 | inquiry | Connect | お問い合わせ・アンケート・管理者メール → notification |
-| reservation | Connect | 予約（GAS ウェブフック / Google Calendar）、空き時間（iCal）、Google マップ → worklocation |
+| reservation | Connect | 予約（Google Calendar API。サービスアカウントがドメイン全体の委任で `GCAL_SA_SUBJECT` になりかわる）、空き時間（iCal）、Google マップ → worklocation |
 | worklocation | Connect（GetWorkLocation は内部用） | 勤務場所 |
 | content | Connect | Qiita・connpass・ORCID・OGP |
 | calendarsync | Connect + HTTP `/api/calendar-sync/*` | 複数アカウントのカレンダー同期（RunSync は CronJob） |

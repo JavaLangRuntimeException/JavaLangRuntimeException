@@ -561,7 +561,7 @@ export const ListIcalSourcesResponseSchema: GenMessage<ListIcalSourcesResponse> 
   messageDesc(file_taramanji_reservation_v1_reservation, 17);
 
 /**
- * お打ち合わせ予約（Google Calendar / Google Apps Script のウェブフック）と空き時間
+ * お打ち合わせ予約（Google Calendar API）と空き時間
  *
  * @generated from service taramanji.reservation.v1.ReservationService
  */

@@ -158,7 +158,7 @@ flowchart TD
 - 入れ替わりは Rollouts の画面で、名前空間を切り替えて見る
 - データは devN ごとの Redis（同じ namespace）
 - カレンダー同期の CronJob は止めてある（実在のカレンダーを書き換えないため）
-- 予約・お問い合わせは本物の GAS・SES に届くので、試すときは自分宛てに
+- 予約・お問い合わせは本物の Google カレンダー・SES に届くので、試すときは自分宛てに
 
 ### 環境ごとの外側の設定
 
@@ -206,12 +206,12 @@ python3 deploy/k8s/observability/monitors.py
 | モニター | まず見るところ |
 | --- | --- |
 | Gateway の 5xx 率 | ダッシュボードの「ステータスクラス別」→ 上流（envoy_cluster_name）→ APM のエラーのトレース |
-| p95 レイテンシ | 「遅い RPC」→ トレースの外部呼び出し（GAS・Qiita・Google） |
+| p95 レイテンシ | 「遅い RPC」→ トレースの外部呼び出し（Google Calendar・Qiita・Google） |
 | 再起動を繰り返す / Ready が足りない | `kubectl describe pod`（OOMKilled・probe 失敗）、`kubectl logs --previous` |
 | トンネルの接続が減った | `kubectl -n cloudflared logs deploy/cloudflared`、Mac mini のネットワーク |
 | Redis のメモリ | `redis-cli --user admin INFO memory`、キャッシュ（`content:*`）の量 |
 | カレンダー同期の失敗・停止・要再接続 | gws.taramanji.com/admin の前回の結果、CronJob `calendarsync-run` の Job のログ |
-| 予約の作成失敗 | `reservation.created{status:failed}` の reason タグ、GAS のデプロイ |
+| 予約の作成失敗 | `reservation.created{status:failed}` の reason タグ、サービスアカウントの鍵とドメイン全体の委任（Workspace の管理コンソール） |
 | メール送信の失敗 | notification のログ、SES の送信制限・認証情報 |
 
 ## データ

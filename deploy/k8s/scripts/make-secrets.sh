@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # 環境ごとの平文の Secret を deploy/k8s/secrets/<env>/ に作る（中身は表示しない。このディレクトリは git に入らない）。
-#  - 外部サービスの値（SES・GAS・Google の OAuth クライアント・iCal）は旧構成の Secret（k8s/*/secret.env）から取る
+#  - 外部サービスの値（SES・Google の OAuth クライアント・iCal）は旧構成の Secret（k8s/*/secret.env）から取る
+#  - 予約を書き込むサービスアカウントの鍵は secrets/gcal-sa.json（全環境で共通）。なりかわる人（ドメイン全体の委任）は
+#    初回だけ GCAL_SA_SUBJECT=<アドレス> で渡す（以後は前回の値を使い回す。アドレスを git に置かないため）
 #  - AUTH_SECRET・Redis のパスワード・CronJob のトークン・同期の暗号鍵は環境ごとに新しく作る（既にあれば再利用）
 #    ※ prod の同期の暗号鍵だけは、旧構成で暗号化した更新トークンを読むために旧構成と同じものを使う
 # 使い方: scripts/make-secrets.sh prod|dev  → 続けて scripts/seal.sh prod|dev
@@ -30,6 +32,16 @@ portfolio = load(f"{legacy}/portfolio/secret.env")
 cal = load(f"{legacy}/calendar-sync/secret.env")
 state = load(f"{out}/generated.env")
 prev_inquiry = load(f"{out}/inquiry.env")
+prev_reservation = load(f"{out}/reservation.env")
+
+sa_path = "secrets/gcal-sa.json"
+if not os.path.exists(sa_path):
+    sys.exit(f"{sa_path} がない（予約を書き込むサービスアカウントの鍵 JSON を置く）")
+sa_subject = os.environ.get("GCAL_SA_SUBJECT") or prev_reservation.get("GCAL_SA_SUBJECT")
+if not sa_subject:
+    sys.exit("GCAL_SA_SUBJECT=<なりかわる Workspace のアドレス> を付けて実行する（初回だけ）")
+gcal = {"GCAL_SA_JSON_BASE64": base64.b64encode(open(sa_path, "rb").read()).decode(),
+        "GCAL_SA_SUBJECT": sa_subject, "GCAL_CALENDAR_ID": "primary"}
 
 def gen(key, n=32):
     if key not in state:
@@ -55,7 +67,7 @@ files = {
     "notification": {k: portfolio[k] for k in ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_REGION", "FROM_EMAIL"]},
     # お問い合わせの通知先（作り直しても前回の値を使い回す。初回は管理者のアドレス）
     "inquiry": {**auth, "INQUIRY_NOTIFY_EMAIL": prev_inquiry.get("INQUIRY_NOTIFY_EMAIL", cal["ADMIN_EMAIL"])},
-    "reservation": {**auth, **{k: portfolio[k] for k in ["GCAL_CALENDAR_ID", "GCAL_WEBHOOK_URL", "ICAL_URLS"]}},
+    "reservation": {**auth, **gcal, "ICAL_URLS": portfolio["ICAL_URLS"]},
     "worklocation": {**auth, "REDIS_URL": redis_url("worklocation")},
     "content": {"REDIS_URL": redis_url("content")},
     "calendarsync": {**auth, **google, "REDIS_URL": redis_url("calendarsync"),

@@ -29,9 +29,12 @@ const (
 // GoogleCredentials は Google Calendar API の認証情報。サービスアカウントを優先する（旧実装と同じ）
 type GoogleCredentials struct {
 	ServiceAccountJSONBase64 string
-	ClientID                 string
-	ClientSecret             string
-	RefreshToken             string
+	// Subject はサービスアカウントがなりかわる Workspace のユーザー（ドメイン全体の委任）。
+	// なりかわらないと Google の制限で出席者を招待できない
+	Subject      string
+	ClientID     string
+	ClientSecret string
+	RefreshToken string
 }
 
 // TokenSource は使える認証情報がなければ nil
@@ -45,6 +48,7 @@ func (c GoogleCredentials) TokenSource(ctx context.Context) (oauth2.TokenSource,
 		if err != nil {
 			return nil, fmt.Errorf("GCAL_SA_JSON_BASE64: %w", err)
 		}
+		cfg.Subject = c.Subject
 		return cfg.TokenSource(ctx), nil
 	}
 	if c.RefreshToken != "" && c.ClientID != "" && c.ClientSecret != "" {
@@ -194,6 +198,9 @@ func forbiddenForServiceAccounts(status int, body []byte) bool {
 	}
 	return json.Unmarshal(body, &e) == nil && len(e.Error.Errors) > 0 && e.Error.Errors[0].Reason == "forbiddenForServiceAccounts"
 }
+
+// localDateTime は日本時間の日時（秒まで、時差なし）。時差は TimeZone で渡す
+func localDateTime(t time.Time) string { return t.Format("2006-01-02T15:04:05") }
 
 func (g *googleCalendar) Create(ctx context.Context, e gateway.Event) (*gateway.Created, error) {
 	location := e.Location
