@@ -1,0 +1,6 @@
+# dev01〜03 だけの上限（stg は含めない）。kind は本番と同じ VM のメモリを分け合うので、
+# dev が増えても本番が OOM に巻き込まれないよう、1 環境あたりの使い道を決めておく
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - quota.yaml

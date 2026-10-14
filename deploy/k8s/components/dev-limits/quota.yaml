@@ -1,0 +1,22 @@
+# 1 環境の上限。今の合計は requests 288Mi / limits 1216Mi（9 サービス + Redis）で、
+# 入れ替え中に 1 台増える分（最大 256Mi）と CronJob を足しても収まる値にしている
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: dev-limits
+spec:
+  hard:
+    pods: "14"
+    requests.memory: 512Mi
+    limits.memory: 1600Mi
+---
+# limits を書き忘れた Pod も上限に数えられるよう、既定値を入れる
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: dev-limits
+spec:
+  limits:
+    - type: Container
+      default: { memory: 64Mi }
+      defaultRequest: { memory: 16Mi }
