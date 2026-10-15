@@ -108,8 +108,9 @@ async function sendMail(env, subject, text) {
     "Destinations.member.1": env.NOTIFY_EMAIL,
     "RawMessage.Data": btoa(String.fromCharCode(...new TextEncoder().encode(raw))),
   });
+  // aws4fetch は URLSearchParams を署名できない（文字列・バイト列だけ）。toString() しないと Worker が 500 になる
   const res = await aws.fetch(`https://email.${env.AWS_REGION}.amazonaws.com/`, {
-    method: "POST", body: form, headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    method: "POST", body: form.toString(), headers: { "Content-Type": "application/x-www-form-urlencoded" },
   });
   if (!res.ok) throw new Error(`SES ${res.status}: ${(await res.text()).slice(0, 300)}`);
 }

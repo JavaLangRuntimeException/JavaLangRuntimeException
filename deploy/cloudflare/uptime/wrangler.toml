@@ -13,7 +13,7 @@ crons = ["* * * * *"]
 # 落ちている / 動いているの状態（変わったときだけ書く。無料枠の書き込み 1,000 回/日に収まる）
 [[kv_namespaces]]
 binding = "STATE"
-id = "REPLACE_WITH_KV_ID"
+id = "a0e448b1308e4070adc7135b43e1012d"
 
 [vars]
 AWS_REGION = "ap-northeast-1"
