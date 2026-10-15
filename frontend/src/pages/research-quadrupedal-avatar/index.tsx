@@ -1,4 +1,4 @@
-import { Fragment, useState } from "react";
+import { useState } from "react";
 import { Button, ButtonLink } from "@/components/base/buttons/button";
 import { PageContainer, PageHeader, Section } from "@/shared/ui/layout";
 
@@ -14,16 +14,17 @@ const AFFILIATIONS = [
   "VISUS, University of Stuttgart, Germany",
 ];
 
-const AUTHORS: { name: string; orcid: string; affiliations: number[]; lastAuthor?: boolean }[] = [
-  { name: "Shuta Tanahashi", orcid: "0009-0005-4751-648X", affiliations: [1] },
-  { name: "Satoshi Hashiguchi", orcid: "0009-0002-0427-030X", affiliations: [1] },
-  { name: "Fumihiko Nakamura", orcid: "0000-0001-6285-3963", affiliations: [1] },
-  { name: "Yuta Kataoka", orcid: "0000-0001-6144-6477", affiliations: [1] },
-  { name: "Fumihisa Shibata", orcid: "0000-0002-6534-5742", affiliations: [1] },
-  { name: "Peter Mohr", orcid: "0000-0002-9592-4104", affiliations: [2] },
-  { name: "Ana Stanescu", orcid: "0000-0002-6203-1238", affiliations: [3, 2] },
-  { name: "Shohei Mori", orcid: "0000-0003-0540-7312", affiliations: [4], lastAuthor: true },
-  { name: "Asako Kimura", orcid: "0000-0002-9859-9079", affiliations: [1], lastAuthor: true },
+// photo は authors/ 以下の 240px 四方の顔写真
+const AUTHORS: { name: string; photo: string; orcid: string; affiliations: number[]; lastAuthor?: boolean }[] = [
+  { name: "Shuta Tanahashi", photo: "tanahashi", orcid: "0009-0005-4751-648X", affiliations: [1] },
+  { name: "Satoshi Hashiguchi", photo: "hashiguchi", orcid: "0009-0002-0427-030X", affiliations: [1] },
+  { name: "Fumihiko Nakamura", photo: "nakamura", orcid: "0000-0001-6285-3963", affiliations: [1] },
+  { name: "Yuta Kataoka", photo: "kataoka", orcid: "0000-0001-6144-6477", affiliations: [1] },
+  { name: "Fumihisa Shibata", photo: "shibata", orcid: "0000-0002-6534-5742", affiliations: [1] },
+  { name: "Peter Mohr", photo: "mohr", orcid: "0000-0002-9592-4104", affiliations: [2] },
+  { name: "Ana Stanescu", photo: "stanescu", orcid: "0000-0002-6203-1238", affiliations: [3, 2] },
+  { name: "Shohei Mori", photo: "mori", orcid: "0000-0003-0540-7312", affiliations: [4], lastAuthor: true },
+  { name: "Asako Kimura", photo: "kimura", orcid: "0000-0002-9859-9079", affiliations: [1], lastAuthor: true },
 ];
 
 const CONDITIONS = [
@@ -66,9 +67,10 @@ export default function ResearchQuadrupedalAvatarPage() {
       <PageHeader
         eyebrow="VRST '26 · November 16–18, 2026 · Sendai, Japan"
         title="Embodying a Quadrupedal Avatar Through Posture- and Hand-Gesture-Congruent Locomotion"
-        description={<Authors />}
       />
-      <div className="-mt-6 mb-10 flex flex-wrap gap-2">
+      {/* 顔写真は動かさない（PageHeader の description に入れると DecodeReveal で出てくる） */}
+      <Authors />
+      <div className="mt-6 mb-10 flex flex-wrap gap-2">
         <ButtonLink variant="secondary" href={`https://doi.org/${DOI}`} target="_blank" rel="noopener noreferrer">
           Paper (ACM DL)
         </ButtonLink>
@@ -213,21 +215,35 @@ export default function ResearchQuadrupedalAvatarPage() {
 
 function Authors() {
   return (
-    <div className="flex flex-col gap-3">
-      <p className="text-body-regular leading-[1.9] text-text-primary">
-        {AUTHORS.map((a, i) => (
-          <Fragment key={a.name}>
-            {i > 0 && ", "}
-            <a href={`https://orcid.org/${a.orcid}`} target="_blank" rel="noopener noreferrer" className="whitespace-nowrap underline-offset-2 hover:underline">
-              {a.name}
+    <div className="-mt-6 flex flex-col gap-6">
+      <ul className="grid grid-cols-3 gap-x-4 gap-y-5 sm:grid-cols-5 lg:grid-cols-9">
+        {AUTHORS.map((a) => (
+          <li key={a.name}>
+            <a
+              href={`https://orcid.org/${a.orcid}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex flex-col items-center gap-2 text-center"
+            >
+              <img
+                src={`${ASSETS}/authors/${a.photo}.jpg`}
+                width={240}
+                height={240}
+                alt=""
+                decoding="async"
+                className="aspect-square w-full max-w-24 rounded-full border border-separator-border object-cover"
+              />
+              <span className="text-body-2-regular text-text-primary underline-offset-2 group-hover:underline">
+                {a.name}
+                <sup className="ms-0.5 text-text-tertiary">
+                  {a.affiliations.join(",")}
+                  {a.lastAuthor && "*"}
+                </sup>
+              </span>
             </a>
-            <sup className="ms-0.5 text-text-tertiary">
-              {a.affiliations.join(",")}
-              {a.lastAuthor && "*"}
-            </sup>
-          </Fragment>
+          </li>
         ))}
-      </p>
+      </ul>
       <ol className="flex flex-col gap-0.5 text-body-2-regular text-text-secondary">
         {AFFILIATIONS.map((name, i) => (
           <li key={name}>
