@@ -7,7 +7,7 @@ const cardClass =
 
 function CardBody({ item }: { item: LinkCard }) {
   // 写真（/image*.png）は面いっぱい。ロゴは同じ大きさで真ん中に置き、普段は控えめ（ホバー・フォーカスで本来の色）
-  const photo = item.imgSrc.startsWith("/image");
+  const photo = item.imgSrc.startsWith("/image") || item.imgSrc.startsWith("/profile_") || item.imgSrc.startsWith("/illust_");
   return (
     <>
       <div className="flex aspect-[16/9] w-full items-center justify-center overflow-hidden border-b border-separator-border bg-background-secondary-default">

@@ -47,7 +47,7 @@ export function ProfileHero() {
         animate={reduced ? undefined : ready ? { clipPath: "inset(0% 0% 0% 0%)", transitionEnd: { clipPath: "none" } } : { clipPath: "inset(100% 0% 0% 0%)" }}
         transition={ready ? { duration: 0.9, ease: CURTAIN_EASE, delay: 0.15 } : { duration: 0 }}
       >
-        <img src="/image.png" alt="棚橋 柊太" className="size-32 rounded-full object-cover ring-1 ring-separator-border sm:size-44" />
+        <img src="/profile_taramanji.png" alt="棚橋 柊太" className="size-32 rounded-full object-cover ring-1 ring-separator-border sm:size-44" />
       </motion.div>
       <div className="flex min-w-0 flex-col gap-3">
         <h1 className="text-[3rem] font-semibold leading-none tracking-[-0.02em] text-text-primary sm:text-[4rem]">

@@ -8,7 +8,7 @@ export type LinkCard = {
 
 export const linkCards: LinkCard[] = [
   // Portfolio → Home
-  { href: "/", imgSrc: "/image.png", title: "Home", description: "ホームの画面へ", backText: "ホームへ" },
+  { href: "/", imgSrc: "/profile_taramanji.png", title: "Home", description: "ホームの画面へ", backText: "ホームへ" },
   // Twitter
   { href: "https://twitter.com/javalangruntime", imgSrc: "/twitter.png", title: "X (Twitter)", description: "@JavaLangRuntime", backText: "なぜJavaの実行時のエラーにしたか？" },
   // Instagram
