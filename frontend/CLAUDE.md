@@ -81,7 +81,7 @@ src/
 - API: `@/shared/api/clients`（identityApi・inquiryApi・reservationApi・workLocationApi・contentApi・calendarSyncApi）。生成型は `@/shared/api/gen/...`
 - エラー: `toApiError(err)`（`@/shared/api/errors`）で `{ code, message, detail, fields }` にする。`code` は旧 API のエラー文字列（`invalid_email` など）
 - サーバーの状態は TanStack Query（`useQuery` / `useMutation`）。フォームの保持（10 分で消える localStorage）は jotai の `atomWithStorage` + `createTTLStorage`（`@/shared/lib/ttl-storage`）で、キー名は旧実装と同じ
-- フォームは react-hook-form + zod（旧 `src/shared/validation/*` のスキーマと文言をそのまま）
+- フォームは jotai + zod（旧 `src/shared/validation/*` のスキーマと文言をそのまま）
 
 ## コマンド
 

@@ -23,7 +23,7 @@ const (
 	ErrorTypeBadRequest   ErrorType = "BAD_REQUEST"
 	ErrorTypeInternal     ErrorType = "INTERNAL_ERROR"
 	ErrorTypeConcurrency  ErrorType = "CONCURRENCY_ERROR"
-	// ErrorTypeUpstream は外部 API（Google・GAS など）の失敗。メッセージと詳細はクライアントに返す
+	// ErrorTypeUpstream は外部 API（Google など）の失敗。メッセージと詳細はクライアントに返す
 	ErrorTypeUpstream ErrorType = "UPSTREAM_ERROR"
 )
 

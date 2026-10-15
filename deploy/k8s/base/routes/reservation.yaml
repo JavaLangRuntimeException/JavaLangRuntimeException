@@ -1,4 +1,4 @@
-# reservation: 予約（GAS の応答を待つので長め）
+# reservation: 予約（Calendar API で予定と Meet を作るので長め）
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:

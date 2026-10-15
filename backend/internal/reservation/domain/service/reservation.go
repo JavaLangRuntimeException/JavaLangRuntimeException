@@ -106,7 +106,7 @@ func guest(name string) string {
 	return name
 }
 
-// titlePrefix は件名の接頭辞（「x棚橋(taramanji)」が付く）。GAS ウェブフックで送っていたころの件名をそのまま使う
+// titlePrefix は件名の接頭辞（「x棚橋(taramanji)」が付く）。相手に届く件名は変えない
 var titlePrefix = map[string]string{
 	"TechSelect+":     "TS+面談_",
 	"開発委託/相談":         "開発ご相談_",
@@ -129,7 +129,7 @@ func Summary(purpose, name string) string {
 	return "ご相談_" + guest(name) + "様"
 }
 
-// Description は予定の説明文。GAS ウェブフックで送っていたころと同じく、Discord サーバーと Slack ワークスペースは書かない
+// Description は予定の説明文。Discord サーバーと Slack ワークスペースは書かない（相手に届く文面を変えない）
 func Description(r Request) string {
 	lines := []string{"ご相談内容: " + r.Purpose}
 	add := func(label, v string) {
