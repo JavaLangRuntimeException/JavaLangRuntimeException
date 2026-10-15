@@ -42,6 +42,7 @@
 
 - アクセスは Cloudflare Tunnel で家に届く（ルーターのポートは開けていない）
 - dev・stg・Argo Rollouts の画面は Cloudflare Access で管理者だけ
+- 落ち始めは Cloudflare Workers（kind の外）が 1 分ごとに見て、Datadog の通知も受けて SES でメールする
 - 外からの作業は Tailscale ＋ SSH
 
 ### リリースの流れ（CI / CD）
