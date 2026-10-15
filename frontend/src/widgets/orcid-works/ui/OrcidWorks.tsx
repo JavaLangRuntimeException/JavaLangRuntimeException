@@ -50,7 +50,7 @@ function ProjectPageCard() {
       to="/research/quadrupedal-avatar"
       className="lift group grid gap-4 rounded-xl border border-border-button-default bg-background-primary-default p-5 outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] md:items-center"
     >
-      <img src="/research/quadrupedal-avatar/teaser.jpg" width={2116} height={600} alt="" loading="lazy" decoding="async" className="h-auto w-full rounded-lg" />
+      <img src="/research/quadrupedal-avatar/teaser-v4.jpg" width={2116} height={600} alt="" loading="lazy" decoding="async" className="h-auto w-full rounded-lg" />
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <Chip color="lime" variant="caption">
