@@ -106,32 +106,8 @@ func guest(name string) string {
 	return name
 }
 
-// calendarTitlePrefix は Google Calendar に直接書くときの件名の接頭辞（既定は TS+面談_）
-var calendarTitlePrefix = map[string]string{
-	"STECH":           "STECH面談_",
-	"biwako.go":       "biwako.go_",
-	"kyoto.go":        "kyoto.go_",
-	"JINEN":           "JINEN_",
-	"NxTEND_Event":    "NxTEND_",
-	"NxTEND_Organize": "NxTEND運営_",
-	"開発委託/相談":         "開発相談_",
-	"出張撮影依頼":          "出張撮影_",
-	"RCC":             "RCC_",
-	"RM2C":            "RM2C_",
-	"その他":             "面談_",
-}
-
-// CalendarSummary は Google Calendar 直結のときの件名
-func CalendarSummary(purpose, name string) string {
-	prefix, ok := calendarTitlePrefix[purpose]
-	if !ok {
-		prefix = "TS+面談_"
-	}
-	return prefix + guest(name) + "様"
-}
-
-// webhookTitlePrefix は GAS ウェブフック経由のときの件名の接頭辞（「x棚橋(taramanji)」が付く）
-var webhookTitlePrefix = map[string]string{
+// titlePrefix は件名の接頭辞（「x棚橋(taramanji)」が付く）。GAS ウェブフックで送っていたころの件名をそのまま使う
+var titlePrefix = map[string]string{
 	"TechSelect+":     "TS+面談_",
 	"開発委託/相談":         "開発ご相談_",
 	"STECH":           "STECHご相談_",
@@ -145,16 +121,16 @@ var webhookTitlePrefix = map[string]string{
 	"その他":             "ご相談_",
 }
 
-// WebhookSummary は GAS ウェブフック経由のときの件名
-func WebhookSummary(purpose, name string) string {
-	if prefix, ok := webhookTitlePrefix[purpose]; ok {
+// Summary は予定の件名
+func Summary(purpose, name string) string {
+	if prefix, ok := titlePrefix[purpose]; ok {
 		return prefix + guest(name) + "様x棚橋(taramanji)"
 	}
 	return "ご相談_" + guest(name) + "様"
 }
 
-// Description は予定の説明文。withWorkspace=false（ウェブフック経由）では Discord サーバーと Slack ワークスペースを書かない
-func Description(r Request, withWorkspace bool) string {
+// Description は予定の説明文。GAS ウェブフックで送っていたころと同じく、Discord サーバーと Slack ワークスペースは書かない
+func Description(r Request) string {
 	lines := []string{"ご相談内容: " + r.Purpose}
 	add := func(label, v string) {
 		if v != "" {
@@ -164,13 +140,7 @@ func Description(r Request, withWorkspace bool) string {
 	add("ご相談詳細(任意): ", r.MeetingNote)
 	add("ミーティング媒体: ", r.ContactMethod)
 	add("Discord名: ", r.DiscordName)
-	if withWorkspace {
-		add("Discordサーバー: ", r.DiscordServer)
-	}
 	add("Slack名: ", r.SlackName)
-	if withWorkspace {
-		add("Slackワークスペース: ", r.SlackWorkspace)
-	}
 	add("備考: ", r.OtherNote)
 	if r.offline() {
 		add("Googleマップ共有リンク: ", r.OfflinePlaceLink)

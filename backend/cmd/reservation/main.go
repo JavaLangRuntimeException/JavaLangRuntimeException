@@ -62,13 +62,12 @@ func main() {
 	metrics, stop := observability.Init(serviceName)
 	defer stop()
 
+	// 予約は Google Calendar API に直接書く。本番はサービスアカウントが GCAL_SA_SUBJECT になりかわる（ドメイン全体の委任）。
+	// primary はなりかわった人のメインのカレンダー
 	calendarID := env.Optional("GCAL_CALENDAR_ID", "primary")
-	var webhook gateway.Calendar
-	if u := os.Getenv("GCAL_WEBHOOK_URL"); u != "" {
-		webhook = infragw.NewGasWebhook(u, calendarID, os.Getenv("OWNER_EMAIL"))
-	}
 	creds := infragw.GoogleCredentials{
 		ServiceAccountJSONBase64: os.Getenv("GCAL_SA_JSON_BASE64"),
+		Subject:                  os.Getenv("GCAL_SA_SUBJECT"),
 		ClientID:                 os.Getenv("GOOGLE_CLIENT_ID"),
 		ClientSecret:             os.Getenv("GOOGLE_CLIENT_SECRET"),
 		RefreshToken:             os.Getenv("GOOGLE_REFRESH_TOKEN"),
@@ -77,10 +76,12 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	cfg := usecase.Config{Primary: webhook}
+	var cfg usecase.Config
 	if tokens != nil {
-		// Google Calendar API が使えればそちらを優先し、削除の失敗時だけウェブフックに回す（旧実装と同じ）
-		cfg.Primary, cfg.Fallback = infragw.NewGoogleCalendar(calendarID, tokens, nil), webhook
+		cfg.Primary = infragw.NewGoogleCalendar(calendarID, tokens, nil)
+	} else if env.AppEnv() != "local" {
+		// 認証情報がないと予約が全部失敗する。気づかずに出さないよう起動しない（手元だけは予約なしで動かせる）
+		log.Fatal("GCAL_SA_JSON_BASE64（または GOOGLE_REFRESH_TOKEN）が未設定")
 	}
 	offset := 9 * 60
 	if v := os.Getenv("ICAL_TZ_OFFSET_MINUTES"); v != "" {

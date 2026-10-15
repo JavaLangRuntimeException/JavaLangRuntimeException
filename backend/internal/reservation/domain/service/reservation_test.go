@@ -49,22 +49,19 @@ func TestCheckWindow(t *testing.T) {
 }
 
 func TestSummaries(t *testing.T) {
-	cases := []struct{ purpose, name, calendar, webhook string }{
-		{"TechSelect+", "山田", "TS+面談_山田様", "TS+面談_山田様x棚橋(taramanji)"},
-		{"STECH", "", "STECH面談_ゲスト様", "STECHご相談_ゲスト様x棚橋(taramanji)"},
-		{"開発委託/相談", "A", "開発相談_A様", "開発ご相談_A様x棚橋(taramanji)"},
-		{"JINEN", "A", "JINEN_A様", "コミュニティご相談_A様x棚橋(taramanji)"},
-		{"NxTEND_Organize", "A", "NxTEND運営_A様", "NxTEND_Organizeご相談_A様x棚橋(taramanji)"},
-		{"出張撮影依頼", "A", "出張撮影_A様", "ご相談_A様"},
-		{"その他", "A", "面談_A様", "ご相談_A様x棚橋(taramanji)"},
-		{"unknown", "A", "TS+面談_A様", "ご相談_A様"},
+	cases := []struct{ purpose, name, want string }{
+		{"TechSelect+", "山田", "TS+面談_山田様x棚橋(taramanji)"},
+		{"STECH", "", "STECHご相談_ゲスト様x棚橋(taramanji)"},
+		{"開発委託/相談", "A", "開発ご相談_A様x棚橋(taramanji)"},
+		{"JINEN", "A", "コミュニティご相談_A様x棚橋(taramanji)"},
+		{"NxTEND_Organize", "A", "NxTEND_Organizeご相談_A様x棚橋(taramanji)"},
+		{"出張撮影依頼", "A", "ご相談_A様"},
+		{"その他", "A", "ご相談_A様x棚橋(taramanji)"},
+		{"unknown", "A", "ご相談_A様"},
 	}
 	for _, c := range cases {
-		if got := CalendarSummary(c.purpose, c.name); got != c.calendar {
-			t.Errorf("CalendarSummary(%q) = %q, want %q", c.purpose, got, c.calendar)
-		}
-		if got := WebhookSummary(c.purpose, c.name); got != c.webhook {
-			t.Errorf("WebhookSummary(%q) = %q, want %q", c.purpose, got, c.webhook)
+		if got := Summary(c.purpose, c.name); got != c.want {
+			t.Errorf("Summary(%q) = %q, want %q", c.purpose, got, c.want)
 		}
 	}
 }
@@ -72,14 +69,12 @@ func TestSummaries(t *testing.T) {
 func TestDescription(t *testing.T) {
 	r := Request{Purpose: "STECH", MeetingNote: "相談", ContactMethod: "discord", DiscordName: "taro", DiscordServer: "srv",
 		OfflinePlaceLink: "https://maps.app.goo.gl/x"}
-	if got, want := Description(r, true), "ご相談内容: STECH\nご相談詳細(任意): 相談\nミーティング媒体: discord\nDiscord名: taro\nDiscordサーバー: srv"; got != want {
-		t.Errorf("calendar:\n%s\nwant:\n%s", got, want)
-	}
-	if got, want := Description(r, false), "ご相談内容: STECH\nご相談詳細(任意): 相談\nミーティング媒体: discord\nDiscord名: taro"; got != want {
-		t.Errorf("webhook:\n%s\nwant:\n%s", got, want)
+	// Discord サーバー（Slack ワークスペースも）は書かない
+	if got, want := Description(r), "ご相談内容: STECH\nご相談詳細(任意): 相談\nミーティング媒体: discord\nDiscord名: taro"; got != want {
+		t.Errorf("description:\n%s\nwant:\n%s", got, want)
 	}
 	off := Request{Purpose: "その他", ContactMethod: "Offline", OfflinePlaceLink: "L", OfflinePlaceName: "N", OfflinePlaceDetail: "D", OtherNote: "x"}
-	if got, want := Description(off, false), "ご相談内容: その他\nミーティング媒体: Offline\n備考: x\nGoogleマップ共有リンク: L\n場所の名称(自動入力): N\n場所の詳細(任意): D"; got != want {
+	if got, want := Description(off), "ご相談内容: その他\nミーティング媒体: Offline\n備考: x\nGoogleマップ共有リンク: L\n場所の名称(自動入力): N\n場所の詳細(任意): D"; got != want {
 		t.Errorf("offline:\n%s\nwant:\n%s", got, want)
 	}
 	if got := WithEventID("a", "id1"); got != "a\nEventID: id1" {

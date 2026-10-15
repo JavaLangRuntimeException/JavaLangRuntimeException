@@ -66,7 +66,7 @@ export function CancelDialog({
       setEventId("");
       timeoutRef.current = setTimeout(finish, 5000);
     } catch (err) {
-      // サーバーが返したエラーコード（webhook_failed など）を出す。届かなければ旧実装と同じ文言
+      // サーバーが返したエラーコード（google_delete_failed など）を出す。届かなければ旧実装と同じ文言
       setError(ConnectError.from(err).metadata.get("x-error-code") || "削除に失敗しました");
       lockRef.current = false;
     } finally {

@@ -21,10 +21,8 @@ var emailPattern = regexp.MustCompile(`^[^\s@]+@[^\s@]+\.[^\s@]+$`)
 
 // Config は予約の書き込み先などの設定
 type Config struct {
-	// Primary は優先する書き込み先（Google Calendar API が使えればそれ、なければ GAS ウェブフック）
-	Primary gateway.Calendar
-	// Fallback は Primary が Google Calendar API のとき、削除に失敗したら使う GAS ウェブフック（任意）
-	Fallback    gateway.Calendar
+	// Primary は予約の書き込み先（Google Calendar API）。nil なら予約できない（手元で認証情報がないとき）
+	Primary     gateway.Calendar
 	Sources     []gateway.IcalSource
 	Ical        service.IcsParser
 	Clock       func() time.Time
@@ -97,18 +95,13 @@ func (u *ReservationUsecaseImpl) CreateReservation(ctx context.Context, in Creat
 
 	event := gateway.Event{
 		Location: r.Location, Start: r.StartAt(), End: r.EndAt(),
-		CreateMeet: r.WantsMeet(), ContactMethod: r.ContactMethod,
+		CreateMeet: r.WantsMeet(),
 	}
 	if r.Email != "" {
 		event.Attendees = []string{r.Email}
 	}
-	if cal.Name() == "gas_webhook" {
-		event.Summary = service.WebhookSummary(r.Purpose, r.Name)
-		event.Description = service.Description(r, false)
-	} else {
-		event.Summary = service.CalendarSummary(r.Purpose, r.Name)
-		event.Description = service.Description(r, true)
-	}
+	event.Summary = service.Summary(r.Purpose, r.Name)
+	event.Description = service.Description(r)
 
 	started := u.cfg.Clock()
 	created, err := cal.Create(ctx, event)
@@ -147,11 +140,6 @@ func (u *ReservationUsecaseImpl) CancelReservation(ctx context.Context, in Cance
 		return nil, u.noCalendar()
 	}
 	deleted, err := cal.Delete(ctx, id)
-	if err != nil && u.cfg.Fallback != nil {
-		slog.WarnContext(ctx, "calendar delete failed; trying webhook", "via", cal.Name(), "error", err)
-		cal = u.cfg.Fallback
-		deleted, err = cal.Delete(ctx, id)
-	}
 	if err != nil {
 		u.count(ctx, "reservation.cancelled", "status:failed", "via:"+cal.Name(), "reason:"+codeOf(err))
 		return nil, err
