@@ -4,7 +4,7 @@
 import { chromium } from "playwright";
 
 const base = process.argv[2] ?? "http://localhost:5173";
-const pages = ["/", "/link", "/blogs", "/contact", "/reserve", "/location", "/calendar-sync", "/privacy"];
+const pages = ["/", "/link", "/blogs", "/contact", "/reserve", "/location", "/calendar-sync", "/privacy", "/research/quadrupedal-avatar"];
 
 const browser = await chromium.launch();
 let total = 0;

@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+import { Link } from "react-router";
 import { Chip } from "@/components/base/badges/chip";
 import { ORCID_SELF_NAME, ORCID_WORK_TYPE_LABELS, useOrcidWorks, type OrcidWork } from "@/entities/publication";
 import { Section, Skeleton } from "@/shared/ui/layout";
@@ -13,6 +14,7 @@ export function OrcidWorks() {
       id="publications"
       title="Publications"
     >
+      <ProjectPageCard />
       {isPending && (
         <div className="flex flex-col gap-3" aria-busy="true">
           <p className="text-body-2-regular text-text-tertiary">論文を取得中...</p>
@@ -38,6 +40,32 @@ export function OrcidWorks() {
         </p>
       )}
     </Section>
+  );
+}
+
+/** プロジェクトページのある論文（ORCID の一覧より上に置く） */
+function ProjectPageCard() {
+  return (
+    <Link
+      to="/research/quadrupedal-avatar"
+      className="lift group grid gap-4 rounded-xl border border-border-button-default bg-background-primary-default p-5 outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] md:items-center"
+    >
+      <img src="/research/quadrupedal-avatar/teaser.jpg" width={2116} height={600} alt="" loading="lazy" decoding="async" className="h-auto w-full rounded-lg" />
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Chip color="lime" variant="caption">
+            Project Page
+          </Chip>
+          <span className="text-caption-1-regular text-text-tertiary">VRST '26</span>
+        </div>
+        <h3 className="text-headline-semibold text-text-primary">Embodying a Quadrupedal Avatar Through Posture- and Hand-Gesture-Congruent Locomotion</h3>
+        <p className="text-body-2-regular text-text-secondary">
+          <span className="font-semibold text-text-primary underline underline-offset-2">Shuta Tanahashi</span>, Satoshi Hashiguchi, Fumihiko Nakamura, Yuta Kataoka, Fumihisa Shibata, Peter Mohr, Ana Stanescu, Shohei Mori,
+          Asako Kimura
+        </p>
+        <p className="text-body-2-regular italic text-text-tertiary">32nd ACM Symposium on Virtual Reality Software and Technology (VRST '26), Sendai, Japan</p>
+      </div>
+    </Link>
   );
 }
 
