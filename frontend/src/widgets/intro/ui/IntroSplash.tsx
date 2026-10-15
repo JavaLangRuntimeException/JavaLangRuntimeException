@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useSetAtom } from "jotai";
 import { tagline } from "@/entities/profile";
+import { useLocale, useT } from "@/shared/lib/i18n";
 import { introPlayingAtom } from "@/shared/model/intro";
 import { CURTAIN_EASE, DecodeChars, EASE, useElapsed } from "@/shared/ui/motion";
 
@@ -9,8 +10,6 @@ import { CURTAIN_EASE, DecodeChars, EASE, useElapsed } from "@/shared/ui/motion"
 const SEEN_KEY = "intro-seen";
 
 const COMMAND = "java -jar taramanji.jar";
-const COPY = tagline.lines;
-const SUBTITLE = tagline.subtitle;
 
 // 時間（ms）
 const T = {
@@ -56,8 +55,10 @@ function markSeen() {
 
 /** キャッチコピーの 1 行（記号から左→右へ 1 文字ずつ定まる） */
 function DecodeLine({ text, accent, start, elapsed }: { text: string; accent: [number, number]; start: number; elapsed: number }) {
+  const locale = useLocale();
   return (
-    <span aria-hidden="true" className="block whitespace-nowrap text-text-primary">
+    // 日本語の行は短く折り返さない。英語は長いので狭い画面では語の切れ目で折り返す
+    <span aria-hidden="true" className={locale === "ja" ? "block whitespace-nowrap text-text-primary" : "block text-text-primary"}>
       <DecodeChars text={text} accent={accent} start={start} elapsed={elapsed} timing={{ stagger: T.charStagger, settle: T.charSettle }} />
     </span>
   );
@@ -97,6 +98,8 @@ function LoadingLog({ elapsed }: { elapsed: number }) {
  * 最後に幕が上へ開いてトップページが見える。スキップ（ボタン・Esc・Enter）でき、動きを減らす設定では出さない
  */
 export function IntroSplash() {
+  const t = useT();
+  const { lines: COPY, subtitle: SUBTITLE } = t(tagline);
   const reduced = useReducedMotion();
   const [visible, setVisible] = useState(() => shouldShow());
   const active = visible && !reduced;
@@ -141,7 +144,7 @@ export function IntroSplash() {
           key="intro"
           role="dialog"
           aria-modal="true"
-          aria-label="イントロ"
+          aria-label={t({ ja: "イントロ", en: "Intro" })}
           className="fixed inset-0 z-[100] flex flex-col bg-background-full"
           initial={{ clipPath: "inset(0% 0% 0% 0%)" }}
           exit={{ clipPath: "inset(0% 0% 100% 0%)" }}
@@ -198,7 +201,7 @@ export function IntroSplash() {
               onClick={finish}
               className="press rounded-sm px-2 py-1 text-text-secondary outline-none hover:text-text-primary focus-visible:ring-2 focus-visible:ring-border-focus-ring"
             >
-              スキップ
+              {t({ ja: "スキップ", en: "Skip" })}
             </button>
           </div>
         </motion.div>

@@ -5,9 +5,11 @@ import { Textarea } from "@/components/base/textarea/textarea";
 import { Code } from "@connectrpc/connect";
 import { inquiryApi } from "@/shared/api/clients";
 import { toApiError } from "@/shared/api/errors";
+import { useT, type L10n } from "@/shared/lib/i18n";
 import { AdminNotice, AdminPanel } from "@/shared/ui/admin";
 
-// 初期値と送信後の値は旧実装のまま（送信後の本文には「taramanji.com」の行がない）
+// 初期値と送信後の値は旧実装のまま（送信後の本文には「taramanji.com」の行がない）。
+// 本文はお客さまに届くメールの中身なので、画面の言語を切り替えても日本語のまま
 const INITIAL_BODY = `この度は、taramanji.comにお問い合わせいただき、ありがとうございます。
 
 管理者からのメッセージです。
@@ -36,18 +38,19 @@ export function AdminEmailForm() {
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState(INITIAL_BODY);
   const [sending, setSending] = useState(false);
-  const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
+  const [result, setResult] = useState<{ ok: boolean; message: L10n } | null>(null);
+  const t = useT();
 
   const sendEmail = async () => {
     if (!to || !subject || !body) {
-      setResult({ ok: false, message: "全ての項目を入力してください" });
+      setResult({ ok: false, message: { ja: "全ての項目を入力してください", en: "Please fill in all fields." } });
       return;
     }
     setSending(true);
     setResult(null);
     try {
       await inquiryApi.sendAdminEmail({ to, subject, body });
-      setResult({ ok: true, message: "メールを送信しました" });
+      setResult({ ok: true, message: { ja: "メールを送信しました", en: "Email sent." } });
       setTo("");
       setSubject("");
       setBody(RESET_BODY);
@@ -55,25 +58,31 @@ export function AdminEmailForm() {
       const e = toApiError(err);
       // サーバーが理由（x-error-code）を返したらその文言、通信できなかったときは旧実装と同じ文言
       const fromServer = e.code !== Code[e.status];
-      setResult({ ok: false, message: fromServer ? e.message || "送信に失敗しました" : "エラーが発生しました" });
+      // サーバーの文言はそのまま（どちらの言語でも同じ）
+      const message: L10n = fromServer
+        ? e.message
+          ? { ja: e.message, en: e.message }
+          : { ja: "送信に失敗しました", en: "Failed to send." }
+        : { ja: "エラーが発生しました", en: "An error occurred." };
+      setResult({ ok: false, message });
     } finally {
       setSending(false);
     }
   };
 
   return (
-    <AdminPanel title="メール送信">
+    <AdminPanel title={t({ ja: "メール送信", en: "Send Email" })}>
       {result && (
         <div className="mb-4">
-          <AdminNotice ok={result.ok}>{result.message}</AdminNotice>
+          <AdminNotice ok={result.ok}>{t(result.message)}</AdminNotice>
         </div>
       )}
       <div className="flex flex-col gap-4">
-        <Input label="宛先" type="email" value={to} onChange={setTo} placeholder="example@gmail.com" inputDir="ltr" />
-        <Input label="件名" value={subject} onChange={setSubject} placeholder="件名を入力" />
-        <Textarea label="本文" value={body} onChange={setBody} placeholder="メール本文を入力" rows={8} resize="vertical" />
+        <Input label={t({ ja: "宛先", en: "To" })} type="email" value={to} onChange={setTo} placeholder="example@gmail.com" inputDir="ltr" />
+        <Input label={t({ ja: "件名", en: "Subject" })} value={subject} onChange={setSubject} placeholder={t({ ja: "件名を入力", en: "Enter a subject" })} />
+        <Textarea label={t({ ja: "本文", en: "Body" })} value={body} onChange={setBody} placeholder={t({ ja: "メール本文を入力", en: "Enter the email body" })} rows={8} resize="vertical" />
         <Button variant="primary" className="w-full" onClick={sendEmail} disabled={sending || !to || !subject || !body}>
-          {sending ? "送信中..." : "送信"}
+          {sending ? t({ ja: "送信中...", en: "Sending..." }) : t({ ja: "送信", en: "Send" })}
         </Button>
       </div>
     </AdminPanel>

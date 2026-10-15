@@ -1,11 +1,15 @@
 import { Link } from "react-router";
 import type { LinkCard } from "@/entities/link";
+import { useT } from "@/shared/lib/i18n";
 import { cx } from "@/utils/cx";
 
 const cardClass =
   "group flex h-full flex-col overflow-hidden rounded-xl border border-separator-border bg-background-primary-default outline-none lift hover:border-border-button-hover focus-visible:ring-2 focus-visible:ring-border-focus-ring";
 
 function CardBody({ item }: { item: LinkCard }) {
+  const t = useT();
+  const text = (v: LinkCard["title"]) => (typeof v === "string" ? v : t(v));
+  const title = text(item.title);
   // 写真（/image*.png）は面いっぱい。ロゴは同じ大きさで真ん中に置き、普段は控えめ（ホバー・フォーカスで本来の色）
   const photo = item.imgSrc.startsWith("/image") || item.imgSrc.startsWith("/profile_") || item.imgSrc.startsWith("/illust_");
   return (
@@ -13,7 +17,7 @@ function CardBody({ item }: { item: LinkCard }) {
       <div className="flex aspect-[16/9] w-full items-center justify-center overflow-hidden border-b border-separator-border bg-background-secondary-default">
         <img
           src={item.imgSrc}
-          alt={item.title}
+          alt={title}
           loading="lazy"
           className={cx(
             "transition-[scale,filter,opacity] duration-500 ease-out motion-reduce:transition-none",
@@ -24,10 +28,10 @@ function CardBody({ item }: { item: LinkCard }) {
         />
       </div>
       <div className="flex flex-1 flex-col gap-1.5 p-5">
-        <h3 className="text-[1.0625rem] font-semibold text-text-primary transition-colors group-hover:text-accent-300">{item.title}</h3>
-        <p className="text-body-2-regular text-text-secondary">{item.description}</p>
+        <h3 className="text-[1.0625rem] font-semibold text-text-primary transition-colors group-hover:text-accent-300">{title}</h3>
+        <p className="text-body-2-regular text-text-secondary">{text(item.description)}</p>
         {/* 旧サイトではカードの裏面にあった一言。常に見せる */}
-        <p className="mt-auto whitespace-pre-line pt-4 text-[0.875rem] leading-[1.75] text-text-tertiary">{item.backText}</p>
+        <p className="mt-auto whitespace-pre-line pt-4 text-[0.875rem] leading-[1.75] text-text-tertiary">{text(item.backText)}</p>
       </div>
     </>
   );
@@ -35,8 +39,9 @@ function CardBody({ item }: { item: LinkCard }) {
 
 /** リンク集のカード */
 export function LinkCardsGrid({ cards }: { cards: LinkCard[] }) {
+  const t = useT();
   if (!cards || cards.length === 0) {
-    return <p className="text-center text-text-secondary">リンクを読み込み中...</p>;
+    return <p className="text-center text-text-secondary">{t({ ja: "リンクを読み込み中...", en: "Loading links..." })}</p>;
   }
   return (
     <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

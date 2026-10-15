@@ -1,7 +1,9 @@
+import { useT } from "@/shared/lib/i18n";
 import type { ArticleOgp } from "../model/types";
 
 /** 記事 1 件（タイトル・説明・タグ）。外部（Qiita）へのリンク */
 export function ArticleListCard({ article }: { article: ArticleOgp }) {
+  const t = useT();
   return (
     <a
       href={article.url}
@@ -25,7 +27,7 @@ export function ArticleListCard({ article }: { article: ArticleOgp }) {
           </ul>
         )}
         <span className="mt-1 inline-flex items-center gap-1 text-body-2-semibold text-accent-300">
-          記事を読む
+          {t({ ja: "記事を読む", en: "Read article" })}
           </span>
       </div>
     </a>

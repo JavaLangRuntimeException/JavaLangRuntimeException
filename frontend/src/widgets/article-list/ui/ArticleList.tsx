@@ -2,6 +2,7 @@ import { BlogArticleCard } from "@/entities/article";
 import { PrevNextPagination } from "@/features/blog-pagination";
 import { SearchInput } from "@/features/blog-search";
 import { CHEAT_SHEET_SERIES, SERIES_LIST, SeriesButtons } from "@/features/blog-series";
+import { useT } from "@/shared/lib/i18n";
 import { Skeleton } from "@/shared/ui/layout";
 import { cx } from "@/utils/cx";
 import { useBlogArticles } from "../model/use-blog-articles";
@@ -18,6 +19,7 @@ function Status({ children, pulse }: { children: string; pulse?: boolean }) {
 
 /** Qiita の記事一覧（検索・シリーズ・ページ送り） */
 export function ArticleList() {
+  const t = useT();
   const s = useBlogArticles();
   const articles = visibleArticles(s.view.items);
   const isCheatSheet = s.series === CHEAT_SHEET_SERIES;
@@ -36,7 +38,7 @@ export function ArticleList() {
 
       {s.pageLoading && (
         <>
-          <Status pulse>記事取得中...</Status>
+          <Status pulse>{t({ ja: "記事取得中...", en: "Loading articles..." })}</Status>
           <div className="grid gap-5 lg:grid-cols-2" aria-hidden="true">
             {Array.from({ length: 4 }, (_, i) => (
               <Skeleton key={i} className="h-80 rounded-xl" />
@@ -53,8 +55,8 @@ export function ArticleList() {
         </div>
       )}
 
-      {s.cheatLoading && <Status pulse>記事を読み込み中...</Status>}
-      {s.backgroundFetching && <Status pulse>バックグラウンドで記事を取得中...</Status>}
+      {s.cheatLoading && <Status pulse>{t({ ja: "記事を読み込み中...", en: "Loading articles..." })}</Status>}
+      {s.backgroundFetching && <Status pulse>{t({ ja: "バックグラウンドで記事を取得中...", en: "Fetching more articles in the background..." })}</Status>}
     </div>
   );
 }

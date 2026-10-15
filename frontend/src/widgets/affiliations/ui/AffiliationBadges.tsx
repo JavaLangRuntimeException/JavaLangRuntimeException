@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { affiliations, type AffiliationCategory } from "@/entities/affiliation";
 import { ButtonLink } from "@/components/base/buttons/button";
+import { useT } from "@/shared/lib/i18n";
 import { Dialog } from "@/shared/ui/dialog";
 import { Section } from "@/shared/ui/layout";
 import { cx } from "@/utils/cx";
@@ -35,6 +36,7 @@ function deepen(colorClass: string) {
 
 /** 所属。タグを押すと説明と公式サイトへのリンクを出す */
 export function AffiliationBadges() {
+  const t = useT();
   const [openIndex, setOpenIndex] = useState<number | null>(null);
   const open = openIndex === null ? null : affiliations[openIndex];
 
@@ -52,7 +54,7 @@ export function AffiliationBadges() {
               <h3 className="text-body-2-medium text-text-tertiary sm:pt-1.5">{categoryLabels[cat]}</h3>
               <ul className="flex flex-wrap gap-2">
                 {items.map((a) => (
-                  <li key={a.label}>
+                  <li key={a.label.ja}>
                     <button
                       type="button"
                       onClick={() => setOpenIndex(affiliations.indexOf(a))}
@@ -64,7 +66,7 @@ export function AffiliationBadges() {
                       // 白い文字が読めるよう、所属の色に黒を混ぜて少し沈める（色の見分けはそのまま）
                       style={{ backgroundColor: deepen(a.color) }}
                     >
-                      {a.label}
+                      {t(a.label)}
                     </button>
                   </li>
                 ))}
@@ -80,7 +82,7 @@ export function AffiliationBadges() {
         title={
           open && (
             <span className="flex flex-col gap-1">
-              <span>{open.label}</span>
+              <span>{t(open.label)}</span>
               <span className="text-caption-1-medium text-text-tertiary">{categoryLabels[open.category]}</span>
               <span className={cx("mt-2 block h-[3px] w-full rounded-full", open.color)} aria-hidden />
             </span>
@@ -89,12 +91,12 @@ export function AffiliationBadges() {
         footer={
           open?.href && (
             <ButtonLink href={open.href} target="_blank" rel="noopener noreferrer" variant="secondary">
-              公式サイトを見る
+              {t({ ja: "公式サイトを見る", en: "Visit official site" })}
             </ButtonLink>
           )
         }
       >
-        {open?.description && <p className="text-body-regular text-text-secondary">{open.description}</p>}
+        {open?.description && <p className="text-body-regular text-text-secondary">{t(open.description)}</p>}
       </Dialog>
     </Section>
   );

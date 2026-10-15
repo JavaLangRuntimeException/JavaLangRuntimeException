@@ -1,3 +1,5 @@
+import type { L10n } from "@/shared/lib/i18n";
+
 export type SocialLink = {
   href: string;
   imgSrc: string;
@@ -41,10 +43,19 @@ export type TaglineLine = {
 };
 
 // キャッチコピー（入り口の演出とトップのプロフィールで使う）
-export const tagline: { lines: TaglineLine[]; subtitle: string } = {
-  lines: [
-    { text: "技術を価値に、", accent: [3, 5] }, // 価値
-    { text: "好きを居場所に。", accent: [3, 6] }, // 居場所
-  ],
-  subtitle: "好きな技術を、誰かの価値と居場所に変えられる技術者へ。",
+export const tagline: L10n<{ lines: TaglineLine[]; subtitle: string }> = {
+  ja: {
+    lines: [
+      { text: "技術を価値に、", accent: [3, 5] }, // 価値
+      { text: "好きを居場所に。", accent: [3, 6] }, // 居場所
+    ],
+    subtitle: "好きな技術を、誰かの価値と居場所に変えられる技術者へ。",
+  },
+  en: {
+    lines: [
+      { text: "Tech into value,", accent: [10, 15] }, // value
+      { text: "passion into belonging.", accent: [13, 22] }, // belonging
+    ],
+    subtitle: "Becoming an engineer who turns the technology I love into value and a place to belong for others.",
+  },
 };

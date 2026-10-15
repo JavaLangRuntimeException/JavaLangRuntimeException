@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router";
+import { useT } from "@/shared/lib/i18n";
 import { DecodeReveal } from "@/shared/ui/motion";
 
 export interface NavCardItem {
@@ -10,9 +11,10 @@ export interface NavCardItem {
 
 /** 主要ページへの入口（線で区切った 2 列。画面に入ると文字が記号から順に定まり、ホバーで面が浮き、題名がアクセント色に） */
 export function NavCards({ items }: { items: NavCardItem[] }) {
+  const t = useT();
   return (
     <DecodeReveal>
-      <nav aria-label="ページ" className="grid border-y border-separator-border sm:grid-cols-2">
+      <nav aria-label={t({ ja: "ページ", en: "Pages" })} className="grid border-y border-separator-border sm:grid-cols-2">
         {items.map((item, i) => (
           <Link
             key={item.href}

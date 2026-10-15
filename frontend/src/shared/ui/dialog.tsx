@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Dialog as AriaDialog, Heading, Modal, ModalOverlay } from "react-aria-components";
 import { CloseButton } from "@/components/base/buttons/close-button";
+import { useT } from "@/shared/lib/i18n";
 import { cx } from "@/utils/cx";
 
 // モーダル（React Aria の Modal + Dialog）。フォーカスの閉じ込め・Esc・背景スクロールの停止は React Aria が行う
@@ -22,6 +23,7 @@ export function Dialog({
   /** 送信中など、外側のクリックや Esc で閉じさせたくないときは false */
   isDismissable?: boolean;
 }) {
+  const t = useT();
   return (
     <ModalOverlay
       isOpen={isOpen}
@@ -43,7 +45,7 @@ export function Dialog({
             <Heading slot="title" className="text-headline-semibold text-text-primary">
               {title}
             </Heading>
-            {isDismissable && <CloseButton onClick={() => onOpenChange(false)} aria-label="閉じる" />}
+            {isDismissable && <CloseButton onClick={() => onOpenChange(false)} aria-label={t({ ja: "閉じる", en: "Close" })} />}
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">{children}</div>
           {footer && <div className="flex justify-end gap-2 border-t border-separator-border px-6 py-4">{footer}</div>}

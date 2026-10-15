@@ -10,9 +10,10 @@ import { Textarea } from "@/components/base/textarea/textarea";
 import { inquiryApi } from "@/shared/api/clients";
 import { toApiError } from "@/shared/api/errors";
 import { CONTACT_PURPOSES } from "@/shared/config/purposes";
+import { useLocale, useT } from "@/shared/lib/i18n";
 import { contactSubmittingAtom } from "@/shared/model/nav-lock";
 import { cx } from "@/utils/cx";
-import { DEFAULT_SUBMIT_ERROR, submitErrorMessage } from "../model/errors";
+import { submitErrorMessage } from "../model/errors";
 import { addFiles, formatFileSize, type AttachedFile } from "../model/files";
 import { isContactValid, validateContact, type ContactFormData, type ContactFormErrors } from "../model/schema";
 import {
@@ -41,10 +42,20 @@ function FieldError({ children }: { children?: string }) {
 
 /** 入力の保持・利用目的・必須の案内（旧 InfoBadge の内容） */
 function FormNotes() {
+  const t = useT();
   const notes = [
-    { text: <>入力内容は10分間保持されます</> },
-    { text: <>フォームに入力いただいた内容はご相談や面談の予約確認の目的でのみ使用されます。</> },
-    { text: <><span className="text-text-error-primary">*</span> は必須項目です</> },
+    { text: <>{t({ ja: "入力内容は10分間保持されます", en: "Your input is kept for 10 minutes" })}</> },
+    {
+      text: (
+        <>
+          {t({
+            ja: "フォームに入力いただいた内容はご相談や面談の予約確認の目的でのみ使用されます。",
+            en: "The information you enter is used only to respond to your inquiry and to confirm meeting bookings.",
+          })}
+        </>
+      ),
+    },
+    { text: <><span className="text-text-error-primary">*</span> {t({ ja: "は必須項目です", en: "indicates a required field" })}</> },
   ];
   return (
     <ul className="flex flex-col gap-2">
@@ -58,6 +69,8 @@ function FormNotes() {
 }
 
 export function ContactForm({ onSuccess }: { onSuccess: () => void }) {
+  const t = useT();
+  const locale = useLocale();
   const [email, setEmail] = useAtom(contactEmailAtom);
   const [name, setName] = useAtom(contactNameAtom);
   const [organization, setOrganization] = useAtom(contactOrganizationAtom);
@@ -93,14 +106,14 @@ export function ContactForm({ onSuccess }: { onSuccess: () => void }) {
   };
 
   const onFiles = (files: File[]) => {
-    const { added, errors: errs } = addFiles(attached, files);
+    const { added, errors: errs } = addFiles(attached, files, locale);
     setFileErrors(errs);
     if (added.length > 0) setAttached((prev) => [...prev, ...added]);
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    const found = validateContact(formData);
+    const found = validateContact(formData, locale);
     setErrors(found);
     if (Object.keys(found).length > 0) return;
 
@@ -129,7 +142,7 @@ export function ContactForm({ onSuccess }: { onSuccess: () => void }) {
       onSuccess();
     } catch (err) {
       const apiError = toApiError(err);
-      setSubmitError(apiError ? submitErrorMessage(apiError.code, apiError.detail) : DEFAULT_SUBMIT_ERROR);
+      setSubmitError(submitErrorMessage(apiError?.code, apiError?.detail, locale));
     } finally {
       setIsSubmitting(false);
       setNavLocked(false);
@@ -143,7 +156,7 @@ export function ContactForm({ onSuccess }: { onSuccess: () => void }) {
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-5">
         <div className="flex flex-col gap-6 border-t border-separator-border pt-8">
           <Input
-            label="メールアドレス"
+            label={t({ ja: "メールアドレス", en: "Email" })}
             isRequired
             validationBehavior="aria"
             type="email"
@@ -157,34 +170,34 @@ export function ContactForm({ onSuccess }: { onSuccess: () => void }) {
           />
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
             <Input
-              label="名前"
+              label={t({ ja: "名前", en: "Name" })}
               isRequired
               validationBehavior="aria"
               name="name"
               value={name}
               onChange={edit("name", setName)}
-              placeholder="山田太郎"
+              placeholder={t({ ja: "山田太郎", en: "Jane Doe" })}
               isInvalid={!!errors.name}
               hint={errors.name}
               autoComplete="name"
             />
             <Input
-              label="所属 (任意)"
+              label={t({ ja: "所属 (任意)", en: "Organization (optional)" })}
               name="organization"
               value={organization}
               onChange={edit("organization", setOrganization)}
-              placeholder="株式会社○○"
+              placeholder={t({ ja: "株式会社○○", en: "Example Inc." })}
               autoComplete="organization"
             />
           </div>
           <Input
-            label="件名"
+            label={t({ ja: "件名", en: "Subject" })}
             isRequired
             validationBehavior="aria"
             name="subject"
             value={subject}
             onChange={edit("subject", setSubject)}
-            placeholder="お問い合わせの件名"
+            placeholder={t({ ja: "お問い合わせの件名", en: "Subject of your inquiry" })}
             isInvalid={!!errors.subject}
             hint={errors.subject}
           />
@@ -193,11 +206,11 @@ export function ContactForm({ onSuccess }: { onSuccess: () => void }) {
         <div className="flex flex-col gap-6 border-t border-separator-border pt-8">
           <div className="flex flex-col gap-1.5">
             <FieldLabel id={purposeLabelId} required>
-              問い合わせ要件
+              {t({ ja: "問い合わせ要件", en: "Purpose" })}
             </FieldLabel>
             <Select
               aria-labelledby={purposeLabelId}
-              placeholder="選択してください"
+              placeholder={t({ ja: "選択してください", en: "Select one" })}
               selectedKey={purpose || null}
               onSelectionChange={(key) => edit("purpose", setPurpose)(key == null ? "" : String(key))}
               isInvalid={!!errors.purpose}
@@ -205,8 +218,8 @@ export function ContactForm({ onSuccess }: { onSuccess: () => void }) {
               popoverClassName="w-[var(--trigger-width)] max-w-[calc(100vw-2rem)]"
             >
               {CONTACT_PURPOSES.map((p) => (
-                <SelectItem key={p.value} id={p.value} textValue={p.label}>
-                  <span className="whitespace-normal">{p.label}</span>
+                <SelectItem key={p.value} id={p.value} textValue={t(p.label)}>
+                  <span className="whitespace-normal">{t(p.label)}</span>
                 </SelectItem>
               ))}
             </Select>
@@ -223,34 +236,34 @@ export function ContactForm({ onSuccess }: { onSuccess: () => void }) {
                 name="eventId"
                 value={eventId}
                 onChange={edit("eventId", setEventId)}
-                placeholder="例: abcdefghij0123456789klmn"
+                placeholder={t({ ja: "例: abcdefghij0123456789klmn", en: "e.g. abcdefghij0123456789klmn" })}
                 isInvalid={!!errors.eventId}
               />
               <p className="text-caption-1-regular text-text-secondary">
-                面談予約完了の際に表示されたEventIDを入力してください。
+                {t({ ja: "面談予約完了の際に表示されたEventIDを入力してください。", en: "Enter the EventID shown when your meeting booking was completed." })}
                 <br />
-                （招待されたGoogleカレンダーやメールにも記載されています）
+                {t({ ja: "（招待されたGoogleカレンダーやメールにも記載されています）", en: "(It is also included in the Google Calendar invitation and the email.)" })}
               </p>
               <FieldError>{errors.eventId}</FieldError>
             </div>
           )}
 
           <Textarea
-            label="本文"
+            label={t({ ja: "本文", en: "Message" })}
             isRequired
             validationBehavior="aria"
             name="message"
             rows={6}
             value={message}
             onChange={edit("message", setMessage)}
-            placeholder="お問い合わせ内容を詳しくお書きください"
+            placeholder={t({ ja: "お問い合わせ内容を詳しくお書きください", en: "Please describe your inquiry in detail" })}
             isInvalid={!!errors.message}
             hint={errors.message}
           />
         </div>
 
         <div className="flex flex-col gap-4 border-t border-separator-border pt-8">
-          <FieldLabel>ファイル添付 (任意)</FieldLabel>
+          <FieldLabel>{t({ ja: "ファイル添付 (任意)", en: "Attachments (optional)" })}</FieldLabel>
           <DropZone
             onDrop={async (e) => {
               const files = await Promise.all(
@@ -267,7 +280,7 @@ export function ContactForm({ onSuccess }: { onSuccess: () => void }) {
           >
             <FileTrigger allowsMultiple onSelect={(list) => list && onFiles(Array.from(list))}>
               <Button type="button" variant="secondary" size="small">
-                ファイルを選択
+                {t({ ja: "ファイルを選択", en: "Choose files" })}
               </Button>
             </FileTrigger>
           </DropZone>
@@ -284,7 +297,7 @@ export function ContactForm({ onSuccess }: { onSuccess: () => void }) {
 
           {attached.length > 0 && (
             <div className="flex flex-col gap-2">
-              <p className="text-body-2-medium text-text-primary">添付ファイル:</p>
+              <p className="text-body-2-medium text-text-primary">{t({ ja: "添付ファイル:", en: "Attached files:" })}</p>
               <ul className="flex flex-col gap-2">
                 {attached.map(({ file, id }) => (
                   <li key={id} className="flex items-center justify-between gap-3 rounded-xl border border-separator-border px-3 py-2">
@@ -300,7 +313,7 @@ export function ContactForm({ onSuccess }: { onSuccess: () => void }) {
                       size="small"
                       iconOnly
                       leadingIcon={RiCloseLine}
-                      aria-label={`${file.name} を削除`}
+                      aria-label={t({ ja: `${file.name} を削除`, en: `Remove ${file.name}` })}
                       onClick={() => {
                         setAttached((prev) => prev.filter((a) => a.id !== id));
                         setFileErrors([]);
@@ -321,11 +334,15 @@ export function ContactForm({ onSuccess }: { onSuccess: () => void }) {
 
         <div className="flex flex-col items-center gap-3">
           <Button type="submit" variant="primary" disabled={submitDisabled} className="min-w-40">
-            {isSubmitting ? "送信中..." : "送信する"}
+            {isSubmitting ? t({ ja: "送信中...", en: "Sending..." }) : t({ ja: "送信する", en: "Send" })}
           </Button>
           {submitDisabled && !isSubmitting && (
             <p className="text-body-2-regular text-text-error-primary">
-              {!valid ? "必須項目を正しく入力してください" : fileErrors.length > 0 ? "ファイルエラーを修正してください" : ""}
+              {!valid
+                ? t({ ja: "必須項目を正しく入力してください", en: "Please fill in the required fields correctly" })
+                : fileErrors.length > 0
+                  ? t({ ja: "ファイルエラーを修正してください", en: "Please fix the file errors" })
+                  : ""}
             </p>
           )}
         </div>
@@ -334,8 +351,8 @@ export function ContactForm({ onSuccess }: { onSuccess: () => void }) {
       {/* 送信中 */}
       <TerminalLoadingDialog
         isOpen={isSubmitting}
-        title="お問い合わせを送信中"
-        message="お問い合わせを送信しています…"
+        title={t({ ja: "お問い合わせを送信中", en: "Sending your inquiry" })}
+        message={t({ ja: "お問い合わせを送信しています…", en: "Sending your inquiry…" })}
        
         variant="contact"
       />

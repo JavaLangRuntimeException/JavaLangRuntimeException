@@ -1,3 +1,5 @@
+import type { Locale } from "@/shared/lib/i18n";
+
 // 勤務場所の定義（色・漢字1文字・ラベル）
 // 各ページで使用: /location, /reserve (WeekGrid), /admin
 
@@ -41,6 +43,30 @@ export const DEFAULT_LOCATION_STYLE: LocationStyle = {
 
 /** admin用: 場所名の配列 */
 export const LOCATION_OPTIONS = Object.keys(LOCATION_STYLES);
+
+// 場所名（API・管理画面では日本語の名前をそのままキーにする）の英語表記
+const LOCATION_NAMES_EN: Record<string, string> = {
+  "滋賀県草津市": "Kusatsu, Shiga",
+  "滋賀県（草津市以外）": "Shiga (outside Kusatsu)",
+  "京都府京都市": "Kyoto City, Kyoto",
+  "京都府（京都市以外）": "Kyoto (outside Kyoto City)",
+  "大阪府大阪市": "Osaka City, Osaka",
+  "大阪府茨木市": "Ibaraki, Osaka",
+  "大阪府（大阪市・茨木市以外）": "Osaka (outside Osaka City and Ibaraki)",
+  "東京都渋谷区": "Shibuya, Tokyo",
+  "東京都（渋谷区以外）": "Tokyo (outside Shibuya)",
+  "愛知県名古屋市": "Nagoya, Aichi",
+  "愛知県（名古屋市以外）": "Aichi (outside Nagoya)",
+  "岐阜県": "Gifu",
+  "リモート": "Remote",
+  [PENDING_LOCATION_NAME]: "TBD (please contact me)",
+  [UNAVAILABLE_LOCATION_NAME]: "Unavailable / day off",
+};
+
+/** 画面に出す場所名（英語表記がない名前はそのまま） */
+export function locationName(location: string, locale: Locale): string {
+  return locale === "en" ? (LOCATION_NAMES_EN[location] ?? location) : location;
+}
 
 export function getLocationStyle(location: string): LocationStyle {
   return LOCATION_STYLES[location] || DEFAULT_LOCATION_STYLE;

@@ -17,5 +17,6 @@ describe("work-location calendar", () => {
   });
   it("日付の表示", () => {
     expect(formatDateLabel("2026-10-06")).toBe("10/6（火）");
+    expect(formatDateLabel("2026-10-06", "en")).toBe("10/6 (Tue)");
   });
 });

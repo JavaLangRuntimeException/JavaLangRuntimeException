@@ -1,7 +1,8 @@
 import { Fragment, useMemo } from "react";
 import { getLocationStyle } from "@/entities/work-location";
 import { CELL_LABEL, cellState, formatDateKey, isDateLimited, isDateUnavailable, oneMonthAfter, type BusinessHours, type CellState } from "@/entities/slot";
-import { getMonday, pad, weekdayName, type BusyInterval } from "@/shared/lib/busy";
+import { getMonday, pad, weekdayLabel, type BusyInterval } from "@/shared/lib/busy";
+import { useLocale, useT } from "@/shared/lib/i18n";
 import { cx } from "@/utils/cx";
 
 // 9:00〜22:30 の 30 分ごとの行（旧実装と同じく営業時間に関係なく 28 行）
@@ -36,6 +37,8 @@ export function WeekGrid({
   businessHours: BusinessHours;
   locations: Record<string, string>;
 }) {
+  const locale = useLocale();
+  const t = useT();
   const now = useMemo(() => new Date(), []);
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const ctx = { now, oneMonthLater: oneMonthAfter(now), hours: businessHours, locations, busy };
@@ -66,7 +69,7 @@ export function WeekGrid({
                       : "bg-background-secondary-default text-text-secondary",
               )}
             >
-              <span>{`${d.getMonth() + 1}/${d.getDate()}(${weekdayName(d)})`}</span>
+              <span>{`${d.getMonth() + 1}/${d.getDate()}(${weekdayLabel(d, locale)})`}</span>
               {/* 勤務場所の色分けはデータの区別色 */}
               {locStyle && <span className={cx("text-caption-2-bold leading-tight", locStyle.text)}>{locStyle.label}</span>}
             </div>
@@ -86,7 +89,7 @@ export function WeekGrid({
                 <button
                   type="button"
                   key={`${d.toDateString()}-${hour}-${min}`}
-                  aria-label={`${d.getMonth() + 1}/${d.getDate()}(${weekdayName(d)}) ${pad(hour)}:${pad(min)} ${CELL_LABEL[state]}`}
+                  aria-label={`${d.getMonth() + 1}/${d.getDate()}(${weekdayLabel(d, locale)}) ${pad(hour)}:${pad(min)} ${t(CELL_LABEL[state])}`}
                   aria-pressed={state === "selected"}
                   className={cx(
                     "border-s border-t border-border-table px-1 py-1.5 text-center text-caption-1-medium transition-colors",
@@ -96,7 +99,7 @@ export function WeekGrid({
                   disabled={disabled}
                   onClick={() => !disabled && onSelectSlot(cellStart, cellEnd)}
                 >
-                  {CELL_LABEL[state]}
+                  {t(CELL_LABEL[state])}
                 </button>
               );
             })}
