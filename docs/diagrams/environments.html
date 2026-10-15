@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="_shared.css" />
+<style>
+  .cols { display: flex; gap: 14px; align-items: stretch; }
+  .col { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+  .col.narrow { flex: 0 0 200px; }
+  .col.wide { flex: 1.15; }
+  .trigger .card { flex-direction: column; align-items: flex-start; min-height: 88px; }
+  .argo-box {
+    background: #eef3fb;
+    border-radius: 22px;
+    padding: 16px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .argo-box .hero {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 4px;
+  }
+  .argo-box .hero img { width: 44px; height: 44px; }
+  .argo-box .hero .name { font-size: 22px; font-weight: 700; }
+  .argo-box .body { font-size: 13px; font-weight: 500; color: #5c6b84; line-height: 1.55; }
+  .env-stack { display: flex; flex-direction: column; gap: 10px; flex: 1; }
+  .env-card {
+    border-radius: 16px;
+    border: 1px solid #e6e9f0;
+    box-shadow: 0 8px 18px rgba(28, 43, 69, 0.06);
+    padding: 14px 16px;
+    background: #fff;
+  }
+  .env-card.stg { background: #f3f4f6; }
+  .env-card.dev { background: #eef3fb; }
+  .env-card .title { font-size: 18px; font-weight: 700; }
+  .env-card .meta { font-size: 13px; font-weight: 500; color: #5c6b84; margin-top: 4px; }
+  .env-card .tags { margin-top: 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+  .env-card .tags img { width: 18px; height: 18px; }
+  .dev-grid { display: flex; gap: 8px; margin-top: 10px; }
+  .dev-chip {
+    flex: 1;
+    text-align: center;
+    background: #fff;
+    border: 1px solid #d4e0f2;
+    border-radius: 12px;
+    padding: 10px 6px;
+    font-size: 15px;
+    font-weight: 700;
+  }
+  .rollouts-box {
+    background: #ffe566;
+    border-radius: 22px;
+    padding: 16px;
+    flex: 1;
+  }
+  .dashed-link {
+    border-left: 2px dashed #b8c4d6;
+    margin-left: 8px;
+    padding-left: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #8b97ab;
+  }
+  .footer-row { display: flex; justify-content: space-between; align-items: baseline; margin-top: 14px; gap: 16px; }
+  .footer-row .footnote { margin: 0; text-align: left; flex: 1; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="cols">
+    <div class="col narrow trigger">
+      <div class="glabel">きっかけ</div>
+      <div class="card">
+        <div class="name">タグ v*</div>
+        <div class="sub">stg で確かめたコミットに付ける</div>
+      </div>
+      <div class="card">
+        <div class="name">main にマージ</div>
+      </div>
+      <div class="card">
+        <div class="name">PR に push</div>
+        <div class="sub">空いている dev を自動で選ぶ</div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="glabel">Git に合わせる</div>
+      <div class="argo-box">
+        <div class="hero">
+          <img src="icons/argo.svg" alt="" />
+          <div class="name">Argo CD</div>
+        </div>
+        <div class="body">
+          環境ごとのアプリ taramanji-prod、taramanji-stg、taramanji-dev01〜03<br />
+          cd が Git に書いた版にクラスターを合わせる
+        </div>
+      </div>
+    </div>
+    <div class="col wide">
+      <div class="glabel"><img src="icons/k8s.svg" alt="" /> Mac mini の kind / namespace</div>
+      <div class="env-stack">
+        <div class="env-card">
+          <div class="title">本番</div>
+          <div class="meta">namespace: taramanji</div>
+          <div class="tags">
+            <span class="tag">カナリア 10% → 100%</span>
+            <span class="tag plain">公開</span>
+            <img src="icons/datadog.svg" alt="" />
+            <span class="tag plain">Datadog で見張る</span>
+          </div>
+        </div>
+        <div class="env-card stg">
+          <div class="title">stg</div>
+          <div class="meta">namespace: taramanji-stg ・ main の最新</div>
+          <div class="tags">
+            <img src="icons/cloudflare.svg" alt="" />
+            <span class="tag plain">Access : 管理者だけ</span>
+            <span class="tag plain">タイトルに [STG]</span>
+          </div>
+        </div>
+        <div class="env-card dev">
+          <div class="title">dev01〜03</div>
+          <div class="meta">PR が入っている dev、なければ一番前に使われた dev</div>
+          <div class="dev-grid">
+            <div class="dev-chip">dev01</div>
+            <div class="dev-chip">dev02</div>
+            <div class="dev-chip">dev03</div>
+          </div>
+          <div class="tags">
+            <img src="icons/cloudflare.svg" alt="" />
+            <span class="tag plain">Access : 管理者だけ</span>
+            <span class="tag plain">タイトルに [DEV01] など</span>
+            <span class="tag plain">PR にコメントで知らせる</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="glabel">見る・操作する</div>
+      <div class="rollouts-box">
+        <div class="hero" style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+          <img src="icons/argo.svg" alt="" style="width:44px;height:44px;" />
+          <div class="name" style="font-size:22px;font-weight:700;">Argo Rollouts</div>
+        </div>
+        <div class="body" style="font-size:13px;font-weight:500;color:#5c6b84;line-height:1.55;">
+          名前空間を切り替えて各環境の入れ替えを見る<br />
+          本番のカナリアを Promote / Abort
+        </div>
+        <div class="dashed-link" style="margin-top:12px;">← 各環境の Rollout</div>
+      </div>
+    </div>
+  </div>
+  <div class="footer-row">
+    <div class="footnote">PR → dev01〜03、マージ → stg、タグ → 本番</div>
+    <div class="footnote small">Argo CD の画面は port-forward で開く（外には出していない）</div>
+  </div>
+</div>
+</body>
+</html>

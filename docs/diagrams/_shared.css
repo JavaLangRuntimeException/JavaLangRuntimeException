@@ -1,0 +1,124 @@
+* { box-sizing: border-box; }
+html, body { margin: 0; background: #fff; }
+body {
+  font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", sans-serif;
+  color: #1c2b45;
+}
+.page {
+  padding: 26px 28px 22px;
+  display: inline-block;
+  width: max-content;
+  max-width: none;
+}
+
+.group {
+  border-radius: 22px;
+  padding: 14px 16px 16px;
+  position: relative;
+}
+.glabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #243656;
+  margin: 0 4px 12px;
+}
+.glabel img { width: 22px; height: 22px; }
+
+.card {
+  background: #fff;
+  border: 1px solid #e6e9f0;
+  border-radius: 16px;
+  box-shadow: 0 8px 18px rgba(28, 43, 69, 0.06);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  min-height: 72px;
+}
+.card img.logo { width: 36px; height: 36px; flex: 0 0 auto; object-fit: contain; }
+.card .name { font-size: 18px; font-weight: 700; line-height: 1.25; }
+.card .sub { font-size: 13px; font-weight: 500; color: #5c6b84; margin-top: 2px; }
+.card.stack { flex-direction: column; align-items: flex-start; justify-content: center; }
+.card.stack .name { white-space: nowrap; }
+
+.card.accent-yellow { background: #fff6d4; border-color: #f0e2a8; }
+.card.accent-blue { background: #eef3fb; border-color: #d4e0f2; }
+.card.accent-gray { background: #f3f4f6; border-color: #e2e5ea; }
+.card.dark {
+  background: #1c2b45;
+  border-color: #1c2b45;
+  color: #fff;
+}
+.card.dark .sub { color: #c5d0e0; }
+
+.arrow-h {
+  color: #8b97ab;
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+  flex: 0 0 auto;
+}
+.flow { display: flex; align-items: center; gap: 10px; }
+.flow .card { flex: 1; min-width: 0; }
+
+.footnote {
+  margin-top: 14px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #1c2b45;
+  text-align: center;
+}
+.footnote.small {
+  font-size: 13px;
+  font-weight: 600;
+  color: #5c6b84;
+  margin-top: 8px;
+}
+
+.tag {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 8px;
+  background: #fff6d4;
+  border: 1px solid #f0e2a8;
+  color: #243656;
+  margin: 2px 4px 2px 0;
+}
+.tag.plain {
+  background: #fff;
+  border-color: #e6e9f0;
+}
+
+.note-top {
+  font-size: 13px;
+  font-weight: 600;
+  color: #5c6b84;
+  margin: 0 4px 12px;
+}
+
+.layer {
+  border-radius: 16px;
+  box-shadow: 0 8px 18px rgba(28, 43, 69, 0.06);
+  padding: 18px 20px;
+  text-align: center;
+  min-width: 140px;
+}
+.layer .name { font-size: 20px; font-weight: 700; }
+.layer .sub { font-size: 13px; font-weight: 500; color: #5c6b84; margin-top: 6px; }
+.layer.white { background: #fff; border: 1px solid #e6e9f0; }
+.layer.pale-yellow { background: #fff6d4; border: 1px solid #f0e2a8; }
+.layer.bright-yellow { background: #ffe566; border: 1px solid #f0d84a; }
+.layer.gray { background: #f3f4f6; border: 1px solid #e2e5ea; }
+.layer.blue { background: #eef3fb; border: 1px solid #d4e0f2; }
+.layer.dark {
+  background: #1c2b45;
+  border: 1px solid #1c2b45;
+  color: #fff;
+}
+.layer.dark .sub { color: #c5d0e0; }
+.layer.soft { background: #f7f8fb; border: 1px solid #e6e9f0; }
