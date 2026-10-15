@@ -31,20 +31,12 @@ const serviceName = "reservation"
 
 var webcal = regexp.MustCompile(`(?i)^webcal://`)
 
-// icalSources は ICAL_URLS（カンマ区切り）か ICAL_URL_1〜19 から iCal の URL を集める（旧実装と同じ）
+// icalSources は ICAL_URLS（カンマ区切り）から iCal の URL を集める
 func icalSources() []gateway.IcalSource {
 	var urls []string
-	if csv := strings.TrimSpace(os.Getenv("ICAL_URLS")); csv != "" {
-		for _, u := range strings.Split(csv, ",") {
-			if u = strings.TrimSpace(u); u != "" {
-				urls = append(urls, u)
-			}
-		}
-	} else {
-		for i := 1; i <= 19; i++ {
-			if v := strings.TrimSpace(os.Getenv(fmt.Sprintf("ICAL_URL_%d", i))); v != "" {
-				urls = append(urls, v)
-			}
+	for _, u := range strings.Split(os.Getenv("ICAL_URLS"), ",") {
+		if u = strings.TrimSpace(u); u != "" {
+			urls = append(urls, u)
 		}
 	}
 	var out []gateway.IcalSource

@@ -73,7 +73,7 @@ func code(err error) string {
 	return ""
 }
 
-// 件名は GAS ウェブフックで送っていたころと同じ（相手に届く文面を変えない）
+// 件名は相手に届く文面を変えない
 func TestCreateUsesGuestTexts(t *testing.T) {
 	cal := &fakeCalendar{name: "google_calendar"}
 	out, err := newUC(cal, fakeLocations{}).CreateReservation(context.Background(), input(7))

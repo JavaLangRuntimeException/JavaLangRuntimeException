@@ -39,7 +39,7 @@ MONITORS = [
         "type": "query alert",
         "query": "percentile(last_15m):p95:trace.http.server.request{env:prod AND service IN "
                  "(identity,inquiry,reservation,worklocation,content,analytics)} by {service} > 3",
-        "message": msg("{{service.name}} の p95 が {{value}} 秒です（外部 API の遅れ・GAS の応答を確認）。"),
+        "message": msg("{{service.name}} の p95 が {{value}} 秒です（外部 API の遅れを確認）。"),
         "options": {"thresholds": {"critical": 3, "warning": 1.5}, "require_full_window": False},
     },
     {
@@ -105,7 +105,7 @@ MONITORS = [
         "name": "[taramanji] 予約の作成に失敗している",
         "type": "query alert",
         "query": "sum(last_1h):sum:reservation.created{status:failed}.as_count() >= 2",
-        "message": msg("予約の作成が 1 時間で {{value}} 回失敗しました（GAS ウェブフックの応答・reason タグを確認）。"),
+        "message": msg("予約の作成が 1 時間で {{value}} 回失敗しました（Calendar API の応答・reason タグを確認）。"),
         "options": {"thresholds": {"critical": 2}, "notify_no_data": False},
     },
     {

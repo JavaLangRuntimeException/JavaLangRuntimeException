@@ -172,7 +172,7 @@ def dashboard():
                 ts("外部 API のレイテンシ（content: Qiita / connpass / ORCID / OGP, ms）",
                    ["avg:content.external.duration.avg{*} by {source}", "max:content.external.duration.95percentile{*} by {source}"]),
                 ts("外部 API の失敗（content）", ["sum:content.external.requests{status:error} by {source}.as_count()"], "bars"),
-                ts("予約の外部呼び出し（GAS / Google Calendar, ms）",
+                ts("予約の外部呼び出し（Google Calendar, ms）",
                    ["avg:reservation.calendar.latency.avg{*} by {via,op}", "max:reservation.calendar.latency.95percentile{*} by {via,op}"]),
                 ts("iCal の取得（ms）", ["max:reservation.ical.latency.95percentile{*} by {source,status}"]),
             ], "vivid_orange"),
