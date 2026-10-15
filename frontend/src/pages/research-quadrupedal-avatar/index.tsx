@@ -79,7 +79,7 @@ export default function ResearchQuadrupedalAvatarPage() {
 
       <div className="mb-8">
         <Figure
-          src={`${ASSETS}/teaser.jpg`}
+          src={`${ASSETS}/teaser-v4.jpg`}
           width={2116}
           height={600}
           alt="Four photographs of a participant wearing a head-mounted display and holding two controllers, labeled Quad-Rowing, Quad-Swinging, Stand-Rowing, and Stand-Swinging. In the two Quad panels the participant kneels in a lowered posture; in the two Stand panels the participant stands upright. Red arrows trace the motion of each hand."
@@ -103,7 +103,7 @@ export default function ResearchQuadrupedalAvatarPage() {
         </p>
       </Section>
 
-      <Section title="Hand-Gesture Quadrupedal Locomotion">
+      <Section animateContent={false} title="Hand-Gesture Quadrupedal Locomotion">
         <div className="grid gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] md:items-start">
           <div className="flex flex-col gap-4">
             <p className="prose-ja">
@@ -139,7 +139,7 @@ export default function ResearchQuadrupedalAvatarPage() {
         </p>
       </Section>
 
-      <Section title="User Study" description="A within-subjects experiment with 24 participants crossing two postures with two gestures.">
+      <Section animateContent={false} title="User Study" description="A within-subjects experiment with 24 participants crossing two postures with two gestures.">
         <dl className="grid gap-x-8 sm:grid-cols-2">
           {CONDITIONS.map((c) => (
             <div key={c.code} className="flex gap-4 border-t border-separator-border py-3">
@@ -171,7 +171,7 @@ export default function ResearchQuadrupedalAvatarPage() {
         />
       </Section>
 
-      <Section title="Results">
+      <Section animateContent={false} title="Results">
         <ul className="flex flex-col gap-2 ps-5 marker:text-text-tertiary [list-style:disc]">
           <li className="prose-ja">Both the pseudo-quadrupedal posture and Rowing enhance body ownership and agency, with no detectable interaction.</li>
           <li className="prose-ja">Quad-Rowing shifted self-perception of speed, weight, and strength toward the bear, and was most often described as “feeling like a bear.”</li>
