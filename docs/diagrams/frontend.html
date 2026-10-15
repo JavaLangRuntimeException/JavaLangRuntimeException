@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<link rel="stylesheet" href="_shared.css" />
+<style>
+  .page { width: 1180px; }
+  .fsd { display: flex; align-items: stretch; gap: 10px; }
+  .fsd .layer { flex: 1; min-height: 100px; display: flex; flex-direction: column; justify-content: center; }
+  .lower { display: flex; align-items: flex-start; margin-top: 20px; gap: 10px; }
+  .lower .nginx { flex: 0 0 calc((100% - 50px) / 6 * 2 + 10px); }
+  .lower .spacer { flex: 1; }
+  .lower .backend { flex: 0 0 calc((100% - 50px) / 6); display: flex; flex-direction: column; align-items: center; }
+  .lower .backend .layer { width: 100%; min-height: 88px; }
+  .arrow-down { font-size: 28px; font-weight: 700; color: #8b97ab; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="fsd">
+    <div class="layer dark"><div class="name">app</div><div class="sub">ルーター</div></div>
+    <div class="arrow-h">→</div>
+    <div class="layer soft"><div class="name">pages</div><div class="sub">URL ごとの画面</div></div>
+    <div class="arrow-h">→</div>
+    <div class="layer soft"><div class="name">widgets</div><div class="sub">画面の部品</div></div>
+    <div class="arrow-h">→</div>
+    <div class="layer pale-yellow"><div class="name">features</div><div class="sub">予約など</div></div>
+    <div class="arrow-h">→</div>
+    <div class="layer pale-yellow"><div class="name">entities</div><div class="sub">記事・勤務場所</div></div>
+    <div class="arrow-h">→</div>
+    <div class="layer bright-yellow"><div class="name">shared</div><div class="sub">API・UI・設定</div></div>
+  </div>
+  <div class="lower">
+    <div class="nginx">
+      <div class="layer gray">
+        <div class="name">nginx のコンテナ</div>
+        <div class="sub">ビルドした静的ファイルを配る</div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+    <div class="backend">
+      <div class="arrow-down">↓</div>
+      <div class="layer dark">
+        <div class="name">Envoy Gateway → backend</div>
+        <div class="sub">connect-es（HTTP）</div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
