@@ -1,0 +1,29 @@
+# 外形監視（kind の外＝Cloudflare で動く）。1 分ごとに taramanji.com などを見て、
+# 落ちた・戻ったときに予約のメールと同じ SES（noreply@taramanji.com）から自分にメールする。
+# Datadog のモニターの通知（webhook）もここで受けてメールにする。
+# 入れ方は deploy/cloudflare/uptime/README.md
+name = "taramanji-uptime"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+account_id = "f952fdc8cd122331a587b1ff4fdac99d"
+
+[triggers]
+crons = ["* * * * *"]
+
+# 落ちている / 動いているの状態（変わったときだけ書く。無料枠の書き込み 1,000 回/日に収まる）
+[[kv_namespaces]]
+binding = "STATE"
+id = "REPLACE_WITH_KV_ID"
+
+[vars]
+AWS_REGION = "ap-northeast-1"
+FROM_EMAIL = "noreply@taramanji.com"
+NOTIFY_EMAIL = "shuta.tanahashi@taramanji.com"
+# 見る URL（5xx・つながらない・10 秒で返らない を失敗とする。3xx/4xx は動いている扱い）
+TARGETS = "https://taramanji.com/,https://gws.taramanji.com/admin"
+# 何回（分）続けて失敗したら知らせるか（一瞬の揺れでは送らない）
+FAIL_THRESHOLD = "2"
+
+# secrets（wrangler secret put で入れる。git には入れない）
+#   AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY: notification と同じ SES の送信用キー
+#   WEBHOOK_TOKEN: Datadog の webhook が付けるヘッダー X-Webhook-Token の値

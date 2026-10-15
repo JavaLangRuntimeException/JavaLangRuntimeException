@@ -4,6 +4,8 @@ Datadog のモニターと SLO を作る / 更新する（名前が同じもの�
 
   python3 deploy/k8s/observability/monitors.py            # 通知先なし（状態だけ変わる）
   NOTIFY="@slack-xxx" python3 deploy/k8s/observability/monitors.py   # 通知先を付ける
+  NOTIFY="@webhook-taramanji-mail" python3 deploy/k8s/observability/monitors.py
+      # 予約のメールと同じ SES から自分にメールする（Cloudflare Worker 経由。deploy/cloudflare/uptime/README.md）
 
 実務でよく置くもの: 入口の 5xx 率・レイテンシ悪化・Pod の CrashLoop/準備不足・依存先（Redis・トンネル）・業務の失敗、
 それとサイトの可用性 SLO（Envoy の 5xx 以外の割合）。
@@ -60,6 +62,16 @@ MONITORS = [
         "query": "min(last_5m):sum:cloudflared.cloudflared_tunnel_ha_connections{kube_cluster_name:taramanji-kind} < 4",
         "message": msg("トンネルの接続数が {{value}} です（正常は 8: 2 Pod × 4 本）。0 ならサイトが見えません。"),
         "options": {"thresholds": {"critical": 4, "warning": 6}, "notify_no_data": True, "no_data_timeframe": 10},
+    },
+    {
+        # kind は本番・stg・dev01〜03 で同じ OrbStack の VM のメモリを分け合う。尽きるとカーネルが全 Pod をまとめて
+        # kill し、再起動の繰り返しから戻れなくなる（2026-10-14 の障害）。落ちる前に気づくためのもの
+        "name": "[taramanji] kind の VM のメモリが残り少ない",
+        "type": "query alert",
+        "query": f"avg(last_5m):min:system.mem.pct_usable{{{CLUSTER}}} < 0.15",
+        "message": msg("OrbStack の VM で使えるメモリが {{value}}（割合）です。dev01〜03 が動いたままでないか、"
+                       "kubectl top pods -A と orb config show の memory_mib を確認してください。"),
+        "options": {"thresholds": {"critical": 0.15, "warning": 0.25}, "notify_no_data": False},
     },
     {
         "name": "[taramanji] Redis のメモリが上限に近い",
