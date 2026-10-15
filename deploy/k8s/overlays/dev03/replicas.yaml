@@ -1,0 +1,5 @@
+# 台数（1 = 動かす / 0 = 止める）。scripts/set-dev-replicas.sh が書き換える
+# PR を出すと 1 に（cd の deploy-dev）、その PR を閉じると 0 に戻る（dev-park.yml）
+- op: replace
+  path: /spec/replicas
+  value: 0

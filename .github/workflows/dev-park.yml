@@ -1,0 +1,33 @@
+# dev-park: main への PR を閉じたら（マージ・クローズとも）、その PR が入っている dev01〜03 を 0 台にして止める。
+# dev は kind で本番と同じ VM のメモリを分け合うので、使っていない dev を動かしっぱなしにしない。
+# 次にその devN に PR を出すと、cd の deploy-dev が 1 台に戻す
+name: dev-park
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  park:
+    # フォークからの PR は dev に出さないので、止めるものもない
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    # cd の deploy ジョブと同じ順番待ち（同時に main を書き換えない）
+    concurrency:
+      group: deploy-manifests
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0   # どの devN に入っているかを、過去の deploy(devNN) コミットから決める
+      - name: Park
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: deploy/k8s/scripts/park-dev.sh "$PR_URL"

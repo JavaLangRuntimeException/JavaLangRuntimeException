@@ -139,6 +139,8 @@ jobs:
           echo "env=$env" >> "$GITHUB_OUTPUT"
           # 前にその devN を使っていた PR の版を残さないよう、まず stg（main の最新）にそろえる
           deploy/k8s/scripts/copy-versions.sh stg "$env"
+          # PR を閉じて止めていた（0 台の）devN なら動かす
+          deploy/k8s/scripts/set-dev-replicas.sh "$env" 1
           # shellcheck disable=SC2086
           deploy/k8s/scripts/bump-and-push.sh "$env" "$TAG" "$SOURCE" $services
           echo "### $env に出しました: https://$env.taramanji.com（$services）" >> "$GITHUB_STEP_SUMMARY"
