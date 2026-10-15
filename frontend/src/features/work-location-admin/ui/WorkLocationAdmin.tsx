@@ -2,15 +2,16 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/base/buttons/button";
 import { Checkbox } from "@/components/base/checkbox/checkbox";
 import { Input } from "@/components/base/input/input";
-import { LOCATION_OPTIONS } from "@/entities/work-location";
+import { LOCATION_OPTIONS, locationName } from "@/entities/work-location";
 import { workLocationApi } from "@/shared/api/clients";
-import { WEEKDAYS } from "@/shared/lib/busy";
+import { weekdayLabel } from "@/shared/lib/busy";
+import { useLocale, useT, type L10n } from "@/shared/lib/i18n";
 import { cx } from "@/utils/cx";
 import { AdminNotice, AdminPanel } from "@/shared/ui/admin";
 import { LocationSelect } from "./LocationSelect";
 
 type LocationMap = Record<string, string>;
-type Result = { ok: boolean; message: string };
+type Result = { ok: boolean; message: L10n };
 
 /**
  * 勤務場所の登録・変更・削除。行をドラッグすると複数日をまとめて選べ、選んだ日を一括で変更できる。
@@ -25,6 +26,8 @@ export function WorkLocationAdmin() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkLocation, setBulkLocation] = useState<string>(LOCATION_OPTIONS[0]);
   const [bulkSaving, setBulkSaving] = useState(false);
+  const t = useT();
+  const locale = useLocale();
 
   // ドラッグで選択
   const isDragging = useRef(false);
@@ -90,16 +93,16 @@ export function WorkLocationAdmin() {
 
   const saveLocation = async () => {
     if (!date || !value) {
-      setResult({ ok: false, message: "日付と場所を選択してください" });
+      setResult({ ok: false, message: { ja: "日付と場所を選択してください", en: "Please choose a date and a location." } });
       return;
     }
     try {
       await workLocationApi.setWorkLocations({ dates: [date], location: value });
-      setResult({ ok: true, message: "保存しました" });
+      setResult({ ok: true, message: { ja: "保存しました", en: "Saved." } });
       setDate("");
       void fetchLocations();
     } catch {
-      setResult({ ok: false, message: "保存に失敗しました" });
+      setResult({ ok: false, message: { ja: "保存に失敗しました", en: "Failed to save." } });
     }
   };
 
@@ -126,11 +129,15 @@ export function WorkLocationAdmin() {
     setBulkSaving(true);
     try {
       await workLocationApi.setWorkLocations({ dates: Array.from(selected), location: bulkLocation });
-      setResult({ ok: true, message: `${selected.size}件を「${bulkLocation}」に変更しました` });
+      setResult({ ok: true, message: {
+          ja: `${selected.size}件を「${bulkLocation}」に変更しました`,
+          en: `Changed ${selected.size} ${selected.size === 1 ? "day" : "days"} to “${locationName(bulkLocation, "en")}”.`,
+        },
+      });
       setSelected(new Set());
       void fetchLocations();
     } catch {
-      setResult({ ok: false, message: "一括変更に失敗しました" });
+      setResult({ ok: false, message: { ja: "一括変更に失敗しました", en: "Bulk update failed." } });
     } finally {
       setBulkSaving(false);
     }
@@ -141,20 +148,20 @@ export function WorkLocationAdmin() {
 
   return (
     <div className="flex flex-col gap-6">
-      <AdminPanel title="勤務場所を登録">
+      <AdminPanel title={t({ ja: "勤務場所を登録", en: "Register work location" })}>
         {result && (
           <div className="mb-4">
-            <AdminNotice ok={result.ok}>{result.message}</AdminNotice>
+            <AdminNotice ok={result.ok}>{t(result.message)}</AdminNotice>
           </div>
         )}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-          <Input label="日付" type="date" value={date} onChange={setDate} className="flex-1" inputDir="ltr" {...{ min: today }} />
+          <Input label={t({ ja: "日付", en: "Date" })} type="date" value={date} onChange={setDate} className="flex-1" inputDir="ltr" {...{ min: today }} />
           <div className="flex flex-1 flex-col gap-1.5">
-            <span className="text-body-2-medium text-text-secondary">勤務場所</span>
-            <LocationSelect label="勤務場所" value={value} onChange={setValue} />
+            <span className="text-body-2-medium text-text-secondary">{t({ ja: "勤務場所", en: "Work location" })}</span>
+            <LocationSelect label={t({ ja: "勤務場所", en: "Work location" })} value={value} onChange={setValue} />
           </div>
           <Button variant="primary" onClick={saveLocation} disabled={!date}>
-            保存
+            {t({ ja: "保存", en: "Save" })}
           </Button>
         </div>
       </AdminPanel>
@@ -162,20 +169,22 @@ export function WorkLocationAdmin() {
       <AdminPanel
         title={
           <>
-            登録済み勤務場所 ({dates.length} 件)
-            {selected.size > 0 && <span className="ms-2 text-body-2-medium text-accent-300">（{selected.size}件選択中）</span>}
+            {t({ ja: `登録済み勤務場所 (${dates.length} 件)`, en: `Registered work locations (${dates.length})` })}
+            {selected.size > 0 && (
+              <span className="ms-2 text-body-2-medium text-accent-300">{t({ ja: `（${selected.size}件選択中）`, en: `(${selected.size} selected)` })}</span>
+            )}
           </>
         }
         actions={
           <>
             <Button variant="ghost" size="xs" onClick={() => setSelected(new Set(dates))}>
-              全選択
+              {t({ ja: "全選択", en: "Select all" })}
             </Button>
             <Button variant="ghost" size="xs" onClick={() => setSelected(new Set())} disabled={selected.size === 0}>
-              選択解除
+              {t({ ja: "選択解除", en: "Clear selection" })}
             </Button>
             <Button variant="secondary" size="small" onClick={fetchLocations} disabled={loading}>
-              {loading ? "読み込み中..." : "更新"}
+              {loading ? t({ ja: "読み込み中...", en: "Loading..." }) : t({ ja: "更新", en: "Refresh" })}
             </Button>
           </>
         }
@@ -183,21 +192,23 @@ export function WorkLocationAdmin() {
         {/* 一括変更バー */}
         {selected.size > 0 && (
           <div className="mb-4 flex flex-col items-stretch gap-3 rounded-xl border border-accent-500/40 bg-accent-500/15 p-4 sm:flex-row sm:items-center">
-            <span className="shrink-0 text-body-2-semibold text-accent-200">{selected.size}件を一括変更 →</span>
-            <LocationSelect label="一括変更する勤務場所" value={bulkLocation} onChange={setBulkLocation} size="sm" className="min-w-0 flex-1" />
+            <span className="shrink-0 text-body-2-semibold text-accent-200">
+              {t({ ja: `${selected.size}件を一括変更 →`, en: `Change ${selected.size} at once →` })}
+            </span>
+            <LocationSelect label={t({ ja: "一括変更する勤務場所", en: "Work location for bulk update" })} value={bulkLocation} onChange={setBulkLocation} size="sm" className="min-w-0 flex-1" />
             <Button variant="primary" size="small" onClick={bulkUpdate} disabled={bulkSaving}>
-              {bulkSaving ? "変更中..." : "一括変更"}
+              {bulkSaving ? t({ ja: "変更中...", en: "Updating..." }) : t({ ja: "一括変更", en: "Update all" })}
             </Button>
           </div>
         )}
 
         {dates.length === 0 ? (
-          <p className="text-body-2-regular text-text-tertiary">登録がありません</p>
+          <p className="text-body-2-regular text-text-tertiary">{t({ ja: "登録がありません", en: "Nothing registered" })}</p>
         ) : (
           <ul className="flex select-none flex-col gap-2">
             {dates.map((d) => {
               const dt = new Date(d + "T00:00:00");
-              const label = `${dt.getMonth() + 1}/${dt.getDate()}（${WEEKDAYS[dt.getDay()]}）`;
+              const label = locale === "ja" ? `${dt.getMonth() + 1}/${dt.getDate()}（${weekdayLabel(dt, locale)}）` : `${dt.getMonth() + 1}/${dt.getDate()} (${weekdayLabel(dt, locale)})`;
               const isSelected = selected.has(d);
               return (
                 <li
@@ -214,11 +225,11 @@ export function WorkLocationAdmin() {
                     isSelected ? "border-accent-300 bg-accent-500/15" : "border-border-button-default bg-background-primary-default hover:bg-background-primary-hover",
                   )}
                 >
-                  <Checkbox isSelected={isSelected} onChange={() => toggleDate(d)} aria-label={`${label}を選択`} />
+                  <Checkbox isSelected={isSelected} onChange={() => toggleDate(d)} aria-label={t({ ja: `${label}を選択`, en: `Select ${label}` })} />
                   <span className="w-24 shrink-0 text-body-medium tabular-nums text-text-primary">{label}</span>
-                  <LocationSelect label={`${label}の勤務場所`} value={locations[d]} onChange={(v) => updateOne(d, v)} size="sm" className="min-w-0 flex-1" />
+                  <LocationSelect label={t({ ja: `${label}の勤務場所`, en: `Work location on ${label}` })} value={locations[d]} onChange={(v) => updateOne(d, v)} size="sm" className="min-w-0 flex-1" />
                   <Button variant="ghost" size="small" className="shrink-0 text-text-error-primary" onClick={() => deleteLocation(d)}>
-                    削除
+                    {t({ ja: "削除", en: "Delete" })}
                   </Button>
                 </li>
               );

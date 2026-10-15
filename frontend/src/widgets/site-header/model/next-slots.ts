@@ -1,9 +1,9 @@
 import { fetchBusy } from "@/entities/slot";
-import { getMonday, isOverlappingBusy, pad, weekdayName, type BusyInterval } from "@/shared/lib/busy";
+import { getMonday, isOverlappingBusy, type BusyInterval } from "@/shared/lib/busy";
 
-/** 2 時間後以降・9:00〜23:00・1 か月以内で、空いている 30 分枠を先頭から 5 つ（旧 Header.tsx と同じ） */
-export async function computeNextFiveSlots(now = new Date()): Promise<string[]> {
-  const results: string[] = [];
+/** 2 時間後以降・9:00〜23:00・1 か月以内で、空いている 30 分枠の開始時刻を先頭から 5 つ（旧 Header.tsx と同じ。文字にするのは画面側） */
+export async function computeNextFiveSlots(now = new Date()): Promise<Date[]> {
+  const results: Date[] = [];
   const cache = new Map<string, BusyInterval[]>();
   const step = 30 * 60 * 1000;
   const oneMonthLater = new Date(now);
@@ -41,7 +41,7 @@ export async function computeNextFiveSlots(now = new Date()): Promise<string[]> 
       continue;
     }
     if (!isOverlappingBusy(t, end, await busyFor(t))) {
-      results.push(`${t.getMonth() + 1}/${pad(t.getDate())}(${weekdayName(t)}) ${pad(t.getHours())}:${pad(t.getMinutes())}〜`);
+      results.push(new Date(t));
     }
     t = end;
   }

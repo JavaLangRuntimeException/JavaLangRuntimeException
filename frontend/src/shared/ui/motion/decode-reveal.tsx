@@ -1,6 +1,7 @@
 import { useEffect, useRef, type ReactNode } from "react";
-import { motion, useInView, useReducedMotion } from "motion/react";
+import { motion, useInView } from "motion/react";
 import { glyphFor, KEEP } from "./glyphs";
+import { useStill } from "./hooks";
 import { EASE } from "./variants";
 
 // 中身（任意の要素）の短い文字（カードの題名・ラベルなど）を、見出しと同じく記号から 1 文字ずつ定まって出す。
@@ -91,7 +92,7 @@ function scramble(root: HTMLElement, delay: number) {
 export function DecodeReveal({ children, className, delay = 0, show }: { children: ReactNode; className?: string; delay?: number; show?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, VIEWPORT);
-  const reduced = Boolean(useReducedMotion());
+  const reduced = useStill();
   const visible = reduced || (show ?? inView);
 
   useEffect(() => {

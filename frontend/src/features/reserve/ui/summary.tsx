@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 import { PURPOSES } from "@/shared/config/purposes";
+import { weekdayLabel } from "@/shared/lib/busy";
+import type { Locale } from "@/shared/lib/i18n";
 import { cx } from "@/utils/cx";
 import type { ContactMethod } from "../model/state";
 
@@ -9,8 +11,10 @@ import type { ReservationDetails } from "../model/types";
 const pad = (n: number) => n.toString().padStart(2, "0");
 const padOrXX = (n: number | null) => (n == null ? "XX" : pad(n));
 
-export function formatDate(d: ReservationDetails) {
-  return `${d.year ?? "XXXX"}/${padOrXX(d.month)}/${padOrXX(d.day)}(${d.weekday || "X"})`;
+export function formatDate(d: ReservationDetails, locale: Locale) {
+  // 曜日は日付から表示する言語で出す（d.weekday は API に送る日本語の曜日）
+  const weekday = d.year != null && d.month != null && d.day != null ? weekdayLabel(new Date(d.year, d.month - 1, d.day), locale) : d.weekday || "X";
+  return `${d.year ?? "XXXX"}/${padOrXX(d.month)}/${padOrXX(d.day)}(${weekday})`;
 }
 
 export function formatTimeRange(d: ReservationDetails) {
@@ -18,12 +22,12 @@ export function formatTimeRange(d: ReservationDetails) {
   return `${pad(d.startHour)} : ${pad(d.startMin)} ~ ${pad(d.endHour)} : ${pad(d.endMin)}`;
 }
 
-export function purposeLabel(value: string) {
-  return PURPOSES.find((p) => p.value === value)?.label || value;
+export function purposeLabel(value: string, locale: Locale) {
+  return PURPOSES.find((p) => p.value === value)?.label[locale] || value;
 }
 
-export function methodLabel(m: ContactMethod) {
-  return m === "meet" ? "GoogleMeet" : m === "offline" ? "オフライン" : m;
+export function methodLabel(m: ContactMethod, locale: Locale) {
+  return m === "meet" ? "GoogleMeet" : m === "offline" ? (locale === "ja" ? "オフライン" : "In person") : m;
 }
 
 /** 確認・完了画面の 1 項目 */

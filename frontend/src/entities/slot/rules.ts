@@ -1,7 +1,8 @@
 // 予約できる 30 分枠の規則（旧 src/app/reserve/page.tsx・src/feature/reserve/ui/WeekGrid.tsx と同じ）。
 // 時刻はブラウザの時刻で数える（旧実装と同じ）。サーバー側でも日本時間で同じ確認をしている
 import { isAskMeUnavailableLocation } from "@/entities/work-location/@x/slot";
-import { getMonday, isHolidayPeriod, isOverlappingBusy, pad, weekdayName, type BusyInterval } from "@/shared/lib/busy";
+import { getMonday, isHolidayPeriod, isOverlappingBusy, pad, weekdayLabel, type BusyInterval } from "@/shared/lib/busy";
+import type { L10n, Locale } from "@/shared/lib/i18n";
 
 export const SLOT_MS = 30 * 60 * 1000;
 export const LEAD_MS = 2 * 60 * 60 * 1000;
@@ -58,9 +59,9 @@ export function isOfflineHoursInvalid(sh: number, sm: number, eh: number, em: nu
   return !(sMins >= 10 * 60 && eMins <= 21 * 60 && eMins > sMins);
 }
 
-/** 「YYYY/MM/DD(曜) HH:MM〜HH:MM」 */
-export function formatSlotText(t: Date, end: Date) {
-  return `${t.getFullYear()}/${pad(t.getMonth() + 1)}/${pad(t.getDate())}(${weekdayName(t)}) ${pad(t.getHours())}:${pad(t.getMinutes())}〜${pad(end.getHours())}:${pad(end.getMinutes())}`;
+/** 「YYYY/MM/DD(曜) HH:MM〜HH:MM」（英語は曜日が「Mon」になるだけ） */
+export function formatSlotText(t: Date, end: Date, locale: Locale = "ja") {
+  return `${t.getFullYear()}/${pad(t.getMonth() + 1)}/${pad(t.getDate())}(${weekdayLabel(t, locale)}) ${pad(t.getHours())}:${pad(t.getMinutes())}〜${pad(end.getHours())}:${pad(end.getMinutes())}`;
 }
 
 /** formatSlotText の逆。読めなければ null */
@@ -69,6 +70,15 @@ export function parseSlotText(text: string) {
   if (!m) return null;
   const [y, mo, d, sh, sm, eh, em] = m.slice(1).map(Number);
   return { year: y, month: mo, day: d, startHour: sh, startMin: sm, endHour: eh, endMin: em };
+}
+
+/** formatSlotText の文字列を、表示する言語の曜日で書き直す（読めなければそのまま） */
+export function localizeSlotText(text: string, locale: Locale) {
+  const slot = parseSlotText(text);
+  if (!slot) return text;
+  const start = new Date(slot.year, slot.month - 1, slot.day, slot.startHour, slot.startMin);
+  const end = new Date(slot.year, slot.month - 1, slot.day, slot.endHour, slot.endMin);
+  return formatSlotText(start, end, locale);
 }
 
 /** 2 時間後以降で最初に空いている 30 分枠（祝休日・対応不可日・1 か月先は除く）。見つからなければ "" */
@@ -185,11 +195,11 @@ export function cellState(cellStart: Date, ctx: DayContext & { selectedStart: Da
   return "available";
 }
 
-/** マスの文言（旧実装と同じ） */
-export const CELL_LABEL: Record<CellState, string> = {
-  past: "過去",
-  unavailable: "不可",
-  blocked: "不可",
-  selected: "選択中",
-  available: "可",
+/** マスの文言（日本語は旧実装と同じ） */
+export const CELL_LABEL: Record<CellState, L10n> = {
+  past: { ja: "過去", en: "Past" },
+  unavailable: { ja: "不可", en: "N/A" },
+  blocked: { ja: "不可", en: "N/A" },
+  selected: { ja: "選択中", en: "Selected" },
+  available: { ja: "可", en: "Open" },
 };

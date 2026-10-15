@@ -1,3 +1,5 @@
+import type { Locale } from "./i18n";
+
 // 空き時間の計算（予約ページ・ヘッダーで共用）。旧 src/app/reserve/page.tsx・Header.tsx と同じ規則
 export type BusyInterval = { start: string; end: string };
 
@@ -6,9 +8,16 @@ export function pad(n: number) {
 }
 
 export const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"] as const;
+export const WEEKDAYS_EN = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
 
+/** 曜日（日本語の 1 文字）。予約 API に送る値・枠の文字列にも使うので、表示言語では変えない */
 export function weekdayName(d: Date) {
   return WEEKDAYS[d.getDay()];
+}
+
+/** 画面に出す曜日（日本語は「月」、英語は「Mon」） */
+export function weekdayLabel(d: Date, locale: Locale) {
+  return (locale === "ja" ? WEEKDAYS : WEEKDAYS_EN)[d.getDay()];
 }
 
 /** その週の月曜 0:00（ブラウザの時刻） */

@@ -2,10 +2,12 @@ import { Fragment } from "react";
 import { Link } from "react-router";
 import { Chip } from "@/components/base/badges/chip";
 import { ORCID_SELF_NAME, ORCID_WORK_TYPE_LABELS, useOrcidWorks, type OrcidWork } from "@/entities/publication";
+import { useT } from "@/shared/lib/i18n";
 import { Section, Skeleton } from "@/shared/ui/layout";
 
 /** ORCID に登録した論文 */
 export function OrcidWorks() {
+  const t = useT();
   const { data, isPending } = useOrcidWorks();
   const works = data?.works ?? [];
 
@@ -17,11 +19,11 @@ export function OrcidWorks() {
       <ProjectPageCard />
       {isPending && (
         <div className="flex flex-col gap-3" aria-busy="true">
-          <p className="text-body-2-regular text-text-tertiary">論文を取得中...</p>
+          <p className="text-body-2-regular text-text-tertiary">{t({ ja: "論文を取得中...", en: "Loading publications..." })}</p>
           <Skeleton className="h-32" />
         </div>
       )}
-      {!isPending && works.length === 0 && <p className="text-body-2-regular text-text-tertiary">論文がまだありません</p>}
+      {!isPending && works.length === 0 && <p className="text-body-2-regular text-text-tertiary">{t({ ja: "論文がまだありません", en: "No publications yet." })}</p>}
       {!isPending && works.length > 0 && (
         <ul className="flex flex-col gap-3">
           {works.map((work) => (

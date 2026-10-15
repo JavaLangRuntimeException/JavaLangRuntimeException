@@ -2,6 +2,7 @@ import { useState } from "react";
 import { RiArrowLeftSLine, RiArrowRightSLine } from "@remixicon/react";
 import { Button } from "@/components/base/buttons/button";
 import { reservationApi } from "@/shared/api/clients";
+import { intlLocale, useLocale, useT, type Locale } from "@/shared/lib/i18n";
 import { AdminPanel } from "@/shared/ui/admin";
 
 type ICalEvent = { start: string; end: string; summary?: string; source?: string; sourceUrl?: string };
@@ -17,8 +18,8 @@ function getWeekMonday(offset: number): Date {
   return monday;
 }
 
-const formatDate = (iso: string) =>
-  new Date(iso).toLocaleString("ja-JP", { month: "short", day: "numeric", weekday: "short", hour: "2-digit", minute: "2-digit" });
+const formatDate = (iso: string, locale: Locale) =>
+  new Date(iso).toLocaleString(intlLocale(locale), { month: "short", day: "numeric", weekday: "short", hour: "2-digit", minute: "2-digit" });
 
 /** iCal 予定確認（各カレンダーの取得状況と、その週の Busy 予定） */
 export function IcalSourcesPanel() {
@@ -26,6 +27,8 @@ export function IcalSourcesPanel() {
   const [events, setEvents] = useState<ICalEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [weekOffset, setWeekOffset] = useState(0);
+  const t = useT();
+  const locale = useLocale();
 
   const fetchIcalSources = async () => {
     setLoading(true);
@@ -50,25 +53,25 @@ export function IcalSourcesPanel() {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-2">
             <Button variant="secondary" size="small" leadingIcon={RiArrowLeftSLine} onClick={() => setWeekOffset((p) => p - 1)}>
-              前週
+              {t({ ja: "前週", en: "Previous week" })}
             </Button>
             <span className="px-3 text-body-semibold tabular-nums text-text-primary">{weekLabel}</span>
             <Button variant="secondary" size="small" trailingIcon={RiArrowRightSLine} onClick={() => setWeekOffset((p) => p + 1)}>
-              次週
+              {t({ ja: "次週", en: "Next week" })}
             </Button>
             <Button variant="ghost" size="small" onClick={() => setWeekOffset(0)}>
-              今週
+              {t({ ja: "今週", en: "This week" })}
             </Button>
           </div>
           <Button variant="primary" onClick={fetchIcalSources} disabled={loading}>
-            {loading ? "読み込み中..." : "取得"}
+            {loading ? t({ ja: "読み込み中...", en: "Loading..." }) : t({ ja: "取得", en: "Fetch" })}
           </Button>
         </div>
       </AdminPanel>
 
-      <AdminPanel title="カレンダーソース">
+      <AdminPanel title={t({ ja: "カレンダーソース", en: "Calendar sources" })}>
         {sources.length === 0 ? (
-          <p className="text-body-2-regular text-text-tertiary">「取得」ボタンを押してデータを読み込んでください</p>
+          <p className="text-body-2-regular text-text-tertiary">{t({ ja: "「取得」ボタンを押してデータを読み込んでください", en: "Press “Fetch” to load the data." })}</p>
         ) : (
           <ul className="divide-y divide-separator-border">
             {sources.map((source, i) => (
@@ -78,7 +81,7 @@ export function IcalSourcesPanel() {
                   <span className="ms-2 text-body-2-regular break-all text-text-tertiary">({source.url})</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-body-2-regular tabular-nums text-text-secondary">{source.eventCount} 件</span>
+                  <span className="text-body-2-regular tabular-nums text-text-secondary">{t({ ja: `${source.eventCount} 件`, en: `${source.eventCount} events` })}</span>
                   <span
                     className={
                       source.ok
@@ -95,9 +98,9 @@ export function IcalSourcesPanel() {
         )}
       </AdminPanel>
 
-      <AdminPanel title={`Busy予定一覧 (${events.length} 件)`}>
+      <AdminPanel title={t({ ja: `Busy予定一覧 (${events.length} 件)`, en: `Busy events (${events.length})` })}>
         {events.length === 0 ? (
-          <p className="text-body-2-regular text-text-tertiary">予定がありません</p>
+          <p className="text-body-2-regular text-text-tertiary">{t({ ja: "予定がありません", en: "No events" })}</p>
         ) : (
           <ul className="flex max-h-96 flex-col gap-2 overflow-y-auto">
             {events.map((event, i) => (
@@ -105,7 +108,7 @@ export function IcalSourcesPanel() {
                 <div className="min-w-0">
                   <p className="text-body-medium break-all text-text-primary">{event.summary}</p>
                   <p className="text-body-2-regular tabular-nums text-text-secondary">
-                    {formatDate(event.start)} → {formatDate(event.end)}
+                    {formatDate(event.start, locale)} → {formatDate(event.end, locale)}
                   </p>
                 </div>
                 <span className="shrink-0 rounded-md bg-background-secondary-default px-2 py-0.5 text-caption-1-medium text-text-secondary">{event.source}</span>

@@ -1,8 +1,8 @@
 import { useEffect, useRef } from "react";
-import { useInView, useReducedMotion } from "motion/react";
+import { useInView } from "motion/react";
 import { cx } from "@/utils/cx";
 import { glyphFor, KEEP } from "./glyphs";
-import { useElapsed } from "./hooks";
+import { useElapsed, useStill } from "./hooks";
 
 // 入り口の演出（widgets/intro）と同じ「記号から 1 文字ずつ定まる」表現。見出しをスクロールで見せるときにも使う
 
@@ -80,7 +80,7 @@ export function DecodeText({
 }) {
   const ref = useRef<HTMLSpanElement>(null);
   const inView = useInView(ref, { once: true, margin: "0px 0px -8% 0px" });
-  const reduced = useReducedMotion();
+  const reduced = useStill();
   const total = delay + Array.from(text).length * timing.stagger + timing.settle;
   const active = inView && ready;
   const elapsed = useElapsed(active && !reduced, total);

@@ -1,4 +1,4 @@
-import { useReducedMotion } from "motion/react";
+import { useStill } from "./hooks";
 
 export const EASE = [0.22, 1, 0.36, 1] as const;
 // 幕の開き（入り口の演出の幕と同じ）
@@ -16,6 +16,6 @@ export const itemVariantsReduced = { hidden: { opacity: 1 }, shown: { opacity: 1
 
 /** RevealList の子にする要素の variants（Link など、RevealItem で包めない要素に付ける） */
 export function useRevealItemVariants() {
-  return useReducedMotion() ? itemVariantsReduced : itemVariants;
+  return useStill() ? itemVariantsReduced : itemVariants;
 }
 

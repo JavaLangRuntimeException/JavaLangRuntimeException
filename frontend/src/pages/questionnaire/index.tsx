@@ -3,9 +3,11 @@ import { useAtomValue } from "jotai";
 import { ConnectError } from "@connectrpc/connect";
 import { heightAtom, isComplete, nameAtom, QuestionnaireForm, responsesAtom, trialPatternAtom, vrUsageAtom } from "@/features/questionnaire";
 import { inquiryApi } from "@/shared/api/clients";
+import { useT } from "@/shared/lib/i18n";
 import { Card, PageContainer } from "@/shared/ui/layout";
 
 export default function QuestionnairePage() {
+  const t = useT();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +20,7 @@ export default function QuestionnairePage() {
   const handleSubmit = async () => {
     setError(null);
     if (!isComplete({ name, vrUsage, height, trialPattern, responses })) {
-      setError("すべての質問に回答してください。");
+      setError(t({ ja: "すべての質問に回答してください。", en: "Please answer all questions." }));
       return;
     }
     setIsSubmitting(true);
@@ -36,7 +38,11 @@ export default function QuestionnairePage() {
     } catch (err) {
       // サーバーが応答した失敗と、通信そのものの失敗で文言を分ける（旧ページと同じ）
       const answered = err instanceof ConnectError && err.metadata.has("x-error-code");
-      setError(answered ? "送信に失敗しました。もう一度お試しください。" : "送信中にエラーが発生しました。");
+      setError(
+        answered
+          ? t({ ja: "送信に失敗しました。もう一度お試しください。", en: "Failed to submit. Please try again." })
+          : t({ ja: "送信中にエラーが発生しました。", en: "An error occurred while submitting." }),
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -46,15 +52,15 @@ export default function QuestionnairePage() {
     <PageContainer width="narrow" className="pt-12">
       <header className="mb-10 flex flex-col items-center gap-2 text-center">
         <h1 className="flex items-center gap-2 text-title-2-semibold text-text-primary">
-          本実験アンケート
+          {t({ ja: "本実験アンケート", en: "Experiment Questionnaire" })}
         </h1>
-        <p className="text-body-regular text-text-secondary">実験のご協力ありがとうございました</p>
+        <p className="text-body-regular text-text-secondary">{t({ ja: "実験のご協力ありがとうございました", en: "Thank you for taking part in the experiment" })}</p>
       </header>
 
       {isSubmitted ? (
         <Card className="flex flex-col items-center gap-3 py-12 text-center">
-          <h2 className="text-title-3-semibold text-text-primary">送信完了</h2>
-          <p className="text-body-regular text-text-secondary">アンケートへのご回答ありがとうございました。</p>
+          <h2 className="text-title-3-semibold text-text-primary">{t({ ja: "送信完了", en: "Submitted" })}</h2>
+          <p className="text-body-regular text-text-secondary">{t({ ja: "アンケートへのご回答ありがとうございました。", en: "Thank you for answering the questionnaire." })}</p>
         </Card>
       ) : (
         <>

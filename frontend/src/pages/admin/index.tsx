@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { siteOrigins } from "@/shared/config/site";
+import { useT } from "@/shared/lib/i18n";
 import { Tab, TabList, TabPanel, Tabs } from "@/components/base/tabs/tabs";
 import { useRequireSession } from "@/entities/session";
 import { AdminEmailForm } from "@/features/admin-email";
@@ -13,16 +14,17 @@ type TabKey = "ical" | "email" | "location";
 export default function AdminPage() {
   const { user, isLoading } = useRequireSession();
   const [activeTab, setActiveTab] = useState<TabKey>("ical");
+  const t = useT();
 
   if (isLoading || !user) return <AdminLoading />;
 
   return (
-    <AdminShell title="Admin Dashboard" email={user.email} crossLink={{ href: `${siteOrigins().calendar}/admin`, label: "カレンダー同期 →" }}>
+    <AdminShell title="Admin Dashboard" email={user.email} crossLink={{ href: `${siteOrigins().calendar}/admin`, label: t({ ja: "カレンダー同期 →", en: "Calendar Sync →" }) }}>
       <Tabs selectedKey={activeTab} onSelectionChange={(k) => setActiveTab(k as TabKey)}>
-        <TabList aria-label="管理メニュー" className="mb-6">
-          <Tab id="ical">iCal予定確認</Tab>
-          <Tab id="email">メール送信</Tab>
-          <Tab id="location">勤務場所</Tab>
+        <TabList aria-label={t({ ja: "管理メニュー", en: "Admin menu" })} className="mb-6">
+          <Tab id="ical">{t({ ja: "iCal予定確認", en: "iCal events" })}</Tab>
+          <Tab id="email">{t({ ja: "メール送信", en: "Send email" })}</Tab>
+          <Tab id="location">{t({ ja: "勤務場所", en: "Work location" })}</Tab>
         </TabList>
         <TabPanel id="ical">
           <IcalSourcesPanel />

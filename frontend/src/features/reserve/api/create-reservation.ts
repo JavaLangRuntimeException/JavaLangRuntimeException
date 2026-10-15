@@ -1,6 +1,7 @@
 import { ConnectError } from "@connectrpc/connect";
 import { reservationApi } from "@/shared/api/clients";
 import { toApiError } from "@/shared/api/errors";
+import type { Locale } from "@/shared/lib/i18n";
 import type { ContactMethod } from "../model/state";
 
 export type CreatedInfo = {
@@ -36,14 +37,14 @@ export type ReservationPayload = {
 };
 
 /** 予約を作る。失敗も画面に出す形（旧 API の ok / error / message / detail）で返す */
-export async function createReservation(p: ReservationPayload): Promise<NonNullable<CreatedInfo>> {
+export async function createReservation(p: ReservationPayload, locale: Locale = "ja"): Promise<NonNullable<CreatedInfo>> {
   try {
     const res = await reservationApi.createReservation({ ...p });
     return { ok: true, eventId: res.eventId || undefined, htmlLink: res.htmlLink || undefined, meetLink: res.meetLink || undefined };
   } catch (err) {
     // サーバーまで届かなかった（エラーコードがない）ときは旧実装と同じ request_failed
     if (!ConnectError.from(err).metadata.get("x-error-code")) {
-      return { ok: false, error: "request_failed", message: "予約APIへの接続に失敗しました。", detail: ConnectError.from(err).rawMessage };
+      return { ok: false, error: "request_failed", message: locale === "ja" ? "予約APIへの接続に失敗しました。" : "Could not connect to the reservation API.", detail: ConnectError.from(err).rawMessage };
     }
     const e = toApiError(err);
     return { ok: false, error: e.code, message: e.message || undefined, detail: e.detail };

@@ -1,11 +1,14 @@
 import { useConnpassEvents } from "@/entities/event";
+import { intlLocale, useLocale, useT, type Locale } from "@/shared/lib/i18n";
 import { Section, Skeleton } from "@/shared/ui/layout";
 
-const formatDate = (dateString: string) =>
-  new Date(dateString).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" });
+const formatDate = (dateString: string, locale: Locale) =>
+  new Date(dateString).toLocaleDateString(intlLocale(locale), { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" });
 
 /** connpass で主催しているイベント */
 export function ConnpassEventCards() {
+  const t = useT();
+  const locale = useLocale();
   const { data: events, isPending } = useConnpassEvents();
 
   return (
@@ -15,11 +18,11 @@ export function ConnpassEventCards() {
     >
       {isPending && (
         <div className="flex flex-col gap-3" aria-busy="true">
-          <p className="text-body-2-regular text-text-tertiary">イベント取得中...</p>
+          <p className="text-body-2-regular text-text-tertiary">{t({ ja: "イベント取得中...", en: "Loading events..." })}</p>
           <Skeleton className="h-36" />
         </div>
       )}
-      {!isPending && (events ?? []).length === 0 && <p className="text-body-2-regular text-text-tertiary">直近の主催イベントはありません</p>}
+      {!isPending && (events ?? []).length === 0 && <p className="text-body-2-regular text-text-tertiary">{t({ ja: "直近の主催イベントはありません", en: "No upcoming events I am organizing." })}</p>}
       {!isPending && events && events.length > 0 && (
         <ul className="flex flex-col gap-3">
           {events.map((event) => (
@@ -37,23 +40,23 @@ export function ConnpassEventCards() {
                   <h3 className="line-clamp-2 text-headline-semibold text-text-primary">{event.title}</h3>
                   <dl className="flex flex-col gap-1.5 text-body-2-regular text-text-secondary">
                     <div className="flex items-center gap-2">
-                      <dt className="meta shrink-0">場所</dt>
+                      <dt className="meta shrink-0">{t({ ja: "場所", en: "Venue" })}</dt>
                       <dd className="line-clamp-1">{event.place}</dd>
                     </div>
                     <div className="flex items-center gap-2">
-                      <dt className="meta shrink-0">日時</dt>
-                      <dd>{formatDate(event.startedAt)}</dd>
+                      <dt className="meta shrink-0">{t({ ja: "日時", en: "Date" })}</dt>
+                      <dd>{formatDate(event.startedAt, locale)}</dd>
                     </div>
                     <div className="flex items-center gap-2">
-                      <dt className="sr-only">参加者</dt>
+                      <dt className="sr-only">{t({ ja: "参加者", en: "Participants" })}</dt>
                       <dd>
-                        参加者: {event.accepted}/{event.limit || "∞"}
-                        {event.waiting > 0 && ` (補欠: ${event.waiting})`}
+                        {t({ ja: "参加者", en: "Participants" })}: {event.accepted}/{event.limit || "∞"}
+                        {event.waiting > 0 && ` (${t({ ja: "補欠", en: "Waitlist" })}: ${event.waiting})`}
                       </dd>
                     </div>
                   </dl>
                   <span className="mt-auto inline-flex items-center gap-1 text-body-2-semibold text-accent-300">
-                    詳細を見る
+                    {t({ ja: "詳細を見る", en: "View details" })}
                   </span>
                 </div>
               </a>

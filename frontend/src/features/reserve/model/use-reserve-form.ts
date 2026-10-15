@@ -2,10 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAtom, useSetAtom } from "jotai";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchBusy } from "@/entities/slot";
-import { businessHoursFor, findNextAvailableSlot, formatDateKey, isOfflineHoursInvalid, isSelectionInvalid, oneMonthAfter, parseSlotText } from "@/entities/slot";
+import { businessHoursFor, findNextAvailableSlot, formatDateKey, isOfflineHoursInvalid, isSelectionInvalid, localizeSlotText, oneMonthAfter, parseSlotText } from "@/entities/slot";
 import { isAskMeUnavailableLocation, useWorkLocations } from "@/entities/work-location";
 import { useResolvePlace } from "./use-resolve-place";
 import { getMonday, isHolidayPeriod, isOverlappingBusy, weekdayName } from "@/shared/lib/busy";
+import { useLocale, useT } from "@/shared/lib/i18n";
 import { reserveSubmittingAtom } from "@/shared/model/nav-lock";
 import { createReservation, type CreatedInfo } from "../api/create-reservation";
 import { contactErrors } from "./schema";
@@ -23,6 +24,8 @@ export const busyQueryKey = (weekIso: string) => ["busy", weekIso] as const;
  */
 export function useReserveForm() {
   const queryClient = useQueryClient();
+  const locale = useLocale();
+  const t = useT();
   const now = useMemo(() => new Date(), []);
   const currentMonday = useMemo(() => getMonday(now), [now]);
   const oneMonthLater = useMemo(() => oneMonthAfter(now), [now]);
@@ -89,27 +92,28 @@ export function useReserveForm() {
     const errs = contactErrors({
       name, email, purpose: purpose || "", contactMethod: contactMethod || "",
       discordServer, discordName, slackWorkspace, slackName, otherNote, offlinePlaceLink, offlinePlaceName, offlinePlaceDetail,
-    });
+    }, locale);
     if (hasDate && hasTime) {
       const s = new Date(year!, month! - 1, day!, startHour!, startMin!);
       const e = new Date(year!, month! - 1, day!, endHour!, endMin!);
-      if (!(e > s)) errs.time = "終了は開始より後にしてください";
+      if (!(e > s)) errs.time = t({ ja: "終了は開始より後にしてください", en: "The end time must be after the start time" });
     }
     return errs;
-  }, [name, email, purpose, contactMethod, discordServer, discordName, slackWorkspace, slackName, otherNote, offlinePlaceLink, offlinePlaceName, offlinePlaceDetail, hasDate, hasTime, year, month, day, startHour, startMin, endHour, endMin]);
+  }, [name, email, purpose, contactMethod, discordServer, discordName, slackWorkspace, slackName, otherNote, offlinePlaceLink, offlinePlaceName, offlinePlaceDetail, hasDate, hasTime, year, month, day, startHour, startMin, endHour, endMin, locale, t]);
 
   const canSubmit = !locationsLoading && hasDate && hasTime && !selectionInvalid && Object.keys(errors).length === 0;
   const submitBlockMessage = locationsLoading
-    ? "空き状況を確認中です"
+    ? t({ ja: "空き状況を確認中です", en: "Checking availability" })
     : !hasDate || !hasTime
-      ? "日付と時間を選択してください"
+      ? t({ ja: "日付と時間を選択してください", en: "Please select a date and time" })
       : Object.keys(errors).length > 0
-        ? "入力内容をご確認ください"
+        ? t({ ja: "入力内容をご確認ください", en: "Please check your entries" })
         : selectionInvalid
-          ? "ご指定の時間では予約できません"
+          ? t({ ja: "ご指定の時間では予約できません", en: "The selected time cannot be booked" })
           : "";
 
   const offlineHoursInvalid = contactMethod === "offline" && hasTime && isOfflineHoursInvalid(startHour!, startMin!, endHour!, endMin!);
+  // 曜日は予約 API に送るので日本語のまま（画面では summary の formatDate が表示する言語で出す）
   const weekday = hasDate ? weekdayName(new Date(year!, month! - 1, day!)) : "";
 
   // 直近の空き 30 分枠（最初に見つけた値を出し続ける。旧実装と同じ）
@@ -151,9 +155,10 @@ export function useReserveForm() {
     setEndHour(slot.endHour);
     setEndMin(slot.endMin);
     setWeekStart(getMonday(new Date(slot.year, slot.month - 1, slot.day)));
-    setNotify(`予約日時を ${displayedSlotText} にセットしました`);
+    const label = localizeSlotText(displayedSlotText, locale);
+    setNotify(t({ ja: `予約日時を ${label} にセットしました`, en: `Reservation time set to ${label}` }));
     setTimeout(() => setNotify(""), 3000);
-  }, [displayedSlotText, setYear, setMonth, setDay, setStartHour, setStartMin, setEndHour, setEndMin]);
+  }, [displayedSlotText, locale, t, setYear, setMonth, setDay, setStartHour, setStartMin, setEndHour, setEndMin]);
 
   // TechSelect+ の Discord 面談はサーバー名の既定を「Tech Select」にする
   useEffect(() => {
@@ -250,26 +255,26 @@ export function useReserveForm() {
       setSubmitting(false);
     };
 
-    if (!hasDate || !hasTime) return stop("日付と時間を選択してください");
+    if (!hasDate || !hasTime) return stop(t({ ja: "日付と時間を選択してください", en: "Please select a date and time" }));
     const nowTs = Date.now();
-    if (Object.keys(contactErrors({ name, email, purpose: purpose || "", contactMethod: contactMethod || "", discordServer, discordName, slackWorkspace, slackName, otherNote, offlinePlaceLink, offlinePlaceName, offlinePlaceDetail })).length > 0) {
+    if (Object.keys(contactErrors({ name, email, purpose: purpose || "", contactMethod: contactMethod || "", discordServer, discordName, slackWorkspace, slackName, otherNote, offlinePlaceLink, offlinePlaceName, offlinePlaceDetail }, locale)).length > 0) {
       return stop();
     }
     const startDate = new Date(year!, month! - 1, day!, startHour!, startMin!);
     const endDate = new Date(year!, month! - 1, day!, endHour!, endMin!);
-    if (startDate.getTime() <= nowTs) return stop("過去の時間は選択できません");
-    if (startDate.getTime() < nowTs + 2 * 60 * 60 * 1000) return stop("現在時刻から2時間後以降のみ予約できます");
-    if (!(endDate > startDate)) return stop("終了は開始より後にしてください");
-    if (isHolidayPeriod(startDate) || isAskMeUnavailableLocation(locations[formatDateKey(startDate)])) return stop("ご指定の日は予約できません");
+    if (startDate.getTime() <= nowTs) return stop(t({ ja: "過去の時間は選択できません", en: "You cannot select a time in the past" }));
+    if (startDate.getTime() < nowTs + 2 * 60 * 60 * 1000) return stop(t({ ja: "現在時刻から2時間後以降のみ予約できます", en: "Reservations must start at least 2 hours from now" }));
+    if (!(endDate > startDate)) return stop(t({ ja: "終了は開始より後にしてください", en: "The end time must be after the start time" }));
+    if (isHolidayPeriod(startDate) || isAskMeUnavailableLocation(locations[formatDateKey(startDate)])) return stop(t({ ja: "ご指定の日は予約できません", en: "The selected date cannot be booked" }));
 
     // 直前の空き確認（同時に予約が入った場合に備える）
     const weekKey = getMonday(startDate).toISOString();
     const latest = await fetchBusy(weekKey);
     if (isOverlappingBusy(startDate, endDate, latest)) {
       queryClient.setQueryData(busyQueryKey(weekKey), latest);
-      return stop("直前に同時間帯の予約が入りました。別の時間をお選びください");
+      return stop(t({ ja: "直前に同時間帯の予約が入りました。別の時間をお選びください", en: "Someone just booked this time. Please choose another time" }));
     }
-    if (isOverlappingBusy(startDate, endDate, busy)) return stop("選択した時間帯は不可です");
+    if (isOverlappingBusy(startDate, endDate, busy)) return stop(t({ ja: "選択した時間帯は不可です", en: "The selected time is not available" }));
 
     try {
       const result = await createReservation({
@@ -286,7 +291,7 @@ export function useReserveForm() {
         offlinePlaceName: contactMethod === "offline" ? (offlinePlaceName || "").trim() : undefined,
         offlinePlaceDetail: contactMethod === "offline" ? (offlinePlaceDetail || "").trim() : undefined,
         meetingNote: meetingNote.trim() || undefined,
-      });
+      }, locale);
       // 入力を消す前に、完了画面に出す内容を控える
       if (result.ok) {
         setCompletedDetails(details);
@@ -313,7 +318,8 @@ export function useReserveForm() {
     busy, busyLoading, locations,
     selectedStart, selectedEnd, selectionInvalid: hasDate && hasTime && selectionInvalid, offlineHoursInvalid,
     errors, canSubmit, submitBlockMessage, yearOptions, monthOptions,
-    slotLoading, displayedSlotText, applyNextAvailableSlot, notify,
+    // 画面に出す直近の空き枠（曜日は表示する言語で）
+    slotLoading, displayedSlotText: localizeSlotText(displayedSlotText, locale), applyNextAvailableSlot, notify,
     // 送信
     confirmOpen, setConfirmOpen, decisionLocked, openConfirm, creating, submit,
     createdInfo, completedDetails, details, completedMethod: completedMethod ?? contactMethod,

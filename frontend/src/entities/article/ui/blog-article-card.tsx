@@ -1,3 +1,4 @@
+import { useT } from "@/shared/lib/i18n";
 import { cx } from "@/utils/cx";
 
 export interface BlogArticleCardProps {
@@ -10,6 +11,7 @@ export interface BlogArticleCardProps {
 
 /** 記事のカード（Qiita へのリンク）。画像・タイトル・説明・タグ（最大 8 個）・「記事を読む →」 */
 export function BlogArticleCard({ title, description, url, image, tags = [] }: BlogArticleCardProps) {
+  const t = useT();
   return (
     <a
       href={url}
@@ -23,14 +25,14 @@ export function BlogArticleCard({ title, description, url, image, tags = [] }: B
     >
       {image && (
         <div className="aspect-[1200/630] w-full overflow-hidden border-b border-separator-border bg-background-secondary-default">
-          <img src={image} alt={title || "Qiita 記事一覧"} loading="lazy" className="size-full object-cover brightness-[0.82] transition-[filter] duration-300 group-hover:brightness-100 group-focus-visible:brightness-100 motion-reduce:transition-none" />
+          <img src={image} alt={title || t({ ja: "Qiita 記事一覧", en: "Qiita articles" })} loading="lazy" className="size-full object-cover brightness-[0.82] transition-[filter] duration-300 group-hover:brightness-100 group-focus-visible:brightness-100 motion-reduce:transition-none" />
         </div>
       )}
       <div className="flex flex-1 flex-col gap-3 p-5">
         <h2 className="line-clamp-2 text-headline-semibold text-text-primary group-hover:text-accent-300">{title}</h2>
         {description && <p className="line-clamp-4 text-body-2-regular text-text-secondary">{description}</p>}
         {tags.length > 0 && (
-          <ul className="flex flex-wrap gap-1.5" aria-label="タグ">
+          <ul className="flex flex-wrap gap-1.5" aria-label={t({ ja: "タグ", en: "Tags" })}>
             {tags.slice(0, 8).map((tag) => (
               <li key={tag} className="rounded-md bg-background-secondary-default px-2 py-0.5 text-caption-1-medium text-text-secondary">
                 {tag}
@@ -39,7 +41,7 @@ export function BlogArticleCard({ title, description, url, image, tags = [] }: B
           </ul>
         )}
         <span className="mt-auto pt-1 text-body-2-semibold text-accent-300">
-          記事を読む <span aria-hidden="true">→</span>
+          {t({ ja: "記事を読む", en: "Read article" })} <span aria-hidden="true">→</span>
         </span>
       </div>
     </a>

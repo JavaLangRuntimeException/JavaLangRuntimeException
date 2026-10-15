@@ -1,6 +1,7 @@
 import { useRef, type ReactNode } from "react";
-import { motion, useInView, useReducedMotion, useScroll, useSpring } from "motion/react";
+import { motion, useInView, useScroll, useSpring } from "motion/react";
 import { cx } from "@/utils/cx";
+import { useStill } from "./hooks";
 import { CURTAIN_EASE, EASE, itemVariants, itemVariantsReduced, listVariants } from "./variants";
 
 // スクロールの演出。入り口の演出（widgets/intro）と同じ語彙でそろえる:
@@ -17,7 +18,7 @@ const VIEWPORT = { once: true, margin: "0px 0px -10% 0px" } as const;
 function useShow(show: boolean | undefined) {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, VIEWPORT);
-  const reduced = useReducedMotion();
+  const reduced = useStill();
   return [ref, Boolean(reduced) || (show ?? inView)] as const;
 }
 
@@ -26,7 +27,7 @@ function useShow(show: boolean | undefined) {
  * （見出しが出終わってから中身を出す、など順番を付けたいとき）
  */
 export function Reveal({ children, className, delay = 0, y = 18, show }: { children: ReactNode; className?: string; delay?: number; y?: number; show?: boolean }) {
-  const reduced = useReducedMotion();
+  const reduced = useStill();
   const [ref, visible] = useShow(show);
   const hidden = { opacity: 0, y, filter: "blur(8px)" };
   const shown = reduced ? { opacity: 1 } : { opacity: 1, y: 0, filter: "blur(0px)", transitionEnd: { filter: "none", transform: "none" } };
@@ -48,7 +49,7 @@ export function RevealList({ children, className, as = "div", stagger = 0.06, ..
   const Comp = motion[as];
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, VIEWPORT);
-  const reduced = useReducedMotion();
+  const reduced = useStill();
   return (
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- motion[as] の ref の型が要素ごとに違う
     <Comp ref={ref as any} className={className} variants={listVariants} custom={stagger} initial="hidden" animate={inView || reduced ? "shown" : "hidden"} {...rest}>
@@ -58,7 +59,7 @@ export function RevealList({ children, className, as = "div", stagger = 0.06, ..
 }
 
 export function RevealItem({ children, className, as = "div" }: { children: ReactNode; className?: string; as?: "div" | "li" }) {
-  const reduced = useReducedMotion();
+  const reduced = useStill();
   const Comp = motion[as];
   return (
     <Comp className={className} variants={reduced ? itemVariantsReduced : itemVariants}>
@@ -69,7 +70,7 @@ export function RevealItem({ children, className, as = "div" }: { children: Reac
 
 /** 左から伸びる細い線（入り口の演出の線と同じ）。show を渡さなければ画面に入ったとき、渡せば true になったとき */
 export function Rule({ className, delay = 0, duration = 0.9, show }: { className?: string; delay?: number; duration?: number; show?: boolean }) {
-  const reduced = useReducedMotion();
+  const reduced = useStill();
   const [ref, visible] = useShow(show);
   const scaleX = reduced || visible ? 1 : 0;
   return (
@@ -86,7 +87,7 @@ export function Rule({ className, delay = 0, duration = 0.9, show }: { className
 
 /** 画面に入ったら、上へ幕が開くように中身が見える（画像など） */
 export function Curtain({ children, className, delay = 0 }: { children: ReactNode; className?: string; delay?: number }) {
-  const reduced = useReducedMotion();
+  const reduced = useStill();
   const [ref, visible] = useShow(undefined);
   if (reduced) return <div className={className}>{children}</div>;
   const closed = { clipPath: "inset(100% 0% 0% 0%)" };

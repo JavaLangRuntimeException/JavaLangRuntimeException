@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { RiArrowLeftSLine, RiArrowRightSLine } from "@remixicon/react";
 import { Button } from "@/components/base/buttons/button";
-import { getLocationStyle, LOCATION_STYLES } from "@/entities/work-location";
+import { getLocationStyle, LOCATION_STYLES, locationName as toLocationName } from "@/entities/work-location";
+import { useLocale, useT } from "@/shared/lib/i18n";
 import { Card } from "@/shared/ui/layout";
 import { cx } from "@/utils/cx";
 import { buildMonth, DAY_NAMES_MON_FIRST, formatDateLabel, formatYMD } from "../model/calendar";
@@ -10,6 +11,8 @@ type LocationMap = Record<string, string>;
 
 /** 月のカレンダー（場所を漢字 1 文字で表示）+ 選んだ日の場所 + 凡例 + 一覧 */
 export function WorkLocationCalendar({ locations }: { locations: LocationMap }) {
+  const t = useT();
+  const locale = useLocale();
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [monthOffset, setMonthOffset] = useState(0);
   const todayStr = formatYMD(new Date());
@@ -18,6 +21,8 @@ export function WorkLocationCalendar({ locations }: { locations: LocationMap }) 
   const displayDate = selectedDate || todayStr;
   const displayLocation = locations[displayDate];
   const sortedDates = Object.keys(locations).sort();
+  const monthLabel = t({ ja: `${month.year}年${month.month}月`, en: new Date(month.year, month.month - 1, 1).toLocaleDateString("en-US", { year: "numeric", month: "long" }) });
+  const dateLabel = (dateStr: string) => formatDateLabel(dateStr, locale);
 
   return (
     <div className="flex flex-col gap-6">
@@ -28,30 +33,30 @@ export function WorkLocationCalendar({ locations }: { locations: LocationMap }) 
             size="small"
             iconOnly
             leadingIcon={RiArrowLeftSLine}
-            aria-label="前の月"
+            aria-label={t({ ja: "前の月", en: "Previous month" })}
             disabled={monthOffset <= 0}
             onClick={() => setMonthOffset((p) => p - 1)}
           />
           <h2 className="min-w-32 text-center text-headline-semibold text-text-primary" aria-live="polite">
-            {month.year}年{month.month}月
+            {monthLabel}
           </h2>
-          <Button variant="ghost" size="small" iconOnly leadingIcon={RiArrowRightSLine} aria-label="次の月" onClick={() => setMonthOffset((p) => p + 1)} />
+          <Button variant="ghost" size="small" iconOnly leadingIcon={RiArrowRightSLine} aria-label={t({ ja: "次の月", en: "Next month" })} onClick={() => setMonthOffset((p) => p + 1)} />
           {monthOffset !== 0 && (
             <Button variant="secondary" size="xs" onClick={() => setMonthOffset(0)}>
-              今月
+              {t({ ja: "今月", en: "This month" })}
             </Button>
           )}
         </div>
 
-        <div role="grid" aria-label={`${month.year}年${month.month}月`} className="flex flex-col gap-1">
+        <div role="grid" aria-label={monthLabel} className="flex flex-col gap-1">
           <div role="row" className="grid grid-cols-7 gap-1">
-            {DAY_NAMES_MON_FIRST.map((name) => (
+            {t(DAY_NAMES_MON_FIRST).map((name, i) => (
               <div
                 key={name}
                 role="columnheader"
                 className={cx(
                   "py-1 text-center text-caption-1-medium",
-                  name === "日" ? "text-text-error-primary" : name === "土" ? "text-accent-300" : "text-text-tertiary",
+                  i === 6 ? "text-text-error-primary" : i === 5 ? "text-accent-300" : "text-text-tertiary",
                 )}
               >
                 {name}
@@ -74,7 +79,7 @@ export function WorkLocationCalendar({ locations }: { locations: LocationMap }) 
                       type="button"
                       onClick={() => !isPast && setSelectedDate(dateStr)}
                       disabled={isPast}
-                      aria-label={`${formatDateLabel(dateStr)}${locationName ? ` ${locationName}` : ""}`}
+                      aria-label={`${dateLabel(dateStr)}${locationName ? ` ${toLocationName(locationName, locale)}` : ""}`}
                       className={cx(
                         "flex h-12 w-full flex-col items-center justify-center rounded-xl text-body-2-regular outline-none transition-colors",
                         "focus-visible:ring-2 focus-visible:ring-border-focus-ring",
@@ -100,14 +105,16 @@ export function WorkLocationCalendar({ locations }: { locations: LocationMap }) 
         <div className="flex min-h-16 items-center justify-center rounded-xl bg-background-secondary-default px-4 py-3" aria-live="polite">
           {displayLocation ? (
             <div className="flex flex-col items-center gap-1">
-              <span className="text-caption-1-regular text-text-tertiary">{formatDateLabel(displayDate)}</span>
+              <span className="text-caption-1-regular text-text-tertiary">{dateLabel(displayDate)}</span>
               <p className={cx("flex items-center gap-2 text-headline-semibold", getLocationStyle(displayLocation).text)}>
                 <span className={cx("inline-block size-2.5 rounded-full", getLocationStyle(displayLocation).dot)} aria-hidden />
-                {displayLocation}
+                {toLocationName(displayLocation, locale)}
               </p>
             </div>
           ) : (
-            <p className="text-body-2-regular text-text-tertiary">{displayDate === todayStr ? "今日の勤務場所は未登録です" : "日付をクリックして確認"}</p>
+            <p className="text-body-2-regular text-text-tertiary">{displayDate === todayStr
+                ? t({ ja: "今日の勤務場所は未登録です", en: "No work location registered for today" })
+                : t({ ja: "日付をクリックして確認", en: "Click a date to see the location" })}</p>
           )}
         </div>
 
@@ -116,15 +123,15 @@ export function WorkLocationCalendar({ locations }: { locations: LocationMap }) 
           <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-caption-1-regular text-text-secondary">
             <span className="flex items-center gap-1.5">
               <span className="inline-block size-3 rounded ring-2 ring-accent-500" aria-hidden />
-              今日
+              {t({ ja: "今日", en: "Today" })}
             </span>
             <span className="flex items-center gap-1.5">
               <span className="inline-block size-3 rounded bg-accent-500/15" aria-hidden />
-              選択中
+              {t({ ja: "選択中", en: "Selected" })}
             </span>
             <span className="flex items-center gap-1.5">
               <span className="inline-block size-3 rounded bg-background-tertiary-default opacity-40" aria-hidden />
-              過去（選択不可）
+              {t({ ja: "過去（選択不可）", en: "Past (not selectable)" })}
             </span>
           </div>
           <ul className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-caption-1-regular text-text-secondary">
@@ -133,7 +140,7 @@ export function WorkLocationCalendar({ locations }: { locations: LocationMap }) 
                 <span className={cx("inline-block w-3.5 text-center text-caption-1-bold", s.text)} aria-hidden>
                   {s.char}
                 </span>
-                {name}
+                {toLocationName(name, locale)}
               </li>
             ))}
           </ul>
@@ -143,7 +150,7 @@ export function WorkLocationCalendar({ locations }: { locations: LocationMap }) 
       {/* 一覧 */}
       <Card className="overflow-hidden p-0">
         {sortedDates.length === 0 ? (
-          <p className="py-8 text-center text-body-regular text-text-tertiary">勤務場所の登録がありません</p>
+          <p className="py-8 text-center text-body-regular text-text-tertiary">{t({ ja: "勤務場所の登録がありません", en: "No work locations registered" })}</p>
         ) : (
           <ul className="divide-y divide-separator-border">
             {sortedDates.map((date) => {
@@ -163,11 +170,11 @@ export function WorkLocationCalendar({ locations }: { locations: LocationMap }) 
                   >
                     <span className="flex items-center gap-3">
                       {isToday && <span className="rounded-full bg-accent-600 px-2 py-0.5 text-caption-2-bold text-text-white">TODAY</span>}
-                      <span className="text-body-medium text-text-primary">{formatDateLabel(date)}</span>
+                      <span className="text-body-medium text-text-primary">{dateLabel(date)}</span>
                     </span>
                     <span className="flex items-center gap-2">
                       <span className={cx("inline-block size-2 rounded-full", style.dot)} aria-hidden />
-                      <span className={cx("text-body-2-medium", style.text)}>{locations[date]}</span>
+                      <span className={cx("text-body-2-medium", style.text)}>{toLocationName(locations[date], locale)}</span>
                     </span>
                   </button>
                 </li>

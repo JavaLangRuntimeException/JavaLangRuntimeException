@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import { Button } from "@/components/base/buttons/button";
 import { signOutAndGo } from "@/entities/session";
+import { LocaleToggle } from "@/features/locale-switch";
+import { useT } from "@/shared/lib/i18n";
 
 /** 管理画面の枠（上部バー: タイトル・もう一方の管理画面へのリンク・ログイン中のアカウント・ログアウト） */
 export function AdminShell({
@@ -18,6 +20,7 @@ export function AdminShell({
   width?: "default" | "wide";
   children: ReactNode;
 }) {
+  const t = useT();
   const link = (
     <a
       href={crossLink.href}
@@ -37,9 +40,10 @@ export function AdminShell({
           </div>
           <div className="flex items-center gap-3">
             {crossLinkPosition === "end" && link}
+            <LocaleToggle />
             <span className="hidden text-body-2-regular text-text-secondary sm:inline">{email}</span>
             <Button variant="secondary" size="small" onClick={() => signOutAndGo("/")}>
-              ログアウト
+              {t({ ja: "ログアウト", en: "Sign out" })}
             </Button>
           </div>
         </div>
@@ -51,9 +55,10 @@ export function AdminShell({
 
 /** 管理画面の読み込み中・リダイレクト前 */
 export function AdminLoading() {
+  const t = useT();
   return (
     <div className="flex min-h-dvh items-center justify-center bg-background-secondary-default">
-      <p className="text-body-regular text-text-secondary">読み込み中...</p>
+      <p className="text-body-regular text-text-secondary">{t({ ja: "読み込み中...", en: "Loading..." })}</p>
     </div>
   );
 }

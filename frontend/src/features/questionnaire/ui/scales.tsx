@@ -1,13 +1,15 @@
 import { useId } from "react";
 import { Radio as AriaRadio, RadioGroup as AriaRadioGroup } from "react-aria-components";
+import { useLocale, useT } from "@/shared/lib/i18n";
 import { cx } from "@/utils/cx";
 import { LIKERT_GUIDE } from "../model/questions";
 
-function Required({ show, children }: { show: boolean; children: string }) {
-  return show ? <p className="text-caption-1-regular text-text-error-primary">{children}</p> : null;
+function Required({ show }: { show: boolean }) {
+  const t = useT();
+  return show ? <p className="text-caption-1-regular text-text-error-primary">{t({ ja: "回答は必須です", en: "An answer is required" })}</p> : null;
 }
 
-/** 7 段階のリッカート尺度 */
+/** 7 段階のリッカート尺度（日本語では日英併記、英語では英語だけ） */
 export function LikertScale({
   value,
   onChange,
@@ -24,15 +26,23 @@ export function LikertScale({
   disabled?: boolean;
 }) {
   const id = useId();
+  const t = useT();
+  const locale = useLocale();
   return (
     <section className="flex flex-col gap-3 border-t border-separator-border pt-6">
       <div id={id} className="flex flex-col gap-1">
         <h3 className="text-body-2-semibold text-text-secondary">{questionNumber}</h3>
-        <p className="text-body-regular text-text-primary">{questionJa}</p>
-        <p className="text-caption-1-regular italic text-text-tertiary">{questionEn}</p>
+        {locale === "ja" ? (
+          <>
+            <p className="text-body-regular text-text-primary">{questionJa}</p>
+            <p className="text-caption-1-regular italic text-text-tertiary">{questionEn}</p>
+          </>
+        ) : (
+          <p className="text-body-regular text-text-primary">{questionEn}</p>
+        )}
       </div>
       <p className="text-caption-1-regular text-text-secondary">
-        {LIKERT_GUIDE.map((line, i) => (
+        {t(LIKERT_GUIDE).map((line, i) => (
           <span key={i}>
             {i > 0 && <br />}
             {line}
@@ -47,7 +57,7 @@ export function LikertScale({
         isDisabled={disabled}
         className="flex flex-wrap items-center justify-between gap-2"
       >
-        <span className="text-caption-1-regular text-text-tertiary">とてもそうは思わない</span>
+        <span className="text-caption-1-regular text-text-tertiary">{t({ ja: "とてもそうは思わない", en: "Strongly disagree" })}</span>
         <div className="flex gap-1.5">
           {[1, 2, 3, 4, 5, 6, 7].map((v) => (
             <AriaRadio
@@ -68,9 +78,9 @@ export function LikertScale({
             </AriaRadio>
           ))}
         </div>
-        <span className="text-caption-1-regular text-text-tertiary">とてもそう思う</span>
+        <span className="text-caption-1-regular text-text-tertiary">{t({ ja: "とてもそう思う", en: "Strongly agree" })}</span>
       </AriaRadioGroup>
-      <Required show={value === null}>回答は必須です</Required>
+      <Required show={value === null} />
     </section>
   );
 }
@@ -82,25 +92,31 @@ export function LikertScale({
 export function NasaTlxScale({
   value,
   onChange,
-  label,
+  questionJa,
+  questionEn,
   questionNumber,
   disabled,
 }: {
   value: number | null;
   onChange: (value: number) => void;
-  label: string;
+  questionJa: string;
+  questionEn: string;
   questionNumber: string;
   disabled?: boolean;
 }) {
   const id = useId();
+  const t = useT();
+  const locale = useLocale();
+  // 日本語では旧フォームと同じ「日本語 / English」、英語では英語だけ
+  const label = locale === "ja" ? `${questionJa} / ${questionEn}` : questionEn;
   return (
     <section className="flex flex-col gap-4 border-t border-separator-border pt-6">
       <h3 id={id} className="text-body-regular text-text-primary">
         <span className="text-body-2-semibold text-text-secondary">{questionNumber}</span> {label}
       </h3>
       <div className="flex justify-between text-caption-1-regular text-text-tertiary">
-        <span>低い(Low)</span>
-        <span>高い(High)</span>
+        <span>{t({ ja: "低い(Low)", en: "Low" })}</span>
+        <span>{t({ ja: "高い(High)", en: "High" })}</span>
       </div>
       <AriaRadioGroup
         aria-labelledby={id}
@@ -114,7 +130,7 @@ export function NasaTlxScale({
           <AriaRadio
             key={position}
             value={String(position)}
-            aria-label={`選択肢 ${position}`}
+            aria-label={t({ ja: `選択肢 ${position}`, en: `Option ${position}` })}
             className={({ isSelected, isFocusVisible, isDisabled, isHovered }) =>
               cx(
                 "relative flex flex-1 items-center justify-center outline-none",
@@ -137,7 +153,7 @@ export function NasaTlxScale({
           </AriaRadio>
         ))}
       </AriaRadioGroup>
-      <Required show={value === null}>回答は必須です</Required>
+      <Required show={value === null} />
     </section>
   );
 }

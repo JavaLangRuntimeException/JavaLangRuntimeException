@@ -49,24 +49,7 @@ export function PageHeader({ eyebrow, title, description, actions }: { eyebrow?:
   );
 }
 
-export function Section({
-  title,
-  description,
-  actions,
-  children,
-  className,
-  id,
-  animateContent = true,
-}: {
-  title?: ReactNode;
-  description?: ReactNode;
-  actions?: ReactNode;
-  children: ReactNode;
-  className?: string;
-  id?: string;
-  /** false なら中身（図・表など）は最初からそのまま出す（フェードも記号の書き換えもしない） */
-  animateContent?: boolean;
-}) {
+export function Section({ title, description, actions, children, className, id }: { title?: ReactNode; description?: ReactNode; actions?: ReactNode; children: ReactNode; className?: string; id?: string }) {
   // スクロールで見出しが出終わってから、説明と中身の文字を順に記号から定めて出す（見出しが文字でないときは画面に入ったら）
   const decoded = typeof title === "string";
   const [titleShown, setTitleShown] = useState(false);
@@ -95,13 +78,9 @@ export function Section({
           {actions}
         </div>
       )}
-      {animateContent ? (
-        <DecodeReveal show={after} delay={description ? 0.18 : 0.06}>
-          <div className="flex flex-col gap-6">{children}</div>
-        </DecodeReveal>
-      ) : (
+      <DecodeReveal show={after} delay={description ? 0.18 : 0.06}>
         <div className="flex flex-col gap-6">{children}</div>
-      )}
+      </DecodeReveal>
     </section>
   );
 }

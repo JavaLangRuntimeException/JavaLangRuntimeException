@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAtomValue } from "jotai";
 import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
 import { socialLinks, tagline } from "@/entities/profile";
+import { useT } from "@/shared/lib/i18n";
 import { introPlayingAtom } from "@/shared/model/intro";
 import { CURTAIN_EASE, DecodeText, EASE } from "@/shared/ui/motion";
 
@@ -11,6 +12,8 @@ import { CURTAIN_EASE, DecodeText, EASE } from "@/shared/ui/motion";
  * スクロールすると少し遅れて上へ流れながら沈む
  */
 export function ProfileHero() {
+  const t = useT();
+  const copy = t(tagline);
   const ref = useRef<HTMLElement>(null);
   const reduced = useReducedMotion();
   const introPlaying = useAtomValue(introPlayingAtom);
@@ -47,7 +50,7 @@ export function ProfileHero() {
         animate={reduced ? undefined : ready ? { clipPath: "inset(0% 0% 0% 0%)", transitionEnd: { clipPath: "none" } } : { clipPath: "inset(100% 0% 0% 0%)" }}
         transition={ready ? { duration: 0.9, ease: CURTAIN_EASE, delay: 0.15 } : { duration: 0 }}
       >
-        <img src="/profile_taramanji.png" alt="棚橋 柊太" className="size-32 rounded-full object-cover ring-1 ring-separator-border sm:size-44" />
+        <img src="/profile_taramanji.png" alt={t({ ja: "棚橋 柊太", en: "Shuta Tanahashi" })} className="size-32 rounded-full object-cover ring-1 ring-separator-border sm:size-44" />
       </motion.div>
       <div className="flex min-w-0 flex-col gap-3">
         <h1 className="text-[3rem] font-semibold leading-none tracking-[-0.02em] text-text-primary sm:text-[4rem]">
@@ -63,12 +66,12 @@ export function ProfileHero() {
             transition={ready ? { duration: 0.9, ease: EASE, delay: 0.5 } : { duration: 0 }}
           />
           <p className="text-[1.5rem] font-semibold leading-[1.4] tracking-[0.01em] text-text-primary [font-feature-settings:'palt'_1] sm:text-[1.75rem]">
-            {tagline.lines.map((line, i) => (
+            {copy.lines.map((line, i) => (
               <DecodeText key={line.text} text={line.text} accent={line.accent} ready={ready} delay={650 + i * 420} className="block" timing={{ stagger: 60, settle: 280 }} />
             ))}
           </p>
           <motion.p {...fade(1.7)} className="text-[0.9375rem] leading-[1.8] text-text-secondary [word-break:auto-phrase]">
-            {tagline.subtitle}
+            {copy.subtitle}
           </motion.p>
         </div>
         <motion.div {...fade(1.9)} className="mt-3 flex flex-col gap-1">
