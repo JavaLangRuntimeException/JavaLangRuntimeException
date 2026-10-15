@@ -33,8 +33,10 @@ controller:
   resources:
     requests: { cpu: 50m, memory: 128Mi }
     limits: { memory: 768Mi }
+# ApplicationSet コントローラーは dev01〜03（apps/taramanji-dev.yaml）を作るのに使う。
+# このチャートには applicationSet.enabled が無く、常に入る（enabled: false と書いても止まらない）
 applicationSet:
-  enabled: false
+  replicas: 1
 notifications:
   enabled: false
 dex:
