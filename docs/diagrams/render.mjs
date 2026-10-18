@@ -26,69 +26,16 @@ const browser = await chromium.launch();
 const page = await browser.newPage({ deviceScaleFactor: 2 });
 await page.setViewportSize({ width: 2560, height: 1600 });
 
-for (const name of diagrams) {
+// 引数で名前を渡すと、その図だけ書き出す（例: node docs/diagrams/render.mjs tech cicd）
+const only = process.argv.slice(2);
+for (const name of diagrams.filter((d) => only.length === 0 || only.includes(d))) {
   const htmlPath = path.join(root, `${name}.html`);
   const fileUrl = `file://${htmlPath}`;
   await page.goto(fileUrl, { waitUntil: "load" });
   await page.waitForTimeout(100);
 
-  if (name === "tech") {
-    await page.evaluate(() => {
-      const pageEl = document.querySelector(".tech-page");
-      const svg = document.getElementById("link-layer");
-      if (!pageEl || !svg) return;
-
-      const pr = pageEl.getBoundingClientRect();
-      const pt = (el, anchor) => {
-        const r = el.getBoundingClientRect();
-        const cx = r.left - pr.left + r.width / 2;
-        const cy = r.top - pr.top + r.height / 2;
-        let x = cx;
-        let y = cy;
-        if (anchor === "top") y = r.top - pr.top;
-        if (anchor === "bottom") y = r.bottom - pr.top;
-        if (anchor === "left") x = r.left - pr.left;
-        if (anchor === "right") x = r.right - pr.left;
-        return { x, y };
-      };
-
-      const links = [
-        { from: "argo-card", fromAnchor: "top", to: "kind-box", toAnchor: "bottom", label: "GitOps 同期" },
-        { from: "kind-box", fromAnchor: "bottom", to: "dd-card", toAnchor: "top", label: "テレメトリ" },
-        { from: "ts-card", fromAnchor: "top", to: "kind-box", toAnchor: "bottom", label: "SSH" },
-        { from: "kind-box", fromAnchor: "bottom", to: "ses-card", toAnchor: "top", label: "SendEmail API" },
-        { from: "workers-card", fromAnchor: "bottom", to: "ses-card", toAnchor: "top", label: "Webhook → SES", dashed: true },
-        { from: "dd-card", fromAnchor: "top", to: "workers-card", toAnchor: "bottom", label: "アラート Webhook", dashed: true },
-      ];
-
-      const ns = "http://www.w3.org/2000/svg";
-      for (const link of links) {
-        const a = document.getElementById(link.from);
-        const b = document.getElementById(link.to);
-        if (!a || !b) continue;
-        const p1 = pt(a, link.fromAnchor);
-        const p2 = pt(b, link.toAnchor);
-        const mx = (p1.x + p2.x) / 2;
-        const my = (p1.y + p2.y) / 2;
-        const dx = p2.x - p1.x;
-        const dy = p2.y - p1.y;
-        const cx = mx - dy * 0.12;
-        const cy = my + dx * 0.12;
-
-        const path = document.createElementNS(ns, "path");
-        path.setAttribute("d", `M ${p1.x} ${p1.y} Q ${cx} ${cy} ${p2.x} ${p2.y}`);
-        if (link.dashed) path.setAttribute("class", "dashed");
-        svg.appendChild(path);
-
-        const text = document.createElementNS(ns, "text");
-        text.setAttribute("x", String(cx));
-        text.setAttribute("y", String(cy - 4));
-        text.setAttribute("text-anchor", "middle");
-        text.textContent = link.label;
-        svg.appendChild(text);
-      }
-    });
-  }
+  // 矢印は各ページの _arrows.js が箱の位置を測って引く
+  await page.waitForFunction(() => window.__arrowsDone === true);
 
   const box = await page.locator(".page").boundingBox();
   if (!box) throw new Error(`No .page in ${name}.html`);

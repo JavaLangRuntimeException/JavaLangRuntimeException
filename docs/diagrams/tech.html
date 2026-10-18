@@ -4,12 +4,11 @@
 <meta charset="utf-8" />
 <link rel="stylesheet" href="_shared.css" />
 <style>
-  .tech-page { position: relative; }
-  .top { display: flex; align-items: stretch; gap: 16px; }
-  .bottom { display: flex; align-items: flex-end; gap: 16px; margin-top: 16px; }
-  .entrance { background: #fff6d4; width: 470px; display: flex; flex-direction: column; gap: 12px; }
+  .top { display: flex; align-items: stretch; gap: 60px; }
+  .bottom { display: flex; align-items: flex-end; gap: 44px; margin-top: 96px; }
+  .entrance { background: #fff6d4; width: 300px; display: flex; flex-direction: column; gap: 12px; }
   .mac { background: #eef3fb; flex: 1; display: flex; flex-direction: column; min-width: 0; }
-  .cicd { background: #f3f4f6; flex: 1; }
+  .cicd { background: #f3f4f6; }
   .user {
     align-self: center;
     background: #fff;
@@ -19,18 +18,26 @@
     padding: 22px 18px;
     font-weight: 700;
     font-size: 18px;
-    min-width: 108px;
+    width: 116px;
     text-align: center;
   }
   .mac-row { display: flex; gap: 12px; align-items: center; }
-  .mac-row + .mac-row { margin-top: 12px; }
+  .mac-row + .mac-row { margin-top: 14px; }
   .apps { display: flex; flex-direction: column; gap: 12px; flex: 1; }
-  .envoy { width: 250px; flex: 0 0 250px; }
+  .envoy { flex: 0 0 240px; }
+  .gap-arrow { flex: 0 0 64px; }
   .plain { justify-content: center; flex: 1; }
-  .bottom-left { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-  .watch-col { width: 640px; flex: 0 0 640px; }
-  .caps { display: flex; gap: 10px; align-items: flex-end; }
-  .caps > div { flex: 1; display: flex; flex-direction: column; align-items: stretch; }
+  .card img.logo.small { width: 30px; height: 30px; }
+  .cicd .flow { display: flex; gap: 48px; align-items: stretch; }
+  .cicd .card { flex: 0 0 auto; height: 84px; }
+  .cicd .card .name { white-space: nowrap; }
+  .outside { display: flex; gap: 0; align-items: flex-end; }
+  .outside > .col { display: flex; flex-direction: column; align-items: stretch; width: 250px; }
+  .outside .card { height: 84px; padding: 12px 14px; }
+  .outside .card .name { white-space: nowrap; font-size: 16px; }
+  .outside .card .sub { white-space: nowrap; }
+  .outside > .col + .col { margin-left: 110px; }
+  .outside > .col.ts { margin-left: 40px; width: 220px; }
   .cap {
     text-align: center;
     font-size: 13px;
@@ -40,49 +47,15 @@
     letter-spacing: 0.02em;
     line-height: 1.3;
   }
-  .link-layer {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    overflow: visible;
-  }
-  .link-layer path {
-    fill: none;
-    stroke: #9aa6ba;
-    stroke-width: 2;
-    marker-end: url(#arrow-gray);
-  }
-  .link-layer path.dashed {
-    stroke-dasharray: 6 5;
-  }
-  .link-layer text {
-    font-size: 11px;
-    font-weight: 700;
-    fill: #5c6b84;
-    font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", sans-serif;
-  }
-  .logos-duo { display: flex; gap: 6px; flex: 0 0 auto; align-items: center; }
-  .logos-duo .logo { width: 32px; height: 32px; }
 </style>
 </head>
 <body>
-<div class="page tech-page">
-  <svg class="link-layer" id="link-layer" aria-hidden="true">
-    <defs>
-      <marker id="arrow-gray" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-        <path d="M0,0 L8,4 L0,8 Z" fill="#9aa6ba" />
-      </marker>
-    </defs>
-  </svg>
-
+<div class="page">
   <div class="top">
-    <div class="user">利用者</div>
-    <div class="arrow-h">→</div>
+    <div class="user" id="user">利用者</div>
     <div class="group entrance">
       <div class="glabel">入口（Ingress）</div>
-      <div class="card">
+      <div class="card" id="tunnel">
         <img class="logo" src="icons/cloudflare.svg" alt="" />
         <div class="name">Cloudflare Tunnel</div>
       </div>
@@ -90,32 +63,24 @@
         <img class="logo" src="icons/cloudflare.svg" alt="" />
         <div class="name">Cloudflare Access</div>
       </div>
-      <div class="card" id="workers-card">
-        <img class="logo" src="icons/workers.svg" alt="" />
-        <div>
-          <div class="name">Cloudflare Workers</div>
-          <div class="sub">kind の外。1 分ごと</div>
-        </div>
-      </div>
     </div>
-    <div class="arrow-h">→</div>
     <div class="group mac" id="kind-box">
       <div class="glabel"><img src="icons/k8s.svg" alt="" /> Mac mini（kind / Kubernetes）</div>
       <div class="mac-row">
-        <div class="card envoy">
+        <div class="card envoy" id="envoy">
           <img class="logo" src="icons/envoy.svg" alt="" />
           <div class="name">Envoy Gateway</div>
         </div>
-        <div class="arrow-h">→</div>
+        <div class="gap-arrow"></div>
         <div class="apps">
-          <div class="card">
+          <div class="card" id="backend">
             <img class="logo" src="icons/go.svg" alt="" />
             <div class="name">backend（8 Go services）</div>
           </div>
-          <div class="card" id="web-card">
-            <div class="logos-duo">
-              <img class="logo" src="icons/nginx.svg" alt="" />
-              <img class="logo" src="icons/react.svg" alt="" />
+          <div class="card" id="web">
+            <div class="logos">
+              <img src="icons/nginx.svg" alt="" />
+              <img src="icons/react.svg" alt="" />
             </div>
             <div>
               <div class="name">web（nginx + React）</div>
@@ -129,65 +94,84 @@
           <img class="logo" src="icons/redis-icons8.jpg" alt="" />
           <div class="name">Redis</div>
         </div>
-        <div class="card plain"><div class="name">NetworkPolicy</div></div>
-        <div class="card plain"><div class="name">Sealed Secrets</div></div>
+        <div class="card plain">
+          <img class="logo" src="icons/netpol.svg" alt="" />
+          <div class="name">NetworkPolicy</div>
+        </div>
+        <div class="card plain">
+          <img class="logo" src="icons/secret.svg" alt="" />
+          <div class="name">Sealed Secrets</div>
+        </div>
       </div>
     </div>
   </div>
   <div class="bottom">
-    <div class="bottom-left">
-      <div class="group cicd" id="cicd-box">
-        <div class="glabel">CI / CD</div>
-        <div class="flow">
-          <div class="card">
-            <img class="logo" src="icons/actions.svg" alt="" />
-            <div class="name">GitHub Actions</div>
-          </div>
-          <div class="arrow-h">→</div>
-          <div class="card">
-            <img class="logo" src="icons/github.svg" alt="" />
-            <div class="name">GHCR</div>
-          </div>
-          <div class="arrow-h">→</div>
-          <div class="card" id="argo-card">
-            <img class="logo" src="icons/argo.svg" alt="" />
-            <div class="name">Argo CD / Rollouts</div>
-          </div>
+    <div class="group cicd">
+      <div class="glabel">CI / CD</div>
+      <div class="flow">
+        <div class="card" id="actions">
+          <img class="logo" src="icons/actions.svg" alt="" />
+          <div class="name">GitHub Actions</div>
+        </div>
+        <div class="card" id="ghcr">
+          <img class="logo" src="icons/github.svg" alt="" />
+          <div class="name">GHCR</div>
+        </div>
+        <div class="card" id="argo">
+          <img class="logo" src="icons/argo.svg" alt="" />
+          <div class="name">Argo CD / Rollouts</div>
         </div>
       </div>
     </div>
-    <div class="watch-col">
-      <div class="caps">
-        <div id="ses-col">
-          <div class="cap">トランザクションメール</div>
-          <div class="card" id="ses-card">
-            <img class="logo" src="icons/ses-console.png" alt="" />
-            <div>
-              <div class="name">Amazon SES</div>
-              <div class="sub">落ち始め・問い合わせ</div>
-            </div>
-          </div>
+    <div class="outside">
+      <div class="col" id="dd-col">
+        <div class="cap">可観測性（Observability）</div>
+        <div class="card" id="dd">
+          <img class="logo" src="icons/datadog.svg" alt="" />
+          <div><div class="name">Datadog</div><div class="sub">アラート Webhook</div></div>
         </div>
-        <div id="dd-col">
-          <div class="cap">可観測性（Observability）</div>
-          <div class="card" id="dd-card">
-            <img class="logo" src="icons/datadog.svg" alt="" />
-            <div>
-              <div class="name">Datadog</div>
-              <div class="sub">アラート Webhook</div>
-            </div>
-          </div>
+      </div>
+      <div class="col" id="workers-col" style="width: 262px">
+        <div class="cap">外形監視（kind の外）</div>
+        <div class="card" id="workers">
+          <img class="logo" src="icons/workers.svg" alt="" />
+          <div><div class="name">Cloudflare Workers</div><div class="sub">1 分ごと</div></div>
         </div>
-        <div id="ts-col">
-          <div class="cap">ゼロトラストアクセス</div>
-          <div class="card" id="ts-card">
-            <img class="logo" src="icons/tailscale.svg" alt="" />
-            <div class="name">Tailscale + SSH</div>
-          </div>
+      </div>
+      <div class="col" id="ses-col">
+        <div class="cap">トランザクションメール</div>
+        <div class="card" id="ses">
+          <img class="logo" src="icons/ses-console.png" alt="" />
+          <div><div class="name">Amazon SES</div><div class="sub">落ち始め・問い合わせ</div></div>
+        </div>
+      </div>
+      <div class="col ts" id="ts-col">
+        <div class="cap">ゼロトラストアクセス</div>
+        <div class="card" id="ts">
+          <img class="logo" src="icons/tailscale.svg" alt="" />
+          <div class="name">Tailscale + SSH</div>
         </div>
       </div>
     </div>
   </div>
 </div>
+<script>
+  window.LINKS = [
+    { from: "user:right", to: "tunnel:left", route: "hvh" },
+    { from: "tunnel:right", to: "envoy:left", route: "hvh" },
+    { from: "envoy:right", to: "backend:left", route: "hvh" },
+    { from: "envoy:right", to: "web:left", route: "hvh" },
+    { from: "actions:right", to: "ghcr:left", route: "h" },
+    { from: "ghcr:right", to: "argo:left", route: "h" },
+    { from: "argo:top@0.72", to: "kind-box:bottom", route: "v", label: "GitOps 同期" },
+    { from: "kind-box:bottom", fromAlign: "dd", to: "dd-col:top", route: "v", label: "テレメトリ" },
+    { from: "dd:right", to: "workers:left", route: "h", label: "Webhook" },
+    { from: "workers:right", to: "ses:left", route: "h", label: "SendRawEmail", labelSize: 11 },
+    { from: "workers-col:top", to: "kind-box:bottom", route: "v", label: "外から見る", dashed: true },
+    { from: "kind-box:bottom", fromAlign: "ses", to: "ses-col:top", route: "v", label: "SendEmail API" },
+    { from: "ts-col:top", to: "kind-box:bottom", route: "v", label: "SSH" },
+  ];
+</script>
+<script src="_arrows.js"></script>
 </body>
 </html>

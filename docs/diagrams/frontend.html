@@ -4,48 +4,59 @@
 <meta charset="utf-8" />
 <link rel="stylesheet" href="_shared.css" />
 <style>
-  .page { width: 1180px; }
-  .fsd { display: flex; align-items: stretch; gap: 10px; }
-  .fsd .layer { flex: 1; min-height: 100px; display: flex; flex-direction: column; justify-content: center; }
-  .lower { display: flex; align-items: flex-start; margin-top: 20px; gap: 10px; }
-  .lower .nginx { flex: 0 0 calc((100% - 50px) / 6 * 2 + 10px); }
-  .lower .spacer { flex: 1; }
-  .lower .backend { flex: 0 0 calc((100% - 50px) / 6); display: flex; flex-direction: column; align-items: center; }
-  .lower .backend .layer { width: 100%; min-height: 88px; }
-  .arrow-down { font-size: 28px; font-weight: 700; color: #8b97ab; margin-bottom: 8px; }
+  .src { background: #f7f8fb; border: 1px solid #e6e9f0; }
+  .glabel .sep { color: #b8c4d6; font-weight: 500; }
+  .fsd { display: grid; grid-template-columns: repeat(6, 156px); column-gap: 46px; }
+  .fsd .layer { min-height: 112px; min-width: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 14px 10px; }
+  .fsd .layer .logos { margin-bottom: 6px; }
+  .fsd .layer .logos img { width: 26px; height: 26px; }
+  .lower { display: grid; grid-template-columns: repeat(6, 156px); column-gap: 46px; margin-top: 76px; padding: 0 16px; }
+  .lower .layer { display: flex; align-items: center; gap: 12px; text-align: left; min-height: 92px; }
+  .lower .layer .logos img { width: 34px; height: 34px; }
+  #nginx { grid-column: 1 / span 3; }
+  #gateway { grid-column: 4 / span 3; }
 </style>
 </head>
 <body>
 <div class="page">
-  <div class="fsd">
-    <div class="layer dark"><div class="name">app</div><div class="sub">ルーター</div></div>
-    <div class="arrow-h">→</div>
-    <div class="layer soft"><div class="name">pages</div><div class="sub">URL ごとの画面</div></div>
-    <div class="arrow-h">→</div>
-    <div class="layer soft"><div class="name">widgets</div><div class="sub">画面の部品</div></div>
-    <div class="arrow-h">→</div>
-    <div class="layer pale-yellow"><div class="name">features</div><div class="sub">予約など</div></div>
-    <div class="arrow-h">→</div>
-    <div class="layer pale-yellow"><div class="name">entities</div><div class="sub">記事・勤務場所</div></div>
-    <div class="arrow-h">→</div>
-    <div class="layer bright-yellow"><div class="name">shared</div><div class="sub">API・UI・設定</div></div>
+  <div class="group src" id="src">
+    <div class="glabel">
+      <img src="icons/react.svg" alt="" /> React
+      <img src="icons/vite.svg" alt="" /> Vite
+      <img src="icons/typescript.svg" alt="" /> TypeScript
+      <span class="sep">／</span> src/ の層
+    </div>
+    <div class="fsd">
+      <div class="layer dark" id="app"><div class="logos"><img src="icons/reactrouter.svg" alt="" /></div><div class="name">app</div><div class="sub">ルーター</div></div>
+      <div class="layer soft" id="pages"><div class="name">pages</div><div class="sub">URL ごとの画面</div></div>
+      <div class="layer soft" id="widgets"><div class="name">widgets</div><div class="sub">画面の部品</div></div>
+      <div class="layer pale-yellow" id="features"><div class="name">features</div><div class="sub">予約など</div></div>
+      <div class="layer pale-yellow" id="entities"><div class="name">entities</div><div class="sub">記事・勤務場所</div></div>
+      <div class="layer bright-yellow" id="shared"><div class="logos"><img src="icons/connect.png" alt="" /><img src="icons/tailwind.svg" alt="" /></div><div class="name">shared</div><div class="sub">API・UI・設定</div></div>
+    </div>
   </div>
   <div class="lower">
-    <div class="nginx">
-      <div class="layer gray">
-        <div class="name">nginx のコンテナ</div>
-        <div class="sub">ビルドした静的ファイルを配る</div>
-      </div>
+    <div class="layer gray" id="nginx">
+      <div class="logos"><img src="icons/nginx.svg" alt="" /></div>
+      <div><div class="name">nginx のコンテナ</div><div class="sub">ビルドした静的ファイルを配る</div></div>
     </div>
-    <div class="spacer"></div>
-    <div class="backend">
-      <div class="arrow-down">↓</div>
-      <div class="layer dark">
-        <div class="name">Envoy Gateway → backend</div>
-        <div class="sub">connect-es（HTTP）</div>
-      </div>
+    <div class="layer dark" id="gateway">
+      <div class="logos"><img src="icons/envoy.svg" alt="" /><img src="icons/go.svg" alt="" /></div>
+      <div><div class="name">Envoy Gateway<i class="ia"></i>backend</div><div class="sub">connect-es（HTTP）</div></div>
     </div>
   </div>
 </div>
+<script>
+  window.LINKS = [
+    { from: "app:right", to: "pages:left", route: "h" },
+    { from: "pages:right", to: "widgets:left", route: "h" },
+    { from: "widgets:right", to: "features:left", route: "h" },
+    { from: "features:right", to: "entities:left", route: "h" },
+    { from: "entities:right", to: "shared:left", route: "h" },
+    { from: "src:bottom@0.25", to: "nginx:top", route: "v", label: "vite build", logo: "icons/vite.svg", logoW: 20, logoH: 20 },
+    { from: "shared:bottom", to: "gateway:top", route: "v", label: "API を呼ぶ", labelSide: "left", logo: "icons/connect.png", logoW: 20, logoH: 20 },
+  ];
+</script>
+<script src="_arrows.js"></script>
 </body>
 </html>
