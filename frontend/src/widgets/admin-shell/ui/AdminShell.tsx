@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
 import { Button } from "@/components/base/buttons/button";
-import { signOutAndGo } from "@/entities/session";
+import { signOutEverywhere } from "@/entities/session";
 import { LocaleToggle } from "@/features/locale-switch";
 import { useT } from "@/shared/lib/i18n";
 
-/** 管理画面の枠（上部バー: タイトル・もう一方の管理画面へのリンク・ログイン中のアカウント・ログアウト） */
+/** 管理画面の枠（上部バー: タイトル・もう一方の管理画面へのリンク・ログイン中のアカウント・ログアウト（アプリと Cloudflare Access の両方）） */
 export function AdminShell({
   title,
   email,
@@ -42,7 +42,7 @@ export function AdminShell({
             {crossLinkPosition === "end" && link}
             <LocaleToggle />
             <span className="hidden text-body-2-regular text-text-secondary sm:inline">{email}</span>
-            <Button variant="secondary" size="small" onClick={() => signOutAndGo("/")}>
+            <Button variant="secondary" size="small" onClick={() => void signOutEverywhere()}>
               {t({ ja: "ログアウト", en: "Sign out" })}
             </Button>
           </div>

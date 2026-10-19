@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { useLocation, useOutlet } from "react-router";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useAtomValue } from "jotai";
+import { AccessLogoutButton } from "@/features/access-logout";
 import { LocaleToggle } from "@/features/locale-switch";
+import { isAccessProtectedEnv } from "@/shared/config/site";
 import { IntroSplash } from "@/widgets/intro";
 import { SiteHeader } from "@/widgets/site-header";
 import { localeAtom } from "@/shared/lib/i18n";
@@ -64,8 +66,10 @@ export function SiteLayout() {
       {TERMINAL_PAGES.includes(pathname) && <TerminalBackground />}
       {!isAdmin && !NO_HEADER.includes(pathname) && <SiteHeader />}
       {FLOATING_LOCALE.includes(pathname) && (
-        <div className="fixed end-3 top-3 z-50 rounded-lg bg-background-full/80 backdrop-blur-md">
+        <div className="fixed end-3 top-3 z-50 flex items-center gap-2 rounded-lg bg-background-full/80 backdrop-blur-md">
           <LocaleToggle />
+          {/* /admin/login と stg・dev は Cloudflare Access の後ろ。別のアカウントで入り直せるようにする */}
+          {(isAdmin || isAccessProtectedEnv()) && <AccessLogoutButton />}
         </div>
       )}
       {/* ページ遷移: 前のページはふっと消え、次のページはぼかしから浮かび上がる */}
