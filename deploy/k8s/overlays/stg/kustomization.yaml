@@ -24,7 +24,7 @@ images:
   - { name: taramanji/content, newName: ghcr.io/javalangruntimeexception/taramanji-content, newTag: sha-41a4323 }
   - { name: taramanji/calendarsync, newName: ghcr.io/javalangruntimeexception/taramanji-calendarsync, newTag: sha-41a4323 }
   - { name: taramanji/analytics, newName: ghcr.io/javalangruntimeexception/taramanji-analytics, newTag: sha-41a4323 }
-  - { name: taramanji/web, newName: ghcr.io/javalangruntimeexception/taramanji-web, newTag: sha-ad2ba9b }
+  - { name: taramanji/web, newName: ghcr.io/javalangruntimeexception/taramanji-web, newTag: sha-4398144 }
 
 patches:
   - target: { kind: Deployment }
