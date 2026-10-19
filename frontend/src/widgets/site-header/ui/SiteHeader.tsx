@@ -1,6 +1,8 @@
 import { NavLink, Link } from "react-router";
 import { useAtomValue } from "jotai";
+import { AccessLogoutButton } from "@/features/access-logout";
 import { LocaleToggle } from "@/features/locale-switch";
+import { isAccessProtectedEnv } from "@/shared/config/site";
 import { useT } from "@/shared/lib/i18n";
 import { navLockedAtom } from "@/shared/model/nav-lock";
 import { cx } from "@/utils/cx";
@@ -19,6 +21,8 @@ const PEEK = "pointer-events-none absolute top-1/2 z-10 -translate-y-1/2 opacity
 export function SiteHeader() {
   const locked = useAtomValue(navLockedAtom);
   const t = useT();
+  // stg・dev01〜03 は Cloudflare Access の後ろなので、別のアカウントで入り直せるようログアウトを出す
+  const accessLogout = isAccessProtectedEnv();
   return (
     <header className="sticky top-0 z-50 w-full overflow-x-clip border-b border-separator-border bg-background-full/80 backdrop-blur-md">
       <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-2 px-3 sm:gap-4 sm:px-4">
@@ -70,6 +74,7 @@ export function SiteHeader() {
         </nav>
         {/* スマホではナビで横幅が埋まるので、言語の切り替えは下の段に置く */}
         <LocaleToggle className="hidden sm:inline-flex" />
+        {accessLogout && <AccessLogoutButton className="hidden sm:inline-flex" />}
       </div>
       <div className="h-8 overflow-hidden border-t border-separator-border sm:hidden">
         <div className="flex h-full items-center gap-2 pe-3">
@@ -77,6 +82,7 @@ export function SiteHeader() {
             <HeaderMarquee />
           </div>
           <LocaleToggle />
+          {accessLogout && <AccessLogoutButton />}
         </div>
       </div>
     </header>

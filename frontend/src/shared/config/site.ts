@@ -38,3 +38,9 @@ export function withEnvTitle(title: string) {
   const env = envName();
   return env === "prod" ? title : `[${env.toUpperCase()}] ${title}`;
 }
+
+/** Cloudflare Access のチームのドメイン（stg・dev01〜03 の全体と、各環境の /admin の前でログインを求める） */
+export const ACCESS_TEAM_DOMAIN = "solitary-sun-32e2.cloudflareaccess.com";
+
+/** 画面全体が Cloudflare Access の後ろにある環境か（stg・dev01〜03） */
+export const isAccessProtectedEnv = () => envName() !== "prod";
