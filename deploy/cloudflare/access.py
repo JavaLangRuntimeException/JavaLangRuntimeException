@@ -3,8 +3,9 @@
 dev / stg、本番の管理画面（/admin）、Argo Rollouts の画面を Cloudflare Access で守る。何度実行しても同じ結果になる。
 Cloudflare の入口で Google ログインを求め、ADMIN_EMAIL のアカウント（shuta.tanahashi@taramanji.com）だけを通す（GKE なら IAP にあたる）。
 --otp を付けると、Google の代わりにワンタイム PIN（そのメールアドレスに届くコード）にする。Google 側が使えないときの逃げ道。
+--with-otp を付けると、Google とワンタイム PIN のどちらでも入れる（ログイン画面で選ぶ）。Google の設定を確かめる間に使う。
 
-  python3 deploy/cloudflare/access.py ~/Downloads/cf-access-token.txt [--otp]
+  python3 deploy/cloudflare/access.py ~/Downloads/cf-access-token.txt [--otp | --with-otp]
 
 必要なもの:
   - API トークン（ファイルで渡す。中身は表示しない）。権限: Account › Access: Apps and Policies › Edit、
@@ -83,6 +84,12 @@ def main():
         idp_body = {"name": "One-time PIN", "type": "onetimepin", "config": {}}
     idp = next((i for i in idps if i["type"] == idp_body["type"]), None)
     idp = call(token, "PUT", f"/identity_providers/{idp['id']}", idp_body) if idp else call(token, "POST", "/identity_providers", idp_body)
+    allowed = [idp["id"]]
+    if use_google and "--with-otp" in sys.argv[2:]:
+        otp = next((i for i in idps if i["type"] == "onetimepin"), None) or call(
+            token, "POST", "/identity_providers", {"name": "One-time PIN", "type": "onetimepin", "config": {}})
+        allowed.append(otp["id"])
+        print("ワンタイム PIN も使える（ログイン画面で選ぶ）")
     print("IdP:", idp_body["name"], idp["id"])
 
     # 本人だけを通すポリシー（使い回せるポリシー）
@@ -100,8 +107,9 @@ def main():
             "name": name, "type": "self_hosted",
             "domain": hosts[0],
             "destinations": [{"type": "public", "uri": h} for h in hosts],
-            "allowed_idps": [idp["id"]],
-            "auto_redirect_to_identity": True,
+            "allowed_idps": allowed,
+            # 方法が 1 つならログイン画面を飛ばしてそのまま Google へ
+            "auto_redirect_to_identity": len(allowed) == 1,
             "session_duration": "24h",
             "app_launcher_visible": False,
             "policies": [{"id": pol["id"], "precedence": 1}],

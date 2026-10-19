@@ -177,7 +177,7 @@ flowchart TD
 ```bash
 # DNS（staging トンネルへ向ける）
 cloudflared tunnel route dns taramanji-kind dev01.taramanji.com
-# Access（管理者だけ。Google ログイン。Google が使えないときは --otp でワンタイム PIN）
+# Access（管理者だけ。Google ログイン。Google が使えないときは --otp でワンタイム PIN、両方なら --with-otp）
 python3 deploy/cloudflare/access.py <API トークンのファイル>
 ```
 
