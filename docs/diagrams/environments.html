@@ -4,10 +4,13 @@
 <meta charset="utf-8" />
 <link rel="stylesheet" href="_shared.css" />
 <style>
-  .cols { display: flex; gap: 14px; align-items: stretch; }
+  .cols { display: flex; gap: 76px; align-items: stretch; }
   .col { flex: 1; display: flex; flex-direction: column; gap: 10px; }
-  .col.narrow { flex: 0 0 200px; }
-  .col.wide { flex: 1.15; }
+  .col.narrow { flex: 0 0 236px; }
+  .col.mid { flex: 0 0 300px; }
+  .col.right { flex: 0 0 330px; margin-left: 60px; }
+  .col.wide { flex: 0 0 540px; }
+  .trigger { justify-content: flex-start; }
   .trigger .card { flex-direction: column; align-items: flex-start; min-height: 88px; }
   .argo-box {
     background: #eef3fb;
@@ -58,14 +61,6 @@
     padding: 16px;
     flex: 1;
   }
-  .dashed-link {
-    border-left: 2px dashed #b8c4d6;
-    margin-left: 8px;
-    padding-left: 12px;
-    font-size: 12px;
-    font-weight: 600;
-    color: #8b97ab;
-  }
   .footer-row { display: flex; justify-content: space-between; align-items: baseline; margin-top: 14px; gap: 16px; }
   .footer-row .footnote { margin: 0; text-align: left; flex: 1; }
 </style>
@@ -75,21 +70,21 @@
   <div class="cols">
     <div class="col narrow trigger">
       <div class="glabel">きっかけ</div>
-      <div class="card">
+      <div class="card" id="t-prod">
         <div class="name">タグ v*</div>
         <div class="sub">stg で確かめたコミットに付ける</div>
       </div>
-      <div class="card">
+      <div class="card" id="t-stg">
         <div class="name">main にマージ</div>
       </div>
-      <div class="card">
+      <div class="card" id="t-dev">
         <div class="name">PR に push</div>
         <div class="sub">空いている dev を自動で選ぶ</div>
       </div>
     </div>
-    <div class="col">
+    <div class="col mid">
       <div class="glabel">Git に合わせる</div>
-      <div class="argo-box">
+      <div class="argo-box" id="argocd">
         <div class="hero">
           <img src="icons/argo.svg" alt="" />
           <div class="name">Argo CD</div>
@@ -103,17 +98,17 @@
     <div class="col wide">
       <div class="glabel"><img src="icons/k8s.svg" alt="" /> Mac mini の kind / namespace</div>
       <div class="env-stack">
-        <div class="env-card">
+        <div class="env-card" id="e-prod">
           <div class="title">本番</div>
           <div class="meta">namespace: taramanji</div>
           <div class="tags">
-            <span class="tag">カナリア 10% → 100%</span>
+            <span class="tag">カナリア 10%<i class="ia"></i>100%</span>
             <span class="tag plain">公開</span>
             <img src="icons/datadog.svg" alt="" />
             <span class="tag plain">Datadog で見張る</span>
           </div>
         </div>
-        <div class="env-card stg">
+        <div class="env-card stg" id="e-stg">
           <div class="title">stg</div>
           <div class="meta">namespace: taramanji-stg ・ main の最新</div>
           <div class="tags">
@@ -122,7 +117,7 @@
             <span class="tag plain">タイトルに [STG]</span>
           </div>
         </div>
-        <div class="env-card dev">
+        <div class="env-card dev" id="e-dev">
           <div class="title">dev01〜03</div>
           <div class="meta">PR が入っている dev、なければ一番前に使われた dev</div>
           <div class="dev-grid">
@@ -139,9 +134,9 @@
         </div>
       </div>
     </div>
-    <div class="col">
+    <div class="col right">
       <div class="glabel">見る・操作する</div>
-      <div class="rollouts-box">
+      <div class="rollouts-box" id="rollouts">
         <div class="hero" style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
           <img src="icons/argo.svg" alt="" style="width:44px;height:44px;" />
           <div class="name" style="font-size:22px;font-weight:700;">Argo Rollouts</div>
@@ -150,14 +145,22 @@
           名前空間を切り替えて各環境の入れ替えを見る<br />
           本番のカナリアを Promote / Abort
         </div>
-        <div class="dashed-link" style="margin-top:12px;">← 各環境の Rollout</div>
       </div>
     </div>
   </div>
   <div class="footer-row">
-    <div class="footnote">PR → dev01〜03、マージ → stg、タグ → 本番</div>
+    <div class="footnote">PR<i class="ia"></i>dev01〜03、マージ<i class="ia"></i>stg、タグ<i class="ia"></i>本番</div>
     <div class="footnote small">Argo CD の画面は port-forward で開く（外には出していない）</div>
   </div>
 </div>
+<script>
+  const ENVS = [["t-prod", "e-prod"], ["t-stg", "e-stg"], ["t-dev", "e-dev"]];
+  window.LINKS = [
+    ...ENVS.map(([t, e]) => ({ from: `${t}:right`, to: "argocd:left", toAlign: e, route: "hvh" })),
+    ...ENVS.map(([, e]) => ({ from: "argocd:right", fromAlign: e, to: `${e}:left`, route: "h" })),
+    ...ENVS.map(([, e], i) => ({ from: "rollouts:left", fromAlign: e, to: `${e}:right`, route: "h", dashed: true, ...(i === 0 ? { label: "各環境の Rollout", labelSide: "above" } : {}) })),
+  ];
+</script>
+<script src="_arrows.js"></script>
 </body>
 </html>

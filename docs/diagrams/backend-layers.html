@@ -4,67 +4,56 @@
 <meta charset="utf-8" />
 <link rel="stylesheet" href="_shared.css" />
 <style>
-  .page { min-width: 900px; }
-  .top-row { display: flex; align-items: center; gap: 12px; }
-  .top-row .layer { flex: 1; min-height: 96px; }
-  .lower { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 36px; }
-  .di-stack { display: flex; flex-direction: column; align-items: center; gap: 8px; }
-  .di-stack .layer { width: 100%; }
-  .up-note { font-size: 13px; font-weight: 700; color: #5c6b84; }
-  .up-note .mark { font-size: 22px; color: #8b97ab; line-height: 1; }
-  .infra-stack { display: flex; flex-direction: column; align-items: stretch; gap: 10px; }
-  .infra-stack .layer { min-height: 96px; }
-  .impl {
-    border-top: 2px dashed #8b97ab;
-    text-align: center;
-    padding-top: 10px;
-    font-size: 13px;
-    font-weight: 700;
-    color: #5c6b84;
-  }
-  .impl .mark { display: block; font-size: 20px; color: #8b97ab; margin-bottom: 2px; }
-  .di-to-infra { display: flex; align-items: center; gap: 8px; margin-top: 12px; grid-column: 1 / -1; }
-  .di-to-infra .layer { flex: 0 0 calc(50% - 24px); }
-  .di-to-infra .arrow-h { flex: 0 0 auto; }
-  .di-to-infra .infra-wide { flex: 1; }
+  .note-top { display: flex; align-items: center; gap: 8px; }
+  .note-top img { width: 24px; height: 24px; object-fit: contain; }
+  .row { display: grid; grid-template-columns: repeat(3, 260px); column-gap: 96px; }
+  .row + .row { margin-top: 84px; }
+  .layer { min-height: 112px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+  .layer .logos { margin-bottom: 8px; }
+  .layer .logos img { width: 28px; height: 28px; }
+  .layer .logos img.wide { width: 62px; }
 </style>
 </head>
 <body>
 <div class="page">
-  <div class="note-top">handler と型は proto から自動で生成する</div>
-  <div class="top-row">
-    <div class="layer white">
+  <div class="note-top"><img src="icons/go.svg" alt="" /> handler と型は proto から自動で生成する <img src="icons/buf.svg" alt="" /></div>
+  <div class="row">
+    <div class="layer white" id="handler">
+      <div class="logos"><img src="icons/connect.png" alt="" /><img class="wide" src="icons/grpc.svg" alt="" /></div>
       <div class="name">handler</div>
       <div class="sub">Connect / gRPC・HTTP</div>
     </div>
-    <div class="arrow-h">→</div>
-    <div class="layer pale-yellow">
+    <div class="layer pale-yellow" id="usecase">
       <div class="name">usecase</div>
       <div class="sub">アプリケーションの処理</div>
     </div>
-    <div class="arrow-h">→</div>
-    <div class="layer bright-yellow">
+    <div class="layer bright-yellow" id="domain">
       <div class="name">domain</div>
       <div class="sub">エンティティ・ルール</div>
     </div>
   </div>
-  <div class="di-to-infra">
-    <div class="di-stack" style="flex:0 0 calc(50% - 24px);">
-      <div class="up-note"><span class="mark">↑</span>組み立て</div>
-      <div class="layer gray">
-        <div class="name">di</div>
-        <div class="sub">組み立て</div>
-      </div>
+  <div class="row">
+    <div class="layer gray" id="di">
+      <div class="name">di</div>
+      <div class="sub">組み立て</div>
     </div>
-    <div class="arrow-h">→</div>
-    <div class="infra-stack infra-wide">
-      <div class="layer blue">
-        <div class="name">infra</div>
-        <div class="sub">Redis・外部 API</div>
-      </div>
-      <div class="impl"><span class="mark">↑</span>実装する</div>
+    <div></div>
+    <div class="layer blue" id="infra">
+      <div class="logos"><img src="icons/redis-icons8.jpg" alt="" /></div>
+      <div class="name">infra</div>
+      <div class="sub">Redis・外部 API</div>
     </div>
   </div>
 </div>
+<script>
+  window.LINKS = [
+    { from: "handler:right", to: "usecase:left", route: "h" },
+    { from: "usecase:right", to: "domain:left", route: "h" },
+    { from: "di:top", to: "handler:bottom", route: "v", label: "組み立て" },
+    { from: "di:right", to: "infra:left", route: "h" },
+    { from: "infra:top", to: "domain:bottom", route: "v", label: "実装する", dashed: true },
+  ];
+</script>
+<script src="_arrows.js"></script>
 </body>
 </html>

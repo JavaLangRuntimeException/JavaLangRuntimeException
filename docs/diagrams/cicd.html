@@ -4,59 +4,50 @@
 <meta charset="utf-8" />
 <link rel="stylesheet" href="_shared.css" />
 <style>
-  .page { min-width: 1100px; }
-  .flow .card { flex-direction: column; align-items: center; text-align: center; padding: 20px 18px; min-height: 132px; }
-  .flow .card img.logo { width: 40px; height: 40px; }
+  .flow { display: flex; align-items: stretch; gap: 64px; }
+  .flow .card { flex: 0 0 176px; flex-direction: column; align-items: center; text-align: center; padding: 20px 14px; min-height: 140px; justify-content: center; }
+  .flow .card img.logo { width: 42px; height: 42px; }
+  .flow .card .name { white-space: nowrap; }
   .flow .card.rollouts { background: #ffe566; border-color: #f0d84a; }
   .flow .card.cd { background: #eef3fb; border-color: #d4e0f2; }
-  .flow .card.registry { background: #f3f4f6; border-color: #e2e5ea; }
-  .flow .card.monitor { background: #f3f4f6; border-color: #e2e5ea; }
+  .flow .card.registry, .flow .card.monitor { background: #f3f4f6; border-color: #e2e5ea; }
+  .footnote { margin-top: 22px; }
 </style>
 </head>
 <body>
 <div class="page">
   <div class="flow">
-    <div class="card">
+    <div class="card" id="actions">
       <img class="logo" src="icons/actions.svg" alt="" />
-      <div>
-        <div class="name">GitHub Actions</div>
-        <div class="sub">テスト・ビルド</div>
-      </div>
+      <div><div class="name">GitHub Actions</div><div class="sub">テスト・ビルド</div></div>
     </div>
-    <div class="arrow-h">→</div>
-    <div class="card registry">
+    <div class="card registry" id="ghcr">
       <img class="logo" src="icons/github.svg" alt="" />
-      <div>
-        <div class="name">GHCR</div>
-        <div class="sub">イメージ置き場</div>
-      </div>
+      <div><div class="name">GHCR</div><div class="sub">イメージ置き場</div></div>
     </div>
-    <div class="arrow-h">→</div>
-    <div class="card cd">
+    <div class="card cd" id="argocd">
       <img class="logo" src="icons/argo.svg" alt="" />
-      <div>
-        <div class="name">Argo CD</div>
-        <div class="sub">Git に合わせる</div>
-      </div>
+      <div><div class="name">Argo CD</div><div class="sub">Git に合わせる</div></div>
     </div>
-    <div class="arrow-h">→</div>
-    <div class="card rollouts">
+    <div class="card rollouts" id="rollouts">
       <img class="logo" src="icons/argo.svg" alt="" />
-      <div>
-        <div class="name">Argo Rollouts</div>
-        <div class="sub">少しずつ出す</div>
-      </div>
+      <div><div class="name">Argo Rollouts</div><div class="sub">少しずつ出す</div></div>
     </div>
-    <div class="arrow-h">→</div>
-    <div class="card monitor">
+    <div class="card monitor" id="datadog">
       <img class="logo" src="icons/datadog.svg" alt="" />
-      <div>
-        <div class="name">Datadog</div>
-        <div class="sub">悪ければ戻す</div>
-      </div>
+      <div><div class="name">Datadog</div><div class="sub">悪ければ戻す</div></div>
     </div>
   </div>
-  <div class="footnote">PR → dev、マージ → stg、タグ → 本番</div>
+  <div class="footnote">PR<i class="ia"></i>dev、マージ<i class="ia"></i>stg、タグ<i class="ia"></i>本番</div>
 </div>
+<script>
+  window.LINKS = [
+    { from: "actions:right", to: "ghcr:left", route: "h" },
+    { from: "ghcr:right", to: "argocd:left", route: "h" },
+    { from: "argocd:right", to: "rollouts:left", route: "h" },
+    { from: "rollouts:right", to: "datadog:left", route: "h" },
+  ];
+</script>
+<script src="_arrows.js"></script>
 </body>
 </html>
