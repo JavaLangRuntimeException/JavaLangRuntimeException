@@ -40,6 +40,8 @@ spec:
       envoyPDB:
         minAvailable: 1
   telemetry:
+    # アクセスログ（1 リクエスト 1 行の JSON）。Datadog に送り、log_pipelines.py で標準属性に直す。
+    # host・status は Datadog の予約語（ホスト名・ログのレベルになってしまう）なので authority・status_code にする
     accessLog:
       settings:
         - format:
@@ -48,8 +50,8 @@ spec:
               start_time: "%START_TIME%"
               method: "%REQ(:METHOD)%"
               path: "%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%"
-              host: "%REQ(:AUTHORITY)%"
-              status: "%RESPONSE_CODE%"
+              authority: "%REQ(:AUTHORITY)%"
+              status_code: "%RESPONSE_CODE%"
               response_flags: "%RESPONSE_FLAGS%"
               duration_ms: "%DURATION%"
               upstream_service_time: "%RESP(X-ENVOY-UPSTREAM-SERVICE-TIME)%"

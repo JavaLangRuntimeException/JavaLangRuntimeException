@@ -101,6 +101,11 @@ def events(title, query):
         "columns": [{"field": "stream", "width": "auto"}], "response_format": "event_list"}]}}
 
 
+def log_stream(title, query, columns):
+    return {"definition": {"type": "log_stream", "title": title, "query": query, "columns": columns, "indexes": [],
+                           "message_display": "inline", "sort": {"column": "time", "order": "desc"}}}
+
+
 def service_map():
     return {"definition": {"type": "servicemap", "title": "サービスマップ（APM）", "service": "reservation",
                            "filters": ["env:prod"]}}
@@ -241,6 +246,17 @@ def dashboard():
                 ts("AnalysisRun（結果別）", ["sum:argo_rollouts.analysis.run.phase{*} by {phase}"], "bars"),
                 ts("Rollout のイベント", ["sum:argo_rollouts.rollout.events.count{*} by {argo_rollouts_name,reason}.as_count()"], "bars"),
             ], "vivid_pink"),
+            group("アクセスログ・SSH（IP 付き）", [
+                note("Envoy Gateway のアクセスログ（全環境の HTTP リクエスト）と、Mac mini の sshd のログ（deploy/mac/ssh-logs）。"
+                     "整形は log_pipelines.py。SSH の @evt.outcome が success ならログインできた、failure なら失敗"),
+                log_stream("HTTP リクエスト（全環境）", "source:envoy service:gateway",
+                           ["@network.client.ip", "@network.client.geoip.country.name", "@http.method",
+                            "@http.url_details.host", "@http.url_details.path", "@http.status_code"]),
+                ts("SSH の認証（結果別）", ["sum:taramanji.ssh.auth{*} by {outcome,event}.as_count()"], "bars"),
+                toplist("SSH でログインした端末（期間内）", "sum:taramanji.ssh.auth{outcome:success} by {device,ssh_user}.as_count()"),
+                log_stream("SSH のログ", "source:sshd",
+                           ["@evt.outcome", "@evt.name", "@usr.name", "@network.client.ip", "@tailscale.device", "@ssh.method"]),
+            ], "vivid_orange"),
             group("Logs", [
                 {"definition": {"type": "log_stream", "title": "エラーログ（全サービス）",
                                 "query": f"{CLUSTER} status:error",

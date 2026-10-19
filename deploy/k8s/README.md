@@ -171,15 +171,17 @@ flowchart TD
 | 設定 | 本番 | stg | dev01〜03 |
 | --- | --- | --- | --- |
 | DNS（Cloudflare Tunnel） | prod トンネル（taramanji-onprem） | staging トンネル（taramanji-kind） | staging トンネル（taramanji-kind） |
-| Cloudflare Access（`deploy/cloudflare/access.py`） | なし（公開） | `taramanji-stg` | `taramanji-dev01`〜`03` |
+| Cloudflare Access（`deploy/cloudflare/access.py`。Google ログインで shuta.tanahashi@taramanji.com だけ） | `/admin` だけ（`taramanji-admin`） | `taramanji-stg` | `taramanji-dev01`〜`03` |
 | Datadog の監視（`observability/datadog-values.yaml`） | 対象 | 対象外 | 対象外 |
 
 ```bash
 # DNS（staging トンネルへ向ける）
 cloudflared tunnel route dns taramanji-kind dev01.taramanji.com
-# Access（管理者だけ）
+# Access（管理者だけ。Google ログイン。Google が使えないときは --otp でワンタイム PIN）
 python3 deploy/cloudflare/access.py <API トークンのファイル>
 ```
+
+Access の Google ログインには、同じ OAuth クライアントのリダイレクト URI に `https://solitary-sun-32e2.cloudflareaccess.com/cdn-cgi/access/callback` が要る。
 
 Google の OAuth クライアント（taramanji-calendar-sync）の「承認済みのリダイレクト URI」。ログインは identity の `LOGIN_HOSTS` のホストごと、カレンダー同期は calendarsync の `AUTH_URL`（gws）に要る:
 
@@ -202,7 +204,11 @@ kubectl --context kind-taramanji drain taramanji-worker --ignore-daemonsets --de
 kubectl --context kind-taramanji uncordon taramanji-worker
 
 python3 deploy/k8s/observability/dashboard.py
-python3 deploy/k8s/observability/monitors.py
+NOTIFY="@webhook-taramanji-mail" python3 deploy/k8s/observability/monitors.py   # NOTIFY を付けないと通知先が外れる
+python3 deploy/k8s/observability/log_pipelines.py   # アクセスログ・SSH のログの整形と、taramanji.ssh.auth
+
+# Mac mini の sshd のログを Datadog へ（launchd の常駐。ログは ~/Library/Logs/taramanji-ssh-logs.log）
+bash deploy/mac/ssh-logs/install.sh
 ```
 
 ## モニターが鳴ったら

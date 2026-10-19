@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
 """
-dev / stg と Argo Rollouts の画面を Cloudflare Access で守る。何度実行しても同じ結果になる。
-Cloudflare の入口でログインを求め、ADMIN_EMAIL のアカウントだけを通す（GKE なら IAP にあたる）。
-ログイン方法は既定でワンタイム PIN（そのメールアドレスに届くコードを入れる。Google 側の設定は要らない）。
---google を付けると Google ログインにする（下の Google のリダイレクト URI の登録が必要）。
+dev / stg、本番の管理画面（/admin）、Argo Rollouts の画面を Cloudflare Access で守る。何度実行しても同じ結果になる。
+Cloudflare の入口で Google ログインを求め、ADMIN_EMAIL のアカウント（shuta.tanahashi@taramanji.com）だけを通す（GKE なら IAP にあたる）。
+--otp を付けると、Google の代わりにワンタイム PIN（そのメールアドレスに届くコード）にする。Google 側が使えないときの逃げ道。
 
-  python3 deploy/cloudflare/access.py ~/Downloads/cf-access-token.txt [--google]
+  python3 deploy/cloudflare/access.py ~/Downloads/cf-access-token.txt [--otp]
 
 必要なもの:
   - API トークン（ファイルで渡す。中身は表示しない）。権限: Account › Access: Apps and Policies › Edit、
     Account › Access: Organizations, Identity Providers, and Groups › Edit
   - Zero Trust の初期設定（チーム名の決定）が済んでいること
-  - --google のときだけ: Google の OAuth クライアント（taramanji-calendar-sync）の「承認済みのリダイレクト URI」に
+  - Google ログイン（既定）のとき: Google の OAuth クライアント（taramanji-calendar-sync）の「承認済みのリダイレクト URI」に
     https://<チーム名>.cloudflareaccess.com/cdn-cgi/access/callback を足してあること
-ADMIN_EMAIL（と --google のときの Google の OAuth クライアントの ID・シークレット）は deploy/k8s/secrets/prod/identity.env から読む。
+ADMIN_EMAIL（と Google の OAuth クライアントの ID・シークレット）は deploy/k8s/secrets/prod/identity.env から読む。
 """
 import json
 import os
@@ -26,11 +25,16 @@ API = f"https://api.cloudflare.com/client/v4/accounts/{ACCOUNT}/access"
 HERE = os.path.dirname(os.path.abspath(__file__))
 SECRETS = os.path.join(HERE, "..", "k8s", "secrets", "prod", "identity.env")
 
+ALLOWED = "shuta.tanahashi@taramanji.com"
+
 APPS = {
     "taramanji-dev01": ["dev01.taramanji.com", "dev01-gws.taramanji.com"],
     "taramanji-dev02": ["dev02.taramanji.com", "dev02-gws.taramanji.com"],
     "taramanji-dev03": ["dev03.taramanji.com", "dev03-gws.taramanji.com"],
     "taramanji-stg": ["stg.taramanji.com", "stg-gws.taramanji.com"],
+    # 本番の管理画面。画面のログインの前に Cloudflare で止める（/admin 配下と、gws の管理画面）
+    "taramanji-admin": ["taramanji.com/admin", "taramanji.com/admin/*", "www.taramanji.com/admin", "www.taramanji.com/admin/*",
+                        "gws.taramanji.com/admin", "gws.taramanji.com/admin/*"],
     # Argo Rollouts の画面（本番のカナリアの Promote / Abort）。画面自体にログインがないので必ずここで守る
     "taramanji-rollouts": ["rollouts.taramanji.com"],
 }
@@ -59,9 +63,11 @@ def main():
     if len(sys.argv) < 2:
         sys.exit(__doc__)
     token = open(os.path.expanduser(sys.argv[1])).read().strip()
-    use_google = "--google" in sys.argv[2:]
+    use_google = "--otp" not in sys.argv[2:]
     env = load_env(SECRETS)
     emails = [e.strip() for e in env["ADMIN_EMAIL"].split(",") if e.strip()]
+    if emails != [ALLOWED]:
+        sys.exit(f"ADMIN_EMAIL が {ALLOWED} だけになっていない（{len(emails)} 件）。identity.env を確かめる")
 
     org = call(token, "GET", "/organizations")
     team = org.get("auth_domain", "")

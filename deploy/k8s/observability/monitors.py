@@ -144,6 +144,14 @@ MONITORS = [
         "message": msg("Rollout {{argo_rollouts_name.name}} が Abort / Error です（分析の失敗など。kubectl argo rollouts get rollout で確認）。"),
         "options": {"thresholds": {"critical": 1}, "notify_no_data": False},
     },
+    {
+        "name": "[taramanji] SSH の認証の失敗が続いている",
+        "type": "log alert",
+        "query": 'logs("source:sshd @evt.outcome:failure").index("*").rollup("count").last("10m") > 5',
+        "message": msg("Mac mini の sshd で、認証の失敗・認証前の切断が 10 分に {{value}} 回あります。"
+                       "ダッシュボードの「SSH のログ」で接続元の IP と Tailscale の端末を確認してください。"),
+        "options": {"thresholds": {"critical": 5}, "notify_no_data": False, "enable_logs_sample": True},
+    },
 ]
 
 SLO = {
