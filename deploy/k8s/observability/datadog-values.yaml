@@ -53,7 +53,8 @@ clusterAgent:
       init_config:
       instances:
         - { name: taramanji.com, url: "https://taramanji.com/", timeout: 10, tags: ["site:taramanji.com"] }
-        - { name: gws.taramanji.com, url: "https://gws.taramanji.com/admin", timeout: 10, tags: ["site:gws.taramanji.com"] }
+        # 管理画面は Cloudflare Access の後ろ。ログイン画面へ飛ばされる（302）ことを確かめる（Access が外れたら気づける）
+        - { name: gws.taramanji.com, url: "https://gws.taramanji.com/admin", timeout: 10, allow_redirects: false, http_response_status_code: "302", tags: ["site:gws.taramanji.com"] }
         - { name: taramanji.com/blogs, url: "https://taramanji.com/blogs", timeout: 10, tags: ["site:taramanji.com"] }
   metricsProvider:
     enabled: false
