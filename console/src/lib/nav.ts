@@ -12,6 +12,7 @@ export type HostingKind = (typeof hostingKinds)[number]["kind"];
 
 export const navItems: NavItem[] = [
   { to: "/", label: "概要" },
+  { to: "/capacity", label: "容量" },
   { to: "/metrics", label: "メトリクス" },
   { to: "/storage", label: "ストレージ" },
   {

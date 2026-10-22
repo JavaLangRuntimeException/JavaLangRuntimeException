@@ -27,3 +27,13 @@ export function useMetrics(range: MetricsRange, enabled: boolean) {
     placeholderData: (prev) => prev,
   });
 }
+
+/** 容量（この環境の枠・Mac mini 全体・あと置けるアプリ）。全環境で使える。デプロイの前に見るので短めの間隔で読み直す */
+export function useCapacity() {
+  return useQuery({
+    queryKey: ["console", "capacity"],
+    queryFn: ({ signal }) => consoleApi.getCapacity({}, { signal }),
+    staleTime: 15_000,
+    refetchInterval: 30_000,
+  });
+}

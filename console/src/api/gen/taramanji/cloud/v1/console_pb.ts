@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file taramanji/cloud/v1/console.proto.
  */
 export const file_taramanji_cloud_v1_console: GenFile = /*@__PURE__*/
-  fileDesc("CiB0YXJhbWFuamkvY2xvdWQvdjEvY29uc29sZS5wcm90bxISdGFyYW1hbmppLmNsb3VkLnYxIkoKCUNvbXBvbmVudBIMCgRuYW1lGAEgASgJEg0KBXJlYWR5GAIgASgFEg8KB2Rlc2lyZWQYAyABKAUSDwoHdmVyc2lvbhgEIAEoCSIUChJHZXRPdmVydmlld1JlcXVlc3QivwEKE0dldE92ZXJ2aWV3UmVzcG9uc2USEwoLZW52aXJvbm1lbnQYASABKAkSDQoFZW1haWwYAiABKAkSFwoPbWV0cmljc19lbmFibGVkGAMgASgIEjEKCmNvbXBvbmVudHMYBCADKAsyHS50YXJhbWFuamkuY2xvdWQudjEuQ29tcG9uZW50EhsKE3N0b3JhZ2VfaG9zdF9zdWZmaXgYBSABKAkSGwoTaG9zdGluZ19ob3N0X3N1ZmZpeBgGIAEoCSJcCgZTZXJpZXMSDgoGbWV0cmljGAEgASgJEg0KBWdyb3VwGAIgASgJEgwKBHVuaXQYAyABKAkSFQoNdGltZXN0YW1wc19tcxgEIAMoAxIOCgZ2YWx1ZXMYBSADKAEiIgoRR2V0TWV0cmljc1JlcXVlc3QSDQoFcmFuZ2UYASABKAkiQAoSR2V0TWV0cmljc1Jlc3BvbnNlEioKBnNlcmllcxgBIAMoCzIaLnRhcmFtYW5qaS5jbG91ZC52MS5TZXJpZXMy0QEKDkNvbnNvbGVTZXJ2aWNlEmAKC0dldE92ZXJ2aWV3EiYudGFyYW1hbmppLmNsb3VkLnYxLkdldE92ZXJ2aWV3UmVxdWVzdBonLnRhcmFtYW5qaS5jbG91ZC52MS5HZXRPdmVydmlld1Jlc3BvbnNlIgASXQoKR2V0TWV0cmljcxIlLnRhcmFtYW5qaS5jbG91ZC52MS5HZXRNZXRyaWNzUmVxdWVzdBomLnRhcmFtYW5qaS5jbG91ZC52MS5HZXRNZXRyaWNzUmVzcG9uc2UiAGIGcHJvdG8z");
+  fileDesc("CiB0YXJhbWFuamkvY2xvdWQvdjEvY29uc29sZS5wcm90bxISdGFyYW1hbmppLmNsb3VkLnYxIkoKCUNvbXBvbmVudBIMCgRuYW1lGAEgASgJEg0KBXJlYWR5GAIgASgFEg8KB2Rlc2lyZWQYAyABKAUSDwoHdmVyc2lvbhgEIAEoCSIUChJHZXRPdmVydmlld1JlcXVlc3QivwEKE0dldE92ZXJ2aWV3UmVzcG9uc2USEwoLZW52aXJvbm1lbnQYASABKAkSDQoFZW1haWwYAiABKAkSFwoPbWV0cmljc19lbmFibGVkGAMgASgIEjEKCmNvbXBvbmVudHMYBCADKAsyHS50YXJhbWFuamkuY2xvdWQudjEuQ29tcG9uZW50EhsKE3N0b3JhZ2VfaG9zdF9zdWZmaXgYBSABKAkSGwoTaG9zdGluZ19ob3N0X3N1ZmZpeBgGIAEoCSJcCgZTZXJpZXMSDgoGbWV0cmljGAEgASgJEg0KBWdyb3VwGAIgASgJEgwKBHVuaXQYAyABKAkSFQoNdGltZXN0YW1wc19tcxgEIAMoAxIOCgZ2YWx1ZXMYBSADKAEiIgoRR2V0TWV0cmljc1JlcXVlc3QSDQoFcmFuZ2UYASABKAkiQAoSR2V0TWV0cmljc1Jlc3BvbnNlEioKBnNlcmllcxgBIAMoCzIaLnRhcmFtYW5qaS5jbG91ZC52MS5TZXJpZXMiFAoSR2V0Q2FwYWNpdHlSZXF1ZXN0IiUKBkFtb3VudBIMCgR1c2VkGAEgASgDEg0KBWxpbWl0GAIgASgDIs0BCgVRdW90YRIRCgluYW1lc3BhY2UYASABKAkSKgoGbWVtb3J5GAIgASgLMhoudGFyYW1hbmppLmNsb3VkLnYxLkFtb3VudBInCgNjcHUYAyABKAsyGi50YXJhbWFuamkuY2xvdWQudjEuQW1vdW50EigKBHBvZHMYBCABKAsyGi50YXJhbWFuamkuY2xvdWQudjEuQW1vdW50EjIKDnZvbHVtZV9zdG9yYWdlGAUgASgLMhoudGFyYW1hbmppLmNsb3VkLnYxLkFtb3VudCKAAQoHTWFjaGluZRIUCgxtZW1vcnlfdG90YWwYASABKAMSEwoLbWVtb3J5X3VzZWQYAiABKAMSFwoPbWVtb3J5X3Jlc2VydmVkGAMgASgDEhgKEGNwdV90b3RhbF9taWxsaXMYBCABKAMSFwoPY3B1X3VzZWRfbWlsbGlzGAUgASgDIl4KB1NpemVGaXQSDAoEbmFtZRgBIAEoCRIOCgZtZW1vcnkYAiABKAMSEgoKY3B1X21pbGxpcxgDIAEoAxINCgVjb3VudBgEIAEoBRISCgpsaW1pdGVkX2J5GAUgASgJIlwKCFBvZFVzYWdlEgwKBG5hbWUYASABKAkSEwoLbWVtb3J5X3VzZWQYAiABKAMSFAoMbWVtb3J5X2xpbWl0GAMgASgDEhcKD2NwdV91c2VkX21pbGxpcxgEIAEoAyLEAQoTR2V0Q2FwYWNpdHlSZXNwb25zZRIoCgVxdW90YRgBIAEoCzIZLnRhcmFtYW5qaS5jbG91ZC52MS5RdW90YRIsCgdtYWNoaW5lGAIgASgLMhsudGFyYW1hbmppLmNsb3VkLnYxLk1hY2hpbmUSKQoEZml0cxgDIAMoCzIbLnRhcmFtYW5qaS5jbG91ZC52MS5TaXplRml0EioKBHBvZHMYBCADKAsyHC50YXJhbWFuamkuY2xvdWQudjEuUG9kVXNhZ2UyswIKDkNvbnNvbGVTZXJ2aWNlEmAKC0dldE92ZXJ2aWV3EiYudGFyYW1hbmppLmNsb3VkLnYxLkdldE92ZXJ2aWV3UmVxdWVzdBonLnRhcmFtYW5qaS5jbG91ZC52MS5HZXRPdmVydmlld1Jlc3BvbnNlIgASXQoKR2V0TWV0cmljcxIlLnRhcmFtYW5qaS5jbG91ZC52MS5HZXRNZXRyaWNzUmVxdWVzdBomLnRhcmFtYW5qaS5jbG91ZC52MS5HZXRNZXRyaWNzUmVzcG9uc2UiABJgCgtHZXRDYXBhY2l0eRImLnRhcmFtYW5qaS5jbG91ZC52MS5HZXRDYXBhY2l0eVJlcXVlc3QaJy50YXJhbWFuamkuY2xvdWQudjEuR2V0Q2FwYWNpdHlSZXNwb25zZSIAYgZwcm90bzM");
 
 /**
  * コンソール自身を動かしている部品（API・画面・Redis）の状態
@@ -191,6 +191,238 @@ export const GetMetricsResponseSchema: GenMessage<GetMetricsResponse> = /*@__PUR
   messageDesc(file_taramanji_cloud_v1_console, 5);
 
 /**
+ * @generated from message taramanji.cloud.v1.GetCapacityRequest
+ */
+export type GetCapacityRequest = Message<"taramanji.cloud.v1.GetCapacityRequest"> & {
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.GetCapacityRequest.
+ * Use `create(GetCapacityRequestSchema)` to create a new message.
+ */
+export const GetCapacityRequestSchema: GenMessage<GetCapacityRequest> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 6);
+
+/**
+ * 使っている量と上限。メモリ・ストレージはバイト、CPU はミリコア、Pod などは個数
+ *
+ * @generated from message taramanji.cloud.v1.Amount
+ */
+export type Amount = Message<"taramanji.cloud.v1.Amount"> & {
+  /**
+   * @generated from field: int64 used = 1;
+   */
+  used: bigint;
+
+  /**
+   * @generated from field: int64 limit = 2;
+   */
+  limit: bigint;
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.Amount.
+ * Use `create(AmountSchema)` to create a new message.
+ */
+export const AmountSchema: GenMessage<Amount> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 7);
+
+/**
+ * この環境のアプリ用 namespace の枠（ResourceQuota）。アプリが予約できる合計で、taramanji.com の分は含まない
+ *
+ * @generated from message taramanji.cloud.v1.Quota
+ */
+export type Quota = Message<"taramanji.cloud.v1.Quota"> & {
+  /**
+   * @generated from field: string namespace = 1;
+   */
+  namespace: string;
+
+  /**
+   * アプリのメモリの予約（requests = limits にそろえてあるので、そのまま実際に使える上限）
+   *
+   * @generated from field: taramanji.cloud.v1.Amount memory = 2;
+   */
+  memory?: Amount | undefined;
+
+  /**
+   * CPU の上限（limits）の合計
+   *
+   * @generated from field: taramanji.cloud.v1.Amount cpu = 3;
+   */
+  cpu?: Amount | undefined;
+
+  /**
+   * @generated from field: taramanji.cloud.v1.Amount pods = 4;
+   */
+  pods?: Amount | undefined;
+
+  /**
+   * ディスク付きのインスタンス・関数などの PVC の容量の合計
+   *
+   * @generated from field: taramanji.cloud.v1.Amount volume_storage = 5;
+   */
+  volumeStorage?: Amount | undefined;
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.Quota.
+ * Use `create(QuotaSchema)` to create a new message.
+ */
+export const QuotaSchema: GenMessage<Quota> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 8);
+
+/**
+ * Mac mini 全体（kind の 3 ノードは同じ VM のメモリを分け合う）。taramanji.com・gws・基盤も含めた実際の使用量
+ *
+ * @generated from message taramanji.cloud.v1.Machine
+ */
+export type Machine = Message<"taramanji.cloud.v1.Machine"> & {
+  /**
+   * @generated from field: int64 memory_total = 1;
+   */
+  memoryTotal: bigint;
+
+  /**
+   * @generated from field: int64 memory_used = 2;
+   */
+  memoryUsed: bigint;
+
+  /**
+   * taramanji.com・gws の伸びしろとして、アプリに渡さずに残しておく量
+   *
+   * @generated from field: int64 memory_reserved = 3;
+   */
+  memoryReserved: bigint;
+
+  /**
+   * @generated from field: int64 cpu_total_millis = 4;
+   */
+  cpuTotalMillis: bigint;
+
+  /**
+   * @generated from field: int64 cpu_used_millis = 5;
+   */
+  cpuUsedMillis: bigint;
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.Machine.
+ * Use `create(MachineSchema)` to create a new message.
+ */
+export const MachineSchema: GenMessage<Machine> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 9);
+
+/**
+ * アプリの大きさ（1 つあたり）ごとの「あと何個置けるか」
+ *
+ * @generated from message taramanji.cloud.v1.SizeFit
+ */
+export type SizeFit = Message<"taramanji.cloud.v1.SizeFit"> & {
+  /**
+   * s / m / l / xl
+   *
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: int64 memory = 2;
+   */
+  memory: bigint;
+
+  /**
+   * @generated from field: int64 cpu_millis = 3;
+   */
+  cpuMillis: bigint;
+
+  /**
+   * @generated from field: int32 count = 4;
+   */
+  count: number;
+
+  /**
+   * 何が足りなくなって count で止まるか: quota_memory / quota_cpu / quota_pods / machine_memory
+   *
+   * @generated from field: string limited_by = 5;
+   */
+  limitedBy: string;
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.SizeFit.
+ * Use `create(SizeFitSchema)` to create a new message.
+ */
+export const SizeFitSchema: GenMessage<SizeFit> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 10);
+
+/**
+ * アプリ用 namespace で動いている Pod ごとの実際の使用量（metrics-server）
+ *
+ * @generated from message taramanji.cloud.v1.PodUsage
+ */
+export type PodUsage = Message<"taramanji.cloud.v1.PodUsage"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: int64 memory_used = 2;
+   */
+  memoryUsed: bigint;
+
+  /**
+   * @generated from field: int64 memory_limit = 3;
+   */
+  memoryLimit: bigint;
+
+  /**
+   * @generated from field: int64 cpu_used_millis = 4;
+   */
+  cpuUsedMillis: bigint;
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.PodUsage.
+ * Use `create(PodUsageSchema)` to create a new message.
+ */
+export const PodUsageSchema: GenMessage<PodUsage> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 11);
+
+/**
+ * @generated from message taramanji.cloud.v1.GetCapacityResponse
+ */
+export type GetCapacityResponse = Message<"taramanji.cloud.v1.GetCapacityResponse"> & {
+  /**
+   * @generated from field: taramanji.cloud.v1.Quota quota = 1;
+   */
+  quota?: Quota | undefined;
+
+  /**
+   * @generated from field: taramanji.cloud.v1.Machine machine = 2;
+   */
+  machine?: Machine | undefined;
+
+  /**
+   * @generated from field: repeated taramanji.cloud.v1.SizeFit fits = 3;
+   */
+  fits: SizeFit[];
+
+  /**
+   * @generated from field: repeated taramanji.cloud.v1.PodUsage pods = 4;
+   */
+  pods: PodUsage[];
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.GetCapacityResponse.
+ * Use `create(GetCapacityResponseSchema)` to create a new message.
+ */
+export const GetCapacityResponseSchema: GenMessage<GetCapacityResponse> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 12);
+
+/**
  * taramanji cloud のマネジメントコンソール（cloud.taramanji.com）。
  * 全 RPC が Cloudflare Access の JWT（管理者 1 人）を要する。taramanji.com のセッションは使わない
  *
@@ -214,6 +446,16 @@ export const ConsoleService: GenService<{
     methodKind: "unary";
     input: typeof GetMetricsRequestSchema;
     output: typeof GetMetricsResponseSchema;
+  },
+  /**
+   * あとどのくらいアプリを置けるか（この環境の枠と、Mac mini 全体の空き）。全環境で使える（Datadog は使わない）
+   *
+   * @generated from rpc taramanji.cloud.v1.ConsoleService.GetCapacity
+   */
+  getCapacity: {
+    methodKind: "unary";
+    input: typeof GetCapacityRequestSchema;
+    output: typeof GetCapacityResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_taramanji_cloud_v1_console, 0);

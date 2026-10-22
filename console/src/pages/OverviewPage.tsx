@@ -1,10 +1,13 @@
 import { Link } from "react-router";
-import { useOverview } from "@/api/console";
+import { useCapacity, useOverview } from "@/api/console";
 import { EnvBadge } from "@/components/EnvBadge";
 import { Mono, PageHeader, Panel, Skeleton } from "@/components/Page";
 import { QueryError } from "@/components/QueryError";
 import { StatusDot, statusOf } from "@/components/StatusDot";
+import { UsageBar } from "@/components/UsageBar";
+import { formatPercent, levelOf, limitedByLabel, pickFit, sizeLabel, usage } from "@/lib/capacity";
 import { toEnv } from "@/lib/env";
+import { formatBytes } from "@/lib/format";
 
 const envDescription = { prod: "本番", stg: "ステージング", dev: "開発" } as const;
 
@@ -55,8 +58,10 @@ export function OverviewPage() {
           )}
         </Panel>
 
-        <Panel title="URL の形" className="lg:col-span-2">
-          <dl className="grid gap-x-6 gap-y-2 px-4 py-3 sm:grid-cols-[auto_1fr]">
+        <CapacityCard />
+
+        <Panel title="URL の形" className="lg:col-span-1">
+          <dl className="grid gap-x-6 gap-y-2 px-4 py-3 sm:grid-cols-[auto_1fr] lg:grid-cols-1">
             <dt className="text-muted">バケット</dt>
             <dd className="min-w-0 break-all">
               {data ? <Mono>https://&lt;名前&gt;{data.storageHostSuffix}</Mono> : <Skeleton className="h-5 w-64" />}
@@ -128,5 +133,55 @@ export function OverviewPage() {
         </div>
       </Panel>
     </>
+  );
+}
+
+/** 容量の要約。デプロイの前に「まだ置けるか」だけ見られるように、M サイズの残りとこの環境のメモリ枠を出す */
+function CapacityCard() {
+  const capacity = useCapacity();
+  const data = capacity.data;
+  const fit = data && pickFit(data.fits);
+  const mem = usage(data?.quota?.memory);
+
+  return (
+    <Panel title="容量" className="lg:col-span-1">
+      <div className="px-4 py-3">
+        {capacity.isError && !data ? (
+          <p className="text-ink-2">容量を取れませんでした。</p>
+        ) : !data ? (
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-40" />
+            <Skeleton className="h-4 w-full" />
+          </div>
+        ) : (
+          <>
+            {fit ? (
+              <>
+                <p className={`flex items-baseline gap-1 ${fit.count <= 0 ? "text-warn" : "text-ink"}`}>
+                  <span className="text-ink-2">あと {sizeLabel(fit.name)} サイズで</span>
+                  <span className="text-2xl leading-none font-semibold tabular-nums">{fit.count}</span>
+                  <span className="text-ink-2">個</span>
+                </p>
+                <p className="mt-1 text-xs text-muted">上限: {limitedByLabel(fit.limitedBy)}</p>
+              </>
+            ) : (
+              <p className="text-ink-2">大きさの一覧を取れませんでした。</p>
+            )}
+            <div className="mt-3 mb-1 flex flex-wrap items-baseline justify-between gap-x-3 text-[13px]">
+              <span className="text-ink-2">この環境のメモリ枠</span>
+              <span className="text-ink-2 tabular-nums">
+                {mem.unlimited ? "枠なし" : `${formatBytes(mem.used)} / ${formatBytes(mem.limit)}（${formatPercent(mem.percent)}）`}
+              </span>
+            </div>
+            <UsageBar fill={mem.fill} level={levelOf(mem)} size="sm" />
+          </>
+        )}
+      </div>
+      <div className="border-t border-line px-4 py-3">
+        <Link to="/capacity" className="font-medium text-accent hover:underline">
+          容量の内訳を見る
+        </Link>
+      </div>
+    </Panel>
   );
 }

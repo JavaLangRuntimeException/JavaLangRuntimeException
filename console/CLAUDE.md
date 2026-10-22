@@ -16,7 +16,7 @@ React 19 + Vite + TypeScript + React Router v8 + Tailwind CSS v4 + TanStack Quer
 - `src/app` 起動・ルーティング・QueryClient・全体の CSS
 - `src/api` Connect のクライアント、クエリのフック、エラーの判定
 - `src/components` 画面の部品（AppShell・Panel・LineChart など）
-- `src/pages` 画面（概要・メトリクス・ストレージ・ホスティング）
+- `src/pages` 画面（概要・容量・メトリクス・ストレージ・ホスティング）
 - `src/lib` 表示の整形・軸の計算・ナビの定義（純粋な関数はここに置いてテストする）
 
 ## コマンド
