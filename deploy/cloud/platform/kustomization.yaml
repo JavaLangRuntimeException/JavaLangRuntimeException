@@ -1,0 +1,7 @@
+# クラスターで 1 つのもの（namespace・Gateway・トンネル）。本番の Argo CD アプリ（cloud-prod）が持つ
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespaces.yaml
+  - gateway.yaml
+  - cloudflared

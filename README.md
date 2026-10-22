@@ -59,6 +59,11 @@
 
 <img alt="環境と管理画面" src="docs/images/environments.png" width="100%" />
 
+### taramanji cloud（`deploy/cloud/`・`console/`）
+
+自分専用の小さなクラウドのマネジメントコンソール（https://cloud.taramanji.com 、stg・dev もあり）。
+トンネル・Gateway・Cloudflare Access のアプリ・Argo CD の AppProject を taramanji.com と分けている。詳しくは [deploy/cloud/README.md](deploy/cloud/README.md)。
+
 ### バックエンド（`backend/`：Go・Connect / gRPC）
 
 <img alt="バックエンドのサービス" src="docs/images/backend-services.png" width="100%" />

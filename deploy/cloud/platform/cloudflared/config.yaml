@@ -1,0 +1,7 @@
+# taramanji cloud 専用のトンネル（taramanji-cloud）。届いたものはすべて cloud の Gateway へ送る（振り分けは HTTPRoute）。
+# taramanji.com のトンネル（taramanji-onprem・taramanji-kind）とは認証情報も Pod も別。taramanji の Gateway には届かない（NetworkPolicy cloudflared-egress）
+credentials-file: /etc/cloudflared/creds/credentials.json
+metrics: 0.0.0.0:2000
+no-autoupdate: true
+ingress:
+  - service: http://cloud-gateway.envoy-gateway-system.svc.cluster.local:80

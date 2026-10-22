@@ -71,6 +71,30 @@ jobs:
       - run: npm run lint
       - run: npm run lint:fsd
 
+  # taramanji cloud のコンソールの画面
+  console:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: console
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: console/package-lock.json
+      - run: npm ci
+      - name: Generated API types are up to date
+        run: |
+          npm run gen
+          if [ -n "$(git status --porcelain src/api/gen)" ]; then
+            echo "::error::connect-es の型が古い。npm run gen を実行してコミットしてください"
+            exit 1
+          fi
+      - run: npm run typecheck
+      - run: npm run lint
+
   manifests:
     runs-on: ubuntu-latest
     steps:
@@ -88,9 +112,19 @@ jobs:
               -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
               /tmp/$env.yaml
           done
+      - name: Render and validate taramanji cloud (dev / stg / prod)
+        run: |
+          for env in dev stg prod; do
+            echo "== cloud-$env"
+            kubectl kustomize deploy/cloud/overlays/$env > /tmp/cloud-$env.yaml
+            kubeconform -strict -summary -ignore-missing-schemas \
+              -schema-location default \
+              -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
+              /tmp/cloud-$env.yaml
+          done
       - name: No plaintext Secret in the repo
         run: |
-          if grep -rlE '^kind: Secret$' deploy/k8s/overlays deploy/k8s/base; then
+          if grep -rlE '^kind: Secret$' deploy/k8s/overlays deploy/k8s/base deploy/cloud; then
             echo "::error::平文の Secret があります。scripts/seal.sh で SealedSecret にしてください"
             exit 1
           fi

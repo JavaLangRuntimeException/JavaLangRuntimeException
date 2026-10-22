@@ -1,0 +1,40 @@
+# taramanji cloud の namespace。taramanji.com（taramanji・data・gateway・cloudflared）とは別にする。
+# Gateway の allowedRoutes はこのラベル（cloud.taramanji.com/gateway-access）で相手を選ぶので、
+# taramanji の namespace の HTTPRoute は cloud の Gateway に付けられない（逆も同じ）
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cloud
+  labels:
+    cloud.taramanji.com/env: prod
+    cloud.taramanji.com/gateway-access: "true"
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cloud-stg
+  labels:
+    cloud.taramanji.com/env: stg
+    cloud.taramanji.com/gateway-access: "true"
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cloud-dev
+  labels:
+    cloud.taramanji.com/env: dev
+    cloud.taramanji.com/gateway-access: "true"
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cloud-gateway
+  labels:
+    cloud.taramanji.com/tier: gateway
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cloud-cloudflared
+  labels:
+    cloud.taramanji.com/tier: tunnel

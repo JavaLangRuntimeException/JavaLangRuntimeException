@@ -1,0 +1,19 @@
+# taramanji cloud の Argo CD プロジェクト。cloud の namespace にしか書けない（taramanji・data・gateway・cloudflared には触れない）。
+# クラスター全体のものは Namespace だけ
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: cloud
+  namespace: argocd
+spec:
+  description: taramanji cloud（cloud.taramanji.com）
+  sourceRepos:
+    - git@github.com:JavaLangRuntimeException/JavaLangRuntimeException.git
+  destinations:
+    - { server: https://kubernetes.default.svc, namespace: cloud }
+    - { server: https://kubernetes.default.svc, namespace: cloud-stg }
+    - { server: https://kubernetes.default.svc, namespace: cloud-dev }
+    - { server: https://kubernetes.default.svc, namespace: cloud-gateway }
+    - { server: https://kubernetes.default.svc, namespace: cloud-cloudflared }
+  clusterResourceWhitelist:
+    - { group: "", kind: Namespace }
