@@ -3,6 +3,8 @@
 #  - 外部サービスの値（SES・Google の OAuth クライアント・iCal）は旧構成の Secret（k8s/*/secret.env）から取る
 #  - 予約を書き込むサービスアカウントの鍵は secrets/gcal-sa.json（全環境で共通）。なりかわる人（ドメイン全体の委任）は
 #    初回だけ GCAL_SA_SUBJECT=<アドレス> で渡す（以後は前回の値を使い回す。アドレスを git に置かないため）
+#  - 予定の通知先（Discord の Webhook）は初回だけ DISCORD_WEBHOOK_URL=<URL> で渡す（以後は前回の値を使い回す）。
+#    渡さなければ通知しない（dev は CronJob を止めているので不要）
 #  - AUTH_SECRET・Redis のパスワード・CronJob のトークン・同期の暗号鍵は環境ごとに新しく作る（既にあれば再利用）
 #    ※ prod の同期の暗号鍵だけは、旧構成で暗号化した更新トークンを読むために旧構成と同じものを使う
 # 使い方: scripts/make-secrets.sh prod|dev  → 続けて scripts/seal.sh prod|dev
@@ -33,6 +35,8 @@ cal = load(f"{legacy}/calendar-sync/secret.env")
 state = load(f"{out}/generated.env")
 prev_inquiry = load(f"{out}/inquiry.env")
 prev_reservation = load(f"{out}/reservation.env")
+prev_calendarsync = load(f"{out}/calendarsync.env")
+discord = os.environ.get("DISCORD_WEBHOOK_URL") or prev_calendarsync.get("DISCORD_WEBHOOK_URL", "")
 
 sa_path = "secrets/gcal-sa.json"
 if not os.path.exists(sa_path):
@@ -71,7 +75,8 @@ files = {
     "worklocation": {**auth, "REDIS_URL": redis_url("worklocation")},
     "content": {"REDIS_URL": redis_url("content")},
     "calendarsync": {**auth, **google, "REDIS_URL": redis_url("calendarsync"),
-                     "CALENDAR_SYNC_ENC_KEY": enc_key, "CALENDAR_SYNC_CRON_TOKEN": cron},
+                     "CALENDAR_SYNC_ENC_KEY": enc_key, "CALENDAR_SYNC_CRON_TOKEN": cron,
+                     **({"DISCORD_WEBHOOK_URL": discord} if discord else {})},
 }
 for name, values in files.items():
     with open(f"{out}/{name}.env", "w") as f:

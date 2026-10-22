@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file taramanji/calendarsync/v1/calendarsync.proto.
  */
 export const file_taramanji_calendarsync_v1_calendarsync: GenFile = /*@__PURE__*/
-  fileDesc("Cix0YXJhbWFuamkvY2FsZW5kYXJzeW5jL3YxL2NhbGVuZGFyc3luYy5wcm90bxIZdGFyYW1hbmppLmNhbGVuZGFyc3luYy52MSJ7Cg9DYWxlbmRhckFjY291bnQSEwoLY2FsZW5kYXJfaWQYASABKAkSFQoNcmVmcmVzaF90b2tlbhgCIAEoCRIPCgdwcml2YXRlGAMgASgIEhkKEWNvbm5lY3RlZF9hdF91bml4GAQgASgDEhAKCGNvbG9yX2lkGAUgASgJIikKC1N5bmNTZXR0aW5nEgoKAmlkGAEgASgJEg4KBm1hc3RlchgCIAEoCSI5CgpTeW5jTWlycm9yEgsKA2tleRgBIAEoCRIOCgZkaWdlc3QYAiABKAkSDgoGZW5kX2F0GAMgASgJIlsKC0FjY291bnRWaWV3EhMKC2NhbGVuZGFyX2lkGAEgASgJEg8KB3ByaXZhdGUYAiABKAgSFAoMY29ubmVjdGVkX2F0GAMgASgJEhAKCGNvbG9yX2lkGAQgASgJIi8KCVN5bmNFcnJvchITCgtjYWxlbmRhcl9pZBgBIAEoCRINCgVlcnJvchgCIAEoCSLNAQoHTGFzdFJ1bhIVCg1zb3VyY2VfZXZlbnRzGAEgASgFEg8KB21pcnJvcnMYAiABKAUSDgoGd3JpdGVzGAMgASgFEg8KB2RlbGV0ZXMYBCABKAUSDwoHcGVuZGluZxgFIAEoBRI0CgZlcnJvcnMYBiADKAsyJC50YXJhbWFuamkuY2FsZW5kYXJzeW5jLnYxLlN5bmNFcnJvchIKCgJhdBgHIAEoCRITCgtkdXJhdGlvbl9tcxgIIAEoAxIRCglyZWNvbm5lY3QYCSADKAkiEgoQR2V0U3RhdHVzUmVxdWVzdCKlAQoRR2V0U3RhdHVzUmVzcG9uc2USDgoGbWFzdGVyGAEgASgJEjgKCGFjY291bnRzGAIgAygLMiYudGFyYW1hbmppLmNhbGVuZGFyc3luYy52MS5BY2NvdW50VmlldxI5CghsYXN0X3J1bhgDIAEoCzIiLnRhcmFtYW5qaS5jYWxlbmRhcnN5bmMudjEuTGFzdFJ1bkgAiAEBQgsKCV9sYXN0X3J1biIQCg5SdW5TeW5jUmVxdWVzdCJTCg9SdW5TeW5jUmVzcG9uc2USLwoDcnVuGAEgASgLMiIudGFyYW1hbmppLmNhbGVuZGFyc3luYy52MS5MYXN0UnVuEg8KB3NraXBwZWQYAiABKAginAEKFVVwZGF0ZVNldHRpbmdzUmVxdWVzdBISCgpzZXRfbWFzdGVyGAEgASgIEg4KBm1hc3RlchgCIAEoCRIbChNwcml2YXRlX2NhbGVuZGFyX2lkGAMgASgJEhUKDXByaXZhdGVfdmFsdWUYBCABKAgSGQoRY29sb3JfY2FsZW5kYXJfaWQYBSABKAkSEAoIY29sb3JfaWQYBiABKAkiGAoWVXBkYXRlU2V0dGluZ3NSZXNwb25zZSIoChFEaXNjb25uZWN0UmVxdWVzdBITCgtjYWxlbmRhcl9pZBgBIAEoCSI1ChJEaXNjb25uZWN0UmVzcG9uc2USDwoHZGVsZXRlZBgBIAEoBRIOCgZmYWlsZWQYAiABKAUyyQMKE0NhbGVuZGFyU3luY1NlcnZpY2USaAoJR2V0U3RhdHVzEisudGFyYW1hbmppLmNhbGVuZGFyc3luYy52MS5HZXRTdGF0dXNSZXF1ZXN0GiwudGFyYW1hbmppLmNhbGVuZGFyc3luYy52MS5HZXRTdGF0dXNSZXNwb25zZSIAEmIKB1J1blN5bmMSKS50YXJhbWFuamkuY2FsZW5kYXJzeW5jLnYxLlJ1blN5bmNSZXF1ZXN0GioudGFyYW1hbmppLmNhbGVuZGFyc3luYy52MS5SdW5TeW5jUmVzcG9uc2UiABJ3Cg5VcGRhdGVTZXR0aW5ncxIwLnRhcmFtYW5qaS5jYWxlbmRhcnN5bmMudjEuVXBkYXRlU2V0dGluZ3NSZXF1ZXN0GjEudGFyYW1hbmppLmNhbGVuZGFyc3luYy52MS5VcGRhdGVTZXR0aW5nc1Jlc3BvbnNlIgASawoKRGlzY29ubmVjdBIsLnRhcmFtYW5qaS5jYWxlbmRhcnN5bmMudjEuRGlzY29ubmVjdFJlcXVlc3QaLS50YXJhbWFuamkuY2FsZW5kYXJzeW5jLnYxLkRpc2Nvbm5lY3RSZXNwb25zZSIAYgZwcm90bzM");
+  fileDesc("Cix0YXJhbWFuamkvY2FsZW5kYXJzeW5jL3YxL2NhbGVuZGFyc3luYy5wcm90bxIZdGFyYW1hbmppLmNhbGVuZGFyc3luYy52MSJ7Cg9DYWxlbmRhckFjY291bnQSEwoLY2FsZW5kYXJfaWQYASABKAkSFQoNcmVmcmVzaF90b2tlbhgCIAEoCRIPCgdwcml2YXRlGAMgASgIEhkKEWNvbm5lY3RlZF9hdF91bml4GAQgASgDEhAKCGNvbG9yX2lkGAUgASgJIikKC1N5bmNTZXR0aW5nEgoKAmlkGAEgASgJEg4KBm1hc3RlchgCIAEoCSI5CgpTeW5jTWlycm9yEgsKA2tleRgBIAEoCRIOCgZkaWdlc3QYAiABKAkSDgoGZW5kX2F0GAMgASgJIlsKC0FjY291bnRWaWV3EhMKC2NhbGVuZGFyX2lkGAEgASgJEg8KB3ByaXZhdGUYAiABKAgSFAoMY29ubmVjdGVkX2F0GAMgASgJEhAKCGNvbG9yX2lkGAQgASgJIi8KCVN5bmNFcnJvchITCgtjYWxlbmRhcl9pZBgBIAEoCRINCgVlcnJvchgCIAEoCSLNAQoHTGFzdFJ1bhIVCg1zb3VyY2VfZXZlbnRzGAEgASgFEg8KB21pcnJvcnMYAiABKAUSDgoGd3JpdGVzGAMgASgFEg8KB2RlbGV0ZXMYBCABKAUSDwoHcGVuZGluZxgFIAEoBRI0CgZlcnJvcnMYBiADKAsyJC50YXJhbWFuamkuY2FsZW5kYXJzeW5jLnYxLlN5bmNFcnJvchIKCgJhdBgHIAEoCRITCgtkdXJhdGlvbl9tcxgIIAEoAxIRCglyZWNvbm5lY3QYCSADKAkiEgoQR2V0U3RhdHVzUmVxdWVzdCKlAQoRR2V0U3RhdHVzUmVzcG9uc2USDgoGbWFzdGVyGAEgASgJEjgKCGFjY291bnRzGAIgAygLMiYudGFyYW1hbmppLmNhbGVuZGFyc3luYy52MS5BY2NvdW50VmlldxI5CghsYXN0X3J1bhgDIAEoCzIiLnRhcmFtYW5qaS5jYWxlbmRhcnN5bmMudjEuTGFzdFJ1bkgAiAEBQgsKCV9sYXN0X3J1biIQCg5SdW5TeW5jUmVxdWVzdCJTCg9SdW5TeW5jUmVzcG9uc2USLwoDcnVuGAEgASgLMiIudGFyYW1hbmppLmNhbGVuZGFyc3luYy52MS5MYXN0UnVuEg8KB3NraXBwZWQYAiABKAgiFAoSUnVuUmVtaW5kZXJSZXF1ZXN0IjcKE1J1blJlbWluZGVyUmVzcG9uc2USEAoIbm90aWZpZWQYASABKAUSDgoGZmFpbGVkGAIgASgFIpwBChVVcGRhdGVTZXR0aW5nc1JlcXVlc3QSEgoKc2V0X21hc3RlchgBIAEoCBIOCgZtYXN0ZXIYAiABKAkSGwoTcHJpdmF0ZV9jYWxlbmRhcl9pZBgDIAEoCRIVCg1wcml2YXRlX3ZhbHVlGAQgASgIEhkKEWNvbG9yX2NhbGVuZGFyX2lkGAUgASgJEhAKCGNvbG9yX2lkGAYgASgJIhgKFlVwZGF0ZVNldHRpbmdzUmVzcG9uc2UiKAoRRGlzY29ubmVjdFJlcXVlc3QSEwoLY2FsZW5kYXJfaWQYASABKAkiNQoSRGlzY29ubmVjdFJlc3BvbnNlEg8KB2RlbGV0ZWQYASABKAUSDgoGZmFpbGVkGAIgASgFMrkEChNDYWxlbmRhclN5bmNTZXJ2aWNlEmgKCUdldFN0YXR1cxIrLnRhcmFtYW5qaS5jYWxlbmRhcnN5bmMudjEuR2V0U3RhdHVzUmVxdWVzdBosLnRhcmFtYW5qaS5jYWxlbmRhcnN5bmMudjEuR2V0U3RhdHVzUmVzcG9uc2UiABJiCgdSdW5TeW5jEikudGFyYW1hbmppLmNhbGVuZGFyc3luYy52MS5SdW5TeW5jUmVxdWVzdBoqLnRhcmFtYW5qaS5jYWxlbmRhcnN5bmMudjEuUnVuU3luY1Jlc3BvbnNlIgASbgoLUnVuUmVtaW5kZXISLS50YXJhbWFuamkuY2FsZW5kYXJzeW5jLnYxLlJ1blJlbWluZGVyUmVxdWVzdBouLnRhcmFtYW5qaS5jYWxlbmRhcnN5bmMudjEuUnVuUmVtaW5kZXJSZXNwb25zZSIAEncKDlVwZGF0ZVNldHRpbmdzEjAudGFyYW1hbmppLmNhbGVuZGFyc3luYy52MS5VcGRhdGVTZXR0aW5nc1JlcXVlc3QaMS50YXJhbWFuamkuY2FsZW5kYXJzeW5jLnYxLlVwZGF0ZVNldHRpbmdzUmVzcG9uc2UiABJrCgpEaXNjb25uZWN0EiwudGFyYW1hbmppLmNhbGVuZGFyc3luYy52MS5EaXNjb25uZWN0UmVxdWVzdBotLnRhcmFtYW5qaS5jYWxlbmRhcnN5bmMudjEuRGlzY29ubmVjdFJlc3BvbnNlIgBiBnByb3RvMw");
 
 /**
  * @entity
@@ -321,6 +321,45 @@ export const RunSyncResponseSchema: GenMessage<RunSyncResponse> = /*@__PURE__*/
   messageDesc(file_taramanji_calendarsync_v1_calendarsync, 9);
 
 /**
+ * @generated from message taramanji.calendarsync.v1.RunReminderRequest
+ */
+export type RunReminderRequest = Message<"taramanji.calendarsync.v1.RunReminderRequest"> & {
+};
+
+/**
+ * Describes the message taramanji.calendarsync.v1.RunReminderRequest.
+ * Use `create(RunReminderRequestSchema)` to create a new message.
+ */
+export const RunReminderRequestSchema: GenMessage<RunReminderRequest> = /*@__PURE__*/
+  messageDesc(file_taramanji_calendarsync_v1_calendarsync, 10);
+
+/**
+ * @generated from message taramanji.calendarsync.v1.RunReminderResponse
+ */
+export type RunReminderResponse = Message<"taramanji.calendarsync.v1.RunReminderResponse"> & {
+  /**
+   * 今回 Discord に送った予定の数（前の回までに送ったものは数えない）
+   *
+   * @generated from field: int32 notified = 1;
+   */
+  notified: number;
+
+  /**
+   * 読めなかったアカウント・送れなかった予定の数（次の回でやり直す）
+   *
+   * @generated from field: int32 failed = 2;
+   */
+  failed: number;
+};
+
+/**
+ * Describes the message taramanji.calendarsync.v1.RunReminderResponse.
+ * Use `create(RunReminderResponseSchema)` to create a new message.
+ */
+export const RunReminderResponseSchema: GenMessage<RunReminderResponse> = /*@__PURE__*/
+  messageDesc(file_taramanji_calendarsync_v1_calendarsync, 11);
+
+/**
  * @generated from message taramanji.calendarsync.v1.UpdateSettingsRequest
  */
 export type UpdateSettingsRequest = Message<"taramanji.calendarsync.v1.UpdateSettingsRequest"> & {
@@ -366,7 +405,7 @@ export type UpdateSettingsRequest = Message<"taramanji.calendarsync.v1.UpdateSet
  * Use `create(UpdateSettingsRequestSchema)` to create a new message.
  */
 export const UpdateSettingsRequestSchema: GenMessage<UpdateSettingsRequest> = /*@__PURE__*/
-  messageDesc(file_taramanji_calendarsync_v1_calendarsync, 10);
+  messageDesc(file_taramanji_calendarsync_v1_calendarsync, 12);
 
 /**
  * @generated from message taramanji.calendarsync.v1.UpdateSettingsResponse
@@ -379,7 +418,7 @@ export type UpdateSettingsResponse = Message<"taramanji.calendarsync.v1.UpdateSe
  * Use `create(UpdateSettingsResponseSchema)` to create a new message.
  */
 export const UpdateSettingsResponseSchema: GenMessage<UpdateSettingsResponse> = /*@__PURE__*/
-  messageDesc(file_taramanji_calendarsync_v1_calendarsync, 11);
+  messageDesc(file_taramanji_calendarsync_v1_calendarsync, 13);
 
 /**
  * @generated from message taramanji.calendarsync.v1.DisconnectRequest
@@ -396,7 +435,7 @@ export type DisconnectRequest = Message<"taramanji.calendarsync.v1.DisconnectReq
  * Use `create(DisconnectRequestSchema)` to create a new message.
  */
 export const DisconnectRequestSchema: GenMessage<DisconnectRequest> = /*@__PURE__*/
-  messageDesc(file_taramanji_calendarsync_v1_calendarsync, 12);
+  messageDesc(file_taramanji_calendarsync_v1_calendarsync, 14);
 
 /**
  * @generated from message taramanji.calendarsync.v1.DisconnectResponse
@@ -418,10 +457,10 @@ export type DisconnectResponse = Message<"taramanji.calendarsync.v1.DisconnectRe
  * Use `create(DisconnectResponseSchema)` to create a new message.
  */
 export const DisconnectResponseSchema: GenMessage<DisconnectResponse> = /*@__PURE__*/
-  messageDesc(file_taramanji_calendarsync_v1_calendarsync, 13);
+  messageDesc(file_taramanji_calendarsync_v1_calendarsync, 15);
 
 /**
- * 複数 Google アカウントのカレンダー同期（管理者用。RunSync は CronJob からも呼ぶ）
+ * 複数 Google アカウントのカレンダー同期（管理者用。RunSync・RunReminder は CronJob からも呼ぶ）
  *
  * @generated from service taramanji.calendarsync.v1.CalendarSyncService
  */
@@ -441,6 +480,16 @@ export const CalendarSyncService: GenService<{
     methodKind: "unary";
     input: typeof RunSyncRequestSchema;
     output: typeof RunSyncResponseSchema;
+  },
+  /**
+   * 接続した全アカウントから、もうすぐ始まる予定を Discord に知らせる（CronJob が 5 分ごとに呼ぶ）
+   *
+   * @generated from rpc taramanji.calendarsync.v1.CalendarSyncService.RunReminder
+   */
+  runReminder: {
+    methodKind: "unary";
+    input: typeof RunReminderRequestSchema;
+    output: typeof RunReminderResponseSchema;
   },
   /**
    * @generated from rpc taramanji.calendarsync.v1.CalendarSyncService.UpdateSettings

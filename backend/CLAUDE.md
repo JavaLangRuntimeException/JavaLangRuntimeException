@@ -63,7 +63,7 @@ taramanji.com のバックエンド。Go + DDD + クリーンアーキテクチ�
 | reservation | Connect | 予約（Google Calendar API。サービスアカウントがドメイン全体の委任で `GCAL_SA_SUBJECT` になりかわる）、空き時間（iCal）、Google マップ → worklocation |
 | worklocation | Connect（GetWorkLocation は内部用） | 勤務場所 |
 | content | Connect | Qiita・connpass・ORCID・OGP |
-| calendarsync | Connect + HTTP `/api/calendar-sync/*` | 複数アカウントのカレンダー同期（RunSync は CronJob） |
+| calendarsync | Connect + HTTP `/api/calendar-sync/*` | 複数アカウントのカレンダー同期（RunSync は CronJob）、10 分以内に始まる予定の Discord 通知（RunReminder は CronJob） |
 | analytics | HTTP `/api/metrics/pageview` | ページビュー → web.pageviews |
 
 ## ディレクトリ構造
