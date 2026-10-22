@@ -117,4 +117,24 @@ type RunState interface {
 	SaveOAuthState(ctx context.Context, state, verifier string, ttl time.Duration) error
 	// TakeOAuthState は一度しか使えないよう、読むと同時に消す。無ければ空
 	TakeOAuthState(ctx context.Context, state string) (string, error)
+	// ClaimReminder は予定の通知を 1 回だけにするための印を付ける。既に付いていれば false
+	ClaimReminder(ctx context.Context, key string, ttl time.Duration) (bool, error)
+	// ReleaseReminder は送れなかった通知の印を外す（次の回で送り直す）
+	ReleaseReminder(ctx context.Context, key string) error
+}
+
+// Reminder はもうすぐ始まる予定の通知内容
+type Reminder struct {
+	// Key は同じ予定を 1 回だけ知らせるためのキー（複数アカウントに招待された同じ会議も 1 つにまとめる）
+	Key        string
+	CalendarID string
+	Summary    string
+	Start, End time.Time
+	Location   string
+	MeetLink   string
+}
+
+// Notifier は通知の送り先（Discord の Webhook）
+type Notifier interface {
+	Notify(ctx context.Context, r Reminder) error
 }

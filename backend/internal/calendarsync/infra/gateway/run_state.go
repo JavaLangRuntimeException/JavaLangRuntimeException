@@ -18,6 +18,8 @@ const (
 	lockKey     = "cal_sync:lock"
 	lastRunKey  = "cal_sync:last_run"
 	oauthPrefix = "cal_sync:oauth:"
+	// Redis の ACL（calendarsync は cal_sync:* だけ）に収まるよう同じ接頭辞にする
+	reminderPrefix = "cal_sync:reminded:"
 )
 
 type runState struct{ rdb redis.UniversalClient }
@@ -79,4 +81,12 @@ func (s *runState) TakeOAuthState(ctx context.Context, state string) (string, er
 		return "", nil
 	}
 	return v, err
+}
+
+func (s *runState) ClaimReminder(ctx context.Context, key string, ttl time.Duration) (bool, error) {
+	return s.rdb.SetNX(ctx, reminderPrefix+key, "1", ttl).Result()
+}
+
+func (s *runState) ReleaseReminder(ctx context.Context, key string) error {
+	return s.rdb.Del(ctx, reminderPrefix+key).Err()
 }

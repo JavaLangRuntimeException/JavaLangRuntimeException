@@ -47,3 +47,53 @@ spec:
                 allowPrivilegeEscalation: false
                 readOnlyRootFilesystem: true
                 capabilities: { drop: ["ALL"] }
+---
+# 5 分ごとに、10 分以内に始まる予定を Discord に知らせる（calendarsync の RunReminder）。
+# 同期とは別の CronJob にする（同期が長引いても通知を遅らせない）
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: calendarsync-remind
+spec:
+  schedule: "*/5 * * * *"
+  timeZone: Asia/Tokyo
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 120
+      ttlSecondsAfterFinished: 3600
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: calendarsync-remind
+            app.kubernetes.io/part-of: taramanji
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 100
+            seccompProfile: { type: RuntimeDefault }
+          containers:
+            - name: remind
+              image: curlimages/curl:8.16.0
+              env:
+                - name: TOKEN
+                  valueFrom:
+                    secretKeyRef: { name: calendarsync-env, key: CALENDAR_SYNC_CRON_TOKEN }
+              command: ["sh", "-c"]
+              args:
+                - >-
+                  curl -sS --fail-with-body --max-time 110 -X POST
+                  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{}'
+                  http://calendarsync:8080/taramanji.calendarsync.v1.CalendarSyncService/RunReminder
+              resources:
+                requests: { cpu: 5m, memory: 8Mi }
+                limits: { memory: 32Mi }
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: { drop: ["ALL"] }
