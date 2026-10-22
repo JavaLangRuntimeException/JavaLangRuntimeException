@@ -65,6 +65,7 @@ taramanji.com のバックエンド。Go + DDD + クリーンアーキテクチ�
 | content | Connect | Qiita・connpass・ORCID・OGP |
 | calendarsync | Connect + HTTP `/api/calendar-sync/*` | 複数アカウントのカレンダー同期（RunSync は CronJob） |
 | analytics | HTTP `/api/metrics/pageview` | ページビュー → web.pageviews |
+| cloud | Connect（cloud.taramanji.com） | taramanji cloud のコンソールの API。認証は Cloudflare Access の JWT（`pkg/util/cfaccess`）で、taramanji のセッションは使わない。マニフェストは `deploy/cloud/` |
 
 ## ディレクトリ構造
 

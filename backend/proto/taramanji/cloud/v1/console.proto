@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package taramanji.cloud.v1;
+
+// taramanji cloud のマネジメントコンソール（cloud.taramanji.com）。
+// 全 RPC が Cloudflare Access の JWT（管理者 1 人）を要する。taramanji.com のセッションは使わない
+service ConsoleService {
+  rpc GetOverview(GetOverviewRequest) returns (GetOverviewResponse) {}
+  // メトリクスは本番だけ（dev / stg は metrics_enabled = false で、呼ぶと failed_precondition）
+  rpc GetMetrics(GetMetricsRequest) returns (GetMetricsResponse) {}
+}
+
+// コンソール自身を動かしている部品（API・画面・Redis）の状態
+message Component {
+  string name = 1;
+  int32 ready = 2;
+  int32 desired = 3;
+  // イメージのタグ（sha-xxxxxxx / v1.2.3）
+  string version = 4;
+}
+
+message GetOverviewRequest {}
+
+message GetOverviewResponse {
+  // prod / stg / dev
+  string environment = 1;
+  // Cloudflare Access でログインした人
+  string email = 2;
+  bool metrics_enabled = 3;
+  repeated Component components = 4;
+  // バケットとアプリの URL の形（"https://<name>" + suffix）。例: "-storage.taramanji.com"
+  string storage_host_suffix = 5;
+  string hosting_host_suffix = 6;
+}
+
+// 1 本の時系列
+message Series {
+  // 例: requests / errors_5xx / latency_p95 / cpu / memory
+  string metric = 1;
+  // 系列の分け方の値（ホスト名・デプロイ名）。全体なら空
+  string group = 2;
+  // 表示の単位: req/s・%・ms・mcores・bytes
+  string unit = 3;
+  repeated int64 timestamps_ms = 4;
+  repeated double values = 5;
+}
+
+message GetMetricsRequest {
+  // 1h / 1d / 7d
+  string range = 1;
+}
+
+message GetMetricsResponse {
+  repeated Series series = 1;
+}

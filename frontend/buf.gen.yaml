@@ -2,8 +2,8 @@
 version: v2
 inputs:
   - directory: ../backend/proto
-    # notification は内部専用（ブラウザから呼ばない）
-    exclude_paths: [../backend/proto/taramanji/notification]
+    # notification は内部専用（ブラウザから呼ばない）。cloud はコンソール（console/）の API で、taramanji.com からは呼ばない
+    exclude_paths: [../backend/proto/taramanji/notification, ../backend/proto/taramanji/cloud]
 plugins:
   - local: protoc-gen-es
     out: src/shared/api/gen
