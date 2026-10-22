@@ -1,0 +1,52 @@
+# taramanji cloud の stg（cloud-stg.taramanji.com、namespace: cloud-stg）。main への push（と手動実行）で CI が版を書き換え、Argo CD の cloud-stg が同期する。
+# 本番との違い: 1 台ずつ・メトリクスなし（Datadog はこの namespace を集めない）・バケットとアプリの URL に -stg が付く
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: cloud-stg
+resources:
+  - ../../../base
+
+# set-version.sh が書き換える（CI の deploy-stg ジョブ）
+images:
+  - { name: taramanji/cloud, newName: ghcr.io/javalangruntimeexception/taramanji-cloud, newTag: unreleased }
+  - { name: taramanji/console, newName: ghcr.io/javalangruntimeexception/taramanji-console, newTag: unreleased }
+
+patches:
+  - target: { kind: Deployment }
+    patch: |-
+      - op: replace
+        path: /spec/template/metadata/labels/tags.datadoghq.com~1env
+        value: stg
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata: { name: cloud-api }
+      spec:
+        template:
+          spec:
+            containers:
+              - name: app
+                env:
+                  - { name: APP_ENV, value: staging }
+                  - { name: CLOUD_ENV, value: stg }
+                  - { name: APPS_NAMESPACE, value: cloud-stg-apps }
+                  - { name: CONSOLE_ORIGIN, value: "https://cloud-stg.taramanji.com" }
+                  - { name: STORAGE_HOST_SUFFIX, value: "-storage-stg.taramanji.com" }
+                  - { name: HOSTING_HOST_SUFFIX, value: "-hosting-stg.taramanji.com" }
+  - target: { kind: HTTPRoute, name: console }
+    patch: |-
+      - op: replace
+        path: /spec/hostnames
+        value: ["cloud-stg.taramanji.com"]
+
+replacements:
+  - source: { kind: Deployment, name: cloud-api, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
+    targets:
+      - select: { kind: Deployment, name: cloud-api }
+        fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
+        options: { create: true }
+  - source: { kind: Deployment, name: console, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
+    targets:
+      - select: { kind: Deployment, name: console }
+        fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
+        options: { create: true }

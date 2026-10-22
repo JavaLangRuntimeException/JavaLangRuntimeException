@@ -1,0 +1,9 @@
+# taramanji cloud の本番（cloud.taramanji.com）。Argo CD の cloud-prod アプリがこのディレクトリを同期する。
+# クラスターで 1 つのもの（namespace・cloud の Gateway・トンネル）もここが持つ
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../platform
+  - app
+  - workloads
+  - sealed

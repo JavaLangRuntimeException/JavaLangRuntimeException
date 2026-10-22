@@ -1,0 +1,8 @@
+# taramanji cloud のコンソール（API・画面・ルート）。環境に依存しない部分。namespace とホスト名はオーバーレイで決める
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - api.yaml
+  - console.yaml
+  - route.yaml
+  - networkpolicy.yaml

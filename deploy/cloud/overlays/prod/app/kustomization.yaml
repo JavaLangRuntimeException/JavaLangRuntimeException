@@ -1,0 +1,43 @@
+# 本番のコンソール（namespace: cloud）。メトリクス（Datadog）を出すのは本番だけ
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: cloud
+resources:
+  - ../../../base
+
+# set-version.sh が書き換える（タグ v* の push で CI の deploy-prod ジョブ）。初回のリリースまでイメージはない
+images:
+  - { name: taramanji/cloud, newName: ghcr.io/javalangruntimeexception/taramanji-cloud, newTag: unreleased }
+  - { name: taramanji/console, newName: ghcr.io/javalangruntimeexception/taramanji-console, newTag: unreleased }
+
+patches:
+  # 2 台にして、片方の入れ替え中・ノードの drain 中も止めない
+  - target: { kind: Deployment }
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 2
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata: { name: cloud-api }
+      spec:
+        template:
+          spec:
+            containers:
+              - name: app
+                env:
+                  # コンソールのメトリクスで見る namespace（コンソール自身とアプリ用）
+                  - { name: METRICS_NAMESPACES, value: "cloud,cloud-apps" }
+
+replacements:
+  - source: { kind: Deployment, name: cloud-api, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
+    targets:
+      - select: { kind: Deployment, name: cloud-api }
+        fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
+        options: { create: true }
+  - source: { kind: Deployment, name: console, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
+    targets:
+      - select: { kind: Deployment, name: console }
+        fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
+        options: { create: true }

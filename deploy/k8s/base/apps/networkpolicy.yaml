@@ -8,6 +8,7 @@ spec:
   policyTypes: [Ingress]
 ---
 # Envoy Gateway（envoy-gateway-system の Envoy）→ 公開するサービスと web
+# taramanji の Gateway（gateway/taramanji）の Envoy だけ。同じ名前空間にいる taramanji cloud の Envoy（cloud-gateway/cloud）からは届かない
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -19,6 +20,10 @@ spec:
   ingress:
     - from:
         - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: envoy-gateway-system } }
+          podSelector:
+            matchLabels:
+              gateway.envoyproxy.io/owning-gateway-name: taramanji
+              gateway.envoyproxy.io/owning-gateway-namespace: gateway
       ports:
         - { port: 8080 }
 ---

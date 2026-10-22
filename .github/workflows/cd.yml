@@ -131,8 +131,17 @@ jobs:
           SOURCE: ${{ needs.gate.outputs.source || github.ref_name }}
         run: |
           TAG="sha-${SHA::7}"
-          services="$(deploy/k8s/scripts/built-services.sh "$TAG")"
-          echo "版を書き換えるサービス: ${services:-（なし）}"
+          all="$(deploy/k8s/scripts/built-services.sh "$TAG")"
+          echo "版を書き換えるサービス: ${all:-（なし）}"
+          # taramanji cloud（cloud・console）は dev が 1 つだけ（cloud-dev.taramanji.com）なので、devN を選ばずに出す
+          cloud=""; services=""
+          for s in $all; do case "$s" in cloud|console) cloud="$cloud $s" ;; *) services="$services $s" ;; esac; done
+          if [ -n "$cloud" ]; then
+            # shellcheck disable=SC2086
+            deploy/k8s/scripts/bump-and-push.sh dev "$TAG" "$SOURCE" $cloud
+            echo "cloud=1" >> "$GITHUB_OUTPUT"
+            echo "### cloud-dev に出しました: https://cloud-dev.taramanji.com（${cloud# }）" >> "$GITHUB_STEP_SUMMARY"
+          fi
           [ -n "$services" ] || exit 0
           env="$(deploy/k8s/scripts/pick-dev.sh "$SOURCE")"
           echo "出す先: $env"
@@ -145,15 +154,23 @@ jobs:
           deploy/k8s/scripts/bump-and-push.sh "$env" "$TAG" "$SOURCE" $services
           echo "### $env に出しました: https://$env.taramanji.com（$services）" >> "$GITHUB_STEP_SUMMARY"
       - name: PR にどこへ出したかを書く
-        if: steps.bump.outputs.env != '' && startsWith(needs.gate.outputs.source, 'https://')
+        if: (steps.bump.outputs.env != '' || steps.bump.outputs.cloud != '') && startsWith(needs.gate.outputs.source, 'https://')
         env:
           GH_TOKEN: ${{ github.token }}
           ENV_NAME: ${{ steps.bump.outputs.env }}
+          CLOUD: ${{ steps.bump.outputs.cloud }}
           PR_URL: ${{ needs.gate.outputs.source }}
           SHA: ${{ needs.gate.outputs.sha }}
         run: |
-          body="**${ENV_NAME}** に出しました（\`${SHA::7}\`）: https://${ENV_NAME}.taramanji.com ・ https://${ENV_NAME}-gws.taramanji.com
+          body=""
+          if [ -n "$ENV_NAME" ]; then
+            body="**${ENV_NAME}** に出しました（\`${SHA::7}\`）: https://${ENV_NAME}.taramanji.com ・ https://${ENV_NAME}-gws.taramanji.com
           入れ替わりの様子: https://rollouts.taramanji.com（名前空間 taramanji-${ENV_NAME}）"
+          fi
+          if [ -n "$CLOUD" ]; then
+            body="${body:+$body
+          }**cloud-dev** に出しました（\`${SHA::7}\`）: https://cloud-dev.taramanji.com"
+          fi
           # 同じ PR で何度出しても、コメントは 1 つを書き換える
           gh pr comment "$PR_URL" --body "$body" --edit-last --create-if-none
 

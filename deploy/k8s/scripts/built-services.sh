@@ -6,7 +6,7 @@ set -euo pipefail
 TAG="${1:?tag}"
 REGISTRY="${REGISTRY:-ghcr.io/javalangruntimeexception}"
 out=""
-for s in identity notification inquiry reservation worklocation content calendarsync analytics web; do
+for s in identity notification inquiry reservation worklocation content calendarsync analytics web cloud console; do
   docker buildx imagetools inspect "$REGISTRY/taramanji-$s:$TAG" >/dev/null 2>&1 && out="$out $s"
 done
 echo "${out# }"

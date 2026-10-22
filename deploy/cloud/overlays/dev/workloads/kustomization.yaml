@@ -1,0 +1,12 @@
+# dev のアプリの枠は小さく（workloads/quota.yaml の既定: メモリ 512 MiB・CPU 1・Pod 10・ディスク 10 GiB）
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: cloud-dev-apps
+resources:
+  - ../../../workloads
+patches:
+  - target: { kind: RoleBinding, name: cloud-api-capacity }
+    patch: |-
+      - op: replace
+        path: /subjects/0/namespace
+        value: cloud-dev

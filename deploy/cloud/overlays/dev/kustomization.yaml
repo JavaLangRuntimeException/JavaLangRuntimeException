@@ -1,0 +1,10 @@
+# taramanji cloud の dev（cloud-dev.taramanji.com）。Argo CD の cloud-dev がこのディレクトリを同期する
+#   app/        コンソール（namespace: cloud-dev）。CI が版を書き換える
+#   workloads/  アプリ用 namespace（cloud-dev-apps）の枠と囲い
+#   sealed/     SealedSecret（scripts/seal.sh が作る）
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - app
+  - workloads
+  - sealed

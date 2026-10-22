@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-dev / stg、本番の管理画面（/admin）、Argo Rollouts の画面を Cloudflare Access で守る。何度実行しても同じ結果になる。
+dev / stg、本番の管理画面（/admin）、Argo Rollouts の画面、taramanji cloud のコンソールを Cloudflare Access で守る。何度実行しても同じ結果になる。
 Cloudflare の入口で Google ログインを求め、ADMIN_EMAIL のアカウント（shuta.tanahashi@taramanji.com）だけを通す（GKE なら IAP にあたる）。
 --otp を付けると、Google の代わりにワンタイム PIN（そのメールアドレスに届くコード）にする。Google 側が使えないときの逃げ道。
 --with-otp を付けると、Google とワンタイム PIN のどちらでも入れる（ログイン画面で選ぶ）。Google の設定を確かめる間に使う。
@@ -14,6 +14,8 @@ Cloudflare の入口で Google ログインを求め、ADMIN_EMAIL のアカウ�
   - Google ログイン（既定）のとき: Google の OAuth クライアント（taramanji-calendar-sync）の「承認済みのリダイレクト URI」に
     https://<チーム名>.cloudflareaccess.com/cdn-cgi/access/callback を足してあること
 ADMIN_EMAIL（と Google の OAuth クライアントの ID・シークレット）は deploy/k8s/secrets/prod/identity.env から読む。
+taramanji cloud のコンソールのアプリ（taramanji-cloud）の Audience タグとチームのドメインは deploy/cloud/secrets/access.env に書く
+（コンソールの API が JWT の aud・iss を確かめるのに使う。deploy/cloud/scripts/seal.sh が読む）。
 """
 import json
 import os
@@ -25,6 +27,8 @@ ACCOUNT = os.environ.get("CF_ACCOUNT_ID", "f952fdc8cd122331a587b1ff4fdac99d")
 API = f"https://api.cloudflare.com/client/v4/accounts/{ACCOUNT}/access"
 HERE = os.path.dirname(os.path.abspath(__file__))
 SECRETS = os.path.join(HERE, "..", "k8s", "secrets", "prod", "identity.env")
+CLOUD_ACCESS_ENV = os.path.join(HERE, "..", "cloud", "secrets", "access.env")
+CLOUD_APP = "taramanji-cloud"
 
 ALLOWED = "shuta.tanahashi@taramanji.com"
 
@@ -38,6 +42,9 @@ APPS = {
                         "gws.taramanji.com/admin", "gws.taramanji.com/admin/*"],
     # Argo Rollouts の画面（本番のカナリアの Promote / Abort）。画面自体にログインがないので必ずここで守る
     "taramanji-rollouts": ["rollouts.taramanji.com"],
+    # taramanji cloud のコンソール（全環境）。taramanji.com とは別のアプリにして Audience タグを分ける
+    # （コンソールの API は自分のアプリの JWT しか受け付けない）。バケット・アプリの URL（*-storage・*-hosting）は含めない
+    CLOUD_APP: ["cloud.taramanji.com", "cloud-stg.taramanji.com", "cloud-dev.taramanji.com"],
 }
 
 
@@ -116,11 +123,17 @@ def main():
         }
         cur = next((a for a in apps if a.get("name") == name), None)
         if cur:
-            call(token, "PUT", f"/apps/{cur['id']}", body)
+            app = call(token, "PUT", f"/apps/{cur['id']}", body)
             print("更新:", name, hosts)
         else:
-            call(token, "POST", "/apps", body)
+            app = call(token, "POST", "/apps", body)
             print("作成:", name, hosts)
+        if name == CLOUD_APP:
+            os.makedirs(os.path.dirname(CLOUD_ACCESS_ENV), exist_ok=True)
+            with open(CLOUD_ACCESS_ENV, "w") as f:
+                f.write(f"CF_ACCESS_AUD={app['aud']}\nCF_ACCESS_TEAM_DOMAIN=https://{team}\n")
+            os.chmod(CLOUD_ACCESS_ENV, 0o600)
+            print("  Audience タグを書いた:", os.path.relpath(CLOUD_ACCESS_ENV))
 
 
 if __name__ == "__main__":
