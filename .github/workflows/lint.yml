@@ -112,15 +112,15 @@ jobs:
               -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
               /tmp/$env.yaml
           done
-      - name: Render and validate taramanji cloud (dev / stg / prod)
+      - name: Render and validate taramanji cloud (dev / stg / prod / cluster)
         run: |
-          for env in dev stg prod; do
-            echo "== cloud-$env"
-            kubectl kustomize deploy/cloud/overlays/$env > /tmp/cloud-$env.yaml
+          for env in overlays/dev overlays/stg overlays/prod cluster; do
+            echo "== cloud/$env"
+            kubectl kustomize deploy/cloud/$env > /tmp/cloud-${env//\//-}.yaml
             kubeconform -strict -summary -ignore-missing-schemas \
               -schema-location default \
               -schema-location 'https://raw.githubusercontent.com/datreeio/CRDs-catalog/main/{{.Group}}/{{.ResourceKind}}_{{.ResourceAPIVersion}}.json' \
-              /tmp/cloud-$env.yaml
+              /tmp/cloud-${env//\//-}.yaml
           done
       - name: No plaintext Secret in the repo
         run: |

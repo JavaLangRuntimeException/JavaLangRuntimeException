@@ -85,6 +85,8 @@ spec:
               valueFrom: { resourceFieldRef: { resource: limits.memory } }
             # 環境ごとに overlays で書き換える
             - { name: CLOUD_ENV, value: prod }
+            # この環境のアプリ用 namespace（容量の枠を読む）
+            - { name: APPS_NAMESPACE, value: cloud-apps }
             - { name: CONSOLE_ORIGIN, value: "https://cloud.taramanji.com" }
             - { name: STORAGE_HOST_SUFFIX, value: "-storage.taramanji.com" }
             - { name: HOSTING_HOST_SUFFIX, value: "-hosting.taramanji.com" }

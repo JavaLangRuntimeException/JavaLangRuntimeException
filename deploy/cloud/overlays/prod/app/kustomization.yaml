@@ -27,8 +27,8 @@ patches:
             containers:
               - name: app
                 env:
-                  # コンソールのメトリクスで見る namespace（③④でデプロイしたアプリの namespace を足す）
-                  - { name: METRICS_NAMESPACES, value: cloud }
+                  # コンソールのメトリクスで見る namespace（コンソール自身とアプリ用）
+                  - { name: METRICS_NAMESPACES, value: "cloud,cloud-apps" }
 
 replacements:
   - source: { kind: Deployment, name: cloud-api, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }

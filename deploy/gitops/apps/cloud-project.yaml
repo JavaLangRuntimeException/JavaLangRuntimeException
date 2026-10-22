@@ -1,5 +1,5 @@
 # taramanji cloud の Argo CD プロジェクト。cloud の namespace にしか書けない（taramanji・data・gateway・cloudflared には触れない）。
-# クラスター全体のものは Namespace だけ
+# クラスター全体のものは Namespace だけ（PriorityClass・ClusterRole は deploy/cloud/cluster を cloud-cluster アプリが default プロジェクトで同期する）
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
 metadata:
@@ -13,6 +13,9 @@ spec:
     - { server: https://kubernetes.default.svc, namespace: cloud }
     - { server: https://kubernetes.default.svc, namespace: cloud-stg }
     - { server: https://kubernetes.default.svc, namespace: cloud-dev }
+    - { server: https://kubernetes.default.svc, namespace: cloud-apps }
+    - { server: https://kubernetes.default.svc, namespace: cloud-stg-apps }
+    - { server: https://kubernetes.default.svc, namespace: cloud-dev-apps }
     - { server: https://kubernetes.default.svc, namespace: cloud-gateway }
     - { server: https://kubernetes.default.svc, namespace: cloud-cloudflared }
   clusterResourceWhitelist:

@@ -4,8 +4,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: cloud-stg
 resources:
-  - ../../base
-  - sealed
+  - ../../../base
 
 # set-version.sh が書き換える（CI の deploy-stg ジョブ）
 images:
@@ -30,6 +29,7 @@ patches:
                 env:
                   - { name: APP_ENV, value: staging }
                   - { name: CLOUD_ENV, value: stg }
+                  - { name: APPS_NAMESPACE, value: cloud-stg-apps }
                   - { name: CONSOLE_ORIGIN, value: "https://cloud-stg.taramanji.com" }
                   - { name: STORAGE_HOST_SUFFIX, value: "-storage-stg.taramanji.com" }
                   - { name: HOSTING_HOST_SUFFIX, value: "-hosting-stg.taramanji.com" }

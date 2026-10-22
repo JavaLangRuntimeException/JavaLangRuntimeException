@@ -4,8 +4,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 namespace: cloud-dev
 resources:
-  - ../../base
-  - sealed
+  - ../../../base
 
 # set-version.sh が書き換える（CI の deploy-dev ジョブ）
 images:
@@ -30,6 +29,7 @@ patches:
                 env:
                   - { name: APP_ENV, value: dev }
                   - { name: CLOUD_ENV, value: dev }
+                  - { name: APPS_NAMESPACE, value: cloud-dev-apps }
                   - { name: CONSOLE_ORIGIN, value: "https://cloud-dev.taramanji.com" }
                   - { name: STORAGE_HOST_SUFFIX, value: "-storage-dev.taramanji.com" }
                   - { name: HOSTING_HOST_SUFFIX, value: "-hosting-dev.taramanji.com" }

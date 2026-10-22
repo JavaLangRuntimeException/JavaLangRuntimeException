@@ -3,7 +3,7 @@
 # 各サービスの version ラベル（Datadog）とカナリアの判定に渡す version は、kustomization.yaml の replacements が
 # そのサービスのイメージのタグから取るので、ここでは newTag だけを書き換えればよい。
 # taramanji cloud のサービス（cloud・console）は deploy/cloud/overlays/ の方を書き換える。cloud の dev は 1 つだけなので、
-# dev01〜03（と dev）はどれも deploy/cloud/overlays/dev になる
+# dev01〜03（と dev）はどれも deploy/cloud/overlays/dev/app になる
 # 使い方: scripts/set-version.sh dev01|dev02|dev03|dev|stg|prod <tag> [サービス ...]   （サービスを省くと、その環境の全部）
 set -euo pipefail
 ENV="${1:?usage: set-version.sh dev01|dev02|dev03|dev|stg|prod <tag> [service ...]}"
@@ -12,9 +12,9 @@ shift 2
 cd "$(dirname "$0")/../../.."
 case "$ENV" in
   prod) K8S=deploy/k8s/overlays/prod/apps/kustomization.yaml; CLOUD=deploy/cloud/overlays/prod/app/kustomization.yaml ;;
-  stg) K8S=deploy/k8s/overlays/stg/kustomization.yaml; CLOUD=deploy/cloud/overlays/stg/kustomization.yaml ;;
-  dev) K8S=""; CLOUD=deploy/cloud/overlays/dev/kustomization.yaml ;;
-  *) K8S="deploy/k8s/overlays/$ENV/kustomization.yaml"; CLOUD=deploy/cloud/overlays/dev/kustomization.yaml ;;
+  stg) K8S=deploy/k8s/overlays/stg/kustomization.yaml; CLOUD=deploy/cloud/overlays/stg/app/kustomization.yaml ;;
+  dev) K8S=""; CLOUD=deploy/cloud/overlays/dev/app/kustomization.yaml ;;
+  *) K8S="deploy/k8s/overlays/$ENV/kustomization.yaml"; CLOUD=deploy/cloud/overlays/dev/app/kustomization.yaml ;;
 esac
 python3 - "$K8S" "$CLOUD" "$TAG" "$@" <<'PY'
 import os, re, sys

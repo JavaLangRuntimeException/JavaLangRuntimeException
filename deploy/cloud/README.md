@@ -22,17 +22,43 @@ taramanji.com・gws.taramanji.com と同じクラスター（kind）で動くが
   taramanji.com のセッション（`AUTH_SECRET`）や Redis は使わない
 - **Secret**: taramanji の Secret は使わず、`deploy/cloud/secrets/`（git に入らない）から SealedSecret を作る
 - **Argo CD**: 専用の AppProject（`cloud`）。同期できる名前空間は cloud の 5 つだけ、クラスター全体のリソースは Namespace だけ
-- **権限**: cloud-api の ServiceAccount は自分の名前空間の Deployment・StatefulSet を読めるだけ
+- **権限**: cloud-api の ServiceAccount は読むだけ（自分の名前空間の Deployment・StatefulSet、アプリ用名前空間の枠と Pod、ノードの容量と使用量）
+
+## アプリの容量（taramanji.com・gws に影響させない）
+
+アプリ（④）は環境ごとのアプリ用名前空間（`cloud-apps`・`cloud-stg-apps`・`cloud-dev-apps`）に置き、`workloads/` で次の 3 つを縛る。
+
+| | 縛り方 |
+|---|---|
+| 量 | ResourceQuota `apps`。メモリは LimitRange で requests = limits にそろえ、予約した分がそのまま実際に使える上限になる |
+| 順番 | PriorityClass `cloud-workload`（-100・他を押しのけない）。メモリが足りなくなったら taramanji より先に追い出される。付けていない Pod は作れない（ResourceQuota `require-cloud-priority`） |
+| 通信 | taramanji・data（Redis）・Kubernetes API・LAN には届かない。受けるのは cloud の Gateway からだけ。NodePort・LoadBalancer は作れない。Pod Security は baseline（hostPath・特権コンテナ不可） |
+
+枠の大きさ（Mac mini の OrbStack VM は 11.7 GiB。taramanji.com・gws・基盤がおよそ 5.5 GiB を使う）:
+
+| 環境 | メモリ | CPU（limits） | Pod | ディスク |
+|---|---|---|---|---|
+| prod | 2.5 GiB | 4 | 30 | 50 GiB |
+| stg | 512 MiB | 1 | 10 | 10 GiB |
+| dev | 512 MiB | 1 | 10 | 10 GiB |
+
+合わせて 3.5 GiB をアプリに渡し、2 GiB を taramanji.com・gws の伸びしろに残す（cloud-api の `CAPACITY_RESERVE_MIB`）。
+VM のメモリを増やしたら `overlays/prod/workloads` の枠を広げる。
+
+コンソールの「容量」は、この枠の残りと Mac mini 全体の実際の空き（予約分を除く）の、先に尽きる方で「S / M / L / XL のアプリがあと何個置けるか」を出す。
+ストレージ（バケット）の容量は ③ で足す。
 
 ## 構成
 
 ```
 deploy/cloud/
   platform/        全環境で 1 つ（prod の Application が持つ）: 名前空間・Gateway（cloud）・トンネル（cloudflared）
+  cluster/         クラスター全体のもの（PriorityClass・ノードを読む ClusterRole）。cloud-cluster アプリ（default プロジェクト）が持つ
   base/            1 環境ぶん: cloud-api（Go、backend/cmd/cloud）・console（console/ の画面）・HTTPRoute・NetworkPolicy
+  workloads/       1 環境ぶんのアプリ用名前空間の枠と囲い（ResourceQuota・LimitRange・NetworkPolicy）
   overlays/
-    prod/          platform + app（base）+ sealed
-    stg/ dev/      base + sealed（ホスト名・環境名だけ変える）
+    prod/          platform + app（base）+ workloads + sealed
+    stg/ dev/      app（base。ホスト名・環境名だけ変える）+ workloads + sealed
   scripts/seal.sh  SealedSecret を作る
   secrets/         平文の入力（git に入らない）
 ```
@@ -58,7 +84,7 @@ deploy/cloud/
 3. **Datadog**（prod のメトリクス用。なくてもコンソールはメトリクスなしで動く）
    - API キーを `deploy/cloud/secrets/datadog-api-key` に置く
    - アプリケーションキーは、スコープを `metrics_read` と `timeseries_query` だけにして作り、`deploy/cloud/secrets/datadog-app-key` に置く
-   - `deploy/k8s/observability/datadog-values.yaml` を変えたので、Agent を入れ直す（cloud-dev・cloud-stg を監視から外し、cloud のログを送る）
+   - `deploy/k8s/observability/datadog-values.yaml` を変えたので、Agent を入れ直す（cloud-dev・cloud-stg を監視から外し、cloud・cloud-apps のログを送る）
 
 4. **SealedSecret** を作ってコミットする
 

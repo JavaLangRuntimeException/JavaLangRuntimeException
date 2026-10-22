@@ -1,0 +1,26 @@
+# コンソールの API（その環境の namespace の ServiceAccount cloud-api）が、アプリ用 namespace の枠と使用量を読む。
+# subjects の namespace は overlays/<env>/workloads で書き換える
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cloud-api-capacity
+rules:
+  - apiGroups: [""]
+    resources: ["resourcequotas", "pods"]
+    verbs: ["get", "list"]
+  - apiGroups: ["metrics.k8s.io"]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cloud-api-capacity
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: cloud-api-capacity
+subjects:
+  - kind: ServiceAccount
+    name: cloud-api
+    namespace: cloud
