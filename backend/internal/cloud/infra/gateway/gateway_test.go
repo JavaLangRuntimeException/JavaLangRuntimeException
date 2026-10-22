@@ -26,7 +26,7 @@ func TestKubeWorkloads(t *testing.T) {
 	defer srv.Close()
 	token := filepath.Join(t.TempDir(), "token")
 	_ = os.WriteFile(token, []byte("tok\n"), 0o600)
-	k := &kube{http: srv.Client(), base: srv.URL, namespace: "cloud", tokenPath: token}
+	k := &Kube{http: srv.Client(), base: srv.URL, namespace: "cloud", tokenPath: token}
 	ws, err := k.Workloads(context.Background())
 	if err != nil {
 		t.Fatal(err)

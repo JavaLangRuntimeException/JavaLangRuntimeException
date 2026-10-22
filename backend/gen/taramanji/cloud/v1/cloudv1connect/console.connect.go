@@ -39,6 +39,9 @@ const (
 	// ConsoleServiceGetMetricsProcedure is the fully-qualified name of the ConsoleService's GetMetrics
 	// RPC.
 	ConsoleServiceGetMetricsProcedure = "/taramanji.cloud.v1.ConsoleService/GetMetrics"
+	// ConsoleServiceGetCapacityProcedure is the fully-qualified name of the ConsoleService's
+	// GetCapacity RPC.
+	ConsoleServiceGetCapacityProcedure = "/taramanji.cloud.v1.ConsoleService/GetCapacity"
 )
 
 // ConsoleServiceClient is a client for the taramanji.cloud.v1.ConsoleService service.
@@ -46,6 +49,8 @@ type ConsoleServiceClient interface {
 	GetOverview(context.Context, *connect.Request[v1.GetOverviewRequest]) (*connect.Response[v1.GetOverviewResponse], error)
 	// メトリクスは本番だけ（dev / stg は metrics_enabled = false で、呼ぶと failed_precondition）
 	GetMetrics(context.Context, *connect.Request[v1.GetMetricsRequest]) (*connect.Response[v1.GetMetricsResponse], error)
+	// あとどのくらいアプリを置けるか（この環境の枠と、Mac mini 全体の空き）。全環境で使える（Datadog は使わない）
+	GetCapacity(context.Context, *connect.Request[v1.GetCapacityRequest]) (*connect.Response[v1.GetCapacityResponse], error)
 }
 
 // NewConsoleServiceClient constructs a client for the taramanji.cloud.v1.ConsoleService service. By
@@ -71,6 +76,12 @@ func NewConsoleServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 			connect.WithSchema(consoleServiceMethods.ByName("GetMetrics")),
 			connect.WithClientOptions(opts...),
 		),
+		getCapacity: connect.NewClient[v1.GetCapacityRequest, v1.GetCapacityResponse](
+			httpClient,
+			baseURL+ConsoleServiceGetCapacityProcedure,
+			connect.WithSchema(consoleServiceMethods.ByName("GetCapacity")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -78,6 +89,7 @@ func NewConsoleServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 type consoleServiceClient struct {
 	getOverview *connect.Client[v1.GetOverviewRequest, v1.GetOverviewResponse]
 	getMetrics  *connect.Client[v1.GetMetricsRequest, v1.GetMetricsResponse]
+	getCapacity *connect.Client[v1.GetCapacityRequest, v1.GetCapacityResponse]
 }
 
 // GetOverview calls taramanji.cloud.v1.ConsoleService.GetOverview.
@@ -90,11 +102,18 @@ func (c *consoleServiceClient) GetMetrics(ctx context.Context, req *connect.Requ
 	return c.getMetrics.CallUnary(ctx, req)
 }
 
+// GetCapacity calls taramanji.cloud.v1.ConsoleService.GetCapacity.
+func (c *consoleServiceClient) GetCapacity(ctx context.Context, req *connect.Request[v1.GetCapacityRequest]) (*connect.Response[v1.GetCapacityResponse], error) {
+	return c.getCapacity.CallUnary(ctx, req)
+}
+
 // ConsoleServiceHandler is an implementation of the taramanji.cloud.v1.ConsoleService service.
 type ConsoleServiceHandler interface {
 	GetOverview(context.Context, *connect.Request[v1.GetOverviewRequest]) (*connect.Response[v1.GetOverviewResponse], error)
 	// メトリクスは本番だけ（dev / stg は metrics_enabled = false で、呼ぶと failed_precondition）
 	GetMetrics(context.Context, *connect.Request[v1.GetMetricsRequest]) (*connect.Response[v1.GetMetricsResponse], error)
+	// あとどのくらいアプリを置けるか（この環境の枠と、Mac mini 全体の空き）。全環境で使える（Datadog は使わない）
+	GetCapacity(context.Context, *connect.Request[v1.GetCapacityRequest]) (*connect.Response[v1.GetCapacityResponse], error)
 }
 
 // NewConsoleServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -116,12 +135,20 @@ func NewConsoleServiceHandler(svc ConsoleServiceHandler, opts ...connect.Handler
 		connect.WithSchema(consoleServiceMethods.ByName("GetMetrics")),
 		connect.WithHandlerOptions(opts...),
 	)
+	consoleServiceGetCapacityHandler := connect.NewUnaryHandler(
+		ConsoleServiceGetCapacityProcedure,
+		svc.GetCapacity,
+		connect.WithSchema(consoleServiceMethods.ByName("GetCapacity")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/taramanji.cloud.v1.ConsoleService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case ConsoleServiceGetOverviewProcedure:
 			consoleServiceGetOverviewHandler.ServeHTTP(w, r)
 		case ConsoleServiceGetMetricsProcedure:
 			consoleServiceGetMetricsHandler.ServeHTTP(w, r)
+		case ConsoleServiceGetCapacityProcedure:
+			consoleServiceGetCapacityHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -137,4 +164,8 @@ func (UnimplementedConsoleServiceHandler) GetOverview(context.Context, *connect.
 
 func (UnimplementedConsoleServiceHandler) GetMetrics(context.Context, *connect.Request[v1.GetMetricsRequest]) (*connect.Response[v1.GetMetricsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.cloud.v1.ConsoleService.GetMetrics is not implemented"))
+}
+
+func (UnimplementedConsoleServiceHandler) GetCapacity(context.Context, *connect.Request[v1.GetCapacityRequest]) (*connect.Response[v1.GetCapacityResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.cloud.v1.ConsoleService.GetCapacity is not implemented"))
 }

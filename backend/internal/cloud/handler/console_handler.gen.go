@@ -61,6 +61,32 @@ func (h *ConsoleHandler) GetMetrics(ctx context.Context, req *connect.Request[cl
 	}(out.Series)}), nil
 }
 
+func (h *ConsoleHandler) GetCapacity(ctx context.Context, req *connect.Request[cloudv1.GetCapacityRequest]) (*connect.Response[cloudv1.GetCapacityResponse], error) {
+	out, err := h.usecase.GetCapacity(ctx, usecase.GetCapacityInput{})
+	if err != nil {
+		return nil, errs.ToConnect(ctx, err)
+	}
+	return connect.NewResponse(&cloudv1.GetCapacityResponse{Quota: consoleQuotaToPb(out.Quota), Machine: consoleMachineToPb(out.Machine), Fits: func(l []*usecase.SizeFit) []*cloudv1.SizeFit {
+		if l == nil {
+			return nil
+		}
+		out := make([]*cloudv1.SizeFit, 0, len(l))
+		for _, v := range l {
+			out = append(out, consoleSizeFitToPb(v))
+		}
+		return out
+	}(out.Fits), Pods: func(l []*usecase.PodUsage) []*cloudv1.PodUsage {
+		if l == nil {
+			return nil
+		}
+		out := make([]*cloudv1.PodUsage, 0, len(l))
+		for _, v := range l {
+			out = append(out, consolePodUsageToPb(v))
+		}
+		return out
+	}(out.Pods)}), nil
+}
+
 func consolePbToComponent(p *cloudv1.Component) *usecase.Component {
 	if p == nil {
 		return nil
@@ -108,5 +134,127 @@ func consoleSeriesToPb(u *usecase.Series) *cloudv1.Series {
 		Unit:         u.Unit,
 		TimestampsMs: u.TimestampsMs,
 		Values:       u.Values,
+	}
+}
+
+func consolePbToAmount(p *cloudv1.Amount) *usecase.Amount {
+	if p == nil {
+		return nil
+	}
+	return &usecase.Amount{
+		Used:  p.GetUsed(),
+		Limit: p.GetLimit(),
+	}
+}
+
+func consoleAmountToPb(u *usecase.Amount) *cloudv1.Amount {
+	if u == nil {
+		return nil
+	}
+	return &cloudv1.Amount{
+		Used:  u.Used,
+		Limit: u.Limit,
+	}
+}
+
+func consolePbToQuota(p *cloudv1.Quota) *usecase.Quota {
+	if p == nil {
+		return nil
+	}
+	return &usecase.Quota{
+		Namespace:     p.GetNamespace(),
+		Memory:        consolePbToAmount(p.GetMemory()),
+		Cpu:           consolePbToAmount(p.GetCpu()),
+		Pods:          consolePbToAmount(p.GetPods()),
+		VolumeStorage: consolePbToAmount(p.GetVolumeStorage()),
+	}
+}
+
+func consoleQuotaToPb(u *usecase.Quota) *cloudv1.Quota {
+	if u == nil {
+		return nil
+	}
+	return &cloudv1.Quota{
+		Namespace:     u.Namespace,
+		Memory:        consoleAmountToPb(u.Memory),
+		Cpu:           consoleAmountToPb(u.Cpu),
+		Pods:          consoleAmountToPb(u.Pods),
+		VolumeStorage: consoleAmountToPb(u.VolumeStorage),
+	}
+}
+
+func consolePbToMachine(p *cloudv1.Machine) *usecase.Machine {
+	if p == nil {
+		return nil
+	}
+	return &usecase.Machine{
+		MemoryTotal:    p.GetMemoryTotal(),
+		MemoryUsed:     p.GetMemoryUsed(),
+		MemoryReserved: p.GetMemoryReserved(),
+		CpuTotalMillis: p.GetCpuTotalMillis(),
+		CpuUsedMillis:  p.GetCpuUsedMillis(),
+	}
+}
+
+func consoleMachineToPb(u *usecase.Machine) *cloudv1.Machine {
+	if u == nil {
+		return nil
+	}
+	return &cloudv1.Machine{
+		MemoryTotal:    u.MemoryTotal,
+		MemoryUsed:     u.MemoryUsed,
+		MemoryReserved: u.MemoryReserved,
+		CpuTotalMillis: u.CpuTotalMillis,
+		CpuUsedMillis:  u.CpuUsedMillis,
+	}
+}
+
+func consolePbToSizeFit(p *cloudv1.SizeFit) *usecase.SizeFit {
+	if p == nil {
+		return nil
+	}
+	return &usecase.SizeFit{
+		Name:      p.GetName(),
+		Memory:    p.GetMemory(),
+		CpuMillis: p.GetCpuMillis(),
+		Count:     p.GetCount(),
+		LimitedBy: p.GetLimitedBy(),
+	}
+}
+
+func consoleSizeFitToPb(u *usecase.SizeFit) *cloudv1.SizeFit {
+	if u == nil {
+		return nil
+	}
+	return &cloudv1.SizeFit{
+		Name:      u.Name,
+		Memory:    u.Memory,
+		CpuMillis: u.CpuMillis,
+		Count:     u.Count,
+		LimitedBy: u.LimitedBy,
+	}
+}
+
+func consolePbToPodUsage(p *cloudv1.PodUsage) *usecase.PodUsage {
+	if p == nil {
+		return nil
+	}
+	return &usecase.PodUsage{
+		Name:          p.GetName(),
+		MemoryUsed:    p.GetMemoryUsed(),
+		MemoryLimit:   p.GetMemoryLimit(),
+		CpuUsedMillis: p.GetCpuUsedMillis(),
+	}
+}
+
+func consolePodUsageToPb(u *usecase.PodUsage) *cloudv1.PodUsage {
+	if u == nil {
+		return nil
+	}
+	return &cloudv1.PodUsage{
+		Name:          u.Name,
+		MemoryUsed:    u.MemoryUsed,
+		MemoryLimit:   u.MemoryLimit,
+		CpuUsedMillis: u.CpuUsedMillis,
 	}
 }

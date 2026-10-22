@@ -105,3 +105,61 @@ func TestGetMetricsUpstreamError(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 }
+
+type fakeCapacity struct {
+	quota gateway.QuotaStatus
+	pods  []gateway.PodUsage
+	nodes []gateway.NodeStatus
+	err   error
+}
+
+func (f *fakeCapacity) AppsNamespace() string { return "cloud-apps" }
+func (f *fakeCapacity) AppQuota(context.Context) (gateway.QuotaStatus, error) {
+	return f.quota, f.err
+}
+func (f *fakeCapacity) AppPods(context.Context) ([]gateway.PodUsage, error) { return f.pods, nil }
+func (f *fakeCapacity) Nodes(context.Context) ([]gateway.NodeStatus, error) { return f.nodes, nil }
+
+func TestGetCapacity(t *testing.T) {
+	const mib = int64(1) << 20
+	capa := &fakeCapacity{
+		quota: gateway.QuotaStatus{Found: true,
+			Hard: gateway.Resources{MemoryBytes: 2560 * mib, CPUMillis: 4000, Pods: 30, StorageBytes: 50 << 30},
+			Used: gateway.Resources{MemoryBytes: 512 * mib, CPUMillis: 500, Pods: 2}},
+		pods: []gateway.PodUsage{{Name: "web-b", MemoryUsed: 200 * mib, MemoryLimit: 256 * mib, CPUUsed: 10},
+			{Name: "web-a", MemoryUsed: 56 * mib, MemoryLimit: 256 * mib, CPUUsed: 5}},
+		// 同じ VM の 2 ノード（12 GiB を分け合う）で、実際に 7 GiB 使っている
+		nodes: []gateway.NodeStatus{{MemoryCapacity: 12 << 30, CPUCapacity: 10000, MemoryUsed: 3 << 30, CPUUsed: 100},
+			{MemoryCapacity: 12 << 30, CPUCapacity: 10000, MemoryUsed: 4 << 30, CPUUsed: 200}},
+	}
+	d := Deps{Environment: "prod", Cluster: fakeCluster{}, Capacity: capa, MemoryReserve: 2 << 30}
+	out, err := NewConsoleUsecase(d).GetCapacity(context.Background(), GetCapacityInput{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out.Quota.Namespace != "cloud-apps" || out.Quota.Memory.Limit != 2560*mib || out.Quota.Cpu.Used != 500 || out.Quota.VolumeStorage.Limit != 50<<30 {
+		t.Fatalf("quota %+v", out.Quota)
+	}
+	if m := out.Machine; m.MemoryTotal != 12<<30 || m.MemoryUsed != 7<<30 || m.MemoryReserved != 2<<30 || m.CpuTotalMillis != 10000 || m.CpuUsedMillis != 300 {
+		t.Fatalf("machine %+v", m)
+	}
+	// 空き = 12 - 7 - 2 - (512MiB 予約 - 256MiB 使用中) = 2816MiB。枠の残り（2048MiB）の方が先に尽きる
+	if f := out.Fits[1]; f.Name != "m" || f.Count != 8 || f.LimitedBy != service.LimitedByQuotaMemory {
+		t.Fatalf("fit m %+v", f)
+	}
+	if out.Pods[0].Name != "web-a" || len(out.Pods) != 2 {
+		t.Fatalf("pods %+v", out.Pods)
+	}
+
+	// Mac mini が詰まっているときは、枠が残っていても置けない
+	capa.nodes[1].MemoryUsed = 7 << 30
+	out, _ = NewConsoleUsecase(d).GetCapacity(context.Background(), GetCapacityInput{})
+	if f := out.Fits[0]; f.Count != 0 || f.LimitedBy != service.LimitedByMachineMemory {
+		t.Fatalf("machine full: %+v", f)
+	}
+
+	capa.err = errors.New("forbidden")
+	if _, err := NewConsoleUsecase(d).GetCapacity(context.Background(), GetCapacityInput{}); err == nil {
+		t.Fatal("expected error")
+	}
+}

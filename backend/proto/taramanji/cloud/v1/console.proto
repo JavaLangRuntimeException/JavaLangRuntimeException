@@ -8,6 +8,8 @@ service ConsoleService {
   rpc GetOverview(GetOverviewRequest) returns (GetOverviewResponse) {}
   // メトリクスは本番だけ（dev / stg は metrics_enabled = false で、呼ぶと failed_precondition）
   rpc GetMetrics(GetMetricsRequest) returns (GetMetricsResponse) {}
+  // あとどのくらいアプリを置けるか（この環境の枠と、Mac mini 全体の空き）。全環境で使える（Datadog は使わない）
+  rpc GetCapacity(GetCapacityRequest) returns (GetCapacityResponse) {}
 }
 
 // コンソール自身を動かしている部品（API・画面・Redis）の状態
@@ -52,4 +54,60 @@ message GetMetricsRequest {
 
 message GetMetricsResponse {
   repeated Series series = 1;
+}
+
+message GetCapacityRequest {}
+
+// 使っている量と上限。メモリ・ストレージはバイト、CPU はミリコア、Pod などは個数
+message Amount {
+  int64 used = 1;
+  int64 limit = 2;
+}
+
+// この環境のアプリ用 namespace の枠（ResourceQuota）。アプリが予約できる合計で、taramanji.com の分は含まない
+message Quota {
+  string namespace = 1;
+  // アプリのメモリの予約（requests = limits にそろえてあるので、そのまま実際に使える上限）
+  Amount memory = 2;
+  // CPU の上限（limits）の合計
+  Amount cpu = 3;
+  Amount pods = 4;
+  // ディスク付きのインスタンス・関数などの PVC の容量の合計
+  Amount volume_storage = 5;
+}
+
+// Mac mini 全体（kind の 3 ノードは同じ VM のメモリを分け合う）。taramanji.com・gws・基盤も含めた実際の使用量
+message Machine {
+  int64 memory_total = 1;
+  int64 memory_used = 2;
+  // taramanji.com・gws の伸びしろとして、アプリに渡さずに残しておく量
+  int64 memory_reserved = 3;
+  int64 cpu_total_millis = 4;
+  int64 cpu_used_millis = 5;
+}
+
+// アプリの大きさ（1 つあたり）ごとの「あと何個置けるか」
+message SizeFit {
+  // s / m / l / xl
+  string name = 1;
+  int64 memory = 2;
+  int64 cpu_millis = 3;
+  int32 count = 4;
+  // 何が足りなくなって count で止まるか: quota_memory / quota_cpu / quota_pods / machine_memory
+  string limited_by = 5;
+}
+
+// アプリ用 namespace で動いている Pod ごとの実際の使用量（metrics-server）
+message PodUsage {
+  string name = 1;
+  int64 memory_used = 2;
+  int64 memory_limit = 3;
+  int64 cpu_used_millis = 4;
+}
+
+message GetCapacityResponse {
+  Quota quota = 1;
+  Machine machine = 2;
+  repeated SizeFit fits = 3;
+  repeated PodUsage pods = 4;
 }

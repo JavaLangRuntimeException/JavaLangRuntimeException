@@ -12,6 +12,8 @@ type GetMetricsInput struct {
 	Range string
 }
 
+type GetCapacityInput struct{}
+
 type GetOverviewOutput struct {
 	Environment       string       `json:"environment"`
 	Email             string       `json:"email"`
@@ -25,11 +27,46 @@ type GetMetricsOutput struct {
 	Series []*Series `json:"series"`
 }
 
+type GetCapacityOutput struct {
+	Quota   *Quota      `json:"quota"`
+	Machine *Machine    `json:"machine"`
+	Fits    []*SizeFit  `json:"fits"`
+	Pods    []*PodUsage `json:"pods"`
+}
+
+type Amount struct {
+	Used  int64 `json:"used"`
+	Limit int64 `json:"limit"`
+}
+
 type Component struct {
 	Name    string `json:"name"`
 	Ready   int32  `json:"ready"`
 	Desired int32  `json:"desired"`
 	Version string `json:"version"`
+}
+
+type Machine struct {
+	MemoryTotal    int64 `json:"memory_total"`
+	MemoryUsed     int64 `json:"memory_used"`
+	MemoryReserved int64 `json:"memory_reserved"`
+	CpuTotalMillis int64 `json:"cpu_total_millis"`
+	CpuUsedMillis  int64 `json:"cpu_used_millis"`
+}
+
+type PodUsage struct {
+	Name          string `json:"name"`
+	MemoryUsed    int64  `json:"memory_used"`
+	MemoryLimit   int64  `json:"memory_limit"`
+	CpuUsedMillis int64  `json:"cpu_used_millis"`
+}
+
+type Quota struct {
+	Namespace     string  `json:"namespace"`
+	Memory        *Amount `json:"memory"`
+	Cpu           *Amount `json:"cpu"`
+	Pods          *Amount `json:"pods"`
+	VolumeStorage *Amount `json:"volume_storage"`
 }
 
 type Series struct {
@@ -40,10 +77,19 @@ type Series struct {
 	Values       []float64 `json:"values"`
 }
 
+type SizeFit struct {
+	Name      string `json:"name"`
+	Memory    int64  `json:"memory"`
+	CpuMillis int64  `json:"cpu_millis"`
+	Count     int32  `json:"count"`
+	LimitedBy string `json:"limited_by"`
+}
+
 // ConsoleUsecase は ConsoleService の rpc 1 本につき 1 メソッドを持つ interface。
 // 実装クラス（<Name>UsecaseImpl）はこの interface を実装する手書き層。
 // 戻り値はすべて pkg/dto の DTO 型 / Output 型でクライアント JSON シリアライズ表現を一元管理する。
 type ConsoleUsecase interface {
 	GetOverview(ctx context.Context, input GetOverviewInput) (*GetOverviewOutput, error)
 	GetMetrics(ctx context.Context, input GetMetricsInput) (*GetMetricsOutput, error)
+	GetCapacity(ctx context.Context, input GetCapacityInput) (*GetCapacityOutput, error)
 }

@@ -31,3 +31,43 @@ type Series struct {
 type Metrics interface {
 	Query(ctx context.Context, query string, from, to time.Time) ([]Series, error)
 }
+
+// Resources は容量の量。メモリ・ストレージはバイト、CPU はミリコア
+type Resources struct {
+	MemoryBytes  int64
+	CPUMillis    int64
+	Pods         int64
+	StorageBytes int64
+}
+
+// QuotaStatus はアプリ用 namespace の ResourceQuota（Found=false なら枠がない＝アプリは置けない）
+type QuotaStatus struct {
+	Found bool
+	Hard  Resources
+	Used  Resources
+}
+
+// NodeStatus はノード 1 台の容量と実際の使用量（metrics-server）
+type NodeStatus struct {
+	Name           string
+	MemoryCapacity int64
+	CPUCapacity    int64
+	MemoryUsed     int64
+	CPUUsed        int64
+}
+
+// PodUsage はアプリ用 namespace の Pod 1 つの実際の使用量と上限
+type PodUsage struct {
+	Name        string
+	MemoryUsed  int64
+	MemoryLimit int64
+	CPUUsed     int64
+}
+
+// Capacity はアプリを置ける余地を調べるための Kubernetes API（読み取りだけ）
+type Capacity interface {
+	AppsNamespace() string
+	AppQuota(ctx context.Context) (QuotaStatus, error)
+	AppPods(ctx context.Context) ([]PodUsage, error)
+	Nodes(ctx context.Context) ([]NodeStatus, error)
+}

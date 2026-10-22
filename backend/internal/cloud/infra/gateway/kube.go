@@ -25,17 +25,24 @@ const (
 	partOfSelector = "app.kubernetes.io/part-of=taramanji-cloud"
 )
 
-// kube は Pod の ServiceAccount で Kubernetes API を呼ぶ最小のクライアント。
+// Kube は Pod の ServiceAccount で Kubernetes API を呼ぶ最小のクライアント。
 // client-go は依存が大きく、全 Go サービスの go.mod に入ってしまうので、使う API だけを REST で叩く
-type kube struct {
+type Kube struct {
 	http      *http.Client
 	base      string
 	namespace string
-	tokenPath string
+	// appsNamespace はこの環境のアプリを置く namespace（ResourceQuota で枠を決めてある）
+	appsNamespace string
+	tokenPath     string
 }
 
-// NewInClusterKube は Pod の中から自分の namespace の API を読む
-func NewInClusterKube(namespace string) (gateway.Cluster, error) {
+var (
+	_ gateway.Cluster  = (*Kube)(nil)
+	_ gateway.Capacity = (*Kube)(nil)
+)
+
+// NewInClusterKube は Pod の中から、自分の namespace とアプリ用 namespace の API を読む
+func NewInClusterKube(namespace, appsNamespace string) (*Kube, error) {
 	host, port := os.Getenv("KUBERNETES_SERVICE_HOST"), os.Getenv("KUBERNETES_SERVICE_PORT")
 	if host == "" || port == "" {
 		return nil, errors.New("not running in a Kubernetes pod (KUBERNETES_SERVICE_HOST is empty)")
@@ -49,10 +56,11 @@ func NewInClusterKube(namespace string) (gateway.Cluster, error) {
 		return nil, errors.New("invalid service account CA")
 	}
 	hc := &http.Client{Timeout: 10 * time.Second, Transport: &http.Transport{TLSClientConfig: &tls.Config{RootCAs: pool, MinVersion: tls.VersionTLS12}}}
-	return &kube{http: hc, base: "https://" + net.JoinHostPort(host, port), namespace: namespace, tokenPath: saDir + "/token"}, nil
+	return &Kube{http: hc, base: "https://" + net.JoinHostPort(host, port), namespace: namespace, appsNamespace: appsNamespace,
+		tokenPath: saDir + "/token"}, nil
 }
 
-func (k *kube) get(ctx context.Context, path string, out any) error {
+func (k *Kube) get(ctx context.Context, path string, out any) error {
 	// 投影されたトークンは kubelet が入れ替えるので、毎回読む
 	token, err := os.ReadFile(k.tokenPath)
 	if err != nil {
@@ -74,9 +82,24 @@ func (k *kube) get(ctx context.Context, path string, out any) error {
 		if len(body) > 300 {
 			body = body[:300]
 		}
-		return fmt.Errorf("kubernetes GET %s: HTTP %d: %s", path, res.StatusCode, body)
+		return &apiError{path: path, status: res.StatusCode, body: string(body)}
 	}
 	return json.Unmarshal(body, out)
+}
+
+type apiError struct {
+	path   string
+	status int
+	body   string
+}
+
+func (e *apiError) Error() string {
+	return fmt.Sprintf("kubernetes GET %s: HTTP %d: %s", e.path, e.status, e.body)
+}
+
+func isNotFound(err error) bool {
+	var e *apiError
+	return errors.As(err, &e) && e.status == http.StatusNotFound
 }
 
 type workloadList struct {
@@ -100,7 +123,7 @@ type workloadList struct {
 	} `json:"items"`
 }
 
-func (k *kube) Workloads(ctx context.Context) ([]gateway.Workload, error) {
+func (k *Kube) Workloads(ctx context.Context) ([]gateway.Workload, error) {
 	var out []gateway.Workload
 	q := "?labelSelector=" + url.QueryEscape(partOfSelector)
 	// nonprod は Argo Rollouts の Rollout で動かすこともあるが、コンソールの部品は Deployment / StatefulSet に限る

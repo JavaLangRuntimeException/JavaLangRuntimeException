@@ -383,6 +383,469 @@ func (x *GetMetricsResponse) GetSeries() []*Series {
 	return nil
 }
 
+type GetCapacityRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetCapacityRequest) Reset() {
+	*x = GetCapacityRequest{}
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetCapacityRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetCapacityRequest) ProtoMessage() {}
+
+func (x *GetCapacityRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetCapacityRequest.ProtoReflect.Descriptor instead.
+func (*GetCapacityRequest) Descriptor() ([]byte, []int) {
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{6}
+}
+
+// 使っている量と上限。メモリ・ストレージはバイト、CPU はミリコア、Pod などは個数
+type Amount struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Used          int64                  `protobuf:"varint,1,opt,name=used,proto3" json:"used,omitempty"`
+	Limit         int64                  `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Amount) Reset() {
+	*x = Amount{}
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Amount) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Amount) ProtoMessage() {}
+
+func (x *Amount) ProtoReflect() protoreflect.Message {
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Amount.ProtoReflect.Descriptor instead.
+func (*Amount) Descriptor() ([]byte, []int) {
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *Amount) GetUsed() int64 {
+	if x != nil {
+		return x.Used
+	}
+	return 0
+}
+
+func (x *Amount) GetLimit() int64 {
+	if x != nil {
+		return x.Limit
+	}
+	return 0
+}
+
+// この環境のアプリ用 namespace の枠（ResourceQuota）。アプリが予約できる合計で、taramanji.com の分は含まない
+type Quota struct {
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	Namespace string                 `protobuf:"bytes,1,opt,name=namespace,proto3" json:"namespace,omitempty"`
+	// アプリのメモリの予約（requests = limits にそろえてあるので、そのまま実際に使える上限）
+	Memory *Amount `protobuf:"bytes,2,opt,name=memory,proto3" json:"memory,omitempty"`
+	// CPU の上限（limits）の合計
+	Cpu  *Amount `protobuf:"bytes,3,opt,name=cpu,proto3" json:"cpu,omitempty"`
+	Pods *Amount `protobuf:"bytes,4,opt,name=pods,proto3" json:"pods,omitempty"`
+	// ディスク付きのインスタンス・関数などの PVC の容量の合計
+	VolumeStorage *Amount `protobuf:"bytes,5,opt,name=volume_storage,json=volumeStorage,proto3" json:"volume_storage,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Quota) Reset() {
+	*x = Quota{}
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Quota) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Quota) ProtoMessage() {}
+
+func (x *Quota) ProtoReflect() protoreflect.Message {
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Quota.ProtoReflect.Descriptor instead.
+func (*Quota) Descriptor() ([]byte, []int) {
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *Quota) GetNamespace() string {
+	if x != nil {
+		return x.Namespace
+	}
+	return ""
+}
+
+func (x *Quota) GetMemory() *Amount {
+	if x != nil {
+		return x.Memory
+	}
+	return nil
+}
+
+func (x *Quota) GetCpu() *Amount {
+	if x != nil {
+		return x.Cpu
+	}
+	return nil
+}
+
+func (x *Quota) GetPods() *Amount {
+	if x != nil {
+		return x.Pods
+	}
+	return nil
+}
+
+func (x *Quota) GetVolumeStorage() *Amount {
+	if x != nil {
+		return x.VolumeStorage
+	}
+	return nil
+}
+
+// Mac mini 全体（kind の 3 ノードは同じ VM のメモリを分け合う）。taramanji.com・gws・基盤も含めた実際の使用量
+type Machine struct {
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	MemoryTotal int64                  `protobuf:"varint,1,opt,name=memory_total,json=memoryTotal,proto3" json:"memory_total,omitempty"`
+	MemoryUsed  int64                  `protobuf:"varint,2,opt,name=memory_used,json=memoryUsed,proto3" json:"memory_used,omitempty"`
+	// taramanji.com・gws の伸びしろとして、アプリに渡さずに残しておく量
+	MemoryReserved int64 `protobuf:"varint,3,opt,name=memory_reserved,json=memoryReserved,proto3" json:"memory_reserved,omitempty"`
+	CpuTotalMillis int64 `protobuf:"varint,4,opt,name=cpu_total_millis,json=cpuTotalMillis,proto3" json:"cpu_total_millis,omitempty"`
+	CpuUsedMillis  int64 `protobuf:"varint,5,opt,name=cpu_used_millis,json=cpuUsedMillis,proto3" json:"cpu_used_millis,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *Machine) Reset() {
+	*x = Machine{}
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Machine) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Machine) ProtoMessage() {}
+
+func (x *Machine) ProtoReflect() protoreflect.Message {
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Machine.ProtoReflect.Descriptor instead.
+func (*Machine) Descriptor() ([]byte, []int) {
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *Machine) GetMemoryTotal() int64 {
+	if x != nil {
+		return x.MemoryTotal
+	}
+	return 0
+}
+
+func (x *Machine) GetMemoryUsed() int64 {
+	if x != nil {
+		return x.MemoryUsed
+	}
+	return 0
+}
+
+func (x *Machine) GetMemoryReserved() int64 {
+	if x != nil {
+		return x.MemoryReserved
+	}
+	return 0
+}
+
+func (x *Machine) GetCpuTotalMillis() int64 {
+	if x != nil {
+		return x.CpuTotalMillis
+	}
+	return 0
+}
+
+func (x *Machine) GetCpuUsedMillis() int64 {
+	if x != nil {
+		return x.CpuUsedMillis
+	}
+	return 0
+}
+
+// アプリの大きさ（1 つあたり）ごとの「あと何個置けるか」
+type SizeFit struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// s / m / l / xl
+	Name      string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Memory    int64  `protobuf:"varint,2,opt,name=memory,proto3" json:"memory,omitempty"`
+	CpuMillis int64  `protobuf:"varint,3,opt,name=cpu_millis,json=cpuMillis,proto3" json:"cpu_millis,omitempty"`
+	Count     int32  `protobuf:"varint,4,opt,name=count,proto3" json:"count,omitempty"`
+	// 何が足りなくなって count で止まるか: quota_memory / quota_cpu / quota_pods / machine_memory
+	LimitedBy     string `protobuf:"bytes,5,opt,name=limited_by,json=limitedBy,proto3" json:"limited_by,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *SizeFit) Reset() {
+	*x = SizeFit{}
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *SizeFit) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SizeFit) ProtoMessage() {}
+
+func (x *SizeFit) ProtoReflect() protoreflect.Message {
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SizeFit.ProtoReflect.Descriptor instead.
+func (*SizeFit) Descriptor() ([]byte, []int) {
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{10}
+}
+
+func (x *SizeFit) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *SizeFit) GetMemory() int64 {
+	if x != nil {
+		return x.Memory
+	}
+	return 0
+}
+
+func (x *SizeFit) GetCpuMillis() int64 {
+	if x != nil {
+		return x.CpuMillis
+	}
+	return 0
+}
+
+func (x *SizeFit) GetCount() int32 {
+	if x != nil {
+		return x.Count
+	}
+	return 0
+}
+
+func (x *SizeFit) GetLimitedBy() string {
+	if x != nil {
+		return x.LimitedBy
+	}
+	return ""
+}
+
+// アプリ用 namespace で動いている Pod ごとの実際の使用量（metrics-server）
+type PodUsage struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	MemoryUsed    int64                  `protobuf:"varint,2,opt,name=memory_used,json=memoryUsed,proto3" json:"memory_used,omitempty"`
+	MemoryLimit   int64                  `protobuf:"varint,3,opt,name=memory_limit,json=memoryLimit,proto3" json:"memory_limit,omitempty"`
+	CpuUsedMillis int64                  `protobuf:"varint,4,opt,name=cpu_used_millis,json=cpuUsedMillis,proto3" json:"cpu_used_millis,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PodUsage) Reset() {
+	*x = PodUsage{}
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PodUsage) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PodUsage) ProtoMessage() {}
+
+func (x *PodUsage) ProtoReflect() protoreflect.Message {
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PodUsage.ProtoReflect.Descriptor instead.
+func (*PodUsage) Descriptor() ([]byte, []int) {
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *PodUsage) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *PodUsage) GetMemoryUsed() int64 {
+	if x != nil {
+		return x.MemoryUsed
+	}
+	return 0
+}
+
+func (x *PodUsage) GetMemoryLimit() int64 {
+	if x != nil {
+		return x.MemoryLimit
+	}
+	return 0
+}
+
+func (x *PodUsage) GetCpuUsedMillis() int64 {
+	if x != nil {
+		return x.CpuUsedMillis
+	}
+	return 0
+}
+
+type GetCapacityResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Quota         *Quota                 `protobuf:"bytes,1,opt,name=quota,proto3" json:"quota,omitempty"`
+	Machine       *Machine               `protobuf:"bytes,2,opt,name=machine,proto3" json:"machine,omitempty"`
+	Fits          []*SizeFit             `protobuf:"bytes,3,rep,name=fits,proto3" json:"fits,omitempty"`
+	Pods          []*PodUsage            `protobuf:"bytes,4,rep,name=pods,proto3" json:"pods,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetCapacityResponse) Reset() {
+	*x = GetCapacityResponse{}
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetCapacityResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetCapacityResponse) ProtoMessage() {}
+
+func (x *GetCapacityResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetCapacityResponse.ProtoReflect.Descriptor instead.
+func (*GetCapacityResponse) Descriptor() ([]byte, []int) {
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *GetCapacityResponse) GetQuota() *Quota {
+	if x != nil {
+		return x.Quota
+	}
+	return nil
+}
+
+func (x *GetCapacityResponse) GetMachine() *Machine {
+	if x != nil {
+		return x.Machine
+	}
+	return nil
+}
+
+func (x *GetCapacityResponse) GetFits() []*SizeFit {
+	if x != nil {
+		return x.Fits
+	}
+	return nil
+}
+
+func (x *GetCapacityResponse) GetPods() []*PodUsage {
+	if x != nil {
+		return x.Pods
+	}
+	return nil
+}
+
 var File_taramanji_cloud_v1_console_proto protoreflect.FileDescriptor
 
 const file_taramanji_cloud_v1_console_proto_rawDesc = "" +
@@ -412,11 +875,48 @@ const file_taramanji_cloud_v1_console_proto_rawDesc = "" +
 	"\x11GetMetricsRequest\x12\x14\n" +
 	"\x05range\x18\x01 \x01(\tR\x05range\"H\n" +
 	"\x12GetMetricsResponse\x122\n" +
-	"\x06series\x18\x01 \x03(\v2\x1a.taramanji.cloud.v1.SeriesR\x06series2\xd1\x01\n" +
+	"\x06series\x18\x01 \x03(\v2\x1a.taramanji.cloud.v1.SeriesR\x06series\"\x14\n" +
+	"\x12GetCapacityRequest\"2\n" +
+	"\x06Amount\x12\x12\n" +
+	"\x04used\x18\x01 \x01(\x03R\x04used\x12\x14\n" +
+	"\x05limit\x18\x02 \x01(\x03R\x05limit\"\xfa\x01\n" +
+	"\x05Quota\x12\x1c\n" +
+	"\tnamespace\x18\x01 \x01(\tR\tnamespace\x122\n" +
+	"\x06memory\x18\x02 \x01(\v2\x1a.taramanji.cloud.v1.AmountR\x06memory\x12,\n" +
+	"\x03cpu\x18\x03 \x01(\v2\x1a.taramanji.cloud.v1.AmountR\x03cpu\x12.\n" +
+	"\x04pods\x18\x04 \x01(\v2\x1a.taramanji.cloud.v1.AmountR\x04pods\x12A\n" +
+	"\x0evolume_storage\x18\x05 \x01(\v2\x1a.taramanji.cloud.v1.AmountR\rvolumeStorage\"\xc8\x01\n" +
+	"\aMachine\x12!\n" +
+	"\fmemory_total\x18\x01 \x01(\x03R\vmemoryTotal\x12\x1f\n" +
+	"\vmemory_used\x18\x02 \x01(\x03R\n" +
+	"memoryUsed\x12'\n" +
+	"\x0fmemory_reserved\x18\x03 \x01(\x03R\x0ememoryReserved\x12(\n" +
+	"\x10cpu_total_millis\x18\x04 \x01(\x03R\x0ecpuTotalMillis\x12&\n" +
+	"\x0fcpu_used_millis\x18\x05 \x01(\x03R\rcpuUsedMillis\"\x89\x01\n" +
+	"\aSizeFit\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x16\n" +
+	"\x06memory\x18\x02 \x01(\x03R\x06memory\x12\x1d\n" +
+	"\n" +
+	"cpu_millis\x18\x03 \x01(\x03R\tcpuMillis\x12\x14\n" +
+	"\x05count\x18\x04 \x01(\x05R\x05count\x12\x1d\n" +
+	"\n" +
+	"limited_by\x18\x05 \x01(\tR\tlimitedBy\"\x8a\x01\n" +
+	"\bPodUsage\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1f\n" +
+	"\vmemory_used\x18\x02 \x01(\x03R\n" +
+	"memoryUsed\x12!\n" +
+	"\fmemory_limit\x18\x03 \x01(\x03R\vmemoryLimit\x12&\n" +
+	"\x0fcpu_used_millis\x18\x04 \x01(\x03R\rcpuUsedMillis\"\xe0\x01\n" +
+	"\x13GetCapacityResponse\x12/\n" +
+	"\x05quota\x18\x01 \x01(\v2\x19.taramanji.cloud.v1.QuotaR\x05quota\x125\n" +
+	"\amachine\x18\x02 \x01(\v2\x1b.taramanji.cloud.v1.MachineR\amachine\x12/\n" +
+	"\x04fits\x18\x03 \x03(\v2\x1b.taramanji.cloud.v1.SizeFitR\x04fits\x120\n" +
+	"\x04pods\x18\x04 \x03(\v2\x1c.taramanji.cloud.v1.PodUsageR\x04pods2\xb3\x02\n" +
 	"\x0eConsoleService\x12`\n" +
 	"\vGetOverview\x12&.taramanji.cloud.v1.GetOverviewRequest\x1a'.taramanji.cloud.v1.GetOverviewResponse\"\x00\x12]\n" +
 	"\n" +
-	"GetMetrics\x12%.taramanji.cloud.v1.GetMetricsRequest\x1a&.taramanji.cloud.v1.GetMetricsResponse\"\x00B\xe6\x01\n" +
+	"GetMetrics\x12%.taramanji.cloud.v1.GetMetricsRequest\x1a&.taramanji.cloud.v1.GetMetricsResponse\"\x00\x12`\n" +
+	"\vGetCapacity\x12&.taramanji.cloud.v1.GetCapacityRequest\x1a'.taramanji.cloud.v1.GetCapacityResponse\"\x00B\xe6\x01\n" +
 	"\x16com.taramanji.cloud.v1B\fConsoleProtoP\x01ZTgithub.com/javalangruntimeexception/taramanji/backend/gen/taramanji/cloud/v1;cloudv1\xa2\x02\x03TCX\xaa\x02\x12Taramanji.Cloud.V1\xca\x02\x12Taramanji\\Cloud\\V1\xe2\x02\x1eTaramanji\\Cloud\\V1\\GPBMetadata\xea\x02\x14Taramanji::Cloud::V1b\x06proto3"
 
 var (
@@ -431,7 +931,7 @@ func file_taramanji_cloud_v1_console_proto_rawDescGZIP() []byte {
 	return file_taramanji_cloud_v1_console_proto_rawDescData
 }
 
-var file_taramanji_cloud_v1_console_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_taramanji_cloud_v1_console_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_taramanji_cloud_v1_console_proto_goTypes = []any{
 	(*Component)(nil),           // 0: taramanji.cloud.v1.Component
 	(*GetOverviewRequest)(nil),  // 1: taramanji.cloud.v1.GetOverviewRequest
@@ -439,19 +939,36 @@ var file_taramanji_cloud_v1_console_proto_goTypes = []any{
 	(*Series)(nil),              // 3: taramanji.cloud.v1.Series
 	(*GetMetricsRequest)(nil),   // 4: taramanji.cloud.v1.GetMetricsRequest
 	(*GetMetricsResponse)(nil),  // 5: taramanji.cloud.v1.GetMetricsResponse
+	(*GetCapacityRequest)(nil),  // 6: taramanji.cloud.v1.GetCapacityRequest
+	(*Amount)(nil),              // 7: taramanji.cloud.v1.Amount
+	(*Quota)(nil),               // 8: taramanji.cloud.v1.Quota
+	(*Machine)(nil),             // 9: taramanji.cloud.v1.Machine
+	(*SizeFit)(nil),             // 10: taramanji.cloud.v1.SizeFit
+	(*PodUsage)(nil),            // 11: taramanji.cloud.v1.PodUsage
+	(*GetCapacityResponse)(nil), // 12: taramanji.cloud.v1.GetCapacityResponse
 }
 var file_taramanji_cloud_v1_console_proto_depIdxs = []int32{
-	0, // 0: taramanji.cloud.v1.GetOverviewResponse.components:type_name -> taramanji.cloud.v1.Component
-	3, // 1: taramanji.cloud.v1.GetMetricsResponse.series:type_name -> taramanji.cloud.v1.Series
-	1, // 2: taramanji.cloud.v1.ConsoleService.GetOverview:input_type -> taramanji.cloud.v1.GetOverviewRequest
-	4, // 3: taramanji.cloud.v1.ConsoleService.GetMetrics:input_type -> taramanji.cloud.v1.GetMetricsRequest
-	2, // 4: taramanji.cloud.v1.ConsoleService.GetOverview:output_type -> taramanji.cloud.v1.GetOverviewResponse
-	5, // 5: taramanji.cloud.v1.ConsoleService.GetMetrics:output_type -> taramanji.cloud.v1.GetMetricsResponse
-	4, // [4:6] is the sub-list for method output_type
-	2, // [2:4] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	0,  // 0: taramanji.cloud.v1.GetOverviewResponse.components:type_name -> taramanji.cloud.v1.Component
+	3,  // 1: taramanji.cloud.v1.GetMetricsResponse.series:type_name -> taramanji.cloud.v1.Series
+	7,  // 2: taramanji.cloud.v1.Quota.memory:type_name -> taramanji.cloud.v1.Amount
+	7,  // 3: taramanji.cloud.v1.Quota.cpu:type_name -> taramanji.cloud.v1.Amount
+	7,  // 4: taramanji.cloud.v1.Quota.pods:type_name -> taramanji.cloud.v1.Amount
+	7,  // 5: taramanji.cloud.v1.Quota.volume_storage:type_name -> taramanji.cloud.v1.Amount
+	8,  // 6: taramanji.cloud.v1.GetCapacityResponse.quota:type_name -> taramanji.cloud.v1.Quota
+	9,  // 7: taramanji.cloud.v1.GetCapacityResponse.machine:type_name -> taramanji.cloud.v1.Machine
+	10, // 8: taramanji.cloud.v1.GetCapacityResponse.fits:type_name -> taramanji.cloud.v1.SizeFit
+	11, // 9: taramanji.cloud.v1.GetCapacityResponse.pods:type_name -> taramanji.cloud.v1.PodUsage
+	1,  // 10: taramanji.cloud.v1.ConsoleService.GetOverview:input_type -> taramanji.cloud.v1.GetOverviewRequest
+	4,  // 11: taramanji.cloud.v1.ConsoleService.GetMetrics:input_type -> taramanji.cloud.v1.GetMetricsRequest
+	6,  // 12: taramanji.cloud.v1.ConsoleService.GetCapacity:input_type -> taramanji.cloud.v1.GetCapacityRequest
+	2,  // 13: taramanji.cloud.v1.ConsoleService.GetOverview:output_type -> taramanji.cloud.v1.GetOverviewResponse
+	5,  // 14: taramanji.cloud.v1.ConsoleService.GetMetrics:output_type -> taramanji.cloud.v1.GetMetricsResponse
+	12, // 15: taramanji.cloud.v1.ConsoleService.GetCapacity:output_type -> taramanji.cloud.v1.GetCapacityResponse
+	13, // [13:16] is the sub-list for method output_type
+	10, // [10:13] is the sub-list for method input_type
+	10, // [10:10] is the sub-list for extension type_name
+	10, // [10:10] is the sub-list for extension extendee
+	0,  // [0:10] is the sub-list for field type_name
 }
 
 func init() { file_taramanji_cloud_v1_console_proto_init() }
@@ -465,7 +982,7 @@ func file_taramanji_cloud_v1_console_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_taramanji_cloud_v1_console_proto_rawDesc), len(file_taramanji_cloud_v1_console_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

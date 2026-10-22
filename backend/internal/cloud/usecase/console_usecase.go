@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"math"
 	"sort"
 	"sync"
 	"time"
@@ -21,7 +22,11 @@ type Deps struct {
 	// Metrics は本番だけ。nil ならメトリクスは出さない（dev / stg は集めていない）
 	Metrics      gateway.Metrics
 	MetricsScope service.MetricsScope
-	Clock        func() time.Time
+	// Capacity はアプリ用 namespace の枠とノードの使用量（全環境で使う）
+	Capacity gateway.Capacity
+	// MemoryReserve は taramanji.com・gws の伸びしろとして、アプリに渡さずに残すメモリ（バイト）
+	MemoryReserve int64
+	Clock         func() time.Time
 }
 
 type ConsoleUsecaseImpl struct{ d Deps }
@@ -91,5 +96,43 @@ func (u *ConsoleUsecaseImpl) GetMetrics(ctx context.Context, in GetMetricsInput)
 		}
 		out.Series = append(out.Series, results[i]...)
 	}
+	return out, nil
+}
+
+func (u *ConsoleUsecaseImpl) GetCapacity(ctx context.Context, _ GetCapacityInput) (*GetCapacityOutput, error) {
+	q, err := u.d.Capacity.AppQuota(ctx)
+	if err != nil {
+		return nil, errs.NewInternalError(err)
+	}
+	pods, err := u.d.Capacity.AppPods(ctx)
+	if err != nil {
+		return nil, errs.NewInternalError(err)
+	}
+	nodes, err := u.d.Capacity.Nodes(ctx)
+	if err != nil {
+		return nil, errs.NewInternalError(err)
+	}
+	m := service.MachineOf(nodes)
+	free := service.MachineFree(m, u.d.MemoryReserve, q, pods)
+
+	out := &GetCapacityOutput{
+		Quota: &Quota{Namespace: u.d.Capacity.AppsNamespace(),
+			Memory:        &Amount{Used: q.Used.MemoryBytes, Limit: q.Hard.MemoryBytes},
+			Cpu:           &Amount{Used: q.Used.CPUMillis, Limit: q.Hard.CPUMillis},
+			Pods:          &Amount{Used: q.Used.Pods, Limit: q.Hard.Pods},
+			VolumeStorage: &Amount{Used: q.Used.StorageBytes, Limit: q.Hard.StorageBytes}},
+		Machine: &Machine{MemoryTotal: m.MemoryTotal, MemoryUsed: m.MemoryUsed, MemoryReserved: u.d.MemoryReserve,
+			CpuTotalMillis: m.CPUTotal, CpuUsedMillis: m.CPUUsed},
+		Fits: []*SizeFit{},
+		Pods: []*PodUsage{},
+	}
+	for _, f := range service.Fits(q, free) {
+		out.Fits = append(out.Fits, &SizeFit{Name: f.Size.Name, Memory: f.Size.MemoryBytes, CpuMillis: f.Size.CPUMillis,
+			Count: int32(min(f.Count, math.MaxInt32)), LimitedBy: f.LimitedBy})
+	}
+	for _, p := range pods {
+		out.Pods = append(out.Pods, &PodUsage{Name: p.Name, MemoryUsed: p.MemoryUsed, MemoryLimit: p.MemoryLimit, CpuUsedMillis: p.CPUUsed})
+	}
+	sort.Slice(out.Pods, func(i, j int) bool { return out.Pods[i].Name < out.Pods[j].Name })
 	return out, nil
 }

@@ -5,6 +5,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"connectrpc.com/connect"
@@ -38,9 +39,13 @@ func main() {
 		log.Fatal(err)
 	}
 	namespace := env.Required("POD_NAMESPACE")
-	cluster, err := infragw.NewInClusterKube(namespace)
+	kube, err := infragw.NewInClusterKube(namespace, env.Required("APPS_NAMESPACE"))
 	if err != nil {
 		log.Fatal(err)
+	}
+	reserveMiB, err := strconv.Atoi(env.Optional("CAPACITY_RESERVE_MIB", "2048"))
+	if err != nil || reserveMiB < 0 {
+		log.Fatal("CAPACITY_RESERVE_MIB must be a non-negative integer")
 	}
 	// メトリクスは本番だけ（キーを渡したときだけ）。dev / stg は Datadog が集めていない
 	var metrics gateway.Metrics
@@ -52,8 +57,11 @@ func main() {
 		Environment:       env.Required("CLOUD_ENV"),
 		StorageHostSuffix: env.Required("STORAGE_HOST_SUFFIX"),
 		HostingHostSuffix: env.Required("HOSTING_HOST_SUFFIX"),
-		Cluster:           cluster,
-		Metrics:           metrics,
+		Cluster:           kube,
+		Capacity:          kube,
+		// taramanji.com・gws の伸びしろ（既定 2 GiB）。アプリの「あと何個」はこれを除いた空きで数える
+		MemoryReserve: int64(reserveMiB) << 20,
+		Metrics:       metrics,
 		MetricsScope: service.MetricsScope{
 			Cluster:     env.Optional("METRICS_CLUSTER", "taramanji-kind"),
 			Namespaces:  strings.Split(env.Optional("METRICS_NAMESPACES", namespace), ","),
