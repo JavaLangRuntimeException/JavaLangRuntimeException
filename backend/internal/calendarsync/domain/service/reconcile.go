@@ -1,6 +1,7 @@
 // Package service は複数の Google アカウントのメインカレンダーを「予定あり」で相互に同期するドメインロジック。
 // calendar-busy-sync（busy_sync.py）→ 旧実装（reconcile.ts）の移植。予定 ID・識別マーカー・ダイジェストは同じなので、
 // これまでに作った同期予定をそのまま引き継げる。
+// 加えて、マスター以外のアカウントの Google ToDo（期限付き・未完了）を、マスターにだけ件名のまま終日予定として出す。
 package service
 
 import (
@@ -8,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -22,6 +24,8 @@ const (
 	freeSlot = "予定あり（MTG可能）"
 	untitled = "(タイトルなし)"
 	day      = 24 * time.Hour
+	// taskPrefix は ToDo から作った同期予定の元予定 ID の頭（予定の ID と区別する）
+	taskPrefix = "task:"
 )
 
 // ErrTooFewAccounts は接続が 2 つ未満
@@ -43,6 +47,7 @@ type State struct {
 
 type Result struct {
 	SourceEvents int
+	SourceTasks  int
 	Mirrors      int
 	Writes       int
 	Deletes      int
@@ -170,6 +175,43 @@ func joinNotes(notes []string) string {
 	return out
 }
 
+// TaskEventID は ToDo を元にした同期予定の、記録上の元予定 ID
+func TaskEventID(taskID string) string { return taskPrefix + taskID }
+
+func isTaskEventID(eventID string) bool { return strings.HasPrefix(eventID, taskPrefix) }
+
+// BuildTaskBody は ToDo をマスターに出す終日予定。件名はそのまま、「予定なし」にして時間を塞がない。期限が読めなければ ok=false
+func BuildTaskBody(sourceID string, t gateway.Task, private bool, colorID string) (b gateway.MirrorBody, ok bool) {
+	due, err := time.Parse(time.DateOnly, t.Due)
+	if err != nil {
+		return b, false
+	}
+	b = gateway.MirrorBody{
+		Summary: t.Title, Transparency: "transparent", Visibility: "default", ColorID: colorID,
+		Start:  gateway.EventTime{"date": t.Due},
+		End:    gateway.EventTime{"date": due.AddDate(0, 0, 1).Format(time.DateOnly)},
+		Marker: map[string]string{Marker: sourceID + ":" + TaskEventID(t.ID)},
+	}
+	if b.Summary == "" {
+		b.Summary = untitled
+	}
+	if private {
+		b.Visibility = "private"
+	}
+	link := ""
+	if t.WebViewLink != "" {
+		link = "Google ToDo: " + t.WebViewLink
+	}
+	var notes []string
+	for _, n := range []string{t.Notes, link, "元のアカウント: " + sourceID} {
+		if n != "" {
+			notes = append(notes, n)
+		}
+	}
+	b.Description = strPtr(joinNotes(notes))
+	return b, true
+}
+
 func eventTimeMap(t gateway.EventTime) map[string]any {
 	m := make(map[string]any, len(t))
 	for k, v := range t {
@@ -240,6 +282,7 @@ type task struct {
 
 // Reconcile は全カレンダーを読み終えてから書き込む。途中で失敗・時間切れになっても再実行で収束する。
 //   - 予定を読めなかったカレンダー（Unavailable を含む）が関わる同期は、作成も削除もせずそのまま持ち越す
+//   - ToDo を読めなかった（許可がない場合を含む）アカウントの ToDo の同期も、そのまま持ち越す
 //   - Deadline を過ぎたら新しい書き込みをやめ、次回に回す
 func Reconcile(ctx context.Context, calendars []gateway.Calendar, state *State, opt Options) (Result, error) {
 	if opt.Days == 0 {
@@ -282,6 +325,24 @@ func Reconcile(ctx context.Context, calendars []gateway.Calendar, state *State, 
 			}
 		}
 	}
+	// ToDo はマスターにだけ出すので、マスター以外のアカウントから読む。マスター自身の ToDo は Google カレンダーにもともと出る
+	todos := map[string][]gateway.Task{}
+	tasksDown := map[string]bool{}
+	for _, cal := range calendars {
+		ts, ok := cal.(gateway.TaskSource)
+		if !ok || state.Master == "" || cal.ID() == state.Master || down[cal.ID()] {
+			continue
+		}
+		list, err := ts.Tasks(ctx, windowStart, windowEnd)
+		if err != nil {
+			tasksDown[cal.ID()] = true
+			if !errors.Is(err, gateway.ErrTasksNotGranted) {
+				res.Errors = append(res.Errors, gateway.SyncError{CalendarID: cal.ID(), Error: err.Error()})
+			}
+			continue
+		}
+		todos[cal.ID()] = list
+	}
 	var live []gateway.Calendar
 	byID := map[string]gateway.Calendar{}
 	for _, c := range calendars {
@@ -296,6 +357,16 @@ func Reconcile(ctx context.Context, calendars []gateway.Calendar, state *State, 
 	}
 	desired := Mirrors{}
 	var tasks []task
+	want := func(sourceID, eventID string, target gateway.Calendar, body gateway.MirrorBody, endAt string) {
+		digest := Digest(body)
+		key := MirrorKey(sourceID, eventID, target.ID())
+		if prev, ok := previous[key]; ok && prev.Digest == digest {
+			desired[key] = Mirror{Digest: digest, EndAt: endAt}
+			return
+		}
+		tasks = append(tasks, task{key: key, digest: digest, endAt: endAt, target: target,
+			id: MirrorID(sourceID, eventID, target.ID()), body: body})
+	}
 
 	for _, source := range live {
 		for _, e := range originals[source.ID()] {
@@ -311,14 +382,18 @@ func Reconcile(ctx context.Context, calendars []gateway.Calendar, state *State, 
 					continue // 同じ招待が同期先にもある
 				}
 				body := BuildMirrorBody(source.ID(), e, target.ID() == state.Master && state.Master != "", opt.PrivateSources[source.ID()], opt.Colors[source.ID()])
-				digest := Digest(body)
-				key := MirrorKey(source.ID(), e.ID, target.ID())
-				if prev, ok := previous[key]; ok && prev.Digest == digest {
-					desired[key] = Mirror{Digest: digest, EndAt: endAt}
+				want(source.ID(), e.ID, target, body, endAt)
+			}
+		}
+	}
+	if master, ok := byID[state.Master]; ok && !down[master.ID()] {
+		for _, source := range live {
+			for _, t := range todos[source.ID()] {
+				body, ok := BuildTaskBody(source.ID(), t, opt.PrivateSources[source.ID()], opt.Colors[source.ID()])
+				if !ok {
 					continue
 				}
-				tasks = append(tasks, task{key: key, digest: digest, endAt: endAt, target: target,
-					id: MirrorID(source.ID(), e.ID, target.ID()), body: body})
+				want(source.ID(), TaskEventID(t.ID), master, body, FormatISO(EventEnd(gateway.Event{End: body.End})))
 			}
 		}
 	}
@@ -381,8 +456,8 @@ func Reconcile(ctx context.Context, calendars []gateway.Calendar, state *State, 
 		if !ok {
 			continue // 壊れた記録は捨てる
 		}
-		if down[sourceID] || down[targetID] {
-			desired[key] = value // 読めなかったカレンダーの分は判断できないので触らない
+		if down[sourceID] || down[targetID] || (isTaskEventID(eventID) && tasksDown[sourceID]) {
+			desired[key] = value // 読めなかったカレンダー・ToDo の分は判断できないので触らない
 			continue
 		}
 		if end, err := time.Parse(time.RFC3339, value.EndAt); err == nil && !end.After(windowStart) {
@@ -403,6 +478,9 @@ func Reconcile(ctx context.Context, calendars []gateway.Calendar, state *State, 
 	state.Mirrors = desired
 	for _, events := range originals {
 		res.SourceEvents += len(events)
+	}
+	for _, list := range todos {
+		res.SourceTasks += len(list)
 	}
 	res.Mirrors = len(desired)
 	return res, nil

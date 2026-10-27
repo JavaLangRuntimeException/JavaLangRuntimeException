@@ -1,4 +1,4 @@
-// Package gateway は calendarsync の外部実装（Google Calendar API・OAuth・暗号化・Redis の実行状態）。
+// Package gateway は calendarsync の外部実装（Google Calendar API・Google ToDo API・OAuth・暗号化・Redis の実行状態）。
 package gateway
 
 import (
@@ -21,6 +21,7 @@ import (
 
 const (
 	calendarAPI = "https://www.googleapis.com/calendar/v3"
+	tasksAPI    = "https://tasks.googleapis.com/tasks/v1"
 	maxRetries  = 4
 	maxErrText  = 500
 )
@@ -88,11 +89,12 @@ func (c *client) do(ctx context.Context, method, target string, body any, out an
 	}
 }
 
-// calendar は接続したアカウント自身のメインカレンダー（ID はメールアドレス）
+// calendar は接続したアカウント自身のメインカレンダー（ID はメールアドレス）と Google ToDo
 type calendar struct {
 	client
-	id   string
-	base string
+	id        string
+	base      string
+	tasksBase string
 }
 
 func (c *calendar) ID() string { return c.id }
@@ -151,6 +153,73 @@ func (c *calendar) Delete(ctx context.Context, eventID string) error {
 	return err
 }
 
+// insufficientScope は許可していないスコープの API を呼んだときの 403
+var insufficientScope = regexp.MustCompile(`ACCESS_TOKEN_SCOPE_INSUFFICIENT|insufficientPermissions`)
+
+func (c *calendar) Tasks(ctx context.Context, dueMin, dueMax time.Time) ([]gateway.Task, error) {
+	out, err := c.tasks(ctx, dueMin, dueMax)
+	if e, ok := err.(*APIError); ok && e.Status == http.StatusForbidden && insufficientScope.MatchString(e.Body) {
+		return nil, gateway.ErrTasksNotGranted
+	}
+	return out, err
+}
+
+func (c *calendar) tasks(ctx context.Context, dueMin, dueMax time.Time) ([]gateway.Task, error) {
+	var lists []string
+	q := url.Values{"maxResults": {"100"}}
+	for {
+		var page struct {
+			Items []struct {
+				ID string `json:"id"`
+			} `json:"items"`
+			NextPageToken string `json:"nextPageToken"`
+		}
+		if err := c.do(ctx, http.MethodGet, c.tasksBase+"/users/@me/lists?"+q.Encode(), nil, &page); err != nil {
+			return nil, err
+		}
+		for _, l := range page.Items {
+			lists = append(lists, l.ID)
+		}
+		if page.NextPageToken == "" {
+			break
+		}
+		q.Set("pageToken", page.NextPageToken)
+	}
+	var out []gateway.Task
+	for _, list := range lists {
+		q := url.Values{"maxResults": {"100"}, "showCompleted": {"false"}, "showHidden": {"false"}, "showDeleted": {"false"},
+			"dueMin": {service.FormatISO(dueMin)}, "dueMax": {service.FormatISO(dueMax)}}
+		for {
+			var page struct {
+				Items []struct {
+					ID          string `json:"id"`
+					Title       string `json:"title"`
+					Notes       string `json:"notes"`
+					Due         string `json:"due"`
+					Status      string `json:"status"`
+					WebViewLink string `json:"webViewLink"`
+				} `json:"items"`
+				NextPageToken string `json:"nextPageToken"`
+			}
+			if err := c.do(ctx, http.MethodGet, c.tasksBase+"/lists/"+url.PathEscape(list)+"/tasks?"+q.Encode(), nil, &page); err != nil {
+				return nil, err
+			}
+			for _, t := range page.Items {
+				// due は「日付の 0 時（UTC）」の RFC 3339。日付だけ使う
+				if t.Status != "needsAction" || len(t.Due) < len(time.DateOnly) {
+					continue
+				}
+				out = append(out, gateway.Task{ID: t.ID, Title: t.Title, Notes: t.Notes, Due: t.Due[:len(time.DateOnly)], WebViewLink: t.WebViewLink})
+			}
+			if page.NextPageToken == "" {
+				break
+			}
+			q.Set("pageToken", page.NextPageToken)
+		}
+	}
+	return out, nil
+}
+
 type connector struct{ cfg *oauth2.Config }
 
 // NewConnector は更新トークンでつなぐ。つなぐ時点でアクセストークンを取り、失効を検出する
@@ -164,5 +233,5 @@ func (c *connector) Connect(ctx context.Context, calendarID, refreshToken string
 		return nil, err
 	}
 	hc := &http.Client{Transport: &oauth2.Transport{Source: oauth2.ReuseTokenSource(nil, ts), Base: base.Transport}, Timeout: base.Timeout}
-	return &calendar{client: client{http: hc, sleep: time.Sleep}, id: calendarID, base: calendarAPI}, nil
+	return &calendar{client: client{http: hc, sleep: time.Sleep}, id: calendarID, base: calendarAPI, tasksBase: tasksAPI}, nil
 }

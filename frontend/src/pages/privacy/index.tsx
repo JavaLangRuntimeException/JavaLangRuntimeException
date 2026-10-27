@@ -7,7 +7,7 @@ const link = "text-accent-300 underline underline-offset-2 hover:text-accent-200
 const code = "break-all rounded bg-background-secondary-default px-1 font-mono text-[0.9em] text-text-primary";
 // Google OAuth の同意画面（ブランディング）に登録している URL。Google API のユーザーデータの扱いを必ず記載する
 // （Google の自動チェックが読めるよう英語版も載せる。APP_NAME は同意画面のアプリ名と完全に一致させる）
-const UPDATED = "2026年10月6日";
+const UPDATED = "2026年10月27日";
 const APP_NAME = "taramanji Calendar Sync";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -61,14 +61,16 @@ function JaPolicy() {
         <ul className="list-disc space-y-1 ps-6 marker:text-text-tertiary">
           <li>メールアドレス（接続したアカウントとメインカレンダーを識別するため）</li>
           <li>メインカレンダーの予定（タイトル・日時・場所・説明・Google Meet の URL・参加状況・公開設定）。対象は過去 1 日から 90 日先まで</li>
+          <li>Google ToDo のタスク（タイトル・メモ・期限・完了状態・リンク）。対象は期限が過去 1 日から 90 日先までの未完了のもの</li>
         </ul>
-        <p>本アプリが要求する権限は、メールアドレスの確認（<code className={code}>email</code>）と <code className={code}>calendar.events</code>（予定の読み取り・作成・更新・削除）のみです。</p>
+        <p>本アプリが要求する権限は、メールアドレスの確認（<code className={code}>email</code>）、<code className={code}>calendar.events</code>（予定の読み取り・作成・更新・削除）、<code className={code}>tasks.readonly</code>（ToDo の読み取り）のみです。ToDo を作成・変更・削除することはありません。</p>
       </Section>
 
       <Section title="3. Google ユーザーデータの利用方法">
         <ul className="list-disc space-y-1 ps-6 marker:text-text-tertiary">
           <li>接続した各カレンダーの予定を読み取り、他の接続済みカレンダーに「予定あり」の予定として作成・更新・削除します。</li>
           <li>運営者が「マスター」に指定したカレンダーにだけ、予定のタイトル・場所・説明・Google Meet の URL を記載します。予定の参加者はコピーしません。</li>
+          <li>マスター以外のアカウントの期限付きの ToDo を、マスターに指定したカレンダーにだけ、タイトル・メモ・リンク付きの終日予定として作成・更新・削除します。</li>
           <li>本アプリが作成した予定には識別用の情報を付け、同期の重複や連鎖を防ぎます。</li>
         </ul>
         <p>Google ユーザーデータを広告、販売、信用調査、機械学習モデルの学習、その他カレンダー同期以外の目的に利用することはありません。</p>
@@ -77,7 +79,7 @@ function JaPolicy() {
       <Section title="4. 保存と保護">
         <ul className="list-disc space-y-1 ps-6 marker:text-text-tertiary">
           <li>接続に必要な更新トークンは AES-256-GCM で暗号化し、運営者が管理するサーバーにのみ保存します。</li>
-          <li>予定の本文は保存しません。同期の状態を管理するため、予定の ID・終了日時・内容の変化を判定するハッシュ値のみを保存します。</li>
+          <li>予定と ToDo の本文は保存しません。同期の状態を管理するため、予定・ToDo の ID・終了日時・内容の変化を判定するハッシュ値のみを保存します。</li>
           <li>本アプリの管理画面を利用できるのは運営者のみです。通信はすべて HTTPS で暗号化されます。</li>
         </ul>
       </Section>
@@ -122,7 +124,7 @@ function EnPolicy() {
       <header id="en" className="space-y-2">
         <h1 className="text-title-1-semibold text-text-primary">Privacy Policy</h1>
         <p className="text-body-2-regular text-text-tertiary">
-          Last updated: October 6, 2026 ／{" "}
+          Last updated: October 27, 2026 ／{" "}
           <a className={link} href="#ja" lang="ja">
             日本語
           </a>
@@ -145,10 +147,12 @@ function EnPolicy() {
         <ul className="list-disc space-y-1 ps-6 marker:text-text-tertiary">
           <li>The account&apos;s email address, to identify the connected account and its primary calendar.</li>
           <li>Events on the primary calendar from 1 day in the past to 90 days in the future: title, date and time, location, description, Google Meet link, response status and visibility.</li>
+          <li>Google Tasks that are not completed and are due from 1 day in the past to 90 days in the future: title, notes, due date, status and link.</li>
         </ul>
         <p>
-          The App requests only the <code className={code}>email</code> scope and{" "}
-          <code className={code}>https://www.googleapis.com/auth/calendar.events</code> (read, create, update and delete events).
+          The App requests only the <code className={code}>email</code> scope,{" "}
+          <code className={code}>https://www.googleapis.com/auth/calendar.events</code> (read, create, update and delete events) and{" "}
+          <code className={code}>https://www.googleapis.com/auth/tasks.readonly</code> (read tasks). It never creates, changes or deletes tasks.
         </p>
       </Section>
 
@@ -156,6 +160,7 @@ function EnPolicy() {
         <ul className="list-disc space-y-1 ps-6 marker:text-text-tertiary">
           <li>It reads events on each connected calendar and creates, updates and deletes corresponding &quot;Busy&quot; events on the other connected calendars, so that every calendar shows the correct availability.</li>
           <li>Only on the calendar the operator designates as the &quot;master&quot; does it include the event title, location, description and Google Meet link. Attendees are never copied.</li>
+          <li>Only on the master calendar does it create, update and delete all-day events for the due tasks of the other connected accounts, with the task title, notes and link.</li>
           <li>Events created by the App carry an identifier so they are not synchronized again.</li>
         </ul>
         <p>Google user data is never used for advertising, sold, used for credit assessment, used to train machine learning or AI models, or used for any purpose other than calendar synchronization.</p>
@@ -164,7 +169,7 @@ function EnPolicy() {
       <Section title="4. Storage and protection">
         <ul className="list-disc space-y-1 ps-6 marker:text-text-tertiary">
           <li>The OAuth refresh token needed for the connection is encrypted with AES-256-GCM and stored only on a server managed by the operator.</li>
-          <li>Event contents are not stored. To track synchronization, the App stores only event IDs, end times and a hash used to detect changes.</li>
+          <li>Event and task contents are not stored. To track synchronization, the App stores only event and task IDs, end times and a hash used to detect changes.</li>
           <li>Only the operator can sign in to the App&apos;s admin screen. All traffic is encrypted with HTTPS.</li>
         </ul>
       </Section>

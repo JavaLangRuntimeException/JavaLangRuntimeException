@@ -69,6 +69,24 @@ type Calendar interface {
 	Delete(ctx context.Context, eventID string) error
 }
 
+// Task は Google ToDo のタスク（期限付きで未完了のものだけ）。Due は期限の日付（YYYY-MM-DD。API は時刻を返さない）
+type Task struct {
+	ID          string
+	Title       string
+	Notes       string
+	Due         string
+	WebViewLink string
+}
+
+// TaskSource は接続したアカウントの Google ToDo。Calendar の実装が併せて持つ
+type TaskSource interface {
+	// Tasks は期限が [dueMin, dueMax] の未完了タスク（全リスト）。読み取りを許可していなければ ErrTasksNotGranted
+	Tasks(ctx context.Context, dueMin, dueMax time.Time) ([]Task, error)
+}
+
+// ErrTasksNotGranted は Google ToDo の読み取り（tasks.readonly）を許可していない。つなぎ直すまで ToDo は同期しない
+var ErrTasksNotGranted = errors.New("Google ToDo の読み取りが許可されていません")
+
 // Connector は更新トークンからカレンダーにつなぐ。失効していればエラー（要再接続）
 type Connector interface {
 	Connect(ctx context.Context, calendarID, refreshToken string) (Calendar, error)

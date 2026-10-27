@@ -298,7 +298,7 @@ func (u *CalendarSyncUsecaseImpl) runLocked(ctx context.Context, budget time.Dur
 		return nil, err
 	}
 	u.report(run, len(list))
-	slog.InfoContext(ctx, "calendar sync finished", "source_events", run.SourceEvents, "mirrors", run.Mirrors, "writes", run.Writes,
+	slog.InfoContext(ctx, "calendar sync finished", "source_events", run.SourceEvents, "source_tasks", res.SourceTasks, "mirrors", run.Mirrors, "writes", run.Writes,
 		"deletes", run.Deletes, "pending", run.Pending, "errors", len(run.Errors), "reconnect", run.Reconnect, "duration_ms", run.DurationMs)
 	for _, e := range run.Errors {
 		slog.WarnContext(ctx, "calendar sync error", "calendar_id", e.CalendarID, "error", e.Error)
