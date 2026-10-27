@@ -26,9 +26,9 @@ images:
   - { name: taramanji/reservation, newName: ghcr.io/javalangruntimeexception/taramanji-reservation, newTag: sha-41a4323 }
   - { name: taramanji/worklocation, newName: ghcr.io/javalangruntimeexception/taramanji-worklocation, newTag: sha-41a4323 }
   - { name: taramanji/content, newName: ghcr.io/javalangruntimeexception/taramanji-content, newTag: sha-41a4323 }
-  - { name: taramanji/calendarsync, newName: ghcr.io/javalangruntimeexception/taramanji-calendarsync, newTag: sha-41a4323 }
+  - { name: taramanji/calendarsync, newName: ghcr.io/javalangruntimeexception/taramanji-calendarsync, newTag: sha-7c2cd2d }
   - { name: taramanji/analytics, newName: ghcr.io/javalangruntimeexception/taramanji-analytics, newTag: sha-41a4323 }
-  - { name: taramanji/web, newName: ghcr.io/javalangruntimeexception/taramanji-web, newTag: sha-ca24638 }
+  - { name: taramanji/web, newName: ghcr.io/javalangruntimeexception/taramanji-web, newTag: sha-7c2cd2d }
 
 patches:
   # 台数（PR を閉じたら 0 にして止める。replicas.yaml）
