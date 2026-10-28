@@ -1,0 +1,28 @@
+# 本番のアプリの枠: メモリ 2.5 GiB・CPU 4・Pod 30・ディスク 50 GiB。
+# Mac mini（OrbStack の VM 11.7 GiB）では taramanji.com・gws・基盤がおよそ 5.5 GiB を使い、2 GiB を伸びしろに残す。
+# stg・dev（各 512 MiB）と合わせて 3.5 GiB をアプリに渡す（VM のメモリを増やしたらここを広げる）
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: cloud-apps
+resources:
+  - ../../../workloads
+patches:
+  - target: { kind: RoleBinding, name: cloud-api-capacity }
+    patch: |-
+      - op: replace
+        path: /subjects/0/namespace
+        value: cloud
+  - target: { kind: ResourceQuota, name: apps }
+    patch: |-
+      - op: replace
+        path: /spec/hard
+        value:
+          requests.memory: 2560Mi
+          limits.memory: 2560Mi
+          requests.cpu: "2"
+          limits.cpu: "4"
+          pods: "30"
+          persistentvolumeclaims: "10"
+          requests.storage: 50Gi
+          services.nodeports: "0"
+          services.loadbalancers: "0"
