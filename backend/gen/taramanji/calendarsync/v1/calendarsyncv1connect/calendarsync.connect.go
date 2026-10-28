@@ -39,6 +39,9 @@ const (
 	// CalendarSyncServiceRunSyncProcedure is the fully-qualified name of the CalendarSyncService's
 	// RunSync RPC.
 	CalendarSyncServiceRunSyncProcedure = "/taramanji.calendarsync.v1.CalendarSyncService/RunSync"
+	// CalendarSyncServiceRunReminderProcedure is the fully-qualified name of the CalendarSyncService's
+	// RunReminder RPC.
+	CalendarSyncServiceRunReminderProcedure = "/taramanji.calendarsync.v1.CalendarSyncService/RunReminder"
 	// CalendarSyncServiceUpdateSettingsProcedure is the fully-qualified name of the
 	// CalendarSyncService's UpdateSettings RPC.
 	CalendarSyncServiceUpdateSettingsProcedure = "/taramanji.calendarsync.v1.CalendarSyncService/UpdateSettings"
@@ -52,6 +55,8 @@ const (
 type CalendarSyncServiceClient interface {
 	GetStatus(context.Context, *connect.Request[v1.GetStatusRequest]) (*connect.Response[v1.GetStatusResponse], error)
 	RunSync(context.Context, *connect.Request[v1.RunSyncRequest]) (*connect.Response[v1.RunSyncResponse], error)
+	// 接続した全アカウントから、もうすぐ始まる予定を Discord に知らせる（CronJob が 5 分ごとに呼ぶ）
+	RunReminder(context.Context, *connect.Request[v1.RunReminderRequest]) (*connect.Response[v1.RunReminderResponse], error)
 	UpdateSettings(context.Context, *connect.Request[v1.UpdateSettingsRequest]) (*connect.Response[v1.UpdateSettingsResponse], error)
 	Disconnect(context.Context, *connect.Request[v1.DisconnectRequest]) (*connect.Response[v1.DisconnectResponse], error)
 }
@@ -80,6 +85,12 @@ func NewCalendarSyncServiceClient(httpClient connect.HTTPClient, baseURL string,
 			connect.WithSchema(calendarSyncServiceMethods.ByName("RunSync")),
 			connect.WithClientOptions(opts...),
 		),
+		runReminder: connect.NewClient[v1.RunReminderRequest, v1.RunReminderResponse](
+			httpClient,
+			baseURL+CalendarSyncServiceRunReminderProcedure,
+			connect.WithSchema(calendarSyncServiceMethods.ByName("RunReminder")),
+			connect.WithClientOptions(opts...),
+		),
 		updateSettings: connect.NewClient[v1.UpdateSettingsRequest, v1.UpdateSettingsResponse](
 			httpClient,
 			baseURL+CalendarSyncServiceUpdateSettingsProcedure,
@@ -99,6 +110,7 @@ func NewCalendarSyncServiceClient(httpClient connect.HTTPClient, baseURL string,
 type calendarSyncServiceClient struct {
 	getStatus      *connect.Client[v1.GetStatusRequest, v1.GetStatusResponse]
 	runSync        *connect.Client[v1.RunSyncRequest, v1.RunSyncResponse]
+	runReminder    *connect.Client[v1.RunReminderRequest, v1.RunReminderResponse]
 	updateSettings *connect.Client[v1.UpdateSettingsRequest, v1.UpdateSettingsResponse]
 	disconnect     *connect.Client[v1.DisconnectRequest, v1.DisconnectResponse]
 }
@@ -111,6 +123,11 @@ func (c *calendarSyncServiceClient) GetStatus(ctx context.Context, req *connect.
 // RunSync calls taramanji.calendarsync.v1.CalendarSyncService.RunSync.
 func (c *calendarSyncServiceClient) RunSync(ctx context.Context, req *connect.Request[v1.RunSyncRequest]) (*connect.Response[v1.RunSyncResponse], error) {
 	return c.runSync.CallUnary(ctx, req)
+}
+
+// RunReminder calls taramanji.calendarsync.v1.CalendarSyncService.RunReminder.
+func (c *calendarSyncServiceClient) RunReminder(ctx context.Context, req *connect.Request[v1.RunReminderRequest]) (*connect.Response[v1.RunReminderResponse], error) {
+	return c.runReminder.CallUnary(ctx, req)
 }
 
 // UpdateSettings calls taramanji.calendarsync.v1.CalendarSyncService.UpdateSettings.
@@ -128,6 +145,8 @@ func (c *calendarSyncServiceClient) Disconnect(ctx context.Context, req *connect
 type CalendarSyncServiceHandler interface {
 	GetStatus(context.Context, *connect.Request[v1.GetStatusRequest]) (*connect.Response[v1.GetStatusResponse], error)
 	RunSync(context.Context, *connect.Request[v1.RunSyncRequest]) (*connect.Response[v1.RunSyncResponse], error)
+	// 接続した全アカウントから、もうすぐ始まる予定を Discord に知らせる（CronJob が 5 分ごとに呼ぶ）
+	RunReminder(context.Context, *connect.Request[v1.RunReminderRequest]) (*connect.Response[v1.RunReminderResponse], error)
 	UpdateSettings(context.Context, *connect.Request[v1.UpdateSettingsRequest]) (*connect.Response[v1.UpdateSettingsResponse], error)
 	Disconnect(context.Context, *connect.Request[v1.DisconnectRequest]) (*connect.Response[v1.DisconnectResponse], error)
 }
@@ -151,6 +170,12 @@ func NewCalendarSyncServiceHandler(svc CalendarSyncServiceHandler, opts ...conne
 		connect.WithSchema(calendarSyncServiceMethods.ByName("RunSync")),
 		connect.WithHandlerOptions(opts...),
 	)
+	calendarSyncServiceRunReminderHandler := connect.NewUnaryHandler(
+		CalendarSyncServiceRunReminderProcedure,
+		svc.RunReminder,
+		connect.WithSchema(calendarSyncServiceMethods.ByName("RunReminder")),
+		connect.WithHandlerOptions(opts...),
+	)
 	calendarSyncServiceUpdateSettingsHandler := connect.NewUnaryHandler(
 		CalendarSyncServiceUpdateSettingsProcedure,
 		svc.UpdateSettings,
@@ -169,6 +194,8 @@ func NewCalendarSyncServiceHandler(svc CalendarSyncServiceHandler, opts ...conne
 			calendarSyncServiceGetStatusHandler.ServeHTTP(w, r)
 		case CalendarSyncServiceRunSyncProcedure:
 			calendarSyncServiceRunSyncHandler.ServeHTTP(w, r)
+		case CalendarSyncServiceRunReminderProcedure:
+			calendarSyncServiceRunReminderHandler.ServeHTTP(w, r)
 		case CalendarSyncServiceUpdateSettingsProcedure:
 			calendarSyncServiceUpdateSettingsHandler.ServeHTTP(w, r)
 		case CalendarSyncServiceDisconnectProcedure:
@@ -188,6 +215,10 @@ func (UnimplementedCalendarSyncServiceHandler) GetStatus(context.Context, *conne
 
 func (UnimplementedCalendarSyncServiceHandler) RunSync(context.Context, *connect.Request[v1.RunSyncRequest]) (*connect.Response[v1.RunSyncResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.calendarsync.v1.CalendarSyncService.RunSync is not implemented"))
+}
+
+func (UnimplementedCalendarSyncServiceHandler) RunReminder(context.Context, *connect.Request[v1.RunReminderRequest]) (*connect.Response[v1.RunReminderResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.calendarsync.v1.CalendarSyncService.RunReminder is not implemented"))
 }
 
 func (UnimplementedCalendarSyncServiceHandler) UpdateSettings(context.Context, *connect.Request[v1.UpdateSettingsRequest]) (*connect.Response[v1.UpdateSettingsResponse], error) {

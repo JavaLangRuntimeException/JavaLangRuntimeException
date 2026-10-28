@@ -10,6 +10,8 @@ type GetStatusInput struct{}
 
 type RunSyncInput struct{}
 
+type RunReminderInput struct{}
+
 type UpdateSettingsInput struct {
 	SetMaster         bool
 	Master            string
@@ -32,6 +34,11 @@ type GetStatusOutput struct {
 type RunSyncOutput struct {
 	Run     *LastRun `json:"run"`
 	Skipped bool     `json:"skipped"`
+}
+
+type RunReminderOutput struct {
+	Notified int32 `json:"notified"`
+	Failed   int32 `json:"failed"`
 }
 
 type DisconnectOutput struct {
@@ -69,6 +76,7 @@ type SyncError struct {
 type CalendarSyncUsecase interface {
 	GetStatus(ctx context.Context, input GetStatusInput) (*GetStatusOutput, error)
 	RunSync(ctx context.Context, input RunSyncInput) (*RunSyncOutput, error)
+	RunReminder(ctx context.Context, input RunReminderInput) (*RunReminderOutput, error)
 	UpdateSettings(ctx context.Context, input UpdateSettingsInput) error
 	Disconnect(ctx context.Context, input DisconnectInput) (*DisconnectOutput, error)
 }
