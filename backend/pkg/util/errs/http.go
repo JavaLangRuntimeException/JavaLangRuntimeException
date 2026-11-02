@@ -31,6 +31,7 @@ var errorTypeTitle = map[ErrorType]string{
 	ErrorTypeInternal:     "Internal Server Error",
 	ErrorTypeConcurrency:  "Service Unavailable",
 	ErrorTypeUpstream:     "Bad Gateway",
+	ErrorTypeRateLimited:  "Too Many Requests",
 }
 
 type problemWriter struct{}
