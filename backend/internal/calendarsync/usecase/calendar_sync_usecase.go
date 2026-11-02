@@ -26,10 +26,14 @@ const (
 	// InteractiveBudget: 管理画面の「今すぐ同期」は Cloudflare の 100 秒制限に収まるよう 80 秒で区切る
 	InteractiveBudget = 80 * time.Second
 	lockTTL           = 10 * time.Minute
-	oauthStateTTL     = 10 * time.Minute
-	settingID         = "default"
-	idleMessage       = "2 つ以上のアカウントを接続すると同期を始めます"
-	lockedMessage     = "同期の実行中です。少し待ってからやり直してください"
+	// ReminderLead: この時間のうちに始まる予定を知らせる（CronJob は 5 分ごと）
+	ReminderLead = 10 * time.Minute
+	// reminderTTL: 送った印を残す時間。予定が窓（ReminderLead）を抜けるまで残れば足りる
+	reminderTTL   = time.Hour
+	oauthStateTTL = 10 * time.Minute
+	settingID     = "default"
+	idleMessage   = "2 つ以上のアカウントを接続すると同期を始めます"
+	lockedMessage = "同期の実行中です。少し待ってからやり直してください"
 )
 
 type Deps struct {
@@ -40,9 +44,11 @@ type Deps struct {
 	OAuth     gateway.OAuth
 	Cipher    gateway.Cipher
 	State     gateway.RunState
-	Metrics   observability.Metrics
-	Clock     func() time.Time
-	Days      int
+	// Notifier は予定の通知先（Discord）。nil なら通知しない（Webhook を設定していない dev / stg）
+	Notifier gateway.Notifier
+	Metrics  observability.Metrics
+	Clock    func() time.Time
+	Days     int
 }
 
 type CalendarSyncUsecaseImpl struct{ d Deps }
@@ -325,6 +331,58 @@ func (u *CalendarSyncUsecaseImpl) report(run *gateway.LastRun, accounts int) {
 	m.Gauge("calendar_sync.mirrors", float64(run.Mirrors))
 	m.Gauge("calendar_sync.accounts", float64(accounts))
 	m.Gauge("calendar_sync.accounts.reconnect_needed", float64(len(run.Reconnect)))
+}
+
+// RunReminder は接続した全アカウントの予定から、ReminderLead のうちに始まるものを 1 回ずつ Discord に送る。
+// 同期のロックは取らない（同期は数分かかることがあり、その間も通知は遅らせたくない。重複は ClaimReminder で防ぐ）
+func (u *CalendarSyncUsecaseImpl) RunReminder(ctx context.Context, _ RunReminderInput) (*RunReminderOutput, error) {
+	out := &RunReminderOutput{}
+	if u.d.Notifier == nil {
+		return out, nil
+	}
+	now := u.d.Clock()
+	list, err := u.accounts(ctx)
+	if err != nil {
+		return nil, errs.NewInternalError(err)
+	}
+	// 失効したアカウントは同期の結果（管理画面・モニター）で知らせるので、ここでは数えるだけ
+	cals, _, connErrors := u.connectAll(ctx, list)
+	out.Failed += int32(len(connErrors))
+	var lists [][]gateway.Reminder
+	for _, cal := range cals {
+		// timeMax は開始がそれより前の予定（ちょうど ReminderLead 後に始まる予定も含めるよう少し広げる）
+		events, err := cal.Events(ctx, now, now.Add(ReminderLead+time.Minute))
+		if err != nil {
+			out.Failed++
+			slog.WarnContext(ctx, "reminder: list events failed", "calendar_id", cal.ID(), "error", err)
+			continue
+		}
+		lists = append(lists, service.DueReminders(cal.ID(), events, now, ReminderLead))
+	}
+	for _, r := range service.MergeReminders(lists...) {
+		first, err := u.d.State.ClaimReminder(ctx, r.Key, reminderTTL)
+		if err != nil {
+			return nil, errs.NewInternalError(err)
+		}
+		if !first {
+			continue
+		}
+		if err := u.d.Notifier.Notify(ctx, r); err != nil {
+			out.Failed++
+			slog.WarnContext(ctx, "reminder: notify failed", "calendar_id", r.CalendarID, "error", err)
+			if err := u.d.State.ReleaseReminder(ctx, r.Key); err != nil {
+				return nil, errs.NewInternalError(err)
+			}
+			continue
+		}
+		out.Notified++
+	}
+	u.d.Metrics.Count("calendar_sync.reminder.sent", int64(out.Notified))
+	u.d.Metrics.Count("calendar_sync.reminder.failed", int64(out.Failed))
+	if out.Notified > 0 || out.Failed > 0 {
+		slog.InfoContext(ctx, "reminder finished", "notified", out.Notified, "failed", out.Failed)
+	}
+	return out, nil
 }
 
 func (u *CalendarSyncUsecaseImpl) UpdateSettings(ctx context.Context, in UpdateSettingsInput) error {

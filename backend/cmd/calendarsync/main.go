@@ -1,5 +1,5 @@
 // calendarsync は複数の Google アカウントのカレンダーを相互に同期するマイクロサービス（管理者用）。
-// RunSync は CronJob が 5 分ごとに Bearer トークンで呼ぶ。アカウント接続の OAuth は HTTP で受ける。
+// RunSync・RunReminder は CronJob が 5 分ごとに Bearer トークンで呼ぶ。アカウント接続の OAuth は HTTP で受ける。
 package main
 
 import (
@@ -11,6 +11,7 @@ import (
 
 	"github.com/javalangruntimeexception/taramanji/backend/gen/taramanji/calendarsync/v1/calendarsyncv1connect"
 	"github.com/javalangruntimeexception/taramanji/backend/internal/calendarsync/di"
+	"github.com/javalangruntimeexception/taramanji/backend/internal/calendarsync/domain/gateway"
 	"github.com/javalangruntimeexception/taramanji/backend/internal/calendarsync/handler"
 	infragw "github.com/javalangruntimeexception/taramanji/backend/internal/calendarsync/infra/gateway"
 	infrarepo "github.com/javalangruntimeexception/taramanji/backend/internal/calendarsync/infra/repository"
@@ -43,6 +44,13 @@ func main() {
 	oauthCfg := infragw.NewOAuthConfig(env.Required("GOOGLE_CLIENT_ID"), env.Required("GOOGLE_CLIENT_SECRET"),
 		siteURL+"/api/calendar-sync/callback")
 	days, _ := strconv.Atoi(env.Optional("SYNC_DAYS", "90"))
+	// もうすぐ始まる予定の通知先。未設定なら通知しない
+	var notifier gateway.Notifier
+	if url := env.Optional("DISCORD_WEBHOOK_URL", ""); url != "" {
+		if notifier, err = infragw.NewDiscord(url, nil); err != nil {
+			log.Fatal(err)
+		}
+	}
 
 	uc := usecase.NewCalendarSyncUsecase(usecase.Deps{
 		Accounts:  infrarepo.NewRedisCalendarAccountRepository(rdb),
@@ -52,16 +60,20 @@ func main() {
 		OAuth:     infragw.NewOAuth(oauthCfg),
 		Cipher:    cipher,
 		State:     infragw.NewRunState(rdb),
+		Notifier:  notifier,
 		Metrics:   metrics,
 		Days:      days,
 	})
 	handlers := di.NewHandlers(uc)
-	// すべて管理者用。RunSync だけは CronJob の Bearer トークンでも呼べる
+	// すべて管理者用。RunSync・RunReminder は CronJob の Bearer トークンでも呼べる
 	interceptor := auth.AdminInterceptor([]string{
 		calendarsyncv1connect.CalendarSyncServiceGetStatusProcedure,
 		calendarsyncv1connect.CalendarSyncServiceUpdateSettingsProcedure,
 		calendarsyncv1connect.CalendarSyncServiceDisconnectProcedure,
-	}, []string{calendarsyncv1connect.CalendarSyncServiceRunSyncProcedure}, env.Required("CALENDAR_SYNC_CRON_TOKEN"))
+	}, []string{
+		calendarsyncv1connect.CalendarSyncServiceRunSyncProcedure,
+		calendarsyncv1connect.CalendarSyncServiceRunReminderProcedure,
+	}, env.Required("CALENDAR_SYNC_CRON_TOKEN"))
 	oauthHTTP := handler.NewOAuthHandlers(uc, siteURL)
 
 	if err := server.Run(serviceName, func(mux *http.ServeMux) {
