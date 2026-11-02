@@ -10,7 +10,7 @@ ENV VITE_APP_VERSION=${VERSION}
 RUN npm run build
 
 FROM nginxinc/nginx-unprivileged:1.29-alpine
-COPY nginx.conf /etc/nginx/nginx.conf
+COPY nginx.conf security-headers.conf /etc/nginx/
 COPY --from=build /src/dist /usr/share/nginx/html
 USER 101
 EXPOSE 8080
