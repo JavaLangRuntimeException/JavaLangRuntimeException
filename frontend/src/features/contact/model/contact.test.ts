@@ -44,6 +44,7 @@ describe("submit errors", () => {
   it("コードごとの文言", () => {
     expect(submitErrorMessage("invalid_email")).toBe("メールアドレスの形式が正しくありません。");
     expect(submitErrorMessage("email_send_failed", "x")).toContain("\n詳細: x");
+    expect(submitErrorMessage("rate_limited")).toContain("送信回数が多すぎます");
     expect(submitErrorMessage("internal")).toBe(DEFAULT_SUBMIT_ERROR);
   });
 });

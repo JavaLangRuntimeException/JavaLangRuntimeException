@@ -51,6 +51,7 @@ taramanji.com のバックエンド。Go + DDD + クリーンアーキテクチ�
   - `ErrorTypeInternal` は内容を返さない（ログだけ）。外部 API の失敗は `ErrorTypeUpstream`（502 相当、detail はクライアントにも返す）
   - ログは `errs.Report` に集約（4xx 相当は WARN、Internal / Concurrency / Upstream は ERROR）
 - **認可**: `pkg/util/auth`。セッションは identity が発行する HS256 JWT の Cookie（`taramanji_session`、AUTH_SECRET 共有）。`auth.AdminInterceptor(adminProcs, cronProcs, cronToken)` を main で付ける
+- **レート制限**: `pkg/util/ratelimit`。公開フォームの RPC を `Cf-Connecting-Ip` ごとに数える（Pod 内のメモリ）。超えたら `rate_limited`（ResourceExhausted）。`ratelimit.Interceptor(rules)` を main で付ける
 - **時刻**: 日付の判定は日本時間（`pkg/util/jst`）。「いま」は `clock func() time.Time` で注入
 
 ## サービス（コンテキスト）
