@@ -27,3 +27,4 @@ FAIL_THRESHOLD = "2"
 # secrets（wrangler secret put で入れる。git には入れない）
 #   AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY: notification と同じ SES の送信用キー
 #   WEBHOOK_TOKEN: Datadog の webhook が付けるヘッダー X-Webhook-Token の値
+#   DISCORD_WEBHOOK_URL: 同じ通知を送る Discord の Webhook（任意。なければメールだけ）
