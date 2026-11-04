@@ -14,12 +14,15 @@ import (
 
 func TestNewDiscordRejectsOtherURLs(t *testing.T) {
 	for _, u := range []string{"https://example.com/api/webhooks/1/x", "http://discord.com/api/webhooks/1/x", "https://discord.com.evil.example/api/webhooks/"} {
-		if _, err := NewDiscord(u, nil); err == nil {
+		if _, err := NewDiscord(u, "", nil); err == nil {
 			t.Errorf("%s should be rejected", u)
 		}
 	}
-	if _, err := NewDiscord("https://discord.com/api/webhooks/123/abc", nil); err != nil {
+	if _, err := NewDiscord("https://discord.com/api/webhooks/123/abc", "", nil); err != nil {
 		t.Fatal(err)
+	}
+	if _, err := NewDiscord("https://discord.com/api/webhooks/123/abc", "<@everyone>", nil); err == nil {
+		t.Error("mention must be digits only")
 	}
 }
 
@@ -40,9 +43,19 @@ func TestDiscordNotify(t *testing.T) {
 	}
 	e := got.Embeds[0]
 	if got.Content != "⏰ 8 分後に予定があります" || e.Description != "**10:08〜10:38**（あと 8 分）" || e.URL != r.MeetLink ||
-		len(e.Fields) != 3 || got.AllowedMentions.Parse == nil || len(got.AllowedMentions.Parse) != 0 {
+		len(e.Fields) != 3 || got.AllowedMentions.Parse == nil || len(got.AllowedMentions.Parse) != 0 || len(got.AllowedMentions.Users) != 0 {
 		t.Fatalf("payload %+v", got)
 	}
+	// mention があれば先頭でその人だけを呼び出す
+	d.mention = "692695641549307926"
+	if err := d.Notify(context.Background(), r); err != nil {
+		t.Fatal(err)
+	}
+	if got.Content != "<@692695641549307926> ⏰ 8 分後に予定があります" || len(got.AllowedMentions.Parse) != 0 ||
+		len(got.AllowedMentions.Users) != 1 || got.AllowedMentions.Users[0] != "692695641549307926" {
+		t.Fatalf("payload %+v", got)
+	}
+	d.mention = ""
 	status = http.StatusTooManyRequests
 	if err := d.Notify(context.Background(), r); err == nil || !strings.Contains(err.Error(), "429") {
 		t.Fatalf("err %v", err)

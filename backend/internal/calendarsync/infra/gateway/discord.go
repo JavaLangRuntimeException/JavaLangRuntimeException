@@ -8,6 +8,7 @@ import (
 	"io"
 	"math"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -17,6 +18,9 @@ import (
 
 // 任意の URL に送らないよう、Discord の Webhook だけを受け付ける
 var discordPrefixes = []string{"https://discord.com/api/webhooks/", "https://discordapp.com/api/webhooks/"}
+
+// Discord のユーザー ID（数字だけ）
+var discordUserID = regexp.MustCompile(`^[0-9]+$`)
 
 const (
 	discordUsername = "taramanji カレンダー"
@@ -28,13 +32,15 @@ const (
 )
 
 type discord struct {
-	http  *http.Client
-	url   string
-	clock func() time.Time
+	http    *http.Client
+	url     string
+	mention string
+	clock   func() time.Time
 }
 
-// NewDiscord は Discord の Webhook に送る Notifier。URL が Discord の Webhook でなければエラー
-func NewDiscord(webhookURL string, clock func() time.Time) (gateway.Notifier, error) {
+// NewDiscord は Discord の Webhook に送る Notifier。URL が Discord の Webhook でなければエラー。
+// mentionUserID（Discord のユーザー ID）があれば、メッセージの先頭でその人を呼び出す
+func NewDiscord(webhookURL, mentionUserID string, clock func() time.Time) (gateway.Notifier, error) {
 	ok := false
 	for _, p := range discordPrefixes {
 		if strings.HasPrefix(webhookURL, p) {
@@ -44,11 +50,14 @@ func NewDiscord(webhookURL string, clock func() time.Time) (gateway.Notifier, er
 	if !ok {
 		return nil, fmt.Errorf("DISCORD_WEBHOOK_URL must start with %s", discordPrefixes[0])
 	}
+	if mentionUserID != "" && !discordUserID.MatchString(mentionUserID) {
+		return nil, fmt.Errorf("DISCORD_MENTION_USER_ID must be a Discord user ID (digits only)")
+	}
 	if clock == nil {
 		clock = time.Now
 	}
 	// httpx（APM 計装）は使わない。Webhook の URL はパスにトークンを含み、span の http.url として Datadog に残ってしまう
-	return &discord{http: &http.Client{Timeout: 10 * time.Second}, url: webhookURL, clock: clock}, nil
+	return &discord{http: &http.Client{Timeout: 10 * time.Second}, url: webhookURL, mention: mentionUserID, clock: clock}, nil
 }
 
 type embedField struct {
@@ -70,9 +79,10 @@ type webhookPayload struct {
 	Username string  `json:"username"`
 	Content  string  `json:"content"`
 	Embeds   []embed `json:"embeds"`
-	// 予定の件名に @everyone などが入っていても誰も呼び出さない
+	// 予定の件名に @everyone などが入っていても、mention の人のほかは誰も呼び出さない
 	AllowedMentions struct {
 		Parse []string `json:"parse"`
+		Users []string `json:"users"`
 	} `json:"allowed_mentions"`
 }
 
@@ -119,8 +129,15 @@ func (d *discord) payload(r gateway.Reminder) webhookPayload {
 		e.Fields = append(e.Fields, embedField{Name: "場所", Value: truncate(r.Location, maxField)})
 	}
 	e.Fields = append(e.Fields, embedField{Name: "カレンダー", Value: truncate(r.CalendarID, maxField), Inline: true})
-	p := webhookPayload{Username: discordUsername, Content: fmt.Sprintf("⏰ %d 分後に予定があります", mins), Embeds: []embed{e}}
+	content := fmt.Sprintf("⏰ %d 分後に予定があります", mins)
+	p := webhookPayload{Username: discordUsername, Embeds: []embed{e}}
 	p.AllowedMentions.Parse = []string{}
+	p.AllowedMentions.Users = []string{}
+	if d.mention != "" {
+		content = fmt.Sprintf("<@%s> %s", d.mention, content)
+		p.AllowedMentions.Users = []string{d.mention}
+	}
+	p.Content = content
 	return p
 }
 
