@@ -1,0 +1,104 @@
+# taramanji cloud の入口。taramanji.com の Gateway（gateway/taramanji）とは別の Envoy（Pod・Service）にする。
+# 片方の設定の誤りやルートの付け間違いが、もう片方に届かない
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: cloud
+  namespace: cloud-gateway
+spec:
+  provider:
+    type: Kubernetes
+    kubernetes:
+      envoyDeployment:
+        replicas: 2
+        pod:
+          labels:
+            tags.datadoghq.com/env: prod
+            tags.datadoghq.com/service: cloud-gateway
+          annotations:
+            # Datadog: ルート・上流ごとのリクエスト数・5xx（コンソールのメトリクスに使う。gateway:cloud で taramanji と分ける）
+            ad.datadoghq.com/envoy.checks: |
+              {"envoy": {"init_config": {}, "instances": [{
+                "openmetrics_endpoint": "http://%%host%%:19001/stats/prometheus",
+                "tags": ["gateway:cloud"]
+              }]}}
+            ad.datadoghq.com/envoy.logs: '[{"source":"envoy","service":"cloud-gateway"}]'
+          topologySpreadConstraints:
+            - maxSkew: 1
+              topologyKey: kubernetes.io/hostname
+              whenUnsatisfiable: ScheduleAnyway
+              labelSelector:
+                matchLabels: { gateway.envoyproxy.io/owning-gateway-name: cloud }
+        container:
+          resources:
+            requests: { cpu: 20m, memory: 64Mi }
+            limits: { memory: 256Mi }
+      # cloudflared（cloud-cloudflared）の転送先に書く名前
+      envoyService:
+        name: cloud-gateway
+        type: ClusterIP
+      envoyPDB:
+        minAvailable: 1
+  telemetry:
+    accessLog:
+      settings:
+        - format:
+            type: JSON
+            json:
+              start_time: "%START_TIME%"
+              method: "%REQ(:METHOD)%"
+              path: "%REQ(X-ENVOY-ORIGINAL-PATH?:PATH)%"
+              authority: "%REQ(:AUTHORITY)%"
+              status_code: "%RESPONSE_CODE%"
+              response_flags: "%RESPONSE_FLAGS%"
+              duration_ms: "%DURATION%"
+              upstream_cluster: "%UPSTREAM_CLUSTER%"
+              route_name: "%ROUTE_NAME%"
+              bytes_received: "%BYTES_RECEIVED%"
+              bytes_sent: "%BYTES_SENT%"
+              user_agent: "%REQ(USER-AGENT)%"
+              client_ip: "%REQ(CF-CONNECTING-IP)%"
+              request_id: "%REQ(X-REQUEST-ID)%"
+          sinks:
+            - type: File
+              file: { path: /dev/stdout }
+  shutdown:
+    drainTimeout: 30s
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: cloud
+  namespace: cloud-gateway
+spec:
+  gatewayClassName: eg
+  infrastructure:
+    parametersRef:
+      group: gateway.envoyproxy.io
+      kind: EnvoyProxy
+      name: cloud
+  listeners:
+    # TLS は Cloudflare で終端し、cloud 用のトンネルから平文の HTTP で入る
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: Selector
+          selector:
+            matchLabels: { cloud.taramanji.com/gateway-access: "true" }
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: ClientTrafficPolicy
+metadata:
+  name: cloud
+  namespace: cloud-gateway
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: cloud
+  clientIPDetection:
+    customHeader:
+      name: Cf-Connecting-Ip
+      failClosed: false

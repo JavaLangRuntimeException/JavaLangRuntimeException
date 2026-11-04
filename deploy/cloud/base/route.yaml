@@ -1,0 +1,20 @@
+# コンソール（cloud.taramanji.com）。taramanji.com とは別の Gateway（cloud-gateway/cloud）にだけ付ける
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: console
+spec:
+  parentRefs:
+    - { name: cloud, namespace: cloud-gateway, sectionName: http }
+  # 環境ごとのホスト名はオーバーレイで差し替える
+  hostnames: ["cloud.taramanji.com"]
+  rules:
+    # API（Connect）。パスの先頭が proto のパッケージ名
+    - matches:
+        - { path: { type: PathPrefix, value: /taramanji.cloud.v1. } }
+      backendRefs:
+        - { name: cloud-api, port: 8080 }
+    - matches:
+        - { path: { type: PathPrefix, value: / } }
+      backendRefs:
+        - { name: console, port: 8080 }

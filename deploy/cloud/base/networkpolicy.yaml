@@ -1,0 +1,28 @@
+# 既定は受信を全部拒否する。taramanji の namespace（とその Gateway）からは届かない
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+---
+# cloud の Gateway の Envoy（envoy-gateway-system の、owning-gateway-name=cloud の Pod）→ API と画面だけ。
+# 同じ namespace にいる taramanji の Gateway の Envoy からは届かない
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: from-cloud-gateway
+spec:
+  podSelector:
+    matchLabels: { app.kubernetes.io/part-of: taramanji-cloud }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: envoy-gateway-system } }
+          podSelector:
+            matchLabels:
+              gateway.envoyproxy.io/owning-gateway-name: cloud
+              gateway.envoyproxy.io/owning-gateway-namespace: cloud-gateway
+      ports:
+        - { port: 8080 }

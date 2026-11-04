@@ -1,0 +1,76 @@
+# taramanji cloud の namespace。taramanji.com（taramanji・data・gateway・cloudflared）とは別にする。
+# Gateway の allowedRoutes はこのラベル（cloud.taramanji.com/gateway-access）で相手を選ぶので、
+# taramanji の namespace の HTTPRoute は cloud の Gateway に付けられない（逆も同じ）
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cloud
+  labels:
+    cloud.taramanji.com/env: prod
+    cloud.taramanji.com/gateway-access: "true"
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cloud-stg
+  labels:
+    cloud.taramanji.com/env: stg
+    cloud.taramanji.com/gateway-access: "true"
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cloud-dev
+  labels:
+    cloud.taramanji.com/env: dev
+    cloud.taramanji.com/gateway-access: "true"
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cloud-gateway
+  labels:
+    cloud.taramanji.com/tier: gateway
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cloud-cloudflared
+  labels:
+    cloud.taramanji.com/tier: tunnel
+---
+# アプリ用（④ でコンテナ・関数・インスタンスを置く）。コンソールの API とは分け、ResourceQuota で枠を決める（deploy/cloud/workloads）。
+# taramanji.com のラベル（taramanji.com/tier など）は付けない（data の Redis などはそのラベルで相手を選ぶ）。
+# Pod Security は baseline を強制する（hostPath・hostNetwork・特権コンテナで Mac mini や taramanji の中身に触れないように）
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cloud-apps
+  labels:
+    cloud.taramanji.com/env: prod
+    cloud.taramanji.com/tier: apps
+    cloud.taramanji.com/gateway-access: "true"
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/warn: restricted
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cloud-stg-apps
+  labels:
+    cloud.taramanji.com/env: stg
+    cloud.taramanji.com/tier: apps
+    cloud.taramanji.com/gateway-access: "true"
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/warn: restricted
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cloud-dev-apps
+  labels:
+    cloud.taramanji.com/env: dev
+    cloud.taramanji.com/tier: apps
+    cloud.taramanji.com/gateway-access: "true"
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/warn: restricted

@@ -1,0 +1,129 @@
+# cloud-api: コンソールの API。自分の namespace の Deployment / StatefulSet を読むだけの ServiceAccount で動く
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cloud-api
+automountServiceAccountToken: false
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cloud-api
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments", "statefulsets"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cloud-api
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: cloud-api
+subjects:
+  - kind: ServiceAccount
+    name: cloud-api
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloud-api
+  labels:
+    app.kubernetes.io/name: cloud-api
+    app.kubernetes.io/part-of: taramanji-cloud
+spec:
+  replicas: 1
+  revisionHistoryLimit: 5
+  strategy:
+    rollingUpdate: { maxSurge: 1, maxUnavailable: 0 }
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cloud-api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cloud-api
+        app.kubernetes.io/part-of: taramanji-cloud
+        tags.datadoghq.com/env: prod
+        tags.datadoghq.com/service: cloud-api
+      annotations:
+        ad.datadoghq.com/app.logs: '[{"source":"go","service":"cloud-api"}]'
+    spec:
+      serviceAccountName: cloud-api
+      # Kubernetes API を読むのでトークンを入れる（Role は自分の namespace の読み取りだけ）
+      automountServiceAccountToken: true
+      enableServiceLinks: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: app
+          image: taramanji/cloud
+          ports:
+            - { name: http, containerPort: 8080 }
+          env:
+            - { name: APP_ENV, value: prod }
+            - { name: PORT, value: ":8080" }
+            - name: POD_NAMESPACE
+              valueFrom: { fieldRef: { fieldPath: metadata.namespace } }
+            - name: DD_AGENT_HOST
+              valueFrom: { fieldRef: { fieldPath: status.hostIP } }
+            - name: DD_ENV
+              valueFrom: { fieldRef: { fieldPath: "metadata.labels['tags.datadoghq.com/env']" } }
+            - name: DD_SERVICE
+              valueFrom: { fieldRef: { fieldPath: "metadata.labels['tags.datadoghq.com/service']" } }
+            - name: DD_VERSION
+              valueFrom: { fieldRef: { fieldPath: "metadata.labels['tags.datadoghq.com/version']" } }
+            - { name: DD_LOGS_INJECTION, value: "true" }
+            - { name: DD_TRACE_SPAN_ATTRIBUTE_SCHEMA, value: v1 }
+            - name: GOMEMLIMIT
+              valueFrom: { resourceFieldRef: { resource: limits.memory } }
+            # 環境ごとに overlays で書き換える
+            - { name: CLOUD_ENV, value: prod }
+            # この環境のアプリ用 namespace（容量の枠を読む）
+            - { name: APPS_NAMESPACE, value: cloud-apps }
+            - { name: CONSOLE_ORIGIN, value: "https://cloud.taramanji.com" }
+            - { name: STORAGE_HOST_SUFFIX, value: "-storage.taramanji.com" }
+            - { name: HOSTING_HOST_SUFFIX, value: "-hosting.taramanji.com" }
+            - { name: CF_ACCESS_TEAM_DOMAIN, value: "https://solitary-sun-32e2.cloudflareaccess.com" }
+          envFrom:
+            # CF_ACCESS_AUD・ADMIN_EMAIL（本番は DD_METRICS_API_KEY・DD_METRICS_APP_KEY も）
+            - secretRef: { name: cloud-api-env }
+          startupProbe:
+            httpGet: { path: /readyz, port: http }
+            periodSeconds: 2
+            failureThreshold: 30
+          readinessProbe:
+            httpGet: { path: /readyz, port: http }
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+            periodSeconds: 10
+            failureThreshold: 3
+          resources:
+            requests: { cpu: 10m, memory: 24Mi }
+            limits: { memory: 128Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloud-api
+  labels:
+    app.kubernetes.io/name: cloud-api
+spec:
+  selector:
+    app.kubernetes.io/name: cloud-api
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+      appProtocol: kubernetes.io/h2c

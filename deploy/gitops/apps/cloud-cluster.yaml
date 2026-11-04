@@ -1,0 +1,17 @@
+# taramanji cloud のクラスター全体のもの（PriorityClass cloud-workload・ノードを読む ClusterRole）。
+# cloud プロジェクトには Namespace 以外のクラスター全体のものを書かせないので、これだけ default プロジェクトで同期する
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cloud-cluster
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: git@github.com:JavaLangRuntimeException/JavaLangRuntimeException.git
+    targetRevision: main
+    path: deploy/cloud/cluster
+  destination:
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }

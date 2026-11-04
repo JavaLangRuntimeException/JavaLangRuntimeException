@@ -1,0 +1,53 @@
+# この環境のアプリが使える合計（大きさは overlays/<env>/workloads で上書きする）。
+# コンソールの「容量」はこの apps の hard と used から「あと何個」を出す（backend/internal/cloud/infra/gateway/capacity.go）
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: apps
+spec:
+  hard:
+    requests.memory: 512Mi
+    limits.memory: 512Mi
+    requests.cpu: "1"
+    limits.cpu: "1"
+    pods: "10"
+    persistentvolumeclaims: "3"
+    requests.storage: 10Gi
+    # 外へ出すのは cloud の Gateway 経由だけ（NodePort・LoadBalancer で Mac mini のポートを開けない）
+    services.nodeports: "0"
+    services.loadbalancers: "0"
+---
+# PriorityClass cloud-workload 以外の Pod は 1 つも作れない（付け忘れると taramanji と同じ優先度になってしまうため）
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: require-cloud-priority
+spec:
+  hard:
+    pods: "0"
+  scopeSelector:
+    matchExpressions:
+      - { scopeName: PriorityClass, operator: NotIn, values: [cloud-workload] }
+---
+# requests・limits を書かなかったコンテナの既定値と上限。メモリは requests = limits にして、予約した分が必ず実際に使える量にする
+# （上限より少なく予約して詰め込むと、Mac mini のメモリが足りなくなったときに taramanji も巻き込まれる）
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: apps
+spec:
+  limits:
+    - type: Container
+      default: { memory: 256Mi, cpu: 250m }
+      defaultRequest: { memory: 256Mi, cpu: 50m }
+      max: { memory: 1Gi, cpu: "1" }
+      maxLimitRequestRatio: { memory: "1" }
+    - type: PersistentVolumeClaim
+      max: { storage: 20Gi }
+---
+# アプリの Pod に Kubernetes API のトークンを渡さない（④ のコントローラーが別の ServiceAccount を使わない限り）
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: default
+automountServiceAccountToken: false
