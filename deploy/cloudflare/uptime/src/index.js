@@ -94,12 +94,14 @@ export async function notify(env, subject, text, senders = { mail: sendMail, dis
 const DISCORD_PREFIX = "https://discord.com/api/webhooks/";
 const DISCORD_MAX = 2000;
 
-// Discord の 1 メッセージ（2,000 文字まで）。本文に @everyone などがあっても誰も呼び出さない
-export function discordMessage(subject, text) {
-  const content = `**${subject}**\n${text}`;
+// Discord の 1 メッセージ（2,000 文字まで）。先頭で mentionUserId の人だけを呼び出す。
+// 本文に @everyone などがあっても、ほかの誰も呼び出さない
+export function discordMessage(subject, text, mentionUserId) {
+  const id = /^\d+$/.test(mentionUserId || "") ? mentionUserId : "";
+  const content = `${id ? `<@${id}> ` : ""}**${subject}**\n${text}`;
   return {
     content: content.length > DISCORD_MAX ? `${content.slice(0, DISCORD_MAX - 1)}…` : content,
-    allowed_mentions: { parse: [] },
+    allowed_mentions: { parse: [], users: id ? [id] : [] },
   };
 }
 
@@ -107,7 +109,7 @@ async function sendDiscord(env, subject, text) {
   // URL にトークンが入っているので、エラーにも URL は出さない
   if (!env.DISCORD_WEBHOOK_ALERT_URL.startsWith(DISCORD_PREFIX)) throw new Error("DISCORD_WEBHOOK_ALERT_URL が Discord の Webhook ではない");
   const res = await fetch(env.DISCORD_WEBHOOK_ALERT_URL, {
-    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(discordMessage(subject, text)),
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(discordMessage(subject, text, env.DISCORD_MENTION_USER_ID)),
   });
   if (!res.ok) throw new Error(`Discord ${res.status}: ${(await res.text()).slice(0, 300)}`);
 }
