@@ -5,7 +5,7 @@ kind（Mac の OrbStack）の外、Cloudflare Workers で動く外形監視。
 - 1 分ごとに `TARGETS`（taramanji.com・gws.taramanji.com/admin）を見て、**2 分続けて** 5xx・つながらない・10 秒で返らないなら「落ちています」、戻ったら「戻りました」をメールする
 - Datadog のモニターの通知（Webhook `taramanji-mail`）も受けてメールにする（VM のメモリ不足・再起動の繰り返しなど、落ちる前の兆し）
 - 送り方は予約のメールと同じ: SES の `SendRawEmail`、送信元 `noreply@taramanji.com`、宛先 `shuta.tanahashi@taramanji.com`
-- secret `DISCORD_WEBHOOK_ALERT_URL` があれば、同じ件名・本文を Discord にも送る。どちらかに届けば送れた扱い（両方失敗したときだけ次の分に送り直す）
+- secret `DISCORD_WEBHOOK_ALERT_URL` があれば、同じ件名・本文を Discord にも送る（先頭で `DISCORD_MENTION_USER_ID` の人を呼び出す）。どちらかに届けば送れた扱い（両方失敗したときだけ次の分に送り直す）
 
 Datadog の HTTP Check は kind の中の Agent が動かしているので、クラスターごと落ちると「No Data」になって知らせられない。
 2026-10-14 の障害では 0:16 に検知していたが、どのモニターにも通知先がなく、誰にも届かなかった。

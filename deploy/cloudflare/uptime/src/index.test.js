@@ -74,5 +74,12 @@ test("Discord のメッセージは 2,000 文字までで、誰も呼び出さ�
   const m = discordMessage("落ちています", "@everyone " + "あ".repeat(3000));
   assert.equal(m.content.length, 2000);
   assert.match(m.content, /^\*\*落ちています\*\*\n@everyone/);
-  assert.deepEqual(m.allowed_mentions, { parse: [] });
+  assert.deepEqual(m.allowed_mentions, { parse: [], users: [] });
+});
+
+test("DISCORD_MENTION_USER_ID の人だけを先頭で呼び出す", () => {
+  const m = discordMessage("落ちています", "@everyone 本文", "692695641549307926");
+  assert.match(m.content, /^<@692695641549307926> \*\*落ちています\*\*\n@everyone 本文$/);
+  assert.deepEqual(m.allowed_mentions, { parse: [], users: ["692695641549307926"] });
+  assert.doesNotMatch(discordMessage("s", "t", "<@everyone>").content, /<@/);
 });
