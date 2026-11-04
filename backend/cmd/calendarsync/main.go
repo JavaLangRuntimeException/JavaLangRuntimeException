@@ -44,10 +44,10 @@ func main() {
 	oauthCfg := infragw.NewOAuthConfig(env.Required("GOOGLE_CLIENT_ID"), env.Required("GOOGLE_CLIENT_SECRET"),
 		siteURL+"/api/calendar-sync/callback")
 	days, _ := strconv.Atoi(env.Optional("SYNC_DAYS", "90"))
-	// もうすぐ始まる予定の通知先。未設定なら通知しない
+	// もうすぐ始まる予定の通知先。未設定なら通知しない。DISCORD_MENTION_USER_ID の人を先頭で呼び出す
 	var notifier gateway.Notifier
 	if url := env.Optional("DISCORD_WEBHOOK_URL", ""); url != "" {
-		if notifier, err = infragw.NewDiscord(url, nil); err != nil {
+		if notifier, err = infragw.NewDiscord(url, env.Optional("DISCORD_MENTION_USER_ID", ""), nil); err != nil {
 			log.Fatal(err)
 		}
 	}
