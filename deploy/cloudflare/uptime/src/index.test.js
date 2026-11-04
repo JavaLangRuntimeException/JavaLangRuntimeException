@@ -51,12 +51,12 @@ test("Discord の Webhook がなければメールだけ、あれば両方に送
   await notify({}, "件名", "本文", senders);
   assert.deepEqual(sent, ["mail"]);
   sent.length = 0;
-  await notify({ DISCORD_WEBHOOK_URL: "https://discord.com/api/webhooks/1/x" }, "件名", "本文", senders);
+  await notify({ DISCORD_WEBHOOK_ALERT_URL: "https://discord.com/api/webhooks/1/x" }, "件名", "本文", senders);
   assert.deepEqual(sent.sort(), ["discord", "mail"]);
 });
 
 test("片方に届けば成功、両方失敗したときだけエラー（状態を進めず次の分に送り直す）", async () => {
-  const env = { DISCORD_WEBHOOK_URL: "https://discord.com/api/webhooks/1/x" };
+  const env = { DISCORD_WEBHOOK_ALERT_URL: "https://discord.com/api/webhooks/1/x" };
   const ng = async () => { throw new Error("ng"); }, ok = async () => {};
   const quiet = console.error;
   console.error = () => {};

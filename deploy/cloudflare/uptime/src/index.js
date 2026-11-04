@@ -1,5 +1,5 @@
 // 外形監視と Datadog の通知を、予約のメールと同じ SES（FROM_EMAIL）から NOTIFY_EMAIL に送る。
-// DISCORD_WEBHOOK_URL（secret）があれば、同じ内容を Discord にも送る。
+// DISCORD_WEBHOOK_ALERT_URL（secret）があれば、同じ内容を Discord にも送る。
 // kind（Mac の OrbStack）の外で動くので、クラスターごと落ちても知らせられる
 import { AwsClient } from "aws4fetch";
 
@@ -84,7 +84,7 @@ async function datadog(req, env) {
 // メールと Discord に送る。どちらかに届けば成功とする（失敗した側のために送り直すと、届いた側に同じ通知が重なる）
 export async function notify(env, subject, text, senders = { mail: sendMail, discord: sendDiscord }) {
   const channels = [["mail", senders.mail]];
-  if (env.DISCORD_WEBHOOK_URL) channels.push(["discord", senders.discord]);
+  if (env.DISCORD_WEBHOOK_ALERT_URL) channels.push(["discord", senders.discord]);
   const results = await Promise.allSettled(channels.map(([, send]) => send(env, subject, text)));
   const failed = results.flatMap((r, i) => (r.status === "rejected" ? [`${channels[i][0]}: ${r.reason?.message || r.reason}`] : []));
   if (failed.length === channels.length) throw new Error(failed.join(" / "));
@@ -105,8 +105,8 @@ export function discordMessage(subject, text) {
 
 async function sendDiscord(env, subject, text) {
   // URL にトークンが入っているので、エラーにも URL は出さない
-  if (!env.DISCORD_WEBHOOK_URL.startsWith(DISCORD_PREFIX)) throw new Error("DISCORD_WEBHOOK_URL が Discord の Webhook ではない");
-  const res = await fetch(env.DISCORD_WEBHOOK_URL, {
+  if (!env.DISCORD_WEBHOOK_ALERT_URL.startsWith(DISCORD_PREFIX)) throw new Error("DISCORD_WEBHOOK_ALERT_URL が Discord の Webhook ではない");
+  const res = await fetch(env.DISCORD_WEBHOOK_ALERT_URL, {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(discordMessage(subject, text)),
   });
   if (!res.ok) throw new Error(`Discord ${res.status}: ${(await res.text()).slice(0, 300)}`);
