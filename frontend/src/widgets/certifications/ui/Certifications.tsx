@@ -10,19 +10,18 @@ export function Certifications() {
     <Section
       id="certifications"
       title="Certification"
-      actions={
+      titleAside={
         <a
           href={CREDLY_PROFILE_URL}
           target="_blank"
           rel="noopener noreferrer"
-          aria-label={t({ ja: "Credly で取得したバッジを見る", en: "See my badges on Credly" })}
           className="group flex shrink-0 items-center gap-2 rounded-full font-mono text-[0.875rem] text-text-secondary outline-none transition-colors hover:text-text-primary focus-visible:ring-2 focus-visible:ring-border-focus-ring"
         >
           {/* ロゴは黒い画像のため、明るい丸の上に置く（トップの SNS と同じ） */}
           <span className="lift flex size-9 shrink-0 items-center justify-center rounded-full bg-text-primary">
             <img src="/credly_home.svg" alt="" className="size-5 object-contain" />
           </span>
-          <span className="underline decoration-separator-border underline-offset-[6px] transition-colors group-hover:decoration-accent-400">Credly</span>
+          <span className="underline decoration-separator-border underline-offset-[6px] transition-colors group-hover:decoration-accent-400">{t({ ja: "Credly(資格のバッジ)", en: "Credly (certification badges)" })}</span>
         </a>
       }
     >
