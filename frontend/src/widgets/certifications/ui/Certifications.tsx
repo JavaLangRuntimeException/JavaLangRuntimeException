@@ -26,16 +26,13 @@ export function Certifications() {
               href={c.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="lift group relative flex h-full w-full flex-col gap-1 overflow-hidden rounded-lg border border-separator-border bg-background-primary-default px-4 py-3.5 ps-5 outline-none hover:border-border-button-hover focus-visible:ring-2 focus-visible:ring-border-focus-ring"
+              className="lift relative flex h-full w-full flex-col gap-1 overflow-hidden rounded-lg border border-separator-border bg-background-primary-default px-4 py-3.5 ps-5 outline-none hover:border-border-button-hover focus-visible:ring-2 focus-visible:ring-border-focus-ring"
             >
               <span className={cx("absolute inset-y-0 start-0 w-1", c.color)} aria-hidden />
               <span className="text-body-semibold text-text-primary">{t(c.name)}</span>
               <span className="meta text-caption-1-regular text-text-tertiary">{t(c.issuer)}</span>
               {c.achieved && <span className="meta text-caption-1-regular text-text-secondary">{t(c.achieved)}</span>}
               <span className="mt-1 text-caption-1-regular text-text-secondary">{t(c.description)}</span>
-              <span className="mt-auto break-all pt-2 font-mono text-caption-1-regular text-text-tertiary underline decoration-separator-border underline-offset-4 transition-colors group-hover:text-text-primary group-hover:decoration-accent-400">
-                {c.href.replace(/^https:\/\//, "")}
-              </span>
             </a>
           </li>
         ))}
