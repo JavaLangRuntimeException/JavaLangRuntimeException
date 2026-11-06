@@ -9,7 +9,7 @@ const alternateContacts = [
   { label: { ja: "株式会社888", en: "888 Inc." }, email: "shuta.tanahashi@888incs.com" },
   { label: { ja: "TSKaigi", en: "TSKaigi" }, email: "tanahashi@tskaigi.org" },
   { label: { ja: "RM2CLab", en: "RM2CLab" }, email: "tanahasi@rm2c.ise.ritsumei.ac.jp" },
-  { label: { ja: "その他", en: "Other" }, email: "tanahashishuta@gmail.com" },
+  { label: { ja: "その他", en: "Other" }, email: "shuta.tanahashi@taramanji.com" },
 ];
 
 export default function ContactPage() {
