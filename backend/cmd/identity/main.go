@@ -1,4 +1,4 @@
-// identity は管理者ログイン（Google OpenID Connect）とセッションのマイクロサービス。
+// identity は管理者ログイン（Cloudflare Access）とセッションのマイクロサービス。
 // セッションは AUTH_SECRET で署名した JWT の Cookie で、各サービスは同じ鍵で検証する。
 package main
 
@@ -9,7 +9,6 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/javalangruntimeexception/taramanji/backend/internal/identity/di"
-	"github.com/javalangruntimeexception/taramanji/backend/internal/identity/domain/service"
 	"github.com/javalangruntimeexception/taramanji/backend/internal/identity/handler"
 	infragw "github.com/javalangruntimeexception/taramanji/backend/internal/identity/infra/gateway"
 	"github.com/javalangruntimeexception/taramanji/backend/internal/identity/usecase"
@@ -27,10 +26,13 @@ func main() {
 	metrics, stop := observability.Init(serviceName)
 	defer stop()
 
-	// ログインを受けるホスト（各ホストの /api/auth/callback/google を Google に登録しておく）
-	hosts := service.ParseHosts(env.Optional("LOGIN_HOSTS", "taramanji.com,www.taramanji.com,gws.taramanji.com"))
-	uc := usecase.NewIdentityUsecase(infragw.NewGoogleOIDC(env.Required("GOOGLE_CLIENT_ID"), env.Required("GOOGLE_CLIENT_SECRET")),
-		hosts, metrics, nil)
+	// ログインは Cloudflare Access だけ。Access のトークンを検証してセッションに替える
+	// （CF_ACCESS_AUD は、その環境の /admin を守る Access アプリの AUD。カンマ区切りで複数）
+	access, err := infragw.NewCloudflareAccess(env.Required("CF_ACCESS_TEAM_DOMAIN"), env.Required("CF_ACCESS_AUD"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	uc := usecase.NewIdentityUsecase(access, metrics, nil)
 	handlers := di.NewHandlers(uc)
 	authHTTP := handler.NewAuthHandlers(uc, env.AppEnv() != "local")
 

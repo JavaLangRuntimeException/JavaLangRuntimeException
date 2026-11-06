@@ -1,16 +1,19 @@
-// Package gateway はログインに使う Google OpenID Connect の抽象。
+// Package gateway は管理者のログインに使う Cloudflare Access の抽象。
 package gateway
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
-// Profile は Google で確認したユーザー（メールアドレスは確認済みのものだけ）
-type Profile struct {
-	Email   string
-	Name    string
-	Picture string
+// Identity は Cloudflare Access が確かめた利用者（Access のログインを通ったメールアドレス）
+type Identity struct {
+	Email string
+	// Expiry は Access のトークンの有効期限。セッションもこれより長くしない
+	Expiry time.Time
 }
 
-type OIDC interface {
-	AuthURL(redirectURI, state, codeChallenge string) string
-	Exchange(ctx context.Context, redirectURI, code, verifier string) (*Profile, error)
+// AccessVerifier は Cloudflare Access のトークン（Cf-Access-Jwt-Assertion / CF_Authorization）を検証する
+type AccessVerifier interface {
+	Verify(ctx context.Context, token string) (*Identity, error)
 }

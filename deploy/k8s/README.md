@@ -189,13 +189,18 @@ python3 deploy/cloudflare/access.py <API トークンのファイル>
 
 Access の Google ログインには、同じ OAuth クライアントのリダイレクト URI に `https://solitary-sun-32e2.cloudflareaccess.com/cdn-cgi/access/callback` が要る。
 
-Google の OAuth クライアント（taramanji-calendar-sync）の「承認済みのリダイレクト URI」。ログインは identity の `LOGIN_HOSTS` のホストごと、カレンダー同期は calendarsync の `AUTH_URL`（gws）に要る:
+管理画面のログインは Cloudflare Access だけ。identity は Access のトークン（`Cf-Access-Jwt-Assertion` / `CF_Authorization`）を検証してセッションに替える。
+環境ごとの Access アプリの AUD を identity の `CF_ACCESS_AUD` に入れる（本番は base、stg・dev01〜03 は各 overlay）。
+本番の `/api/auth/signin/access` も `taramanji-admin` に入れてある（access.py）ので、アプリを足し直したら AUD を確かめる。
+
+Google の OAuth クライアント（taramanji-calendar-sync）の「承認済みのリダイレクト URI」。カレンダー同期は calendarsync の `AUTH_URL`（gws）に要る
+（`/api/auth/callback/google` は管理画面のログインに使っていたもの。今は使わないので消してよい）:
 
 | 環境 | リダイレクト URI |
 | --- | --- |
-| 本番 | `https://taramanji.com/api/auth/callback/google`・`https://www.taramanji.com/api/auth/callback/google`・`https://gws.taramanji.com/api/auth/callback/google`・`https://gws.taramanji.com/api/calendar-sync/callback` |
-| stg | `https://stg.taramanji.com/api/auth/callback/google`・`https://stg-gws.taramanji.com/api/auth/callback/google`・`https://stg-gws.taramanji.com/api/calendar-sync/callback` |
-| dev01〜03 | `https://devNN.taramanji.com/api/auth/callback/google`・`https://devNN-gws.taramanji.com/api/auth/callback/google`・`https://devNN-gws.taramanji.com/api/calendar-sync/callback`（NN = 01〜03） |
+| 本番 | `https://gws.taramanji.com/api/calendar-sync/callback` |
+| stg | `https://stg-gws.taramanji.com/api/calendar-sync/callback` |
+| dev01〜03 | `https://devNN-gws.taramanji.com/api/calendar-sync/callback`（NN = 01〜03） |
 
 ## よく使う操作
 
