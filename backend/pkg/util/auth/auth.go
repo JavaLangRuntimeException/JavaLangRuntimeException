@@ -44,12 +44,22 @@ func secret() ([]byte, error) {
 
 // Sign はログイン成功時にセッションの JWT を作る
 func Sign(u User, now time.Time) (string, error) {
+	return SignUntil(u, now, time.Time{})
+}
+
+// SignUntil は期限を until までに縮めたセッションの JWT を作る（ゼロ値なら SessionTTL）。
+// Cloudflare Access のトークンの期限より長いセッションを作らないために使う
+func SignUntil(u User, now, until time.Time) (string, error) {
 	key, err := secret()
 	if err != nil {
 		return "", err
 	}
+	exp := now.Add(SessionTTL)
+	if !until.IsZero() && until.Before(exp) {
+		exp = until
+	}
 	c := claims{User: u, RegisteredClaims: jwt.RegisteredClaims{
-		Subject: u.Email, IssuedAt: jwt.NewNumericDate(now), ExpiresAt: jwt.NewNumericDate(now.Add(SessionTTL)),
+		Subject: u.Email, IssuedAt: jwt.NewNumericDate(now), ExpiresAt: jwt.NewNumericDate(exp),
 	}}
 	return jwt.NewWithClaims(jwt.SigningMethodHS256, c).SignedString(key)
 }

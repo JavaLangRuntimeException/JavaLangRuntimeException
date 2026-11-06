@@ -2,44 +2,46 @@ package usecase
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/javalangruntimeexception/taramanji/backend/internal/identity/domain/gateway"
-	"github.com/javalangruntimeexception/taramanji/backend/internal/identity/domain/service"
 	"github.com/javalangruntimeexception/taramanji/backend/pkg/util/auth"
 	"github.com/javalangruntimeexception/taramanji/backend/pkg/util/observability"
 )
 
-type fakeOIDC struct{ email string }
-
-func (f fakeOIDC) AuthURL(redirect, state, challenge string) string {
-	return "https://accounts.google.com/auth?redirect_uri=" + redirect + "&state=" + state
-}
-func (f fakeOIDC) Exchange(context.Context, string, string, string) (*gateway.Profile, error) {
-	return &gateway.Profile{Email: f.email, Name: "Shuta"}, nil
+type fakeAccess struct {
+	email  string
+	expiry time.Time
+	err    error
 }
 
-func TestLoginFlow(t *testing.T) {
+func (f fakeAccess) Verify(_ context.Context, token string) (*gateway.Identity, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	return &gateway.Identity{Email: f.email, Expiry: f.expiry}, nil
+}
+
+func TestLoginWithAccess(t *testing.T) {
 	t.Setenv("AUTH_SECRET", strings.Repeat("s", 40))
 	t.Setenv("ADMIN_EMAIL", "admin@taramanji.com")
-	hosts := service.ParseHosts("taramanji.com")
 	ctx := context.Background()
+	now := time.Date(2026, 11, 7, 0, 0, 0, 0, time.UTC)
+	clock := func() time.Time { return now }
+	accessExp := now.Add(24 * time.Hour)
 
-	uc := NewIdentityUsecase(fakeOIDC{email: "Admin@taramanji.com"}, hosts, observability.Noop{}, nil)
-	if _, _, err := uc.BeginLogin("evil.example.com", true, "/admin"); err != ErrUnknownHost {
+	uc := NewIdentityUsecase(fakeAccess{email: "Admin@taramanji.com", expiry: accessExp}, observability.Noop{}, clock)
+
+	// Access のトークンが無い（Access を通っていない）
+	if _, err := uc.LoginWithAccess(ctx, "", "/admin"); !errors.Is(err, ErrNoAccessToken) {
 		t.Fatalf("err %v", err)
 	}
-	target, flow, err := uc.BeginLogin("taramanji.com", true, "https://evil.example.com/x")
-	if err != nil || !strings.Contains(target, "redirect_uri=https://taramanji.com/api/auth/callback/google") || flow.Callback != "/x" {
-		t.Fatalf("target %s flow %+v err %v", target, flow, err)
-	}
-	// state が違えば拒否
-	res, _ := uc.FinishLogin(ctx, "taramanji.com", true, flow, "forged", "code", "")
-	if res.Token != "" || res.Redirect != "/admin/login?error=AccessDenied" {
-		t.Fatalf("res %+v", res)
-	}
-	res, err = uc.FinishLogin(ctx, "taramanji.com", true, flow, flow.State, "code", "")
+
+	// 外のサイトへは戻さない
+	res, err := uc.LoginWithAccess(ctx, "token", "https://evil.example.com/x")
 	if err != nil || res.Token == "" || res.Redirect != "/x" {
 		t.Fatalf("res %+v err %v", res, err)
 	}
@@ -48,11 +50,16 @@ func TestLoginFlow(t *testing.T) {
 		t.Fatalf("user %+v %v", u, err)
 	}
 
-	// 許可されていないアカウント
-	other := NewIdentityUsecase(fakeOIDC{email: "someone@gmail.com"}, hosts, observability.Noop{}, nil)
-	_, flow2, _ := other.BeginLogin("taramanji.com", true, "")
-	res, _ = other.FinishLogin(ctx, "taramanji.com", true, flow2, flow2.State, "code", "")
-	if res.Token != "" || !strings.Contains(res.Redirect, "AccessDenied") {
-		t.Fatalf("res %+v", res)
+	// 検証に失敗したトークン
+	bad := NewIdentityUsecase(fakeAccess{err: errors.New("bad signature")}, observability.Noop{}, clock)
+	if _, err := bad.LoginWithAccess(ctx, "token", "/admin"); err == nil {
+		t.Fatal("want error")
+	}
+
+	// Access は通ったが ADMIN_EMAIL ではないアカウント
+	other := NewIdentityUsecase(fakeAccess{email: "someone@gmail.com", expiry: accessExp}, observability.Noop{}, clock)
+	res, err = other.LoginWithAccess(ctx, "token", "/admin")
+	if err != nil || res.Token != "" || res.Redirect != "/admin/login?error=AccessDenied" {
+		t.Fatalf("res %+v err %v", res, err)
 	}
 }
