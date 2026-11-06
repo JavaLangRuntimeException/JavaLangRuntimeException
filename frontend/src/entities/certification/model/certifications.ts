@@ -17,7 +17,7 @@ export type Certification = {
 
 export const certifications: Certification[] = [
   {
-    name: { ja: "AWS 認定ソリューションアーキテクト – アソシエイト", en: "AWS Certified Solutions Architect – Associate" },
+    name: { ja: "AWS 認定ソリューションアーキテクト – アソシエイト(SAA-C03)", en: "AWS Certified Solutions Architect – Associate (SAA-C03)" },
     issuer: { ja: "Amazon Web Services", en: "Amazon Web Services" },
     description: {
       ja: "AWS 上で、可用性・性能・コスト・セキュリティを満たすシステムを設計できることを認定する資格。",
