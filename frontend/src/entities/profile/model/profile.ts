@@ -12,7 +12,7 @@ export const socialLinks: SocialLink[] = [
   {
     href: "https://twitter.com/javalangruntime",
     imgSrc: "/x_home.png",
-    label: "X (Twitter)",
+    label: "X",
   },
   {
     href: "https://www.instagram.com/manjiin773tara/",

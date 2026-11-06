@@ -7,18 +7,25 @@ import { cx } from "@/utils/cx";
 export function Certifications() {
   const t = useT();
   return (
-    <Section id="certifications" title="Certification">
-      <p className="text-body-2-regular text-text-secondary">
-        {t({ ja: "取得したバッジは Credly で確認できます: ", en: "My badges are verified on Credly: " })}
+    <Section
+      id="certifications"
+      title="Certification"
+      actions={
         <a
           href={CREDLY_PROFILE_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="break-all font-mono text-text-primary underline decoration-separator-border underline-offset-[6px] outline-none transition-colors hover:decoration-accent-400 focus-visible:ring-2 focus-visible:ring-border-focus-ring"
+          aria-label={t({ ja: "Credly で取得したバッジを見る", en: "See my badges on Credly" })}
+          className="group flex shrink-0 items-center gap-2 rounded-full font-mono text-[0.875rem] text-text-secondary outline-none transition-colors hover:text-text-primary focus-visible:ring-2 focus-visible:ring-border-focus-ring"
         >
-          {CREDLY_PROFILE_URL}
+          {/* ロゴは黒い画像のため、明るい丸の上に置く（トップの SNS と同じ） */}
+          <span className="lift flex size-9 shrink-0 items-center justify-center rounded-full bg-text-primary">
+            <img src="/credly_home.svg" alt="" className="size-5 object-contain" />
+          </span>
+          <span className="underline decoration-separator-border underline-offset-[6px] transition-colors group-hover:decoration-accent-400">Credly</span>
         </a>
-      </p>
+      }
+    >
       <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
         {certifications.map((c) => (
           <li key={c.href}>
