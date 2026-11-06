@@ -88,7 +88,7 @@ export function ProfileHero() {
             Community Director
           </p>
         </motion.div>
-        <motion.ul {...fade(2.1)} className="mt-3 flex flex-wrap items-center justify-center gap-x-5 gap-y-3 sm:justify-start" aria-label="SNS">
+        <motion.ul {...fade(2.1)} className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-3 sm:justify-start" aria-label="SNS">
           {socialLinks.map((s) => (
             <li key={s.label}>
               <a
