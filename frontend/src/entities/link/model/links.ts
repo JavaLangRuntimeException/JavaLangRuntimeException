@@ -57,6 +57,14 @@ export const linkCards: LinkCard[] = [
     description: "Profile",
     backText: { ja: "つながりましょう", en: "Let's connect" },
   },
+  // Credly
+  {
+    href: "https://www.credly.com/users/javalangruntimeexception",
+    imgSrc: "/credly.svg",
+    title: "Credly",
+    description: "@javalangruntimeexception",
+    backText: { ja: "取得した資格のバッジ", en: "Badges for my certifications" },
+  },
   // Qiita
   {
     href: "/blogs",

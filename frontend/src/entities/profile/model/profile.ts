@@ -30,6 +30,11 @@ export const socialLinks: SocialLink[] = [
     label: "LinkedIn",
   },
   {
+    href: "https://www.credly.com/users/javalangruntimeexception",
+    imgSrc: "/credly_home.svg",
+    label: "Credly",
+  },
+  {
     href: "https://orcid.org/0009-0005-4751-648X",
     imgSrc: "/ORCID_home.png",
     label: "ORCID",

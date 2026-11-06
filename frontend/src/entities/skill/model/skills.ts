@@ -153,17 +153,4 @@ export const skills: Skill[] = [
             en: ["On-location photography", "Portrait", "Event photography", "Photo editing", "Lightroom Classic"],
         },
     },
-    {
-        title: "Certification",
-        short: { ja: "取得した資格", en: "Certifications I hold" },
-        description: {
-            ja: "ITパスポート/情報セキュリティマネジメント試験/基本情報技術者試験/応用情報技術者試験",
-            en: "IT Passport / Information Security Management / Fundamental Information Technology Engineer / Applied Information Technology Engineer Examinations",
-        },
-        color: "bg-stone-700",
-        tags: {
-            ja: ["ITパスポート", "情報セキュリティマネジメント", "基本情報技術者", "応用情報技術者"],
-            en: ["IT Passport", "Information Security Management", "Fundamental Information Technology Engineer", "Applied Information Technology Engineer"],
-        },
-    },
 ];

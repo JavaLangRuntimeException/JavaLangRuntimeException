@@ -1,4 +1,5 @@
 import { AffiliationBadges } from "@/widgets/affiliations";
+import { Certifications } from "@/widgets/certifications";
 import { ConnpassEventCards } from "@/widgets/connpass-events";
 import { NavCards } from "@/widgets/nav-cards";
 import { OrcidWorks } from "@/widgets/orcid-works";
@@ -25,6 +26,7 @@ export default function HomePage() {
       </div>
       <div className="mt-4 flex flex-col">
         <AffiliationBadges />
+        <Certifications />
         <SkillBadges />
         <ConnpassEventCards />
         <OrcidWorks />
