@@ -10,7 +10,7 @@ taramanji.com のバックエンド。Go + DDD + クリーンアーキテクチ�
 - **API スタイル**: Connect（connect-go）。1 つのハンドラで **gRPC / gRPC-Web / Connect（JSON over HTTP）** を受ける
   - ブラウザ → Envoy Gateway → 各サービス: Connect（フロントは connect-es）
   - サービス間: gRPC（h2c）。`pkg/util/server.InternalHTTPClient()` + `InternalClientOptions()`（`connect.WithGRPC()`）
-  - ブラウザのリダイレクトや sendBeacon を受ける口だけは素の HTTP ハンドラ（OAuth の `/api/auth/*`・`/api/calendar-sync/connect|callback`・`/api/metrics/pageview`）。URL は旧 Next.js と同じで、Google に登録済みのリダイレクト URI を変えない
+  - ブラウザのリダイレクトや sendBeacon を受ける口だけは素の HTTP ハンドラ（ログインの `/api/auth/*`・`/api/calendar-sync/connect|callback`・`/api/metrics/pageview`）。URL は旧 Next.js と同じで、Google に登録済みのリダイレクト URI を変えない
 - **Proto**: Protocol Buffers + buf。`proto/taramanji/<context>/v1/*.proto`
 - **コード生成**: `protoc-gen-go` + `protoc-gen-connect-go`（`gen/`）と、独自の `mss-protoc-gen`（`cmd/mss-protoc-gen/`）。buf.gen.yaml の opt:
   - `go_module=github.com/javalangruntimeexception/taramanji/backend`（`module=` は protogen の予約語なので使わない）
@@ -58,7 +58,7 @@ taramanji.com のバックエンド。Go + DDD + クリーンアーキテクチ�
 
 | サービス | 公開 | 担当 |
 | --- | --- | --- |
-| identity | Connect + HTTP `/api/auth/*` | Google ログイン、セッション |
+| identity | Connect + HTTP `/api/auth/*` | 管理者ログイン（Cloudflare Access のトークンを検証してセッションに替える）、セッション |
 | notification | **内部 gRPC のみ** | SES でメール送信 |
 | inquiry | Connect | お問い合わせ・アンケート・管理者メール → notification |
 | reservation | Connect | 予約（Google Calendar API。サービスアカウントがドメイン全体の委任で `GCAL_SA_SUBJECT` になりかわる）、空き時間（iCal）、Google マップ → worklocation |

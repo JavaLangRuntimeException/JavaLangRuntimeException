@@ -80,7 +80,7 @@ patches:
       - op: replace
         path: /spec/rules/0/filters/0/requestRedirect/hostname
         value: dev02.taramanji.com
-  # ログインを受けるホストと、カレンダー同期の戻り先
+  # ログインを受け付ける Cloudflare Access のアプリと、カレンダー同期の戻り先
   # 名前で書き換える（番号で指すと、env を足したときに別の項目を上書きしてしまう）
   - patch: |-
       apiVersion: apps/v1
@@ -92,7 +92,7 @@ patches:
             containers:
               - name: app
                 env:
-                  - { name: LOGIN_HOSTS, value: "dev02.taramanji.com,dev02-gws.taramanji.com" }
+                  - { name: CF_ACCESS_AUD, value: "ecdef4096f79796a1453ea3e665563cb55cf02b6720fd75ee2f60f2bb5c000a5" }  # taramanji-dev02（Access アプリ）
   - patch: |-
       apiVersion: apps/v1
       kind: Deployment

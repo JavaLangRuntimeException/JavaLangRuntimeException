@@ -1,4 +1,4 @@
-// Package service はログインのドメインルール（戻り先とホストの検証）。
+// Package service はログインのドメインルール（戻り先の検証）。
 package service
 
 import (
@@ -22,30 +22,4 @@ func SafeCallback(raw, fallback string) string {
 		return fallback
 	}
 	return raw
-}
-
-// Hosts はログインを受け付けるホスト（Google の OAuth クライアントにリダイレクト URI を登録したもの）
-type Hosts map[string]bool
-
-func ParseHosts(csv string) Hosts {
-	h := Hosts{}
-	for _, s := range strings.Split(csv, ",") {
-		if s = strings.ToLower(strings.TrimSpace(s)); s != "" {
-			h[s] = true
-		}
-	}
-	return h
-}
-
-// RedirectURI はリクエストのホストに対応するコールバック URL。登録外のホストなら空
-func (h Hosts) RedirectURI(host string, secure bool) string {
-	host = strings.ToLower(host)
-	if !h[host] {
-		return ""
-	}
-	scheme := "https"
-	if !secure {
-		scheme = "http"
-	}
-	return scheme + "://" + host + "/api/auth/callback/google"
 }

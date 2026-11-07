@@ -13,6 +13,8 @@ export type Certification = {
   color: string;
   /** 合格・取得した日（受験日）。出さないものは省く */
   achieved?: L10n;
+  /** カードの背景に薄く敷くバッジの画像（public 配下） */
+  badge?: string;
 };
 
 export const certifications: Certification[] = [
@@ -26,6 +28,7 @@ export const certifications: Certification[] = [
     href: "https://aws.amazon.com/certification/certified-solutions-architect-associate/",
     achieved: { ja: "2026年11月6日 取得", en: "Earned Nov 6, 2026" },
     color: "bg-amber-700",
+    badge: "/badge_aws_saa.png",
   },
   {
     name: { ja: "応用情報技術者試験(AP)", en: "Applied Information Technology Engineer Examination (AP)" },

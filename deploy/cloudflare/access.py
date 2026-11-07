@@ -34,8 +34,11 @@ APPS = {
     "taramanji-dev03": ["dev03.taramanji.com", "dev03-gws.taramanji.com"],
     "taramanji-stg": ["stg.taramanji.com", "stg-gws.taramanji.com"],
     # 本番の管理画面。画面のログインの前に Cloudflare で止める（/admin 配下と、gws の管理画面）
+    # /api/auth/signin/access は管理画面のログイン（Access のトークンをアプリのセッションに替える口）。Access を通してトークンを付けさせる
     "taramanji-admin": ["taramanji.com/admin", "taramanji.com/admin/*", "www.taramanji.com/admin", "www.taramanji.com/admin/*",
-                        "gws.taramanji.com/admin", "gws.taramanji.com/admin/*"],
+                        "gws.taramanji.com/admin", "gws.taramanji.com/admin/*",
+                        "taramanji.com/api/auth/signin/access", "www.taramanji.com/api/auth/signin/access",
+                        "gws.taramanji.com/api/auth/signin/access"],
     # Argo Rollouts の画面（本番のカナリアの Promote / Abort）。画面自体にログインがないので必ずここで守る
     "taramanji-rollouts": ["rollouts.taramanji.com"],
 }

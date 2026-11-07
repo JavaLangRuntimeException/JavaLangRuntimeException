@@ -70,7 +70,10 @@ spec:
             # GC をメモリ上限に合わせる（OOMKill の前に GC が頑張る）
             - name: GOMEMLIMIT
               valueFrom: { resourceFieldRef: { resource: limits.memory } }
-            - { name: LOGIN_HOSTS, value: "taramanji.com,www.taramanji.com,gws.taramanji.com" }
+            # ログインは Cloudflare Access だけ。Access のトークンを検証する（AUD はその環境の /admin を守る Access アプリのもの。
+            # 公開してよい値。deploy/cloudflare/access.py が作るアプリの「Application Audience (AUD) Tag」）
+            - { name: CF_ACCESS_TEAM_DOMAIN, value: solitary-sun-32e2.cloudflareaccess.com }
+            - { name: CF_ACCESS_AUD, value: "cc37290c08a0e914c88c08184a317648b6353dbb2ec94538944458c021f9e53d" }  # taramanji-admin
           envFrom:
             - secretRef: { name: identity-env }
           startupProbe:

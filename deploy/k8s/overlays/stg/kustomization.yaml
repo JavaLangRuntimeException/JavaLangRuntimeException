@@ -71,7 +71,7 @@ patches:
       - op: replace
         path: /spec/rules/0/filters/0/requestRedirect/hostname
         value: stg.taramanji.com
-  # ログインを受けるホストと、カレンダー同期の戻り先
+  # ログインを受け付ける Cloudflare Access のアプリと、カレンダー同期の戻り先
   # 名前で書き換える（番号で指すと、env を足したときに別の項目を上書きしてしまう）
   - patch: |-
       apiVersion: apps/v1
@@ -83,7 +83,7 @@ patches:
             containers:
               - name: app
                 env:
-                  - { name: LOGIN_HOSTS, value: "stg.taramanji.com,stg-gws.taramanji.com" }
+                  - { name: CF_ACCESS_AUD, value: "02959ac7e5c5f24ee262b1fb9d5e4ea06eefaa5dec631b737f8e6af3fa655e81" }  # taramanji-stg（Access アプリ）
   - patch: |-
       apiVersion: apps/v1
       kind: Deployment
