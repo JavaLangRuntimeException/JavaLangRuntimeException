@@ -11,7 +11,7 @@ export function Certifications() {
     <Section
       id="certifications"
       title="Certification"
-      actions={
+      titleAside={
         // 見出しの横の Credly も、中身と同じく文字が記号から定まって出る
         <DecodeReveal className="shrink-0">
           <a
@@ -25,7 +25,7 @@ export function Certifications() {
             <span className="lift flex size-9 shrink-0 items-center justify-center rounded-full bg-text-primary">
               <img src="/credly_home.svg" alt="" className="size-5 object-contain" />
             </span>
-            <span className="underline decoration-separator-border underline-offset-[6px] transition-colors group-hover:decoration-accent-400">Credly</span>
+            <span className="underline decoration-separator-border underline-offset-[6px] transition-colors group-hover:decoration-accent-400">{t({ ja: "Credly(資格のバッジ)", en: "Credly (certification badges)" })}</span>
           </a>
         </DecodeReveal>
       }
