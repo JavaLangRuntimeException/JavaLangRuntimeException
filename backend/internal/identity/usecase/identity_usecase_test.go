@@ -29,7 +29,7 @@ func TestLoginWithAccess(t *testing.T) {
 	t.Setenv("AUTH_SECRET", strings.Repeat("s", 40))
 	t.Setenv("ADMIN_EMAIL", "admin@taramanji.com")
 	ctx := context.Background()
-	now := time.Date(2026, 11, 7, 0, 0, 0, 0, time.UTC)
+	now := time.Now().UTC()
 	clock := func() time.Time { return now }
 	accessExp := now.Add(24 * time.Hour)
 

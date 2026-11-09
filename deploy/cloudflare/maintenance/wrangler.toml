@@ -1,0 +1,14 @@
+# オリジン（Cloudflare Tunnel → 自宅の kind）が落ちているときだけ「メンテナンス中」の画面を返す。
+# 動いているときは素通し。入れ方は deploy/cloudflare/maintenance/README.md
+name = "taramanji-maintenance"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+account_id = "f952fdc8cd122331a587b1ff4fdac99d"
+workers_dev = false
+
+# 本番の公開ホストだけ（dev・stg は Access の内側なので Cloudflare のエラー画面のままでよい）
+routes = [
+  { pattern = "taramanji.com/*", zone_name = "taramanji.com" },
+  { pattern = "www.taramanji.com/*", zone_name = "taramanji.com" },
+  { pattern = "gws.taramanji.com/*", zone_name = "taramanji.com" },
+]
