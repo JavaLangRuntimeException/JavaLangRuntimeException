@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { discordMessage, next, notify, probe, rawMessage } from "./index.js";
+import { discordMessage, discordText, next, notify, plainText, probe, rawMessage } from "./index.js";
 
 const ok = { ok: true }, ng = { ok: false };
 
@@ -82,4 +82,44 @@ test("DISCORD_MENTION_USER_ID の人だけを先頭で呼び出す", () => {
   assert.match(m.content, /^<@692695641549307926> \*\*落ちています\*\*\n@everyone 本文$/);
   assert.deepEqual(m.allowed_mentions, { parse: [], users: ["692695641549307926"] });
   assert.doesNotMatch(discordMessage("s", "t", "<@everyone>").content, /<@/);
+});
+
+// Datadog の $EVENT_MSG の形
+const DD = [
+  "%%%",
+  "Redis のメモリが maxmemory の 85% です。",
+  "",
+  "[![Metric Graph](https://p.datadoghq.com/snapshot/x.png)](https://app.datadoghq.com/monitors/1)",
+  "",
+  "**avg:redis.mem.used** was **> 80** on average during the **last 10m**.",
+  "",
+  "- - -",
+  "",
+  "[[Monitor Status](https://app.datadoghq.com/monitors/1)] · [[Edit Monitor](https://app.datadoghq.com/monitors/1/edit)]",
+  "%%%",
+].join("\n");
+
+test("メールでは Datadog の Markdown を普通の文にする", () => {
+  const t = plainText(DD);
+  assert.doesNotMatch(t, /%%%|\*\*|\]\(|- - -/);
+  assert.match(t, /^Redis のメモリ/);
+  assert.match(t, /Metric Graph: https:\/\/app\.datadoghq\.com\/monitors\/1\n/);
+  assert.match(t, /avg:redis\.mem\.used was > 80 on average during the last 10m\./);
+  assert.match(t, /\n─+\n/);
+  assert.match(t, /Monitor Status: https:\/\/app\.datadoghq\.com\/monitors\/1 · Edit Monitor: https:\/\/app\.datadoghq\.com\/monitors\/1\/edit$/);
+});
+
+test("Discord では区切り線を箇条書きにせず、リンクはプレビューを出さない", () => {
+  const t = discordText(DD);
+  assert.doesNotMatch(t, /%%%|^\s*- /m);
+  assert.match(t, /\n─+\n/);
+  assert.match(t, /\[Metric Graph\]\(<https:\/\/app\.datadoghq\.com\/monitors\/1>\)/);
+  assert.match(t, /\*\*> 80\*\*/);
+  assert.match(t, /^\[Monitor Status\]\(<https:\/\/app\.datadoghq\.com\/monitors\/1>\) · \[Edit Monitor\]\(<https:\/\/app\.datadoghq\.com\/monitors\/1\/edit>\)$/m);
+});
+
+test("外形監視の文はそのまま送る", () => {
+  const s = "https://taramanji.com/ に 2 分続けてつながりません（HTTP 502）。\n\n確認: kubectl get pods -A / cloudflared";
+  assert.equal(plainText(s), s);
+  assert.equal(discordText(s), s);
 });

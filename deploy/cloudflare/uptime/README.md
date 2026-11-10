@@ -60,6 +60,7 @@ curl -fsS -X POST "$URL/datadog" -H "X-Webhook-Token: $(cat ../../k8s/secrets/pr
 
 ## 変えるとき
 
+- main にマージすると GitHub Actions（`.github/workflows/cloudflare.yml`）がテストして `wrangler deploy` する（変わった Worker だけ。手で出すときは Actions の「Run workflow」）。PR ではテストと `--dry-run` だけ
 - 見る URL・しきい値・宛先は `wrangler.toml` の `[vars]`。変えたら `npx wrangler deploy`
 - 動きを見る: `npx wrangler tail`
 - テスト: `npm test`（状態の進み方・5xx の判定・メールの組み立て）
