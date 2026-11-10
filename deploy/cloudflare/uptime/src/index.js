@@ -76,16 +76,39 @@ async function datadog(req, env) {
   }
   const body = await req.json().catch(() => ({}));
   const title = String(body.title || "Datadog のアラート").slice(0, 200);
-  const text = [body.message, body.link && `Datadog: ${body.link}`].filter(Boolean).join("\n\n");
+  const text = [body.message, body.link && `[Datadog で開く](${body.link})`].filter(Boolean).join("\n\n");
   await notify(env, `【taramanji】${title}`, text || title);
   return new Response("ok");
 }
 
+// Datadog の $EVENT_MSG は %%% で囲んだ Markdown で、末尾に「- - -」と [[Monitor Status](url)] · [[Edit Monitor](url)] … が付く。
+// メール（text/plain）と Discord ではそのままだと崩れる（「- - -」は Discord では箇条書きになる）ので、送り先ごとに直す
+const HR = "────────────";
+const lines = (md, f) => md.split(/\r?\n/).filter((l) => l.trim() !== "%%%").map(f).join("\n").trim();
+const isHr = (l) => /^\s*([-*_]\s*){3,}$/.test(l);
+
+// メール用: リンクは「文字: URL」、太字の ** は外す
+export function plainText(md) {
+  return lines(md, (l) => isHr(l) ? HR : l
+    .replace(/\[!\[([^\]]*)\]\([^)]*\)\]\(([^)]+)\)/g, "$1: $2")
+    .replace(/\[\[([^\]]+)\]\(([^)]+)\)\]/g, "$1: $2")
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1: $2")
+    .replace(/\*\*(.+?)\*\*/g, "$1"));
+}
+
+// Discord 用: 画像はリンクにし、リンクは <url> でプレビューを出さない
+export function discordText(md) {
+  return lines(md, (l) => isHr(l) ? HR : l
+    .replace(/\[!\[([^\]]*)\]\([^)]*\)\]\(([^)]+)\)/g, "[$1](<$2>)")
+    .replace(/\[\[([^\]]+)\]\(([^)]+)\)\]/g, "[$1](<$2>)")
+    .replace(/\[([^\]]+)\]\((?!<)([^)]+)\)/g, "[$1](<$2>)"));
+}
+
 // メールと Discord に送る。どちらかに届けば成功とする（失敗した側のために送り直すと、届いた側に同じ通知が重なる）
 export async function notify(env, subject, text, senders = { mail: sendMail, discord: sendDiscord }) {
-  const channels = [["mail", senders.mail]];
-  if (env.DISCORD_WEBHOOK_ALERT_URL) channels.push(["discord", senders.discord]);
-  const results = await Promise.allSettled(channels.map(([, send]) => send(env, subject, text)));
+  const channels = [["mail", senders.mail, plainText]];
+  if (env.DISCORD_WEBHOOK_ALERT_URL) channels.push(["discord", senders.discord, discordText]);
+  const results = await Promise.allSettled(channels.map(([, send, format]) => send(env, subject, format(text))));
   const failed = results.flatMap((r, i) => (r.status === "rejected" ? [`${channels[i][0]}: ${r.reason?.message || r.reason}`] : []));
   if (failed.length === channels.length) throw new Error(failed.join(" / "));
   for (const f of failed) console.error(f);

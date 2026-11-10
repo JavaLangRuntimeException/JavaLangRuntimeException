@@ -23,6 +23,7 @@ npm test
 npx wrangler deploy
 ```
 
+- main にマージすると GitHub Actions（`.github/workflows/cloudflare.yml`）がテストして `wrangler deploy` する（変わった Worker だけ。手で出すときは Actions の「Run workflow」）。PR ではテストと `--dry-run` だけ
 - 画面の見た目を確かめる: `node -e 'import("./src/page.js").then(m=>process.stdout.write(m.MAINTENANCE_HTML))' > /tmp/maintenance.html` を作ってブラウザで開く
 - 本番で出ているかは応答ヘッダー `X-Taramanji-Maintenance: 1` と `X-Origin-Status`（元の状態）で分かる
 - 止めるとき（素通しも含めて外す）: `npx wrangler delete`、またはダッシュボードの Workers Routes から外す
