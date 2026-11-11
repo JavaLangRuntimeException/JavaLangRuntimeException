@@ -68,6 +68,7 @@ patches:
               - name: app
                 env:
                   - { name: CLOUD_ENV, value: dev }
+                  - { name: HOST_SUFFIX, value: "-cloud-dev.taramanji.com" }
                   - { name: APP_ENV, value: dev }
                   - { name: APPS_NAMESPACE, value: cloud-dev-apps }
   - target: { kind: NetworkPolicy, name: to-cloud-storage }

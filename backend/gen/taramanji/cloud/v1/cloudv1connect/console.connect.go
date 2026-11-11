@@ -103,6 +103,9 @@ const (
 	// ConsoleServiceDeleteDatabaseProcedure is the fully-qualified name of the ConsoleService's
 	// DeleteDatabase RPC.
 	ConsoleServiceDeleteDatabaseProcedure = "/taramanji.cloud.v1.ConsoleService/DeleteDatabase"
+	// ConsoleServiceListDeploymentsProcedure is the fully-qualified name of the ConsoleService's
+	// ListDeployments RPC.
+	ConsoleServiceListDeploymentsProcedure = "/taramanji.cloud.v1.ConsoleService/ListDeployments"
 	// ConsoleServiceSyncAlertsProcedure is the fully-qualified name of the ConsoleService's SyncAlerts
 	// RPC.
 	ConsoleServiceSyncAlertsProcedure = "/taramanji.cloud.v1.ConsoleService/SyncAlerts"
@@ -148,6 +151,9 @@ type ConsoleServiceClient interface {
 	CreateDatabase(context.Context, *connect.Request[v1.CreateDatabaseRequest]) (*connect.Response[v1.CreateDatabaseResponse], error)
 	// どの関数にもつながれていないデータベースだけ消せる。中身は残る（ログインだけ止める）
 	DeleteDatabase(context.Context, *connect.Request[v1.DeleteDatabaseRequest]) (*connect.Response[v1.DeleteDatabaseResponse], error)
+	// ---- デプロイの様子 ----
+	// コントローラー（デプロイヤー）が、リポジトリの YAML をクラスターに入れた結果と履歴（Argo CD は使わない）
+	ListDeployments(context.Context, *connect.Request[v1.ListDeploymentsRequest]) (*connect.Response[v1.ListDeploymentsResponse], error)
 	// リポジトリの YAML に合わせて、Datadog のモニターを作り直す（git に直接 push したあとに呼ぶ）
 	SyncAlerts(context.Context, *connect.Request[v1.SyncAlertsRequest]) (*connect.Response[v1.SyncAlertsResponse], error)
 }
@@ -307,6 +313,12 @@ func NewConsoleServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 			connect.WithSchema(consoleServiceMethods.ByName("DeleteDatabase")),
 			connect.WithClientOptions(opts...),
 		),
+		listDeployments: connect.NewClient[v1.ListDeploymentsRequest, v1.ListDeploymentsResponse](
+			httpClient,
+			baseURL+ConsoleServiceListDeploymentsProcedure,
+			connect.WithSchema(consoleServiceMethods.ByName("ListDeployments")),
+			connect.WithClientOptions(opts...),
+		),
 		syncAlerts: connect.NewClient[v1.SyncAlertsRequest, v1.SyncAlertsResponse](
 			httpClient,
 			baseURL+ConsoleServiceSyncAlertsProcedure,
@@ -342,6 +354,7 @@ type consoleServiceClient struct {
 	listDatabases       *connect.Client[v1.ListDatabasesRequest, v1.ListDatabasesResponse]
 	createDatabase      *connect.Client[v1.CreateDatabaseRequest, v1.CreateDatabaseResponse]
 	deleteDatabase      *connect.Client[v1.DeleteDatabaseRequest, v1.DeleteDatabaseResponse]
+	listDeployments     *connect.Client[v1.ListDeploymentsRequest, v1.ListDeploymentsResponse]
 	syncAlerts          *connect.Client[v1.SyncAlertsRequest, v1.SyncAlertsResponse]
 }
 
@@ -465,6 +478,11 @@ func (c *consoleServiceClient) DeleteDatabase(ctx context.Context, req *connect.
 	return c.deleteDatabase.CallUnary(ctx, req)
 }
 
+// ListDeployments calls taramanji.cloud.v1.ConsoleService.ListDeployments.
+func (c *consoleServiceClient) ListDeployments(ctx context.Context, req *connect.Request[v1.ListDeploymentsRequest]) (*connect.Response[v1.ListDeploymentsResponse], error) {
+	return c.listDeployments.CallUnary(ctx, req)
+}
+
 // SyncAlerts calls taramanji.cloud.v1.ConsoleService.SyncAlerts.
 func (c *consoleServiceClient) SyncAlerts(ctx context.Context, req *connect.Request[v1.SyncAlertsRequest]) (*connect.Response[v1.SyncAlertsResponse], error) {
 	return c.syncAlerts.CallUnary(ctx, req)
@@ -510,6 +528,9 @@ type ConsoleServiceHandler interface {
 	CreateDatabase(context.Context, *connect.Request[v1.CreateDatabaseRequest]) (*connect.Response[v1.CreateDatabaseResponse], error)
 	// どの関数にもつながれていないデータベースだけ消せる。中身は残る（ログインだけ止める）
 	DeleteDatabase(context.Context, *connect.Request[v1.DeleteDatabaseRequest]) (*connect.Response[v1.DeleteDatabaseResponse], error)
+	// ---- デプロイの様子 ----
+	// コントローラー（デプロイヤー）が、リポジトリの YAML をクラスターに入れた結果と履歴（Argo CD は使わない）
+	ListDeployments(context.Context, *connect.Request[v1.ListDeploymentsRequest]) (*connect.Response[v1.ListDeploymentsResponse], error)
 	// リポジトリの YAML に合わせて、Datadog のモニターを作り直す（git に直接 push したあとに呼ぶ）
 	SyncAlerts(context.Context, *connect.Request[v1.SyncAlertsRequest]) (*connect.Response[v1.SyncAlertsResponse], error)
 }
@@ -665,6 +686,12 @@ func NewConsoleServiceHandler(svc ConsoleServiceHandler, opts ...connect.Handler
 		connect.WithSchema(consoleServiceMethods.ByName("DeleteDatabase")),
 		connect.WithHandlerOptions(opts...),
 	)
+	consoleServiceListDeploymentsHandler := connect.NewUnaryHandler(
+		ConsoleServiceListDeploymentsProcedure,
+		svc.ListDeployments,
+		connect.WithSchema(consoleServiceMethods.ByName("ListDeployments")),
+		connect.WithHandlerOptions(opts...),
+	)
 	consoleServiceSyncAlertsHandler := connect.NewUnaryHandler(
 		ConsoleServiceSyncAlertsProcedure,
 		svc.SyncAlerts,
@@ -721,6 +748,8 @@ func NewConsoleServiceHandler(svc ConsoleServiceHandler, opts ...connect.Handler
 			consoleServiceCreateDatabaseHandler.ServeHTTP(w, r)
 		case ConsoleServiceDeleteDatabaseProcedure:
 			consoleServiceDeleteDatabaseHandler.ServeHTTP(w, r)
+		case ConsoleServiceListDeploymentsProcedure:
+			consoleServiceListDeploymentsHandler.ServeHTTP(w, r)
 		case ConsoleServiceSyncAlertsProcedure:
 			consoleServiceSyncAlertsHandler.ServeHTTP(w, r)
 		default:
@@ -826,6 +855,10 @@ func (UnimplementedConsoleServiceHandler) CreateDatabase(context.Context, *conne
 
 func (UnimplementedConsoleServiceHandler) DeleteDatabase(context.Context, *connect.Request[v1.DeleteDatabaseRequest]) (*connect.Response[v1.DeleteDatabaseResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.cloud.v1.ConsoleService.DeleteDatabase is not implemented"))
+}
+
+func (UnimplementedConsoleServiceHandler) ListDeployments(context.Context, *connect.Request[v1.ListDeploymentsRequest]) (*connect.Response[v1.ListDeploymentsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.cloud.v1.ConsoleService.ListDeployments is not implemented"))
 }
 
 func (UnimplementedConsoleServiceHandler) SyncAlerts(context.Context, *connect.Request[v1.SyncAlertsRequest]) (*connect.Response[v1.SyncAlertsResponse], error) {

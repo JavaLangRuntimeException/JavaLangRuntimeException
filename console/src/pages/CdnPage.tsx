@@ -4,6 +4,7 @@ import type { Distribution, GetHostingOptionsResponse } from "@/api/gen/taramanj
 import { btnPrimary, Field, InfoTip, input, Legend, Status } from "@/components/Form";
 import { EmptyState, Mono, PageHeader, Panel, Skeleton } from "@/components/Page";
 import { QueryError } from "@/components/QueryError";
+import { DeployBadge, DeployHistory } from "@/components/Deploy";
 import { ResourceEditor } from "@/components/ResourceEditor";
 import { cachePresets, distributionFormErrors, distributionFormOf, distributionSpecOf, emptyDistributionForm, formatCache, type DistributionForm } from "@/lib/hosting";
 import { StoreDisabled } from "@/pages/FunctionsPage";
@@ -56,7 +57,10 @@ export function CdnPage() {
       ) : !options.data.storeEnabled ? (
         <StoreDisabled repository={options.data.repository} />
       ) : editing !== undefined ? (
-        <Editor key={editing?.spec?.name ?? ""} dist={editing} opt={options.data} buckets={bucketNames} functions={functionNames} onClose={() => setEditing(undefined)} />
+        <div className="space-y-4">
+          <Editor key={editing?.spec?.name ?? ""} dist={editing} opt={options.data} buckets={bucketNames} functions={functionNames} onClose={() => setEditing(undefined)} />
+          {editing?.spec && <DeployHistory kind="cdn" name={editing.spec.name} revision={editing.source?.revision} />}
+        </div>
       ) : (
         <Panel title="ディストリビューション">
           {dists.isPending ? (
@@ -78,6 +82,7 @@ export function CdnPage() {
                   <tr>
                     <th className="px-4 py-2 font-semibold">名前</th>
                     <th className="px-4 py-2 font-semibold">URL</th>
+                    <th className="px-4 py-2 font-semibold">デプロイ</th>
                     <th className="px-4 py-2 font-semibold">元</th>
                     <th className="px-4 py-2 font-semibold">キャッシュ</th>
                   </tr>
@@ -94,6 +99,9 @@ export function CdnPage() {
                         <a href={`https://${d.host}`} target="_blank" rel="noreferrer" className="font-mono text-[13px] text-accent hover:underline">
                           {d.host}
                         </a>
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <DeployBadge kind="cdn" name={d.spec?.name ?? ""} revision={d.source?.revision} />
                       </td>
                       {d.source?.problem ? (
                         <td className="px-4 py-2.5" colSpan={2}>

@@ -6,6 +6,7 @@ import { btn, btnDanger, btnPrimary, Field, input, Legend, Status } from "@/comp
 import { EmptyState, Mono, PageHeader, Panel, Skeleton } from "@/components/Page";
 import { QueryError } from "@/components/QueryError";
 import { databaseStatus, engineLabel } from "@/lib/hosting";
+import { DeployHistory } from "@/components/Deploy";
 import { StoreDisabled } from "@/pages/FunctionsPage";
 
 const engines = [
@@ -195,6 +196,8 @@ function Detail({ db, onClose }: { db: Database; onClose: () => void }) {
           {db.engine === "redis" && <p>Redis は共有なので、キーは必ず PREFIX（{db.name}:）で始めてください。ほかの接頭辞のキーは読み書きできません。</p>}
         </div>
       </Panel>
+
+      <DeployHistory kind="databases" name={db.name} revision={db.source?.revision} />
 
       <Panel title="データベースを消す">
         <div className="flex flex-wrap items-center gap-3 px-4 py-3">

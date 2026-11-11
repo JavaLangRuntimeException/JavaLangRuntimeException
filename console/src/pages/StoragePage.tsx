@@ -9,6 +9,7 @@ import { QueryError } from "@/components/QueryError";
 import { num } from "@/lib/capacity";
 import { formatBytes, formatDateTime } from "@/lib/format";
 import { crumbsOf, entriesOf } from "@/lib/hosting";
+import { DeployHistory } from "@/components/Deploy";
 import { StoreDisabled } from "@/pages/FunctionsPage";
 
 export function StoragePage() {
@@ -266,6 +267,8 @@ function Objects({ bucket, storageEnabled, onClose }: { bucket: Bucket; storageE
         )}
         {objects.data?.truncated && <p className="border-t border-line px-4 py-2 text-xs text-muted">1,000 件までを表示しています。フォルダーを開くと、その中だけを読みます。</p>}
       </Panel>
+
+      <DeployHistory kind="buckets" name={bucket.name} revision={bucket.source?.revision} />
 
       <Panel title="バケットを消す">
         <div className="flex flex-wrap items-center gap-3 px-4 py-3">

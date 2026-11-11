@@ -38,7 +38,7 @@ type github struct {
 }
 
 // NewGitHubResourceStore は GitHub の Contents API で <Dir>/<種類>/<名前>.yaml を読み書きする
-func NewGitHubResourceStore(c GitHubConfig) (gateway.ResourceStore, error) {
+func NewGitHubResourceStore(c GitHubConfig) (gateway.ResourceRepo, error) {
 	if !repoRe.MatchString(c.Repo) {
 		return nil, fmt.Errorf("APPS_REPO must be owner/name")
 	}
@@ -109,6 +109,21 @@ type contentEntry struct {
 	SHA      string `json:"sha"`
 	Content  string `json:"content"`
 	Encoding string `json:"encoding"`
+}
+
+var _ gateway.ResourceSource = (*github)(nil)
+
+// Head はブランチの今のコミットの SHA
+func (g *github) Head(ctx context.Context) (string, error) {
+	var out struct {
+		Commit struct {
+			SHA string `json:"sha"`
+		} `json:"commit"`
+	}
+	if _, err := g.do(ctx, http.MethodGet, "/repos/"+g.c.Repo+"/branches/"+url.PathEscape(g.c.Branch), nil, &out); err != nil {
+		return "", err
+	}
+	return out.Commit.SHA, nil
 }
 
 func (g *github) List(ctx context.Context, kind string) ([]gateway.ResourceFile, error) {

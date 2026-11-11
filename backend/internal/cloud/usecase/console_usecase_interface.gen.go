@@ -100,6 +100,8 @@ type DeleteDatabaseInput struct {
 	Revision string
 }
 
+type ListDeploymentsInput struct{}
+
 type SyncAlertsInput struct{}
 
 type GetOverviewOutput struct {
@@ -214,6 +216,11 @@ type CreateDatabaseOutput struct {
 	Database *Database `json:"database"`
 }
 
+type ListDeploymentsOutput struct {
+	Deployments []*Deployment `json:"deployments"`
+	Enabled     bool          `json:"enabled"`
+}
+
 type SyncAlertsOutput struct {
 	Created int32 `json:"created"`
 	Updated int32 `json:"updated"`
@@ -271,6 +278,25 @@ type Database struct {
 	Ready     bool     `json:"ready"`
 	EnvNames  []string `json:"env_names"`
 	Functions []string `json:"functions"`
+}
+
+type Deployment struct {
+	Kind     string             `json:"kind"`
+	Name     string             `json:"name"`
+	State    string             `json:"state"`
+	Message  string             `json:"message"`
+	Revision string             `json:"revision"`
+	Commit   string             `json:"commit"`
+	AtMs     int64              `json:"at_ms"`
+	History  []*DeploymentEvent `json:"history"`
+}
+
+type DeploymentEvent struct {
+	AtMs     int64  `json:"at_ms"`
+	Commit   string `json:"commit"`
+	Revision string `json:"revision"`
+	State    string `json:"state"`
+	Message  string `json:"message"`
 }
 
 type Distribution struct {
@@ -410,5 +436,6 @@ type ConsoleUsecase interface {
 	ListDatabases(ctx context.Context, input ListDatabasesInput) (*ListDatabasesOutput, error)
 	CreateDatabase(ctx context.Context, input CreateDatabaseInput) (*CreateDatabaseOutput, error)
 	DeleteDatabase(ctx context.Context, input DeleteDatabaseInput) error
+	ListDeployments(ctx context.Context, input ListDeploymentsInput) (*ListDeploymentsOutput, error)
 	SyncAlerts(ctx context.Context, input SyncAlertsInput) (*SyncAlertsOutput, error)
 }

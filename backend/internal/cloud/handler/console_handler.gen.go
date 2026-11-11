@@ -377,6 +377,23 @@ func (h *ConsoleHandler) DeleteDatabase(ctx context.Context, req *connect.Reques
 	return connect.NewResponse(&cloudv1.DeleteDatabaseResponse{}), nil
 }
 
+func (h *ConsoleHandler) ListDeployments(ctx context.Context, req *connect.Request[cloudv1.ListDeploymentsRequest]) (*connect.Response[cloudv1.ListDeploymentsResponse], error) {
+	out, err := h.usecase.ListDeployments(ctx, usecase.ListDeploymentsInput{})
+	if err != nil {
+		return nil, errs.ToConnect(ctx, err)
+	}
+	return connect.NewResponse(&cloudv1.ListDeploymentsResponse{Deployments: func(l []*usecase.Deployment) []*cloudv1.Deployment {
+		if l == nil {
+			return nil
+		}
+		out := make([]*cloudv1.Deployment, 0, len(l))
+		for _, v := range l {
+			out = append(out, consoleDeploymentToPb(v))
+		}
+		return out
+	}(out.Deployments), Enabled: out.Enabled}), nil
+}
+
 func (h *ConsoleHandler) SyncAlerts(ctx context.Context, req *connect.Request[cloudv1.SyncAlertsRequest]) (*connect.Response[cloudv1.SyncAlertsResponse], error) {
 	out, err := h.usecase.SyncAlerts(ctx, usecase.SyncAlertsInput{})
 	if err != nil {
@@ -962,5 +979,81 @@ func consoleDatabaseToPb(u *usecase.Database) *cloudv1.Database {
 		Ready:     u.Ready,
 		EnvNames:  u.EnvNames,
 		Functions: u.Functions,
+	}
+}
+
+func consolePbToDeploymentEvent(p *cloudv1.DeploymentEvent) *usecase.DeploymentEvent {
+	if p == nil {
+		return nil
+	}
+	return &usecase.DeploymentEvent{
+		AtMs:     p.GetAtMs(),
+		Commit:   p.GetCommit(),
+		Revision: p.GetRevision(),
+		State:    p.GetState(),
+		Message:  p.GetMessage(),
+	}
+}
+
+func consoleDeploymentEventToPb(u *usecase.DeploymentEvent) *cloudv1.DeploymentEvent {
+	if u == nil {
+		return nil
+	}
+	return &cloudv1.DeploymentEvent{
+		AtMs:     u.AtMs,
+		Commit:   u.Commit,
+		Revision: u.Revision,
+		State:    u.State,
+		Message:  u.Message,
+	}
+}
+
+func consolePbToDeployment(p *cloudv1.Deployment) *usecase.Deployment {
+	if p == nil {
+		return nil
+	}
+	return &usecase.Deployment{
+		Kind:     p.GetKind(),
+		Name:     p.GetName(),
+		State:    p.GetState(),
+		Message:  p.GetMessage(),
+		Revision: p.GetRevision(),
+		Commit:   p.GetCommit(),
+		AtMs:     p.GetAtMs(),
+		History: func(l []*cloudv1.DeploymentEvent) []*usecase.DeploymentEvent {
+			if l == nil {
+				return nil
+			}
+			out := make([]*usecase.DeploymentEvent, 0, len(l))
+			for _, v := range l {
+				out = append(out, consolePbToDeploymentEvent(v))
+			}
+			return out
+		}(p.GetHistory()),
+	}
+}
+
+func consoleDeploymentToPb(u *usecase.Deployment) *cloudv1.Deployment {
+	if u == nil {
+		return nil
+	}
+	return &cloudv1.Deployment{
+		Kind:     u.Kind,
+		Name:     u.Name,
+		State:    u.State,
+		Message:  u.Message,
+		Revision: u.Revision,
+		Commit:   u.Commit,
+		AtMs:     u.AtMs,
+		History: func(l []*usecase.DeploymentEvent) []*cloudv1.DeploymentEvent {
+			if l == nil {
+				return nil
+			}
+			out := make([]*cloudv1.DeploymentEvent, 0, len(l))
+			for _, v := range l {
+				out = append(out, consoleDeploymentEventToPb(v))
+			}
+			return out
+		}(u.History),
 	}
 }

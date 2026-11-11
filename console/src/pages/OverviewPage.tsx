@@ -2,6 +2,7 @@ import { Link } from "react-router";
 import { useCapacity, useOverview } from "@/api/console";
 import { EnvBadge } from "@/components/EnvBadge";
 import { Mono, PageHeader, Panel, Skeleton } from "@/components/Page";
+import { RecentDeployments } from "@/components/Deploy";
 import { QueryError } from "@/components/QueryError";
 import { ServiceIcon } from "@/components/ServiceIcon";
 import { StatusDot, statusOf } from "@/components/StatusDot";
@@ -39,6 +40,10 @@ export function OverviewPage() {
           <span className="block text-[13px] text-ink-2">何ができて、どこに何が保存されるか。関数の公開・静的サイト・データベースのチュートリアルもあります。</span>
         </span>
       </Link>
+
+      <div className="mb-4">
+        <RecentDeployments />
+      </div>
 
       <Panel title="サービス" className="mb-4">
         <div className="grid gap-x-6 gap-y-5 px-5 py-4 sm:grid-cols-2 lg:grid-cols-3">
