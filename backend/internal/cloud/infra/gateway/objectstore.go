@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/javalangruntimeexception/taramanji/backend/internal/cloud/domain/gateway"
@@ -69,8 +70,17 @@ func (o *objectStore) List(ctx context.Context, bucket, prefix string) ([]gatewa
 	return out.Objects, out.Truncated, nil
 }
 
+// objectURL はストレージの /b/<バケット>/<キー>。STORAGE_URL にパスがない（http://cloud-storage:8080）と JoinPath は先頭の / を付けないので、
+// ReverseProxy がそのまま送ると「PUT b/...」という不正な要求になり、ストレージが 400 で切る。必ず / から始める
 func (o *objectStore) objectURL(bucket, key string) *url.URL {
-	return o.base.JoinPath("b", bucket, key)
+	u := o.base.JoinPath("b", bucket, key)
+	if !strings.HasPrefix(u.Path, "/") {
+		u.Path = "/" + u.Path
+		if u.RawPath != "" {
+			u.RawPath = "/" + u.RawPath
+		}
+	}
+	return u
 }
 
 func (o *objectStore) Delete(ctx context.Context, bucket, key string) error {
