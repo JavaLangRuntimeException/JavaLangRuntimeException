@@ -1,7 +1,7 @@
 // サービスの一覧。上の「サービス」メニュー・左のナビ・ホームのカード・パンくずが、ここを見る。
 // 画面を足すときはここと app/router.tsx に足す
 
-export type ServiceId = "home" | "functions" | "apis" | "cdn" | "storage" | "databases" | "capacity" | "metrics";
+export type ServiceId = "home" | "functions" | "apis" | "cdn" | "storage" | "databases" | "capacity" | "metrics" | "guide";
 
 export type Service = {
   id: ServiceId;
@@ -15,7 +15,7 @@ export type ServiceGroup = { label: string; services: Service[] };
 
 export const home: Service = { id: "home", to: "/", label: "コンソールのホーム", description: "環境と部品の状態" };
 
-// 分類は AWS のコンソールと同じ並び（コンピューティング → ネットワーキング → ストレージ → データベース → 管理）
+// 分類は AWS のコンソールと同じ並び（コンピューティング → ネットワーキング → ストレージ → データベース → 管理 → ヘルプ）
 export const serviceGroups: ServiceGroup[] = [
   {
     label: "コンピューティング",
@@ -42,6 +42,10 @@ export const serviceGroups: ServiceGroup[] = [
       { id: "capacity", to: "/capacity", label: "容量", description: "あとどれだけ置けるか" },
       { id: "metrics", to: "/metrics", label: "メトリクス", description: "リクエスト・エラー・CPU・メモリ" },
     ],
+  },
+  {
+    label: "ヘルプ",
+    services: [{ id: "guide", to: "/guide", label: "ガイド", description: "しくみの説明と、手を動かすチュートリアル" }],
   },
 ];
 

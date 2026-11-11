@@ -5,6 +5,7 @@ import { ApisPage } from "@/pages/ApisPage";
 import { CdnPage } from "@/pages/CdnPage";
 import { DatabasesPage } from "@/pages/DatabasesPage";
 import { FunctionsPage } from "@/pages/FunctionsPage";
+import { GuidePage } from "@/pages/GuidePage";
 import { MetricsPage } from "@/pages/MetricsPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { OverviewPage } from "@/pages/OverviewPage";
@@ -22,6 +23,8 @@ export const router = createBrowserRouter([
       { path: "apis", element: <ApisPage /> },
       { path: "cdn", element: <CdnPage /> },
       { path: "databases", element: <DatabasesPage /> },
+      { path: "guide", element: <GuidePage /> },
+      { path: "guide/:slug", element: <GuidePage /> },
       { path: "*", element: <NotFoundPage /> },
     ],
   },
