@@ -9,9 +9,10 @@ spec:
   # 環境ごとのホスト名はオーバーレイで差し替える
   hostnames: ["cloud.taramanji.com"]
   rules:
-    # API（Connect）。パスの先頭が proto のパッケージ名
+    # API（Connect）。PathPrefix は「/ で区切った単位」で比べるので、サービス名まで書く
+    #（/taramanji.cloud.v1. だと /taramanji.cloud.v1.ConsoleService/… に当たらず、画面の nginx に行って 405 になる）
     - matches:
-        - { path: { type: PathPrefix, value: /taramanji.cloud.v1. } }
+        - { path: { type: PathPrefix, value: /taramanji.cloud.v1.ConsoleService/ } }
       backendRefs:
         - { name: cloud-api, port: 8080 }
     # オブジェクトのアップロード・ダウンロード（Connect ではない HTTP）。画面の /storage とぶつからない名前にしてある
