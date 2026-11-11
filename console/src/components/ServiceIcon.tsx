@@ -67,6 +67,11 @@ const glyphs: Record<ServiceId, Glyph> = {
     color: pink,
     paths: <path d="M6 4.5v15h12v-15M6 13h12M9 16.5h6M13.5 7H18M13.5 10H18" />,
   },
+  // ガイド: 開いた本
+  guide: {
+    color: navy,
+    paths: <path d="M12 7c-1.8-1.3-4.3-2-7-2v12c2.7 0 5.2.7 7 2M12 7c1.8-1.3 4.3-2 7-2v12c-2.7 0-5.2.7-7 2M12 7v12" />,
+  },
   // メトリクス: 軸と折れ線
   metrics: {
     color: pink,

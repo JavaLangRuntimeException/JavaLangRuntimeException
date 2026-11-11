@@ -32,6 +32,14 @@ export function OverviewPage() {
     <>
       <PageHeader title="コンソールのホーム" description="サービスの一覧と、この環境の状態です。" />
 
+      <Link to="/guide/overview" className="mb-4 flex items-center gap-4 rounded-xl border border-accent bg-accent-soft px-5 py-4 hover:underline">
+        <ServiceIcon id="guide" size={32} />
+        <span className="min-w-0">
+          <span className="block font-bold text-accent">はじめての方へ: taramanji cloud のしくみ</span>
+          <span className="block text-[13px] text-ink-2">何ができて、どこに何が保存されるか。関数の公開・静的サイト・データベースのチュートリアルもあります。</span>
+        </span>
+      </Link>
+
       <Panel title="サービス" className="mb-4">
         <div className="grid gap-x-6 gap-y-5 px-5 py-4 sm:grid-cols-2 lg:grid-cols-3">
           {serviceGroups.map((g) => (
