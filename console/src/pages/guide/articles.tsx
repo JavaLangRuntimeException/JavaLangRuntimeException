@@ -68,6 +68,10 @@ export const articles: Article[] = [
             には届きません。
           </li>
         </UL>
+        <Note title="使えるのは自分だけです">
+          コンソールも、公開した {host} も、Cloudflare Access の後ろにあります。開くと Google のログインが出て、管理者のアカウントだけが通ります（stg・dev
+          と同じしくみ）。ブラウザ以外から呼ぶときは <C>cloudflared access curl</C> を使います。
+        </Note>
 
         <H2 id="yaml">設定は YAML で残る</H2>
         <P>
@@ -177,10 +181,17 @@ CMD ["node", "server.js"]
         </P>
 
         <H2 id="call">4. 呼んでみる</H2>
-        <Code lang="sh">{`curl https://hello-cloud.taramanji.com/`}</Code>
+        <P>
+          ブラウザで <C>https://hello-cloud.taramanji.com/</C> を開きます。公開したものも Cloudflare Access の後ろにあるので、最初に Google のログインが出ます
+          （管理者のアカウントだけが通ります）。ターミナルから呼ぶときは <C>cloudflared access curl</C> を使います（最初の 1 回はブラウザでログインします）。
+        </P>
+        <Code lang="sh">{`cloudflared access curl https://hello-cloud.taramanji.com/`}</Code>
         <P>
           最初の 1 回は関数の起動を待つので、数秒かかります。2 回目からはすぐ返ります。関数の画面で、状態が「実行中」に変わるのを確かめてください。
         </P>
+        <Note kind="warn" title="外部のサービスからは呼べません">
+          Access の後ろにあるので、GitHub や Stripe などの Webhook を受ける関数は、そのままでは呼ばれません。
+        </Note>
 
         <H2 id="cold">0 台からの起動について</H2>
         <UL>
@@ -587,6 +598,7 @@ spec:
 
         <H2 id="isolation">囲い</H2>
         <UL>
+          <li>公開したもの（{host}）も Cloudflare Access の後ろにあり、使えるのは管理者のアカウントだけです。</li>
           <li>
             関数は 1 つずつ別の namespace（<C>cloud-fn-&lt;名前&gt;</C>）で動きます。namespace と囲い（量の上限・通信の制限・Pod Security・権限）は
             コントローラーが作り、YAML のリポジトリからは作れません。
@@ -603,6 +615,7 @@ spec:
           <li>自分で決める秘密の環境変数、非公開のイメージ</li>
           <li>データベースのバックアップ、CDN のキャッシュの消去</li>
           <li>コンソールからフォルダーごとアップロードする</li>
+          <li>外部のサービスからの Webhook を受ける（Access の後ろにあるため）</li>
         </UL>
       </>
     ),

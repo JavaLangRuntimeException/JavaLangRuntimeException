@@ -46,8 +46,11 @@ APPS = {
     # Argo Rollouts の画面（本番のカナリアの Promote / Abort）。画面自体にログインがないので必ずここで守る
     "taramanji-rollouts": ["rollouts.taramanji.com"],
     # taramanji cloud のコンソール（全環境）。taramanji.com とは別のアプリにして Audience タグを分ける
-    # （コンソールの API は自分のアプリの JWT しか受け付けない）。バケット・アプリの URL（*-storage・*-hosting）は含めない
+    # （コンソールの API は自分のアプリの JWT しか受け付けない）。公開する関数・CDN の URL は、下の taramanji-cloud-apps で守る
     CLOUD_APP: ["cloud.taramanji.com", "cloud-stg.taramanji.com", "cloud-dev.taramanji.com"],
+    # taramanji cloud で公開する関数・CDN（API・CDN の <名前>-cloud.taramanji.com など）。使うのは本人だけなので、ここも守る。
+    # 関数には Access の JWT（Cf-Access-Jwt-Assertion）が付いて届く。ブラウザ以外から呼ぶときは `cloudflared access curl`
+    "taramanji-cloud-apps": ["*-cloud.taramanji.com", "*-cloud-stg.taramanji.com", "*-cloud-dev.taramanji.com"],
 }
 
 
