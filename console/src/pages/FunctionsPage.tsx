@@ -11,6 +11,8 @@ import { formatCpu, num } from "@/lib/capacity";
 import { formatBytes } from "@/lib/format";
 import {
   emptyForm,
+  familyLabels,
+  groupByFamily,
   engineLabel,
   envPrefix,
   formatIdle,
@@ -250,7 +252,7 @@ function Editor({ fn, opt, onClose }: { fn: Fn | null; opt: GetHostingOptionsRes
         <input className={`${input} font-mono text-[13px]`} value={form.image} onChange={(e) => set({ image: e.target.value })} placeholder="ghcr.io/owner/name:tag" autoComplete="off" spellCheck={false} />
       </Field>
 
-      <InstanceTypePicker form={form} types={types} limits={limits} errors={{ cpuMillis: err("cpuMillis"), memoryMib: err("memoryMib") }} onChange={setForm} />
+      <InstanceTypePicker form={form} types={types} families={opt.instanceFamilies} limits={limits} errors={{ cpuMillis: err("cpuMillis"), memoryMib: err("memoryMib") }} onChange={setForm} />
       <EnvEditor form={form} error={err("env")} onChange={set} />
       <ConnectionPicker form={form} onChange={set} />
       <AlertPicker form={form} opt={opt} onChange={set} />
@@ -261,32 +263,51 @@ function Editor({ fn, opt, onClose }: { fn: Fn | null; opt: GetHostingOptionsRes
 function InstanceTypePicker({
   form,
   types,
+  families,
   limits,
   errors,
   onChange,
 }: {
   form: FunctionForm;
   types: TypeOption[];
+  families: readonly { id: string; label: string; description: string }[];
   limits: Limits;
   errors: { cpuMillis?: string; memoryMib?: string };
   onChange: (f: FunctionForm) => void;
 }) {
   const custom = isCustom(form, types);
+  const groups = groupByFamily(types, families.map((f) => f.id));
   const current = types.find((t) => t.name === form.instanceType);
   return (
     <fieldset>
-      <Legend info={<>関数 1 台あたりの CPU とメモリの組み合わせです。名前は EC2 と同じ「ファミリー + 世代 . サイズ」（<code>t1.small</code> など）。型を選ぶと下の CPU とメモリが入り、そのあと個別に変えられます。変えたものは一覧に「カスタム」と出ます。</>}>インスタンスタイプ</Legend>
-      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-        {types.map((t) => {
-          const on = t.name === form.instanceType;
+      <Legend info={<>関数 1 台あたりの CPU とメモリの組み合わせです。名前は EC2 と同じ「ファミリー + 世代 . サイズ」です。汎用の <code>t1</code>、CPU が多い <code>c1</code>（コンピューティング最適化）、メモリが多い <code>r1</code>（メモリ最適化）から選べます。型を選ぶと下の CPU とメモリが入り、そのあと個別に変えられます。変えたものは一覧に「カスタム」と出ます。</>}>インスタンスタイプ</Legend>
+      <div className="space-y-3">
+        {groups.map((g) => {
+          const fam = families.find((f) => f.id === g.family);
           return (
-            <label key={t.name} className={`cursor-pointer rounded border px-3 py-2 ${on ? "border-accent bg-accent-soft" : "border-line-strong hover:bg-surface-2"}`}>
-              <input type="radio" name="instance-type" className="sr-only" checked={on} onChange={() => onChange(withInstanceType(form, t))} />
-              <span className="block font-mono text-[13px] font-semibold text-ink">{t.name}</span>
-              <span className="block text-xs text-muted">
-                {formatCpu(t.cpuMillis)} / {formatBytes(t.memoryMib * MIB)}
-              </span>
-            </label>
+            <div key={g.family}>
+              <p className="mb-1.5 flex flex-wrap items-baseline gap-x-2">
+                <span className="text-[13px] font-semibold text-ink">
+                  {fam?.label ?? familyLabels[g.family] ?? g.family}
+                  <span className="ml-1 font-mono font-normal text-muted">{g.family}</span>
+                </span>
+                {fam && <span className="text-xs text-muted">{fam.description}</span>}
+              </p>
+              <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+                {g.items.map((t) => {
+                  const on = t.name === form.instanceType;
+                  return (
+                    <label key={t.name} className={`cursor-pointer rounded border px-3 py-2 ${on ? "border-accent bg-accent-soft" : "border-line-strong hover:bg-surface-2"}`}>
+                      <input type="radio" name="instance-type" className="sr-only" checked={on} onChange={() => onChange(withInstanceType(form, t))} />
+                      <span className="block font-mono text-[13px] font-semibold text-ink">{t.name}</span>
+                      <span className="block text-xs text-muted">
+                        {formatCpu(t.cpuMillis)} / {formatBytes(t.memoryMib * MIB)}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
           );
         })}
       </div>

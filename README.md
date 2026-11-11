@@ -114,7 +114,7 @@ AWS のコンソールのように使える、自分専用の小さなクラウ�
 | <img src="docs/diagrams/icons/cloud/cdn.svg" width="32" /> | CDN | CloudFront | バケットや関数を公開し、Cloudflare にキャッシュさせる |
 | <img src="docs/diagrams/icons/cloud/storage.svg" width="32" /> | ストレージ | S3 | ファイルを置くバケット |
 | <img src="docs/diagrams/icons/cloud/databases.svg" width="32" /> | データベース | RDS / ElastiCache | PostgreSQL と Redis を切り出して、関数につなぐ |
-| <img src="docs/diagrams/icons/cloud/capacity.svg" width="32" /> | 容量 | — | インスタンスタイプ（`t1.small`〜`t1.xlarge`）があと何個置けるか |
+| <img src="docs/diagrams/icons/cloud/capacity.svg" width="32" /> | 容量 | — | インスタンスタイプ（汎用 `t1`・コンピューティング最適化 `c1`・メモリ最適化 `r1`）があと何個置けるか |
 | <img src="docs/diagrams/icons/cloud/metrics.svg" width="32" /> | メトリクス | CloudWatch | リクエスト・エラー・CPU・メモリ（本番だけ） |
 | <img src="docs/diagrams/icons/cloud/guide.svg" width="32" /> | ガイド | — | しくみの説明とチュートリアル（コンソールの中） |
 

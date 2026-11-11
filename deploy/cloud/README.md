@@ -85,14 +85,20 @@ API Gateway（`cloud-gw`。cloud-api と同じイメージを `CLOUD_MODE=gatewa
 リポジトリを分けているのは、コンソールのトークンが漏れても taramanji.com のマニフェスト（このリポジトリ）を書き換えられないようにするため。
 プロジェクト `cloud-apps` は、入れ先を環境の共有の namespace と関数ごとの namespace（`cloud-fn-*` など）に、種類を Deployment・Service・ConfigMap・PersistentVolumeClaim・HTTPRoute に限る。
 
-**インスタンスタイプ**（EC2 と同じ「ファミリー + 世代 . サイズ」。`backend/internal/cloud/domain/service/instancetype.go`）:
+**インスタンスタイプ**（EC2 と同じ「系統 + 世代 . サイズ」。汎用 `t1`・コンピューティング最適化 `c1`・メモリ最適化 `r1`。`backend/internal/cloud/domain/service/instancetype.go`）:
 
-| 名前 | CPU | メモリ |
-|---|---|---|
-| `t1.small` | 0.1 | 128 MiB |
-| `t1.medium` | 0.25 | 256 MiB |
-| `t1.large` | 0.5 | 512 MiB |
-| `t1.xlarge` | 1 | 1 GiB |
+| 名前 | 系統 | CPU | メモリ |
+|---|---|---|---|
+| `t1.small` | 汎用 | 0.1 | 128 MiB |
+| `t1.medium` | 汎用 | 0.25 | 256 MiB |
+| `t1.large` | 汎用 | 0.5 | 512 MiB |
+| `t1.xlarge` | 汎用 | 1 | 1 GiB |
+| `c1.small` | コンピューティング最適化 | 0.25 | 128 MiB |
+| `c1.medium` | コンピューティング最適化 | 0.5 | 256 MiB |
+| `c1.large` | コンピューティング最適化 | 1 | 512 MiB |
+| `r1.small` | メモリ最適化 | 0.05 | 256 MiB |
+| `r1.medium` | メモリ最適化 | 0.125 | 512 MiB |
+| `r1.large` | メモリ最適化 | 0.25 | 1 GiB |
 
 型を選ぶと CPU・メモリが入り、そのあと個別に変えられる（CPU 10〜1000 ミリコア、メモリ 16〜1024 MiB。上限は LimitRange の max）。
 YAML ではラベル `cloud.taramanji.com/instance-type` が型、`resources` が実際の値（requests = limits）。

@@ -110,7 +110,16 @@ func (h *ConsoleHandler) GetHostingOptions(ctx context.Context, req *connect.Req
 			out = append(out, consoleAlertPresetToPb(v))
 		}
 		return out
-	}(out.AlertPresets), NotifyChannels: out.NotifyChannels, MinCpuMillis: out.MinCpuMillis, MaxCpuMillis: out.MaxCpuMillis, MinMemory: out.MinMemory, MaxMemory: out.MaxMemory, StoreEnabled: out.StoreEnabled, AlertsEnabled: out.AlertsEnabled, Repository: out.Repository, Directory: out.Directory, IdleTimeoutSeconds: out.IdleTimeoutSeconds, HostSuffix: out.HostSuffix, StorageEnabled: out.StorageEnabled, DnsEnabled: out.DnsEnabled, DatabasesEnabled: out.DatabasesEnabled}), nil
+	}(out.AlertPresets), NotifyChannels: out.NotifyChannels, MinCpuMillis: out.MinCpuMillis, MaxCpuMillis: out.MaxCpuMillis, MinMemory: out.MinMemory, MaxMemory: out.MaxMemory, StoreEnabled: out.StoreEnabled, AlertsEnabled: out.AlertsEnabled, Repository: out.Repository, Directory: out.Directory, IdleTimeoutSeconds: out.IdleTimeoutSeconds, HostSuffix: out.HostSuffix, InstanceFamilies: func(l []*usecase.InstanceFamily) []*cloudv1.InstanceFamily {
+		if l == nil {
+			return nil
+		}
+		out := make([]*cloudv1.InstanceFamily, 0, len(l))
+		for _, v := range l {
+			out = append(out, consoleInstanceFamilyToPb(v))
+		}
+		return out
+	}(out.InstanceFamilies), StorageEnabled: out.StorageEnabled, DnsEnabled: out.DnsEnabled, DatabasesEnabled: out.DatabasesEnabled}), nil
 }
 
 func (h *ConsoleHandler) ListFunctions(ctx context.Context, req *connect.Request[cloudv1.ListFunctionsRequest]) (*connect.Response[cloudv1.ListFunctionsResponse], error) {
@@ -588,6 +597,28 @@ func consoleAlertPresetToPb(u *usecase.AlertPreset) *cloudv1.AlertPreset {
 		return nil
 	}
 	return &cloudv1.AlertPreset{
+		Id:          u.ID,
+		Label:       u.Label,
+		Description: u.Description,
+	}
+}
+
+func consolePbToInstanceFamily(p *cloudv1.InstanceFamily) *usecase.InstanceFamily {
+	if p == nil {
+		return nil
+	}
+	return &usecase.InstanceFamily{
+		ID:          p.GetId(),
+		Label:       p.GetLabel(),
+		Description: p.GetDescription(),
+	}
+}
+
+func consoleInstanceFamilyToPb(u *usecase.InstanceFamily) *cloudv1.InstanceFamily {
+	if u == nil {
+		return nil
+	}
+	return &cloudv1.InstanceFamily{
 		Id:          u.ID,
 		Label:       u.Label,
 		Description: u.Description,

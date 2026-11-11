@@ -1,3 +1,4 @@
+import { familyLabels, groupByFamily } from "@/lib/hosting";
 import { useCapacity } from "@/api/console";
 import type { GetCapacityResponse, PodUsage, SizeFit } from "@/api/gen/taramanji/cloud/v1/console_pb";
 import { EmptyState, Mono, PageHeader, Panel, Skeleton } from "@/components/Page";
@@ -71,12 +72,21 @@ function Fits({ fits }: { fits: SizeFit[] }) {
       {fits.length === 0 ? (
         <EmptyState title="インスタンスタイプの一覧を取れませんでした">少し待ってから読み直してください。</EmptyState>
       ) : (
-        // スマホでは 2 列、広いと 4 列。インスタンスタイプの順は API の並び（t1.small → t1.xlarge）のまま
-        <ul className="grid grid-cols-2 gap-px bg-line lg:grid-cols-4">
-          {fits.map((f) => (
-            <FitItem key={f.name} fit={f} />
+        // 系統（t1 汎用・c1 コンピューティング最適化・r1 メモリ最適化）ごとに、スマホでは 2 列、広いと 4 列
+        <div className="divide-y divide-line">
+          {groupByFamily(fits, ["t1", "c1", "r1"]).map((g) => (
+            <section key={g.family}>
+              <h3 className="bg-surface-2 px-4 py-1.5 text-xs font-semibold text-ink-2">
+                {familyLabels[g.family] ?? g.family} <span className="font-mono font-normal text-muted">{g.family}</span>
+              </h3>
+              <ul className="grid grid-cols-2 gap-px bg-line lg:grid-cols-4">
+                {g.items.map((f) => (
+                  <FitItem key={f.name} fit={f} />
+                ))}
+              </ul>
+            </section>
           ))}
-        </ul>
+        </div>
       )}
     </Panel>
   );

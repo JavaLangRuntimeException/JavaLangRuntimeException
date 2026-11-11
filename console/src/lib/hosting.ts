@@ -285,3 +285,24 @@ export function databaseStatus(db: { ready: boolean; status: string; problem: st
   if (db.status === "" || db.status === "pending") return { label: "作成中", level: "warn" };
   return { label: "エラー", level: "bad", detail: db.status };
 }
+
+// ---- インスタンスタイプの系統 ----
+
+/** 「c1.large」の「c1」 */
+export function familyOf(name: string): string {
+  return name.split(".")[0] ?? name;
+}
+
+/** 系統の名前（API の instanceFamilies が読めないときの控え。API と同じ） */
+export const familyLabels: Record<string, string> = { t1: "汎用", c1: "コンピューティング最適化", r1: "メモリ最適化" };
+
+/** 型を系統ごとにまとめる。系統の順は order（なければ出てきた順） */
+export function groupByFamily<T extends { name: string }>(items: readonly T[], order: readonly string[] = []): { family: string; items: T[] }[] {
+  const groups = new Map<string, T[]>();
+  for (const f of order) groups.set(f, []);
+  for (const it of items) {
+    const f = familyOf(it.name);
+    groups.set(f, [...(groups.get(f) ?? []), it]);
+  }
+  return [...groups.entries()].filter(([, v]) => v.length > 0).map(([family, items]) => ({ family, items }));
+}

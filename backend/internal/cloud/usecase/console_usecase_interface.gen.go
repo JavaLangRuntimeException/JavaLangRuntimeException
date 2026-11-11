@@ -123,22 +123,23 @@ type GetCapacityOutput struct {
 }
 
 type GetHostingOptionsOutput struct {
-	InstanceTypes      []*InstanceType `json:"instance_types"`
-	AlertPresets       []*AlertPreset  `json:"alert_presets"`
-	NotifyChannels     []string        `json:"notify_channels"`
-	MinCpuMillis       int64           `json:"min_cpu_millis"`
-	MaxCpuMillis       int64           `json:"max_cpu_millis"`
-	MinMemory          int64           `json:"min_memory"`
-	MaxMemory          int64           `json:"max_memory"`
-	StoreEnabled       bool            `json:"store_enabled"`
-	AlertsEnabled      bool            `json:"alerts_enabled"`
-	Repository         string          `json:"repository"`
-	Directory          string          `json:"directory"`
-	IdleTimeoutSeconds int32           `json:"idle_timeout_seconds"`
-	HostSuffix         string          `json:"host_suffix"`
-	StorageEnabled     bool            `json:"storage_enabled"`
-	DnsEnabled         bool            `json:"dns_enabled"`
-	DatabasesEnabled   bool            `json:"databases_enabled"`
+	InstanceTypes      []*InstanceType   `json:"instance_types"`
+	AlertPresets       []*AlertPreset    `json:"alert_presets"`
+	NotifyChannels     []string          `json:"notify_channels"`
+	MinCpuMillis       int64             `json:"min_cpu_millis"`
+	MaxCpuMillis       int64             `json:"max_cpu_millis"`
+	MinMemory          int64             `json:"min_memory"`
+	MaxMemory          int64             `json:"max_memory"`
+	StoreEnabled       bool              `json:"store_enabled"`
+	AlertsEnabled      bool              `json:"alerts_enabled"`
+	Repository         string            `json:"repository"`
+	Directory          string            `json:"directory"`
+	IdleTimeoutSeconds int32             `json:"idle_timeout_seconds"`
+	HostSuffix         string            `json:"host_suffix"`
+	InstanceFamilies   []*InstanceFamily `json:"instance_families"`
+	StorageEnabled     bool              `json:"storage_enabled"`
+	DnsEnabled         bool              `json:"dns_enabled"`
+	DatabasesEnabled   bool              `json:"databases_enabled"`
 }
 
 type ListFunctionsOutput struct {
@@ -313,6 +314,12 @@ type FunctionSpec struct {
 	Notify       []string  `json:"notify"`
 	Databases    []string  `json:"databases"`
 	Buckets      []string  `json:"buckets"`
+}
+
+type InstanceFamily struct {
+	ID          string `json:"id"`
+	Label       string `json:"label"`
+	Description string `json:"description"`
 }
 
 type InstanceType struct {

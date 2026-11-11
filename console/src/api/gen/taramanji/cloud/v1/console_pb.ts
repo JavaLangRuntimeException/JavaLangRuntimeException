@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file taramanji/cloud/v1/console.proto.
  */
 export const file_taramanji_cloud_v1_console: GenFile = /*@__PURE__*/
-  fileDesc("CiB0YXJhbWFuamkvY2xvdWQvdjEvY29uc29sZS5wcm90bxISdGFyYW1hbmppLmNsb3VkLnYxIkoKCUNvbXBvbmVudBIMCgRuYW1lGAEgASgJEg0KBXJlYWR5GAIgASgFEg8KB2Rlc2lyZWQYAyABKAUSDwoHdmVyc2lvbhgEIAEoCSIUChJHZXRPdmVydmlld1JlcXVlc3QivwEKE0dldE92ZXJ2aWV3UmVzcG9uc2USEwoLZW52aXJvbm1lbnQYASABKAkSDQoFZW1haWwYAiABKAkSFwoPbWV0cmljc19lbmFibGVkGAMgASgIEjEKCmNvbXBvbmVudHMYBCADKAsyHS50YXJhbWFuamkuY2xvdWQudjEuQ29tcG9uZW50EhsKE3N0b3JhZ2VfaG9zdF9zdWZmaXgYBSABKAkSGwoTaG9zdGluZ19ob3N0X3N1ZmZpeBgGIAEoCSJcCgZTZXJpZXMSDgoGbWV0cmljGAEgASgJEg0KBWdyb3VwGAIgASgJEgwKBHVuaXQYAyABKAkSFQoNdGltZXN0YW1wc19tcxgEIAMoAxIOCgZ2YWx1ZXMYBSADKAEiIgoRR2V0TWV0cmljc1JlcXVlc3QSDQoFcmFuZ2UYASABKAkiQAoSR2V0TWV0cmljc1Jlc3BvbnNlEioKBnNlcmllcxgBIAMoCzIaLnRhcmFtYW5qaS5jbG91ZC52MS5TZXJpZXMiFAoSR2V0Q2FwYWNpdHlSZXF1ZXN0IiUKBkFtb3VudBIMCgR1c2VkGAEgASgDEg0KBWxpbWl0GAIgASgDIs0BCgVRdW90YRIRCgluYW1lc3BhY2UYASABKAkSKgoGbWVtb3J5GAIgASgLMhoudGFyYW1hbmppLmNsb3VkLnYxLkFtb3VudBInCgNjcHUYAyABKAsyGi50YXJhbWFuamkuY2xvdWQudjEuQW1vdW50EigKBHBvZHMYBCABKAsyGi50YXJhbWFuamkuY2xvdWQudjEuQW1vdW50EjIKDnZvbHVtZV9zdG9yYWdlGAUgASgLMhoudGFyYW1hbmppLmNsb3VkLnYxLkFtb3VudCKAAQoHTWFjaGluZRIUCgxtZW1vcnlfdG90YWwYASABKAMSEwoLbWVtb3J5X3VzZWQYAiABKAMSFwoPbWVtb3J5X3Jlc2VydmVkGAMgASgDEhgKEGNwdV90b3RhbF9taWxsaXMYBCABKAMSFwoPY3B1X3VzZWRfbWlsbGlzGAUgASgDIl4KB1NpemVGaXQSDAoEbmFtZRgBIAEoCRIOCgZtZW1vcnkYAiABKAMSEgoKY3B1X21pbGxpcxgDIAEoAxINCgVjb3VudBgEIAEoBRISCgpsaW1pdGVkX2J5GAUgASgJIlwKCFBvZFVzYWdlEgwKBG5hbWUYASABKAkSEwoLbWVtb3J5X3VzZWQYAiABKAMSFAoMbWVtb3J5X2xpbWl0GAMgASgDEhcKD2NwdV91c2VkX21pbGxpcxgEIAEoAyLEAQoTR2V0Q2FwYWNpdHlSZXNwb25zZRIoCgVxdW90YRgBIAEoCzIZLnRhcmFtYW5qaS5jbG91ZC52MS5RdW90YRIsCgdtYWNoaW5lGAIgASgLMhsudGFyYW1hbmppLmNsb3VkLnYxLk1hY2hpbmUSKQoEZml0cxgDIAMoCzIbLnRhcmFtYW5qaS5jbG91ZC52MS5TaXplRml0EioKBHBvZHMYBCADKAsyHC50YXJhbWFuamkuY2xvdWQudjEuUG9kVXNhZ2UiUAoMSW5zdGFuY2VUeXBlEgwKBG5hbWUYASABKAkSDgoGZmFtaWx5GAIgASgJEg4KBm1lbW9yeRgDIAEoAxISCgpjcHVfbWlsbGlzGAQgASgDIj0KC0FsZXJ0UHJlc2V0EgoKAmlkGAEgASgJEg0KBWxhYmVsGAIgASgJEhMKC2Rlc2NyaXB0aW9uGAMgASgJIhoKGEdldEhvc3RpbmdPcHRpb25zUmVxdWVzdCLWAwoZR2V0SG9zdGluZ09wdGlvbnNSZXNwb25zZRI4Cg5pbnN0YW5jZV90eXBlcxgBIAMoCzIgLnRhcmFtYW5qaS5jbG91ZC52MS5JbnN0YW5jZVR5cGUSNgoNYWxlcnRfcHJlc2V0cxgCIAMoCzIfLnRhcmFtYW5qaS5jbG91ZC52MS5BbGVydFByZXNldBIXCg9ub3RpZnlfY2hhbm5lbHMYAyADKAkSFgoObWluX2NwdV9taWxsaXMYBCABKAMSFgoObWF4X2NwdV9taWxsaXMYBSABKAMSEgoKbWluX21lbW9yeRgGIAEoAxISCgptYXhfbWVtb3J5GAcgASgDEhUKDXN0b3JlX2VuYWJsZWQYCSABKAgSFgoOYWxlcnRzX2VuYWJsZWQYCiABKAgSEgoKcmVwb3NpdG9yeRgLIAEoCRIRCglkaXJlY3RvcnkYDCABKAkSHAoUaWRsZV90aW1lb3V0X3NlY29uZHMYDSABKAUSEwoLaG9zdF9zdWZmaXgYDiABKAkSFwoPc3RvcmFnZV9lbmFibGVkGA8gASgIEhMKC2Ruc19lbmFibGVkGBAgASgIEhkKEWRhdGFiYXNlc19lbmFibGVkGBEgASgISgQICBAJIiUKBkVudlZhchIMCgRuYW1lGAEgASgJEg0KBXZhbHVlGAIgASgJIl0KBlNvdXJjZRIMCgR5YW1sGAEgASgJEhAKCHJldmlzaW9uGAIgASgJEhUKDWZvcm1fZWRpdGFibGUYAyABKAgSCwoDdXJsGAQgASgJEg8KB3Byb2JsZW0YBSABKAki4QEKDEZ1bmN0aW9uU3BlYxIMCgRuYW1lGAEgASgJEg0KBWltYWdlGAIgASgJEgwKBHBvcnQYAyABKAUSFQoNaW5zdGFuY2VfdHlwZRgEIAEoCRISCgpjcHVfbWlsbGlzGAUgASgDEg4KBm1lbW9yeRgGIAEoAxInCgNlbnYYByADKAsyGi50YXJhbWFuamkuY2xvdWQudjEuRW52VmFyEg4KBmFsZXJ0cxgIIAMoCRIOCgZub3RpZnkYCSADKAkSEQoJZGF0YWJhc2VzGAogAygJEg8KB2J1Y2tldHMYCyADKAkiwAEKCEZ1bmN0aW9uEi4KBHNwZWMYASABKAsyIC50YXJhbWFuamkuY2xvdWQudjEuRnVuY3Rpb25TcGVjEioKBnNvdXJjZRgCIAEoCzIaLnRhcmFtYW5qaS5jbG91ZC52MS5Tb3VyY2USGAoQY3VzdG9tX3Jlc291cmNlcxgDIAEoCBIQCghkZXBsb3llZBgEIAEoCBINCgVyZWFkeRgFIAEoBRIPCgdkZXNpcmVkGAYgASgFEgwKBGFwaXMYByADKAkiFgoUTGlzdEZ1bmN0aW9uc1JlcXVlc3QiSAoVTGlzdEZ1bmN0aW9uc1Jlc3BvbnNlEi8KCWZ1bmN0aW9ucxgBIAMoCzIcLnRhcmFtYW5qaS5jbG91ZC52MS5GdW5jdGlvbiJIChZQcmV2aWV3RnVuY3Rpb25SZXF1ZXN0Ei4KBHNwZWMYASABKAsyIC50YXJhbWFuamkuY2xvdWQudjEuRnVuY3Rpb25TcGVjIicKF1ByZXZpZXdGdW5jdGlvblJlc3BvbnNlEgwKBHlhbWwYASABKAkiZgoUQXBwbHlGdW5jdGlvblJlcXVlc3QSLgoEc3BlYxgBIAEoCzIgLnRhcmFtYW5qaS5jbG91ZC52MS5GdW5jdGlvblNwZWMSDAoEeWFtbBgCIAEoCRIQCghyZXZpc2lvbhgDIAEoCSJfChVBcHBseUZ1bmN0aW9uUmVzcG9uc2USLgoIZnVuY3Rpb24YASABKAsyHC50YXJhbWFuamkuY2xvdWQudjEuRnVuY3Rpb24SFgoOYWxlcnRzX3Byb2JsZW0YAiABKAkiNwoVRGVsZXRlRnVuY3Rpb25SZXF1ZXN0EgwKBG5hbWUYASABKAkSEAoIcmV2aXNpb24YAiABKAkiMAoWRGVsZXRlRnVuY3Rpb25SZXNwb25zZRIWCg5hbGVydHNfcHJvYmxlbRgBIAEoCSIqCghBcGlSb3V0ZRIMCgRwYXRoGAEgASgJEhAKCGZ1bmN0aW9uGAIgASgJIkUKB0FwaVNwZWMSDAoEbmFtZRgBIAEoCRIsCgZyb3V0ZXMYAiADKAsyHC50YXJhbWFuamkuY2xvdWQudjEuQXBpUm91dGUiagoDQXBpEikKBHNwZWMYASABKAsyGy50YXJhbWFuamkuY2xvdWQudjEuQXBpU3BlYxIqCgZzb3VyY2UYAiABKAsyGi50YXJhbWFuamkuY2xvdWQudjEuU291cmNlEgwKBGhvc3QYAyABKAkiEQoPTGlzdEFwaXNSZXF1ZXN0IjkKEExpc3RBcGlzUmVzcG9uc2USJQoEYXBpcxgBIAMoCzIXLnRhcmFtYW5qaS5jbG91ZC52MS5BcGkiPgoRUHJldmlld0FwaVJlcXVlc3QSKQoEc3BlYxgBIAEoCzIbLnRhcmFtYW5qaS5jbG91ZC52MS5BcGlTcGVjIiIKElByZXZpZXdBcGlSZXNwb25zZRIMCgR5YW1sGAEgASgJIlwKD0FwcGx5QXBpUmVxdWVzdBIpCgRzcGVjGAEgASgLMhsudGFyYW1hbmppLmNsb3VkLnYxLkFwaVNwZWMSDAoEeWFtbBgCIAEoCRIQCghyZXZpc2lvbhgDIAEoCSJNChBBcHBseUFwaVJlc3BvbnNlEiQKA2FwaRgBIAEoCzIXLnRhcmFtYW5qaS5jbG91ZC52MS5BcGkSEwoLZG5zX3Byb2JsZW0YAiABKAkiMgoQRGVsZXRlQXBpUmVxdWVzdBIMCgRuYW1lGAEgASgJEhAKCHJldmlzaW9uGAIgASgJIigKEURlbGV0ZUFwaVJlc3BvbnNlEhMKC2Ruc19wcm9ibGVtGAEgASgJIhMKEVN5bmNBbGVydHNSZXF1ZXN0IkcKElN5bmNBbGVydHNSZXNwb25zZRIPCgdjcmVhdGVkGAEgASgFEg8KB3VwZGF0ZWQYAiABKAUSDwoHZGVsZXRlZBgDIAEoBSKIAQoGQnVja2V0EgwKBG5hbWUYASABKAkSKgoGc291cmNlGAIgASgLMhoudGFyYW1hbmppLmNsb3VkLnYxLlNvdXJjZRINCgVyZWFkeRgDIAEoCBIPCgdvYmplY3RzGAQgASgDEg0KBWJ5dGVzGAUgASgDEhUKDWRpc3RyaWJ1dGlvbnMYBiADKAkiFAoSTGlzdEJ1Y2tldHNSZXF1ZXN0IkIKE0xpc3RCdWNrZXRzUmVzcG9uc2USKwoHYnVja2V0cxgBIAMoCzIaLnRhcmFtYW5qaS5jbG91ZC52MS5CdWNrZXQiIwoTQ3JlYXRlQnVja2V0UmVxdWVzdBIMCgRuYW1lGAEgASgJIkIKFENyZWF0ZUJ1Y2tldFJlc3BvbnNlEioKBmJ1Y2tldBgBIAEoCzIaLnRhcmFtYW5qaS5jbG91ZC52MS5CdWNrZXQiNQoTRGVsZXRlQnVja2V0UmVxdWVzdBIMCgRuYW1lGAEgASgJEhAKCHJldmlzaW9uGAIgASgJIhYKFERlbGV0ZUJ1Y2tldFJlc3BvbnNlIj8KDVN0b3JhZ2VPYmplY3QSCwoDa2V5GAEgASgJEgwKBHNpemUYAiABKAMSEwoLbW9kaWZpZWRfbXMYAyABKAMiNAoSTGlzdE9iamVjdHNSZXF1ZXN0Eg4KBmJ1Y2tldBgBIAEoCRIOCgZwcmVmaXgYAiABKAkiXAoTTGlzdE9iamVjdHNSZXNwb25zZRIyCgdvYmplY3RzGAEgAygLMiEudGFyYW1hbmppLmNsb3VkLnYxLlN0b3JhZ2VPYmplY3QSEQoJdHJ1bmNhdGVkGAIgASgIIjIKE0RlbGV0ZU9iamVjdFJlcXVlc3QSDgoGYnVja2V0GAEgASgJEgsKA2tleRgCIAEoCSIWChREZWxldGVPYmplY3RSZXNwb25zZSJpChBEaXN0cmlidXRpb25TcGVjEgwKBG5hbWUYASABKAkSEwoLb3JpZ2luX3R5cGUYAiABKAkSDgoGb3JpZ2luGAMgASgJEhUKDWNhY2hlX3NlY29uZHMYBCABKAUSCwoDc3BhGAUgASgIInwKDERpc3RyaWJ1dGlvbhIyCgRzcGVjGAEgASgLMiQudGFyYW1hbmppLmNsb3VkLnYxLkRpc3RyaWJ1dGlvblNwZWMSKgoGc291cmNlGAIgASgLMhoudGFyYW1hbmppLmNsb3VkLnYxLlNvdXJjZRIMCgRob3N0GAMgASgJIhoKGExpc3REaXN0cmlidXRpb25zUmVxdWVzdCJUChlMaXN0RGlzdHJpYnV0aW9uc1Jlc3BvbnNlEjcKDWRpc3RyaWJ1dGlvbnMYASADKAsyIC50YXJhbWFuamkuY2xvdWQudjEuRGlzdHJpYnV0aW9uIlAKGlByZXZpZXdEaXN0cmlidXRpb25SZXF1ZXN0EjIKBHNwZWMYASABKAsyJC50YXJhbWFuamkuY2xvdWQudjEuRGlzdHJpYnV0aW9uU3BlYyIrChtQcmV2aWV3RGlzdHJpYnV0aW9uUmVzcG9uc2USDAoEeWFtbBgBIAEoCSJuChhBcHBseURpc3RyaWJ1dGlvblJlcXVlc3QSMgoEc3BlYxgBIAEoCzIkLnRhcmFtYW5qaS5jbG91ZC52MS5EaXN0cmlidXRpb25TcGVjEgwKBHlhbWwYAiABKAkSEAoIcmV2aXNpb24YAyABKAkiaAoZQXBwbHlEaXN0cmlidXRpb25SZXNwb25zZRI2CgxkaXN0cmlidXRpb24YASABKAsyIC50YXJhbWFuamkuY2xvdWQudjEuRGlzdHJpYnV0aW9uEhMKC2Ruc19wcm9ibGVtGAIgASgJIjsKGURlbGV0ZURpc3RyaWJ1dGlvblJlcXVlc3QSDAoEbmFtZRgBIAEoCRIQCghyZXZpc2lvbhgCIAEoCSIxChpEZWxldGVEaXN0cmlidXRpb25SZXNwb25zZRITCgtkbnNfcHJvYmxlbRgBIAEoCSKZAQoIRGF0YWJhc2USDAoEbmFtZRgBIAEoCRIOCgZlbmdpbmUYAiABKAkSKgoGc291cmNlGAMgASgLMhoudGFyYW1hbmppLmNsb3VkLnYxLlNvdXJjZRIOCgZzdGF0dXMYBCABKAkSDQoFcmVhZHkYBSABKAgSEQoJZW52X25hbWVzGAYgAygJEhEKCWZ1bmN0aW9ucxgHIAMoCSIWChRMaXN0RGF0YWJhc2VzUmVxdWVzdCJIChVMaXN0RGF0YWJhc2VzUmVzcG9uc2USLwoJZGF0YWJhc2VzGAEgAygLMhwudGFyYW1hbmppLmNsb3VkLnYxLkRhdGFiYXNlIjUKFUNyZWF0ZURhdGFiYXNlUmVxdWVzdBIMCgRuYW1lGAEgASgJEg4KBmVuZ2luZRgCIAEoCSJIChZDcmVhdGVEYXRhYmFzZVJlc3BvbnNlEi4KCGRhdGFiYXNlGAEgASgLMhwudGFyYW1hbmppLmNsb3VkLnYxLkRhdGFiYXNlIjcKFURlbGV0ZURhdGFiYXNlUmVxdWVzdBIMCgRuYW1lGAEgASgJEhAKCHJldmlzaW9uGAIgASgJIhgKFkRlbGV0ZURhdGFiYXNlUmVzcG9uc2UyphQKDkNvbnNvbGVTZXJ2aWNlEmAKC0dldE92ZXJ2aWV3EiYudGFyYW1hbmppLmNsb3VkLnYxLkdldE92ZXJ2aWV3UmVxdWVzdBonLnRhcmFtYW5qaS5jbG91ZC52MS5HZXRPdmVydmlld1Jlc3BvbnNlIgASXQoKR2V0TWV0cmljcxIlLnRhcmFtYW5qaS5jbG91ZC52MS5HZXRNZXRyaWNzUmVxdWVzdBomLnRhcmFtYW5qaS5jbG91ZC52MS5HZXRNZXRyaWNzUmVzcG9uc2UiABJgCgtHZXRDYXBhY2l0eRImLnRhcmFtYW5qaS5jbG91ZC52MS5HZXRDYXBhY2l0eVJlcXVlc3QaJy50YXJhbWFuamkuY2xvdWQudjEuR2V0Q2FwYWNpdHlSZXNwb25zZSIAEnIKEUdldEhvc3RpbmdPcHRpb25zEiwudGFyYW1hbmppLmNsb3VkLnYxLkdldEhvc3RpbmdPcHRpb25zUmVxdWVzdBotLnRhcmFtYW5qaS5jbG91ZC52MS5HZXRIb3N0aW5nT3B0aW9uc1Jlc3BvbnNlIgASZgoNTGlzdEZ1bmN0aW9ucxIoLnRhcmFtYW5qaS5jbG91ZC52MS5MaXN0RnVuY3Rpb25zUmVxdWVzdBopLnRhcmFtYW5qaS5jbG91ZC52MS5MaXN0RnVuY3Rpb25zUmVzcG9uc2UiABJsCg9QcmV2aWV3RnVuY3Rpb24SKi50YXJhbWFuamkuY2xvdWQudjEuUHJldmlld0Z1bmN0aW9uUmVxdWVzdBorLnRhcmFtYW5qaS5jbG91ZC52MS5QcmV2aWV3RnVuY3Rpb25SZXNwb25zZSIAEmYKDUFwcGx5RnVuY3Rpb24SKC50YXJhbWFuamkuY2xvdWQudjEuQXBwbHlGdW5jdGlvblJlcXVlc3QaKS50YXJhbWFuamkuY2xvdWQudjEuQXBwbHlGdW5jdGlvblJlc3BvbnNlIgASaQoORGVsZXRlRnVuY3Rpb24SKS50YXJhbWFuamkuY2xvdWQudjEuRGVsZXRlRnVuY3Rpb25SZXF1ZXN0GioudGFyYW1hbmppLmNsb3VkLnYxLkRlbGV0ZUZ1bmN0aW9uUmVzcG9uc2UiABJXCghMaXN0QXBpcxIjLnRhcmFtYW5qaS5jbG91ZC52MS5MaXN0QXBpc1JlcXVlc3QaJC50YXJhbWFuamkuY2xvdWQudjEuTGlzdEFwaXNSZXNwb25zZSIAEl0KClByZXZpZXdBcGkSJS50YXJhbWFuamkuY2xvdWQudjEuUHJldmlld0FwaVJlcXVlc3QaJi50YXJhbWFuamkuY2xvdWQudjEuUHJldmlld0FwaVJlc3BvbnNlIgASVwoIQXBwbHlBcGkSIy50YXJhbWFuamkuY2xvdWQudjEuQXBwbHlBcGlSZXF1ZXN0GiQudGFyYW1hbmppLmNsb3VkLnYxLkFwcGx5QXBpUmVzcG9uc2UiABJaCglEZWxldGVBcGkSJC50YXJhbWFuamkuY2xvdWQudjEuRGVsZXRlQXBpUmVxdWVzdBolLnRhcmFtYW5qaS5jbG91ZC52MS5EZWxldGVBcGlSZXNwb25zZSIAEmAKC0xpc3RCdWNrZXRzEiYudGFyYW1hbmppLmNsb3VkLnYxLkxpc3RCdWNrZXRzUmVxdWVzdBonLnRhcmFtYW5qaS5jbG91ZC52MS5MaXN0QnVja2V0c1Jlc3BvbnNlIgASYwoMQ3JlYXRlQnVja2V0EicudGFyYW1hbmppLmNsb3VkLnYxLkNyZWF0ZUJ1Y2tldFJlcXVlc3QaKC50YXJhbWFuamkuY2xvdWQudjEuQ3JlYXRlQnVja2V0UmVzcG9uc2UiABJjCgxEZWxldGVCdWNrZXQSJy50YXJhbWFuamkuY2xvdWQudjEuRGVsZXRlQnVja2V0UmVxdWVzdBooLnRhcmFtYW5qaS5jbG91ZC52MS5EZWxldGVCdWNrZXRSZXNwb25zZSIAEmAKC0xpc3RPYmplY3RzEiYudGFyYW1hbmppLmNsb3VkLnYxLkxpc3RPYmplY3RzUmVxdWVzdBonLnRhcmFtYW5qaS5jbG91ZC52MS5MaXN0T2JqZWN0c1Jlc3BvbnNlIgASYwoMRGVsZXRlT2JqZWN0EicudGFyYW1hbmppLmNsb3VkLnYxLkRlbGV0ZU9iamVjdFJlcXVlc3QaKC50YXJhbWFuamkuY2xvdWQudjEuRGVsZXRlT2JqZWN0UmVzcG9uc2UiABJyChFMaXN0RGlzdHJpYnV0aW9ucxIsLnRhcmFtYW5qaS5jbG91ZC52MS5MaXN0RGlzdHJpYnV0aW9uc1JlcXVlc3QaLS50YXJhbWFuamkuY2xvdWQudjEuTGlzdERpc3RyaWJ1dGlvbnNSZXNwb25zZSIAEngKE1ByZXZpZXdEaXN0cmlidXRpb24SLi50YXJhbWFuamkuY2xvdWQudjEuUHJldmlld0Rpc3RyaWJ1dGlvblJlcXVlc3QaLy50YXJhbWFuamkuY2xvdWQudjEuUHJldmlld0Rpc3RyaWJ1dGlvblJlc3BvbnNlIgAScgoRQXBwbHlEaXN0cmlidXRpb24SLC50YXJhbWFuamkuY2xvdWQudjEuQXBwbHlEaXN0cmlidXRpb25SZXF1ZXN0Gi0udGFyYW1hbmppLmNsb3VkLnYxLkFwcGx5RGlzdHJpYnV0aW9uUmVzcG9uc2UiABJ1ChJEZWxldGVEaXN0cmlidXRpb24SLS50YXJhbWFuamkuY2xvdWQudjEuRGVsZXRlRGlzdHJpYnV0aW9uUmVxdWVzdBouLnRhcmFtYW5qaS5jbG91ZC52MS5EZWxldGVEaXN0cmlidXRpb25SZXNwb25zZSIAEmYKDUxpc3REYXRhYmFzZXMSKC50YXJhbWFuamkuY2xvdWQudjEuTGlzdERhdGFiYXNlc1JlcXVlc3QaKS50YXJhbWFuamkuY2xvdWQudjEuTGlzdERhdGFiYXNlc1Jlc3BvbnNlIgASaQoOQ3JlYXRlRGF0YWJhc2USKS50YXJhbWFuamkuY2xvdWQudjEuQ3JlYXRlRGF0YWJhc2VSZXF1ZXN0GioudGFyYW1hbmppLmNsb3VkLnYxLkNyZWF0ZURhdGFiYXNlUmVzcG9uc2UiABJpCg5EZWxldGVEYXRhYmFzZRIpLnRhcmFtYW5qaS5jbG91ZC52MS5EZWxldGVEYXRhYmFzZVJlcXVlc3QaKi50YXJhbWFuamkuY2xvdWQudjEuRGVsZXRlRGF0YWJhc2VSZXNwb25zZSIAEl0KClN5bmNBbGVydHMSJS50YXJhbWFuamkuY2xvdWQudjEuU3luY0FsZXJ0c1JlcXVlc3QaJi50YXJhbWFuamkuY2xvdWQudjEuU3luY0FsZXJ0c1Jlc3BvbnNlIgBiBnByb3RvMw");
+  fileDesc("CiB0YXJhbWFuamkvY2xvdWQvdjEvY29uc29sZS5wcm90bxISdGFyYW1hbmppLmNsb3VkLnYxIkoKCUNvbXBvbmVudBIMCgRuYW1lGAEgASgJEg0KBXJlYWR5GAIgASgFEg8KB2Rlc2lyZWQYAyABKAUSDwoHdmVyc2lvbhgEIAEoCSIUChJHZXRPdmVydmlld1JlcXVlc3QivwEKE0dldE92ZXJ2aWV3UmVzcG9uc2USEwoLZW52aXJvbm1lbnQYASABKAkSDQoFZW1haWwYAiABKAkSFwoPbWV0cmljc19lbmFibGVkGAMgASgIEjEKCmNvbXBvbmVudHMYBCADKAsyHS50YXJhbWFuamkuY2xvdWQudjEuQ29tcG9uZW50EhsKE3N0b3JhZ2VfaG9zdF9zdWZmaXgYBSABKAkSGwoTaG9zdGluZ19ob3N0X3N1ZmZpeBgGIAEoCSJcCgZTZXJpZXMSDgoGbWV0cmljGAEgASgJEg0KBWdyb3VwGAIgASgJEgwKBHVuaXQYAyABKAkSFQoNdGltZXN0YW1wc19tcxgEIAMoAxIOCgZ2YWx1ZXMYBSADKAEiIgoRR2V0TWV0cmljc1JlcXVlc3QSDQoFcmFuZ2UYASABKAkiQAoSR2V0TWV0cmljc1Jlc3BvbnNlEioKBnNlcmllcxgBIAMoCzIaLnRhcmFtYW5qaS5jbG91ZC52MS5TZXJpZXMiFAoSR2V0Q2FwYWNpdHlSZXF1ZXN0IiUKBkFtb3VudBIMCgR1c2VkGAEgASgDEg0KBWxpbWl0GAIgASgDIs0BCgVRdW90YRIRCgluYW1lc3BhY2UYASABKAkSKgoGbWVtb3J5GAIgASgLMhoudGFyYW1hbmppLmNsb3VkLnYxLkFtb3VudBInCgNjcHUYAyABKAsyGi50YXJhbWFuamkuY2xvdWQudjEuQW1vdW50EigKBHBvZHMYBCABKAsyGi50YXJhbWFuamkuY2xvdWQudjEuQW1vdW50EjIKDnZvbHVtZV9zdG9yYWdlGAUgASgLMhoudGFyYW1hbmppLmNsb3VkLnYxLkFtb3VudCKAAQoHTWFjaGluZRIUCgxtZW1vcnlfdG90YWwYASABKAMSEwoLbWVtb3J5X3VzZWQYAiABKAMSFwoPbWVtb3J5X3Jlc2VydmVkGAMgASgDEhgKEGNwdV90b3RhbF9taWxsaXMYBCABKAMSFwoPY3B1X3VzZWRfbWlsbGlzGAUgASgDIl4KB1NpemVGaXQSDAoEbmFtZRgBIAEoCRIOCgZtZW1vcnkYAiABKAMSEgoKY3B1X21pbGxpcxgDIAEoAxINCgVjb3VudBgEIAEoBRISCgpsaW1pdGVkX2J5GAUgASgJIlwKCFBvZFVzYWdlEgwKBG5hbWUYASABKAkSEwoLbWVtb3J5X3VzZWQYAiABKAMSFAoMbWVtb3J5X2xpbWl0GAMgASgDEhcKD2NwdV91c2VkX21pbGxpcxgEIAEoAyLEAQoTR2V0Q2FwYWNpdHlSZXNwb25zZRIoCgVxdW90YRgBIAEoCzIZLnRhcmFtYW5qaS5jbG91ZC52MS5RdW90YRIsCgdtYWNoaW5lGAIgASgLMhsudGFyYW1hbmppLmNsb3VkLnYxLk1hY2hpbmUSKQoEZml0cxgDIAMoCzIbLnRhcmFtYW5qaS5jbG91ZC52MS5TaXplRml0EioKBHBvZHMYBCADKAsyHC50YXJhbWFuamkuY2xvdWQudjEuUG9kVXNhZ2UiUAoMSW5zdGFuY2VUeXBlEgwKBG5hbWUYASABKAkSDgoGZmFtaWx5GAIgASgJEg4KBm1lbW9yeRgDIAEoAxISCgpjcHVfbWlsbGlzGAQgASgDIj0KC0FsZXJ0UHJlc2V0EgoKAmlkGAEgASgJEg0KBWxhYmVsGAIgASgJEhMKC2Rlc2NyaXB0aW9uGAMgASgJIhoKGEdldEhvc3RpbmdPcHRpb25zUmVxdWVzdCJACg5JbnN0YW5jZUZhbWlseRIKCgJpZBgBIAEoCRINCgVsYWJlbBgCIAEoCRITCgtkZXNjcmlwdGlvbhgDIAEoCSKVBAoZR2V0SG9zdGluZ09wdGlvbnNSZXNwb25zZRI4Cg5pbnN0YW5jZV90eXBlcxgBIAMoCzIgLnRhcmFtYW5qaS5jbG91ZC52MS5JbnN0YW5jZVR5cGUSNgoNYWxlcnRfcHJlc2V0cxgCIAMoCzIfLnRhcmFtYW5qaS5jbG91ZC52MS5BbGVydFByZXNldBIXCg9ub3RpZnlfY2hhbm5lbHMYAyADKAkSFgoObWluX2NwdV9taWxsaXMYBCABKAMSFgoObWF4X2NwdV9taWxsaXMYBSABKAMSEgoKbWluX21lbW9yeRgGIAEoAxISCgptYXhfbWVtb3J5GAcgASgDEhUKDXN0b3JlX2VuYWJsZWQYCSABKAgSFgoOYWxlcnRzX2VuYWJsZWQYCiABKAgSEgoKcmVwb3NpdG9yeRgLIAEoCRIRCglkaXJlY3RvcnkYDCABKAkSHAoUaWRsZV90aW1lb3V0X3NlY29uZHMYDSABKAUSEwoLaG9zdF9zdWZmaXgYDiABKAkSPQoRaW5zdGFuY2VfZmFtaWxpZXMYEiADKAsyIi50YXJhbWFuamkuY2xvdWQudjEuSW5zdGFuY2VGYW1pbHkSFwoPc3RvcmFnZV9lbmFibGVkGA8gASgIEhMKC2Ruc19lbmFibGVkGBAgASgIEhkKEWRhdGFiYXNlc19lbmFibGVkGBEgASgISgQICBAJIiUKBkVudlZhchIMCgRuYW1lGAEgASgJEg0KBXZhbHVlGAIgASgJIl0KBlNvdXJjZRIMCgR5YW1sGAEgASgJEhAKCHJldmlzaW9uGAIgASgJEhUKDWZvcm1fZWRpdGFibGUYAyABKAgSCwoDdXJsGAQgASgJEg8KB3Byb2JsZW0YBSABKAki4QEKDEZ1bmN0aW9uU3BlYxIMCgRuYW1lGAEgASgJEg0KBWltYWdlGAIgASgJEgwKBHBvcnQYAyABKAUSFQoNaW5zdGFuY2VfdHlwZRgEIAEoCRISCgpjcHVfbWlsbGlzGAUgASgDEg4KBm1lbW9yeRgGIAEoAxInCgNlbnYYByADKAsyGi50YXJhbWFuamkuY2xvdWQudjEuRW52VmFyEg4KBmFsZXJ0cxgIIAMoCRIOCgZub3RpZnkYCSADKAkSEQoJZGF0YWJhc2VzGAogAygJEg8KB2J1Y2tldHMYCyADKAkiwAEKCEZ1bmN0aW9uEi4KBHNwZWMYASABKAsyIC50YXJhbWFuamkuY2xvdWQudjEuRnVuY3Rpb25TcGVjEioKBnNvdXJjZRgCIAEoCzIaLnRhcmFtYW5qaS5jbG91ZC52MS5Tb3VyY2USGAoQY3VzdG9tX3Jlc291cmNlcxgDIAEoCBIQCghkZXBsb3llZBgEIAEoCBINCgVyZWFkeRgFIAEoBRIPCgdkZXNpcmVkGAYgASgFEgwKBGFwaXMYByADKAkiFgoUTGlzdEZ1bmN0aW9uc1JlcXVlc3QiSAoVTGlzdEZ1bmN0aW9uc1Jlc3BvbnNlEi8KCWZ1bmN0aW9ucxgBIAMoCzIcLnRhcmFtYW5qaS5jbG91ZC52MS5GdW5jdGlvbiJIChZQcmV2aWV3RnVuY3Rpb25SZXF1ZXN0Ei4KBHNwZWMYASABKAsyIC50YXJhbWFuamkuY2xvdWQudjEuRnVuY3Rpb25TcGVjIicKF1ByZXZpZXdGdW5jdGlvblJlc3BvbnNlEgwKBHlhbWwYASABKAkiZgoUQXBwbHlGdW5jdGlvblJlcXVlc3QSLgoEc3BlYxgBIAEoCzIgLnRhcmFtYW5qaS5jbG91ZC52MS5GdW5jdGlvblNwZWMSDAoEeWFtbBgCIAEoCRIQCghyZXZpc2lvbhgDIAEoCSJfChVBcHBseUZ1bmN0aW9uUmVzcG9uc2USLgoIZnVuY3Rpb24YASABKAsyHC50YXJhbWFuamkuY2xvdWQudjEuRnVuY3Rpb24SFgoOYWxlcnRzX3Byb2JsZW0YAiABKAkiNwoVRGVsZXRlRnVuY3Rpb25SZXF1ZXN0EgwKBG5hbWUYASABKAkSEAoIcmV2aXNpb24YAiABKAkiMAoWRGVsZXRlRnVuY3Rpb25SZXNwb25zZRIWCg5hbGVydHNfcHJvYmxlbRgBIAEoCSIqCghBcGlSb3V0ZRIMCgRwYXRoGAEgASgJEhAKCGZ1bmN0aW9uGAIgASgJIkUKB0FwaVNwZWMSDAoEbmFtZRgBIAEoCRIsCgZyb3V0ZXMYAiADKAsyHC50YXJhbWFuamkuY2xvdWQudjEuQXBpUm91dGUiagoDQXBpEikKBHNwZWMYASABKAsyGy50YXJhbWFuamkuY2xvdWQudjEuQXBpU3BlYxIqCgZzb3VyY2UYAiABKAsyGi50YXJhbWFuamkuY2xvdWQudjEuU291cmNlEgwKBGhvc3QYAyABKAkiEQoPTGlzdEFwaXNSZXF1ZXN0IjkKEExpc3RBcGlzUmVzcG9uc2USJQoEYXBpcxgBIAMoCzIXLnRhcmFtYW5qaS5jbG91ZC52MS5BcGkiPgoRUHJldmlld0FwaVJlcXVlc3QSKQoEc3BlYxgBIAEoCzIbLnRhcmFtYW5qaS5jbG91ZC52MS5BcGlTcGVjIiIKElByZXZpZXdBcGlSZXNwb25zZRIMCgR5YW1sGAEgASgJIlwKD0FwcGx5QXBpUmVxdWVzdBIpCgRzcGVjGAEgASgLMhsudGFyYW1hbmppLmNsb3VkLnYxLkFwaVNwZWMSDAoEeWFtbBgCIAEoCRIQCghyZXZpc2lvbhgDIAEoCSJNChBBcHBseUFwaVJlc3BvbnNlEiQKA2FwaRgBIAEoCzIXLnRhcmFtYW5qaS5jbG91ZC52MS5BcGkSEwoLZG5zX3Byb2JsZW0YAiABKAkiMgoQRGVsZXRlQXBpUmVxdWVzdBIMCgRuYW1lGAEgASgJEhAKCHJldmlzaW9uGAIgASgJIigKEURlbGV0ZUFwaVJlc3BvbnNlEhMKC2Ruc19wcm9ibGVtGAEgASgJIhMKEVN5bmNBbGVydHNSZXF1ZXN0IkcKElN5bmNBbGVydHNSZXNwb25zZRIPCgdjcmVhdGVkGAEgASgFEg8KB3VwZGF0ZWQYAiABKAUSDwoHZGVsZXRlZBgDIAEoBSKIAQoGQnVja2V0EgwKBG5hbWUYASABKAkSKgoGc291cmNlGAIgASgLMhoudGFyYW1hbmppLmNsb3VkLnYxLlNvdXJjZRINCgVyZWFkeRgDIAEoCBIPCgdvYmplY3RzGAQgASgDEg0KBWJ5dGVzGAUgASgDEhUKDWRpc3RyaWJ1dGlvbnMYBiADKAkiFAoSTGlzdEJ1Y2tldHNSZXF1ZXN0IkIKE0xpc3RCdWNrZXRzUmVzcG9uc2USKwoHYnVja2V0cxgBIAMoCzIaLnRhcmFtYW5qaS5jbG91ZC52MS5CdWNrZXQiIwoTQ3JlYXRlQnVja2V0UmVxdWVzdBIMCgRuYW1lGAEgASgJIkIKFENyZWF0ZUJ1Y2tldFJlc3BvbnNlEioKBmJ1Y2tldBgBIAEoCzIaLnRhcmFtYW5qaS5jbG91ZC52MS5CdWNrZXQiNQoTRGVsZXRlQnVja2V0UmVxdWVzdBIMCgRuYW1lGAEgASgJEhAKCHJldmlzaW9uGAIgASgJIhYKFERlbGV0ZUJ1Y2tldFJlc3BvbnNlIj8KDVN0b3JhZ2VPYmplY3QSCwoDa2V5GAEgASgJEgwKBHNpemUYAiABKAMSEwoLbW9kaWZpZWRfbXMYAyABKAMiNAoSTGlzdE9iamVjdHNSZXF1ZXN0Eg4KBmJ1Y2tldBgBIAEoCRIOCgZwcmVmaXgYAiABKAkiXAoTTGlzdE9iamVjdHNSZXNwb25zZRIyCgdvYmplY3RzGAEgAygLMiEudGFyYW1hbmppLmNsb3VkLnYxLlN0b3JhZ2VPYmplY3QSEQoJdHJ1bmNhdGVkGAIgASgIIjIKE0RlbGV0ZU9iamVjdFJlcXVlc3QSDgoGYnVja2V0GAEgASgJEgsKA2tleRgCIAEoCSIWChREZWxldGVPYmplY3RSZXNwb25zZSJpChBEaXN0cmlidXRpb25TcGVjEgwKBG5hbWUYASABKAkSEwoLb3JpZ2luX3R5cGUYAiABKAkSDgoGb3JpZ2luGAMgASgJEhUKDWNhY2hlX3NlY29uZHMYBCABKAUSCwoDc3BhGAUgASgIInwKDERpc3RyaWJ1dGlvbhIyCgRzcGVjGAEgASgLMiQudGFyYW1hbmppLmNsb3VkLnYxLkRpc3RyaWJ1dGlvblNwZWMSKgoGc291cmNlGAIgASgLMhoudGFyYW1hbmppLmNsb3VkLnYxLlNvdXJjZRIMCgRob3N0GAMgASgJIhoKGExpc3REaXN0cmlidXRpb25zUmVxdWVzdCJUChlMaXN0RGlzdHJpYnV0aW9uc1Jlc3BvbnNlEjcKDWRpc3RyaWJ1dGlvbnMYASADKAsyIC50YXJhbWFuamkuY2xvdWQudjEuRGlzdHJpYnV0aW9uIlAKGlByZXZpZXdEaXN0cmlidXRpb25SZXF1ZXN0EjIKBHNwZWMYASABKAsyJC50YXJhbWFuamkuY2xvdWQudjEuRGlzdHJpYnV0aW9uU3BlYyIrChtQcmV2aWV3RGlzdHJpYnV0aW9uUmVzcG9uc2USDAoEeWFtbBgBIAEoCSJuChhBcHBseURpc3RyaWJ1dGlvblJlcXVlc3QSMgoEc3BlYxgBIAEoCzIkLnRhcmFtYW5qaS5jbG91ZC52MS5EaXN0cmlidXRpb25TcGVjEgwKBHlhbWwYAiABKAkSEAoIcmV2aXNpb24YAyABKAkiaAoZQXBwbHlEaXN0cmlidXRpb25SZXNwb25zZRI2CgxkaXN0cmlidXRpb24YASABKAsyIC50YXJhbWFuamkuY2xvdWQudjEuRGlzdHJpYnV0aW9uEhMKC2Ruc19wcm9ibGVtGAIgASgJIjsKGURlbGV0ZURpc3RyaWJ1dGlvblJlcXVlc3QSDAoEbmFtZRgBIAEoCRIQCghyZXZpc2lvbhgCIAEoCSIxChpEZWxldGVEaXN0cmlidXRpb25SZXNwb25zZRITCgtkbnNfcHJvYmxlbRgBIAEoCSKZAQoIRGF0YWJhc2USDAoEbmFtZRgBIAEoCRIOCgZlbmdpbmUYAiABKAkSKgoGc291cmNlGAMgASgLMhoudGFyYW1hbmppLmNsb3VkLnYxLlNvdXJjZRIOCgZzdGF0dXMYBCABKAkSDQoFcmVhZHkYBSABKAgSEQoJZW52X25hbWVzGAYgAygJEhEKCWZ1bmN0aW9ucxgHIAMoCSIWChRMaXN0RGF0YWJhc2VzUmVxdWVzdCJIChVMaXN0RGF0YWJhc2VzUmVzcG9uc2USLwoJZGF0YWJhc2VzGAEgAygLMhwudGFyYW1hbmppLmNsb3VkLnYxLkRhdGFiYXNlIjUKFUNyZWF0ZURhdGFiYXNlUmVxdWVzdBIMCgRuYW1lGAEgASgJEg4KBmVuZ2luZRgCIAEoCSJIChZDcmVhdGVEYXRhYmFzZVJlc3BvbnNlEi4KCGRhdGFiYXNlGAEgASgLMhwudGFyYW1hbmppLmNsb3VkLnYxLkRhdGFiYXNlIjcKFURlbGV0ZURhdGFiYXNlUmVxdWVzdBIMCgRuYW1lGAEgASgJEhAKCHJldmlzaW9uGAIgASgJIhgKFkRlbGV0ZURhdGFiYXNlUmVzcG9uc2UyphQKDkNvbnNvbGVTZXJ2aWNlEmAKC0dldE92ZXJ2aWV3EiYudGFyYW1hbmppLmNsb3VkLnYxLkdldE92ZXJ2aWV3UmVxdWVzdBonLnRhcmFtYW5qaS5jbG91ZC52MS5HZXRPdmVydmlld1Jlc3BvbnNlIgASXQoKR2V0TWV0cmljcxIlLnRhcmFtYW5qaS5jbG91ZC52MS5HZXRNZXRyaWNzUmVxdWVzdBomLnRhcmFtYW5qaS5jbG91ZC52MS5HZXRNZXRyaWNzUmVzcG9uc2UiABJgCgtHZXRDYXBhY2l0eRImLnRhcmFtYW5qaS5jbG91ZC52MS5HZXRDYXBhY2l0eVJlcXVlc3QaJy50YXJhbWFuamkuY2xvdWQudjEuR2V0Q2FwYWNpdHlSZXNwb25zZSIAEnIKEUdldEhvc3RpbmdPcHRpb25zEiwudGFyYW1hbmppLmNsb3VkLnYxLkdldEhvc3RpbmdPcHRpb25zUmVxdWVzdBotLnRhcmFtYW5qaS5jbG91ZC52MS5HZXRIb3N0aW5nT3B0aW9uc1Jlc3BvbnNlIgASZgoNTGlzdEZ1bmN0aW9ucxIoLnRhcmFtYW5qaS5jbG91ZC52MS5MaXN0RnVuY3Rpb25zUmVxdWVzdBopLnRhcmFtYW5qaS5jbG91ZC52MS5MaXN0RnVuY3Rpb25zUmVzcG9uc2UiABJsCg9QcmV2aWV3RnVuY3Rpb24SKi50YXJhbWFuamkuY2xvdWQudjEuUHJldmlld0Z1bmN0aW9uUmVxdWVzdBorLnRhcmFtYW5qaS5jbG91ZC52MS5QcmV2aWV3RnVuY3Rpb25SZXNwb25zZSIAEmYKDUFwcGx5RnVuY3Rpb24SKC50YXJhbWFuamkuY2xvdWQudjEuQXBwbHlGdW5jdGlvblJlcXVlc3QaKS50YXJhbWFuamkuY2xvdWQudjEuQXBwbHlGdW5jdGlvblJlc3BvbnNlIgASaQoORGVsZXRlRnVuY3Rpb24SKS50YXJhbWFuamkuY2xvdWQudjEuRGVsZXRlRnVuY3Rpb25SZXF1ZXN0GioudGFyYW1hbmppLmNsb3VkLnYxLkRlbGV0ZUZ1bmN0aW9uUmVzcG9uc2UiABJXCghMaXN0QXBpcxIjLnRhcmFtYW5qaS5jbG91ZC52MS5MaXN0QXBpc1JlcXVlc3QaJC50YXJhbWFuamkuY2xvdWQudjEuTGlzdEFwaXNSZXNwb25zZSIAEl0KClByZXZpZXdBcGkSJS50YXJhbWFuamkuY2xvdWQudjEuUHJldmlld0FwaVJlcXVlc3QaJi50YXJhbWFuamkuY2xvdWQudjEuUHJldmlld0FwaVJlc3BvbnNlIgASVwoIQXBwbHlBcGkSIy50YXJhbWFuamkuY2xvdWQudjEuQXBwbHlBcGlSZXF1ZXN0GiQudGFyYW1hbmppLmNsb3VkLnYxLkFwcGx5QXBpUmVzcG9uc2UiABJaCglEZWxldGVBcGkSJC50YXJhbWFuamkuY2xvdWQudjEuRGVsZXRlQXBpUmVxdWVzdBolLnRhcmFtYW5qaS5jbG91ZC52MS5EZWxldGVBcGlSZXNwb25zZSIAEmAKC0xpc3RCdWNrZXRzEiYudGFyYW1hbmppLmNsb3VkLnYxLkxpc3RCdWNrZXRzUmVxdWVzdBonLnRhcmFtYW5qaS5jbG91ZC52MS5MaXN0QnVja2V0c1Jlc3BvbnNlIgASYwoMQ3JlYXRlQnVja2V0EicudGFyYW1hbmppLmNsb3VkLnYxLkNyZWF0ZUJ1Y2tldFJlcXVlc3QaKC50YXJhbWFuamkuY2xvdWQudjEuQ3JlYXRlQnVja2V0UmVzcG9uc2UiABJjCgxEZWxldGVCdWNrZXQSJy50YXJhbWFuamkuY2xvdWQudjEuRGVsZXRlQnVja2V0UmVxdWVzdBooLnRhcmFtYW5qaS5jbG91ZC52MS5EZWxldGVCdWNrZXRSZXNwb25zZSIAEmAKC0xpc3RPYmplY3RzEiYudGFyYW1hbmppLmNsb3VkLnYxLkxpc3RPYmplY3RzUmVxdWVzdBonLnRhcmFtYW5qaS5jbG91ZC52MS5MaXN0T2JqZWN0c1Jlc3BvbnNlIgASYwoMRGVsZXRlT2JqZWN0EicudGFyYW1hbmppLmNsb3VkLnYxLkRlbGV0ZU9iamVjdFJlcXVlc3QaKC50YXJhbWFuamkuY2xvdWQudjEuRGVsZXRlT2JqZWN0UmVzcG9uc2UiABJyChFMaXN0RGlzdHJpYnV0aW9ucxIsLnRhcmFtYW5qaS5jbG91ZC52MS5MaXN0RGlzdHJpYnV0aW9uc1JlcXVlc3QaLS50YXJhbWFuamkuY2xvdWQudjEuTGlzdERpc3RyaWJ1dGlvbnNSZXNwb25zZSIAEngKE1ByZXZpZXdEaXN0cmlidXRpb24SLi50YXJhbWFuamkuY2xvdWQudjEuUHJldmlld0Rpc3RyaWJ1dGlvblJlcXVlc3QaLy50YXJhbWFuamkuY2xvdWQudjEuUHJldmlld0Rpc3RyaWJ1dGlvblJlc3BvbnNlIgAScgoRQXBwbHlEaXN0cmlidXRpb24SLC50YXJhbWFuamkuY2xvdWQudjEuQXBwbHlEaXN0cmlidXRpb25SZXF1ZXN0Gi0udGFyYW1hbmppLmNsb3VkLnYxLkFwcGx5RGlzdHJpYnV0aW9uUmVzcG9uc2UiABJ1ChJEZWxldGVEaXN0cmlidXRpb24SLS50YXJhbWFuamkuY2xvdWQudjEuRGVsZXRlRGlzdHJpYnV0aW9uUmVxdWVzdBouLnRhcmFtYW5qaS5jbG91ZC52MS5EZWxldGVEaXN0cmlidXRpb25SZXNwb25zZSIAEmYKDUxpc3REYXRhYmFzZXMSKC50YXJhbWFuamkuY2xvdWQudjEuTGlzdERhdGFiYXNlc1JlcXVlc3QaKS50YXJhbWFuamkuY2xvdWQudjEuTGlzdERhdGFiYXNlc1Jlc3BvbnNlIgASaQoOQ3JlYXRlRGF0YWJhc2USKS50YXJhbWFuamkuY2xvdWQudjEuQ3JlYXRlRGF0YWJhc2VSZXF1ZXN0GioudGFyYW1hbmppLmNsb3VkLnYxLkNyZWF0ZURhdGFiYXNlUmVzcG9uc2UiABJpCg5EZWxldGVEYXRhYmFzZRIpLnRhcmFtYW5qaS5jbG91ZC52MS5EZWxldGVEYXRhYmFzZVJlcXVlc3QaKi50YXJhbWFuamkuY2xvdWQudjEuRGVsZXRlRGF0YWJhc2VSZXNwb25zZSIAEl0KClN5bmNBbGVydHMSJS50YXJhbWFuamkuY2xvdWQudjEuU3luY0FsZXJ0c1JlcXVlc3QaJi50YXJhbWFuamkuY2xvdWQudjEuU3luY0FsZXJ0c1Jlc3BvbnNlIgBiBnByb3RvMw");
 
 /**
  * コンソール自身を動かしている部品（API・画面・Redis）の状態
@@ -320,7 +320,7 @@ export const MachineSchema: GenMessage<Machine> = /*@__PURE__*/
  */
 export type SizeFit = Message<"taramanji.cloud.v1.SizeFit"> & {
   /**
-   * インスタンスタイプの名前（t1.small / t1.medium / t1.large / t1.xlarge）
+   * インスタンスタイプの名前（t1.small・c1.medium・r1.large など）
    *
    * @generated from field: string name = 1;
    */
@@ -505,6 +505,35 @@ export const GetHostingOptionsRequestSchema: GenMessage<GetHostingOptionsRequest
   messageDesc(file_taramanji_cloud_v1_console, 15);
 
 /**
+ * インスタンスタイプの系統（t1 汎用・c1 コンピューティング最適化・r1 メモリ最適化）
+ *
+ * @generated from message taramanji.cloud.v1.InstanceFamily
+ */
+export type InstanceFamily = Message<"taramanji.cloud.v1.InstanceFamily"> & {
+  /**
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: string label = 2;
+   */
+  label: string;
+
+  /**
+   * @generated from field: string description = 3;
+   */
+  description: string;
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.InstanceFamily.
+ * Use `create(InstanceFamilySchema)` to create a new message.
+ */
+export const InstanceFamilySchema: GenMessage<InstanceFamily> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 16);
+
+/**
  * @generated from message taramanji.cloud.v1.GetHostingOptionsResponse
  */
 export type GetHostingOptionsResponse = Message<"taramanji.cloud.v1.GetHostingOptionsResponse"> & {
@@ -588,6 +617,13 @@ export type GetHostingOptionsResponse = Message<"taramanji.cloud.v1.GetHostingOp
   hostSuffix: string;
 
   /**
+   * 系統（画面で型をまとめて見せる順）
+   *
+   * @generated from field: repeated taramanji.cloud.v1.InstanceFamily instance_families = 18;
+   */
+  instanceFamilies: InstanceFamily[];
+
+  /**
    * オブジェクトストレージが動いているか
    *
    * @generated from field: bool storage_enabled = 15;
@@ -614,7 +650,7 @@ export type GetHostingOptionsResponse = Message<"taramanji.cloud.v1.GetHostingOp
  * Use `create(GetHostingOptionsResponseSchema)` to create a new message.
  */
 export const GetHostingOptionsResponseSchema: GenMessage<GetHostingOptionsResponse> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 16);
+  messageDesc(file_taramanji_cloud_v1_console, 17);
 
 /**
  * @generated from message taramanji.cloud.v1.EnvVar
@@ -638,7 +674,7 @@ export type EnvVar = Message<"taramanji.cloud.v1.EnvVar"> & {
  * Use `create(EnvVarSchema)` to create a new message.
  */
 export const EnvVarSchema: GenMessage<EnvVar> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 17);
+  messageDesc(file_taramanji_cloud_v1_console, 18);
 
 /**
  * リポジトリにある YAML と、その版。どのリソースにも付く
@@ -685,7 +721,7 @@ export type Source = Message<"taramanji.cloud.v1.Source"> & {
  * Use `create(SourceSchema)` to create a new message.
  */
 export const SourceSchema: GenMessage<Source> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 18);
+  messageDesc(file_taramanji_cloud_v1_console, 19);
 
 /**
  * フォームで決められる範囲の関数の定義
@@ -766,7 +802,7 @@ export type FunctionSpec = Message<"taramanji.cloud.v1.FunctionSpec"> & {
  * Use `create(FunctionSpecSchema)` to create a new message.
  */
 export const FunctionSpecSchema: GenMessage<FunctionSpec> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 19);
+  messageDesc(file_taramanji_cloud_v1_console, 20);
 
 /**
  * @generated from message taramanji.cloud.v1.Function
@@ -821,7 +857,7 @@ export type Function = Message<"taramanji.cloud.v1.Function"> & {
  * Use `create(FunctionSchema)` to create a new message.
  */
 export const FunctionSchema: GenMessage<Function> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 20);
+  messageDesc(file_taramanji_cloud_v1_console, 21);
 
 /**
  * @generated from message taramanji.cloud.v1.ListFunctionsRequest
@@ -834,7 +870,7 @@ export type ListFunctionsRequest = Message<"taramanji.cloud.v1.ListFunctionsRequ
  * Use `create(ListFunctionsRequestSchema)` to create a new message.
  */
 export const ListFunctionsRequestSchema: GenMessage<ListFunctionsRequest> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 21);
+  messageDesc(file_taramanji_cloud_v1_console, 22);
 
 /**
  * @generated from message taramanji.cloud.v1.ListFunctionsResponse
@@ -851,7 +887,7 @@ export type ListFunctionsResponse = Message<"taramanji.cloud.v1.ListFunctionsRes
  * Use `create(ListFunctionsResponseSchema)` to create a new message.
  */
 export const ListFunctionsResponseSchema: GenMessage<ListFunctionsResponse> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 22);
+  messageDesc(file_taramanji_cloud_v1_console, 23);
 
 /**
  * @generated from message taramanji.cloud.v1.PreviewFunctionRequest
@@ -868,7 +904,7 @@ export type PreviewFunctionRequest = Message<"taramanji.cloud.v1.PreviewFunction
  * Use `create(PreviewFunctionRequestSchema)` to create a new message.
  */
 export const PreviewFunctionRequestSchema: GenMessage<PreviewFunctionRequest> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 23);
+  messageDesc(file_taramanji_cloud_v1_console, 24);
 
 /**
  * @generated from message taramanji.cloud.v1.PreviewFunctionResponse
@@ -885,7 +921,7 @@ export type PreviewFunctionResponse = Message<"taramanji.cloud.v1.PreviewFunctio
  * Use `create(PreviewFunctionResponseSchema)` to create a new message.
  */
 export const PreviewFunctionResponseSchema: GenMessage<PreviewFunctionResponse> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 24);
+  messageDesc(file_taramanji_cloud_v1_console, 25);
 
 /**
  * @generated from message taramanji.cloud.v1.ApplyFunctionRequest
@@ -916,7 +952,7 @@ export type ApplyFunctionRequest = Message<"taramanji.cloud.v1.ApplyFunctionRequ
  * Use `create(ApplyFunctionRequestSchema)` to create a new message.
  */
 export const ApplyFunctionRequestSchema: GenMessage<ApplyFunctionRequest> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 25);
+  messageDesc(file_taramanji_cloud_v1_console, 26);
 
 /**
  * @generated from message taramanji.cloud.v1.ApplyFunctionResponse
@@ -940,7 +976,7 @@ export type ApplyFunctionResponse = Message<"taramanji.cloud.v1.ApplyFunctionRes
  * Use `create(ApplyFunctionResponseSchema)` to create a new message.
  */
 export const ApplyFunctionResponseSchema: GenMessage<ApplyFunctionResponse> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 26);
+  messageDesc(file_taramanji_cloud_v1_console, 27);
 
 /**
  * @generated from message taramanji.cloud.v1.DeleteFunctionRequest
@@ -962,7 +998,7 @@ export type DeleteFunctionRequest = Message<"taramanji.cloud.v1.DeleteFunctionRe
  * Use `create(DeleteFunctionRequestSchema)` to create a new message.
  */
 export const DeleteFunctionRequestSchema: GenMessage<DeleteFunctionRequest> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 27);
+  messageDesc(file_taramanji_cloud_v1_console, 28);
 
 /**
  * @generated from message taramanji.cloud.v1.DeleteFunctionResponse
@@ -979,7 +1015,7 @@ export type DeleteFunctionResponse = Message<"taramanji.cloud.v1.DeleteFunctionR
  * Use `create(DeleteFunctionResponseSchema)` to create a new message.
  */
 export const DeleteFunctionResponseSchema: GenMessage<DeleteFunctionResponse> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 28);
+  messageDesc(file_taramanji_cloud_v1_console, 29);
 
 /**
  * パスの前方一致で、渡し先の関数を決める（長いパスが先に当たる）
@@ -1005,7 +1041,7 @@ export type ApiRoute = Message<"taramanji.cloud.v1.ApiRoute"> & {
  * Use `create(ApiRouteSchema)` to create a new message.
  */
 export const ApiRouteSchema: GenMessage<ApiRoute> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 29);
+  messageDesc(file_taramanji_cloud_v1_console, 30);
 
 /**
  * @generated from message taramanji.cloud.v1.ApiSpec
@@ -1029,7 +1065,7 @@ export type ApiSpec = Message<"taramanji.cloud.v1.ApiSpec"> & {
  * Use `create(ApiSpecSchema)` to create a new message.
  */
 export const ApiSpecSchema: GenMessage<ApiSpec> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 30);
+  messageDesc(file_taramanji_cloud_v1_console, 31);
 
 /**
  * @generated from message taramanji.cloud.v1.Api
@@ -1058,7 +1094,7 @@ export type Api = Message<"taramanji.cloud.v1.Api"> & {
  * Use `create(ApiSchema)` to create a new message.
  */
 export const ApiSchema: GenMessage<Api> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 31);
+  messageDesc(file_taramanji_cloud_v1_console, 32);
 
 /**
  * @generated from message taramanji.cloud.v1.ListApisRequest
@@ -1071,7 +1107,7 @@ export type ListApisRequest = Message<"taramanji.cloud.v1.ListApisRequest"> & {
  * Use `create(ListApisRequestSchema)` to create a new message.
  */
 export const ListApisRequestSchema: GenMessage<ListApisRequest> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 32);
+  messageDesc(file_taramanji_cloud_v1_console, 33);
 
 /**
  * @generated from message taramanji.cloud.v1.ListApisResponse
@@ -1088,7 +1124,7 @@ export type ListApisResponse = Message<"taramanji.cloud.v1.ListApisResponse"> & 
  * Use `create(ListApisResponseSchema)` to create a new message.
  */
 export const ListApisResponseSchema: GenMessage<ListApisResponse> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 33);
+  messageDesc(file_taramanji_cloud_v1_console, 34);
 
 /**
  * @generated from message taramanji.cloud.v1.PreviewApiRequest
@@ -1105,7 +1141,7 @@ export type PreviewApiRequest = Message<"taramanji.cloud.v1.PreviewApiRequest"> 
  * Use `create(PreviewApiRequestSchema)` to create a new message.
  */
 export const PreviewApiRequestSchema: GenMessage<PreviewApiRequest> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 34);
+  messageDesc(file_taramanji_cloud_v1_console, 35);
 
 /**
  * @generated from message taramanji.cloud.v1.PreviewApiResponse
@@ -1122,7 +1158,7 @@ export type PreviewApiResponse = Message<"taramanji.cloud.v1.PreviewApiResponse"
  * Use `create(PreviewApiResponseSchema)` to create a new message.
  */
 export const PreviewApiResponseSchema: GenMessage<PreviewApiResponse> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 35);
+  messageDesc(file_taramanji_cloud_v1_console, 36);
 
 /**
  * @generated from message taramanji.cloud.v1.ApplyApiRequest
@@ -1149,7 +1185,7 @@ export type ApplyApiRequest = Message<"taramanji.cloud.v1.ApplyApiRequest"> & {
  * Use `create(ApplyApiRequestSchema)` to create a new message.
  */
 export const ApplyApiRequestSchema: GenMessage<ApplyApiRequest> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 36);
+  messageDesc(file_taramanji_cloud_v1_console, 37);
 
 /**
  * @generated from message taramanji.cloud.v1.ApplyApiResponse
@@ -1173,7 +1209,7 @@ export type ApplyApiResponse = Message<"taramanji.cloud.v1.ApplyApiResponse"> & 
  * Use `create(ApplyApiResponseSchema)` to create a new message.
  */
 export const ApplyApiResponseSchema: GenMessage<ApplyApiResponse> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 37);
+  messageDesc(file_taramanji_cloud_v1_console, 38);
 
 /**
  * @generated from message taramanji.cloud.v1.DeleteApiRequest
@@ -1195,7 +1231,7 @@ export type DeleteApiRequest = Message<"taramanji.cloud.v1.DeleteApiRequest"> & 
  * Use `create(DeleteApiRequestSchema)` to create a new message.
  */
 export const DeleteApiRequestSchema: GenMessage<DeleteApiRequest> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 38);
+  messageDesc(file_taramanji_cloud_v1_console, 39);
 
 /**
  * @generated from message taramanji.cloud.v1.DeleteApiResponse
@@ -1214,7 +1250,7 @@ export type DeleteApiResponse = Message<"taramanji.cloud.v1.DeleteApiResponse"> 
  * Use `create(DeleteApiResponseSchema)` to create a new message.
  */
 export const DeleteApiResponseSchema: GenMessage<DeleteApiResponse> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 39);
+  messageDesc(file_taramanji_cloud_v1_console, 40);
 
 /**
  * @generated from message taramanji.cloud.v1.SyncAlertsRequest
@@ -1227,7 +1263,7 @@ export type SyncAlertsRequest = Message<"taramanji.cloud.v1.SyncAlertsRequest"> 
  * Use `create(SyncAlertsRequestSchema)` to create a new message.
  */
 export const SyncAlertsRequestSchema: GenMessage<SyncAlertsRequest> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 40);
+  messageDesc(file_taramanji_cloud_v1_console, 41);
 
 /**
  * @generated from message taramanji.cloud.v1.SyncAlertsResponse
@@ -1254,7 +1290,7 @@ export type SyncAlertsResponse = Message<"taramanji.cloud.v1.SyncAlertsResponse"
  * Use `create(SyncAlertsResponseSchema)` to create a new message.
  */
 export const SyncAlertsResponseSchema: GenMessage<SyncAlertsResponse> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 41);
+  messageDesc(file_taramanji_cloud_v1_console, 42);
 
 /**
  * @generated from message taramanji.cloud.v1.Bucket
@@ -1300,7 +1336,7 @@ export type Bucket = Message<"taramanji.cloud.v1.Bucket"> & {
  * Use `create(BucketSchema)` to create a new message.
  */
 export const BucketSchema: GenMessage<Bucket> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 42);
+  messageDesc(file_taramanji_cloud_v1_console, 43);
 
 /**
  * @generated from message taramanji.cloud.v1.ListBucketsRequest
@@ -1313,7 +1349,7 @@ export type ListBucketsRequest = Message<"taramanji.cloud.v1.ListBucketsRequest"
  * Use `create(ListBucketsRequestSchema)` to create a new message.
  */
 export const ListBucketsRequestSchema: GenMessage<ListBucketsRequest> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 43);
+  messageDesc(file_taramanji_cloud_v1_console, 44);
 
 /**
  * @generated from message taramanji.cloud.v1.ListBucketsResponse
@@ -1330,7 +1366,7 @@ export type ListBucketsResponse = Message<"taramanji.cloud.v1.ListBucketsRespons
  * Use `create(ListBucketsResponseSchema)` to create a new message.
  */
 export const ListBucketsResponseSchema: GenMessage<ListBucketsResponse> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 44);
+  messageDesc(file_taramanji_cloud_v1_console, 45);
 
 /**
  * @generated from message taramanji.cloud.v1.CreateBucketRequest
@@ -1347,7 +1383,7 @@ export type CreateBucketRequest = Message<"taramanji.cloud.v1.CreateBucketReques
  * Use `create(CreateBucketRequestSchema)` to create a new message.
  */
 export const CreateBucketRequestSchema: GenMessage<CreateBucketRequest> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 45);
+  messageDesc(file_taramanji_cloud_v1_console, 46);
 
 /**
  * @generated from message taramanji.cloud.v1.CreateBucketResponse
@@ -1364,7 +1400,7 @@ export type CreateBucketResponse = Message<"taramanji.cloud.v1.CreateBucketRespo
  * Use `create(CreateBucketResponseSchema)` to create a new message.
  */
 export const CreateBucketResponseSchema: GenMessage<CreateBucketResponse> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 46);
+  messageDesc(file_taramanji_cloud_v1_console, 47);
 
 /**
  * @generated from message taramanji.cloud.v1.DeleteBucketRequest
@@ -1386,7 +1422,7 @@ export type DeleteBucketRequest = Message<"taramanji.cloud.v1.DeleteBucketReques
  * Use `create(DeleteBucketRequestSchema)` to create a new message.
  */
 export const DeleteBucketRequestSchema: GenMessage<DeleteBucketRequest> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 47);
+  messageDesc(file_taramanji_cloud_v1_console, 48);
 
 /**
  * @generated from message taramanji.cloud.v1.DeleteBucketResponse
@@ -1399,7 +1435,7 @@ export type DeleteBucketResponse = Message<"taramanji.cloud.v1.DeleteBucketRespo
  * Use `create(DeleteBucketResponseSchema)` to create a new message.
  */
 export const DeleteBucketResponseSchema: GenMessage<DeleteBucketResponse> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 48);
+  messageDesc(file_taramanji_cloud_v1_console, 49);
 
 /**
  * @generated from message taramanji.cloud.v1.StorageObject
@@ -1426,7 +1462,7 @@ export type StorageObject = Message<"taramanji.cloud.v1.StorageObject"> & {
  * Use `create(StorageObjectSchema)` to create a new message.
  */
 export const StorageObjectSchema: GenMessage<StorageObject> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 49);
+  messageDesc(file_taramanji_cloud_v1_console, 50);
 
 /**
  * @generated from message taramanji.cloud.v1.ListObjectsRequest
@@ -1450,7 +1486,7 @@ export type ListObjectsRequest = Message<"taramanji.cloud.v1.ListObjectsRequest"
  * Use `create(ListObjectsRequestSchema)` to create a new message.
  */
 export const ListObjectsRequestSchema: GenMessage<ListObjectsRequest> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 50);
+  messageDesc(file_taramanji_cloud_v1_console, 51);
 
 /**
  * @generated from message taramanji.cloud.v1.ListObjectsResponse
@@ -1474,7 +1510,7 @@ export type ListObjectsResponse = Message<"taramanji.cloud.v1.ListObjectsRespons
  * Use `create(ListObjectsResponseSchema)` to create a new message.
  */
 export const ListObjectsResponseSchema: GenMessage<ListObjectsResponse> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 51);
+  messageDesc(file_taramanji_cloud_v1_console, 52);
 
 /**
  * @generated from message taramanji.cloud.v1.DeleteObjectRequest
@@ -1496,7 +1532,7 @@ export type DeleteObjectRequest = Message<"taramanji.cloud.v1.DeleteObjectReques
  * Use `create(DeleteObjectRequestSchema)` to create a new message.
  */
 export const DeleteObjectRequestSchema: GenMessage<DeleteObjectRequest> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 52);
+  messageDesc(file_taramanji_cloud_v1_console, 53);
 
 /**
  * @generated from message taramanji.cloud.v1.DeleteObjectResponse
@@ -1509,7 +1545,7 @@ export type DeleteObjectResponse = Message<"taramanji.cloud.v1.DeleteObjectRespo
  * Use `create(DeleteObjectResponseSchema)` to create a new message.
  */
 export const DeleteObjectResponseSchema: GenMessage<DeleteObjectResponse> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 53);
+  messageDesc(file_taramanji_cloud_v1_console, 54);
 
 /**
  * @generated from message taramanji.cloud.v1.DistributionSpec
@@ -1554,7 +1590,7 @@ export type DistributionSpec = Message<"taramanji.cloud.v1.DistributionSpec"> & 
  * Use `create(DistributionSpecSchema)` to create a new message.
  */
 export const DistributionSpecSchema: GenMessage<DistributionSpec> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 54);
+  messageDesc(file_taramanji_cloud_v1_console, 55);
 
 /**
  * @generated from message taramanji.cloud.v1.Distribution
@@ -1581,7 +1617,7 @@ export type Distribution = Message<"taramanji.cloud.v1.Distribution"> & {
  * Use `create(DistributionSchema)` to create a new message.
  */
 export const DistributionSchema: GenMessage<Distribution> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 55);
+  messageDesc(file_taramanji_cloud_v1_console, 56);
 
 /**
  * @generated from message taramanji.cloud.v1.ListDistributionsRequest
@@ -1594,7 +1630,7 @@ export type ListDistributionsRequest = Message<"taramanji.cloud.v1.ListDistribut
  * Use `create(ListDistributionsRequestSchema)` to create a new message.
  */
 export const ListDistributionsRequestSchema: GenMessage<ListDistributionsRequest> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 56);
+  messageDesc(file_taramanji_cloud_v1_console, 57);
 
 /**
  * @generated from message taramanji.cloud.v1.ListDistributionsResponse
@@ -1611,7 +1647,7 @@ export type ListDistributionsResponse = Message<"taramanji.cloud.v1.ListDistribu
  * Use `create(ListDistributionsResponseSchema)` to create a new message.
  */
 export const ListDistributionsResponseSchema: GenMessage<ListDistributionsResponse> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 57);
+  messageDesc(file_taramanji_cloud_v1_console, 58);
 
 /**
  * @generated from message taramanji.cloud.v1.PreviewDistributionRequest
@@ -1628,7 +1664,7 @@ export type PreviewDistributionRequest = Message<"taramanji.cloud.v1.PreviewDist
  * Use `create(PreviewDistributionRequestSchema)` to create a new message.
  */
 export const PreviewDistributionRequestSchema: GenMessage<PreviewDistributionRequest> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 58);
+  messageDesc(file_taramanji_cloud_v1_console, 59);
 
 /**
  * @generated from message taramanji.cloud.v1.PreviewDistributionResponse
@@ -1645,7 +1681,7 @@ export type PreviewDistributionResponse = Message<"taramanji.cloud.v1.PreviewDis
  * Use `create(PreviewDistributionResponseSchema)` to create a new message.
  */
 export const PreviewDistributionResponseSchema: GenMessage<PreviewDistributionResponse> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 59);
+  messageDesc(file_taramanji_cloud_v1_console, 60);
 
 /**
  * @generated from message taramanji.cloud.v1.ApplyDistributionRequest
@@ -1672,7 +1708,7 @@ export type ApplyDistributionRequest = Message<"taramanji.cloud.v1.ApplyDistribu
  * Use `create(ApplyDistributionRequestSchema)` to create a new message.
  */
 export const ApplyDistributionRequestSchema: GenMessage<ApplyDistributionRequest> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 60);
+  messageDesc(file_taramanji_cloud_v1_console, 61);
 
 /**
  * @generated from message taramanji.cloud.v1.ApplyDistributionResponse
@@ -1694,7 +1730,7 @@ export type ApplyDistributionResponse = Message<"taramanji.cloud.v1.ApplyDistrib
  * Use `create(ApplyDistributionResponseSchema)` to create a new message.
  */
 export const ApplyDistributionResponseSchema: GenMessage<ApplyDistributionResponse> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 61);
+  messageDesc(file_taramanji_cloud_v1_console, 62);
 
 /**
  * @generated from message taramanji.cloud.v1.DeleteDistributionRequest
@@ -1716,7 +1752,7 @@ export type DeleteDistributionRequest = Message<"taramanji.cloud.v1.DeleteDistri
  * Use `create(DeleteDistributionRequestSchema)` to create a new message.
  */
 export const DeleteDistributionRequestSchema: GenMessage<DeleteDistributionRequest> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 62);
+  messageDesc(file_taramanji_cloud_v1_console, 63);
 
 /**
  * @generated from message taramanji.cloud.v1.DeleteDistributionResponse
@@ -1733,7 +1769,7 @@ export type DeleteDistributionResponse = Message<"taramanji.cloud.v1.DeleteDistr
  * Use `create(DeleteDistributionResponseSchema)` to create a new message.
  */
 export const DeleteDistributionResponseSchema: GenMessage<DeleteDistributionResponse> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 63);
+  messageDesc(file_taramanji_cloud_v1_console, 64);
 
 /**
  * @generated from message taramanji.cloud.v1.Database
@@ -1788,7 +1824,7 @@ export type Database = Message<"taramanji.cloud.v1.Database"> & {
  * Use `create(DatabaseSchema)` to create a new message.
  */
 export const DatabaseSchema: GenMessage<Database> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 64);
+  messageDesc(file_taramanji_cloud_v1_console, 65);
 
 /**
  * @generated from message taramanji.cloud.v1.ListDatabasesRequest
@@ -1801,7 +1837,7 @@ export type ListDatabasesRequest = Message<"taramanji.cloud.v1.ListDatabasesRequ
  * Use `create(ListDatabasesRequestSchema)` to create a new message.
  */
 export const ListDatabasesRequestSchema: GenMessage<ListDatabasesRequest> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 65);
+  messageDesc(file_taramanji_cloud_v1_console, 66);
 
 /**
  * @generated from message taramanji.cloud.v1.ListDatabasesResponse
@@ -1818,7 +1854,7 @@ export type ListDatabasesResponse = Message<"taramanji.cloud.v1.ListDatabasesRes
  * Use `create(ListDatabasesResponseSchema)` to create a new message.
  */
 export const ListDatabasesResponseSchema: GenMessage<ListDatabasesResponse> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 66);
+  messageDesc(file_taramanji_cloud_v1_console, 67);
 
 /**
  * @generated from message taramanji.cloud.v1.CreateDatabaseRequest
@@ -1840,7 +1876,7 @@ export type CreateDatabaseRequest = Message<"taramanji.cloud.v1.CreateDatabaseRe
  * Use `create(CreateDatabaseRequestSchema)` to create a new message.
  */
 export const CreateDatabaseRequestSchema: GenMessage<CreateDatabaseRequest> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 67);
+  messageDesc(file_taramanji_cloud_v1_console, 68);
 
 /**
  * @generated from message taramanji.cloud.v1.CreateDatabaseResponse
@@ -1857,7 +1893,7 @@ export type CreateDatabaseResponse = Message<"taramanji.cloud.v1.CreateDatabaseR
  * Use `create(CreateDatabaseResponseSchema)` to create a new message.
  */
 export const CreateDatabaseResponseSchema: GenMessage<CreateDatabaseResponse> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 68);
+  messageDesc(file_taramanji_cloud_v1_console, 69);
 
 /**
  * @generated from message taramanji.cloud.v1.DeleteDatabaseRequest
@@ -1879,7 +1915,7 @@ export type DeleteDatabaseRequest = Message<"taramanji.cloud.v1.DeleteDatabaseRe
  * Use `create(DeleteDatabaseRequestSchema)` to create a new message.
  */
 export const DeleteDatabaseRequestSchema: GenMessage<DeleteDatabaseRequest> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 69);
+  messageDesc(file_taramanji_cloud_v1_console, 70);
 
 /**
  * @generated from message taramanji.cloud.v1.DeleteDatabaseResponse
@@ -1892,7 +1928,7 @@ export type DeleteDatabaseResponse = Message<"taramanji.cloud.v1.DeleteDatabaseR
  * Use `create(DeleteDatabaseResponseSchema)` to create a new message.
  */
 export const DeleteDatabaseResponseSchema: GenMessage<DeleteDatabaseResponse> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 70);
+  messageDesc(file_taramanji_cloud_v1_console, 71);
 
 /**
  * taramanji cloud のマネジメントコンソール（cloud.taramanji.com）。
