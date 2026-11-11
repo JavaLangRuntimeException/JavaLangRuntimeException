@@ -20,6 +20,7 @@ React 19 + Vite + TypeScript + React Router v8 + Tailwind CSS v4 + TanStack Quer
 - `src/components` 画面の部品（AppShell・Panel・LineChart など）
 - `src/pages` 画面（ホーム・容量・メトリクス・関数・API Gateway・ストレージ・CDN・データベース・ガイド）
   - 関数（`FunctionsPage.tsx`）と API（`ApisPage.tsx`）は、フォームか YAML で編集する（`components/ResourceEditor.tsx`）。保存先はアプリ専用リポジトリの YAML で、クラスターには Argo CD が入れる（`deploy/cloud/README.md`）
+- 設定の欄には「i」（`InfoTip`）で補足説明を付ける。`Field` は `info`、fieldset の見出しは `Legend` の `info` に渡す。欄を足したら説明も足す
 - ガイド（`/guide`）の記事は `src/pages/guide/articles.tsx`。部品は `src/components/Doc.tsx`。機能を変えたら、ここの説明も合わせて直す
 - `src/lib` 表示の整形・軸の計算・ナビの定義（純粋な関数はここに置いてテストする）
 

@@ -80,7 +80,7 @@ function CreateBucket({ onClose }: { onClose: () => void }) {
         }}
       >
         <div className="w-full max-w-sm">
-          <Field label="名前" hint="英小文字で始め、英小文字・数字・ハイフンで 40 文字まで。あとから変えられません">
+          <Field label="名前" hint="英小文字で始め、英小文字・数字・ハイフンで 40 文字まで。あとから変えられません" info={<>バケットの名前です。関数につなぐと、環境変数 <code>BUCKET_&lt;名前&gt;_URL</code>・<code>BUCKET_&lt;名前&gt;_TOKEN</code> になります（ハイフンは <code>_</code>、英字は大文字）。中身はそのままでは外に出ません。公開するときは CDN を作ります。</>}>
             <input className={input} value={name} onChange={(e) => setName(e.target.value)} placeholder="site" autoComplete="off" spellCheck={false} />
           </Field>
         </div>

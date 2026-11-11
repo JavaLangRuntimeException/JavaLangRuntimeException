@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { consoleApi, useBuckets, useDistributions, useFunctions, useHostingOptions, useStorageMutations } from "@/api/console";
 import type { Distribution, GetHostingOptionsResponse } from "@/api/gen/taramanji/cloud/v1/console_pb";
-import { btnPrimary, Field, input, Status } from "@/components/Form";
+import { btnPrimary, Field, InfoTip, input, Legend, Status } from "@/components/Form";
 import { EmptyState, Mono, PageHeader, Panel, Skeleton } from "@/components/Page";
 import { QueryError } from "@/components/QueryError";
 import { ResourceEditor } from "@/components/ResourceEditor";
@@ -177,6 +177,7 @@ function Editor({
     >
       <Field
         label="名前"
+        info={<>公開するホスト名の先頭です。<code>&lt;名前&gt;{opt.hostSuffix}</code> になり、DNS は作ったときに自動で登録されます。API と同じ名前は使えません（同じホスト名になるため）。</>}
         error={err("name")}
         hint={
           <>
@@ -188,7 +189,7 @@ function Editor({
       </Field>
 
       <fieldset>
-        <legend className="mb-2 text-xs font-medium text-ink-2">元（オリジン）</legend>
+        <Legend info={<>どこから中身を取ってくるかです。バケットなら、置いたファイルをパスのとおりに返します（読むだけ）。関数なら、関数の応答にキャッシュの長さを付けて返します（関数が自分で <code>Cache-Control</code> を付けていればそちらを使います）。</>}>元（オリジン）</Legend>
         <div className="flex flex-wrap gap-2">
           {(["bucket", "function"] as const).map((t) => (
             <label key={t} className={`cursor-pointer rounded border px-3 py-2 ${form.originType === t ? "border-accent bg-accent-soft" : "border-line-strong hover:bg-surface-2"}`}>
@@ -205,7 +206,7 @@ function Editor({
           ))}
         </div>
         <div className="mt-3 max-w-sm">
-          <Field label={form.originType === "bucket" ? "バケット" : "関数"} error={err("origin")}>
+          <Field label={form.originType === "bucket" ? "バケット" : "関数"} error={err("origin")} info={form.originType === "bucket" ? <>中身を配るバケットです。<code>/</code> で終わるパスには、その下の <code>index.html</code> を返します。</> : <>応答をキャッシュさせる関数です。関数が 0 台なら、最初のリクエストで起こします。</>}>
             <select className={input} value={form.origin} onChange={(e) => set({ origin: e.target.value })}>
               <option value="">選ぶ</option>
               {choices.map((n) => (
@@ -220,7 +221,12 @@ function Editor({
           <label className="mt-3 flex cursor-pointer items-start gap-2">
             <input type="checkbox" className="mt-1" checked={form.spa} onChange={(e) => set({ spa: e.target.checked })} />
             <span>
-              <span className="block text-ink">ファイルがないパスに index.html を返す（SPA）</span>
+              <span className="flex items-center gap-1.5 text-ink">
+                ファイルがないパスに index.html を返す（SPA）
+                <InfoTip label="SPA">
+                  React Router などで画面側がルーティングするサイト向けです。<code>/users/1</code> のようにファイルがないパスにも、一番上の <code>index.html</code> を 200 で返します。付けないときは 404 を返します。
+                </InfoTip>
+              </span>
               <span className="block text-xs text-muted">画面側でルーティングするサイト向け。付けないときは 404 を返します。</span>
             </span>
           </label>
@@ -228,7 +234,7 @@ function Editor({
       </fieldset>
 
       <fieldset>
-        <legend className="mb-2 text-xs font-medium text-ink-2">キャッシュの長さ</legend>
+        <Legend info={<>応答に <code>Cache-Control: public, max-age=&lt;秒&gt;</code> を付けます。その間は Cloudflare のエッジが応答を持ち、元に取りに来ません。Cloudflare の既定では、画像・CSS・JS などの拡張子だけがキャッシュされ、HTML はされません。キャッシュの消去はまだできないので、同じ名前で中身を変えるファイルは短めにしてください。</>}>キャッシュの長さ</Legend>
         <div className="flex flex-wrap items-center gap-2">
           {cachePresets.map((p) => (
             <button
