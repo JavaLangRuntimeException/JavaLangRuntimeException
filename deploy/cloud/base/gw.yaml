@@ -49,6 +49,11 @@ spec:
             - { name: http, containerPort: 8080 }
           env:
             - { name: CLOUD_MODE, value: gateway }
+            # CDN の元が API のとき、<API>-apigw + HOST_SUFFIX のホスト名で、cloud の Envoy（GATEWAY_URL の既定）に渡し直す
+            - { name: HOST_SUFFIX, value: "-cloud.taramanji.com" }
+            # CDN（ログイン済み）から API に渡し直したリクエストの署名の鍵（scripts/seal.sh が環境ごとに作る）。なければ API キーを求める
+            - name: GATEWAY_INTERNAL_SECRET
+              valueFrom: { secretKeyRef: { name: cloud-api-env, key: GATEWAY_INTERNAL_SECRET, optional: true } }
             - { name: APP_ENV, value: prod }
             - { name: PORT, value: ":8080" }
             - name: POD_NAMESPACE

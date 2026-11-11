@@ -512,7 +512,7 @@ message DeleteObjectResponse {}
 message DistributionSpec {
   // ホスト名の先頭（<名前>-cdn-cloud.taramanji.com）。API と合わせて、環境の中で重複できない
   string name = 1;
-  // bucket / function
+  // bucket / api（API Gateway。CloudFront の元を API Gateway にするのと同じ。API のルート・認証・CORS が効く）
   string origin_type = 2;
   string origin = 3;
   // キャッシュさせる秒数（Cache-Control: public, max-age）。0 ならキャッシュさせない
@@ -530,7 +530,7 @@ message DistributionSpec {
 message DistributionBehavior {
   // / で始まるパス（/api など）。/ そのものは既定の元なので書かない
   string path = 1;
-  // bucket / function
+  // bucket / api（API Gateway。CloudFront の元を API Gateway にするのと同じ。API のルート・認証・CORS が効く）
   string origin_type = 2;
   string origin = 3;
   int32 cache_seconds = 4;

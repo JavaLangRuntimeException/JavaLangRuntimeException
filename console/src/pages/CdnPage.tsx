@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { consoleApi, useBuckets, useDistributions, useFunctions, useHostingOptions, useStorageMutations } from "@/api/console";
+import { consoleApi, useApis, useBuckets, useDistributions, useHostingOptions, useStorageMutations } from "@/api/console";
 import type { Distribution, GetHostingOptionsResponse } from "@/api/gen/taramanji/cloud/v1/console_pb";
 import { btnPrimary, Field, InfoTip, input, Legend, Status } from "@/components/Form";
 import { EmptyState, Mono, PageHeader, Panel, Skeleton } from "@/components/Page";
@@ -33,12 +33,12 @@ export function CdnPage() {
   const enabled = options.data?.storeEnabled === true;
   const dists = useDistributions(enabled);
   const buckets = useBuckets(enabled);
-  const functions = useFunctions(enabled);
+  const apis = useApis(enabled);
   // undefined = 一覧、null = 新しく作る
   const [editing, setEditing] = useState<Distribution | null | undefined>(undefined);
   const opt = options.data;
   const bucketNames = buckets.data?.buckets.map((b) => b.name) ?? [];
-  const functionNames = functions.data?.functions.map((f) => f.spec?.name ?? "").filter((n) => n !== "") ?? [];
+  const apiNames = apis.data?.apis.map((a) => a.spec?.name ?? "").filter((n) => n !== "") ?? [];
 
   return (
     <>
@@ -47,10 +47,10 @@ export function CdnPage() {
         description={
           opt ? (
             <>
-              バケットか関数を <Mono>https://&lt;名前&gt;{opt.cdnHostSuffix}</Mono> で出し、Cloudflare のエッジにキャッシュさせます（Cloudflare Access のログインあり）。
+              バケットか API Gateway を <Mono>https://&lt;名前&gt;{opt.cdnHostSuffix}</Mono> で出し、Cloudflare のエッジにキャッシュさせます（Cloudflare Access のログインあり）。
             </>
           ) : (
-            "バケットか関数にホスト名を付けて公開し、キャッシュさせます。"
+            "バケットか API Gateway にホスト名を付けて出し、キャッシュさせます。"
           )
         }
         actions={
@@ -70,7 +70,7 @@ export function CdnPage() {
         <StoreDisabled repository={options.data.repository} />
       ) : editing !== undefined ? (
         <div className="space-y-4">
-          <Editor key={editing?.spec?.name ?? ""} dist={editing} opt={options.data} buckets={bucketNames} functions={functionNames} onClose={() => setEditing(undefined)} />
+          <Editor key={editing?.spec?.name ?? ""} dist={editing} opt={options.data} buckets={bucketNames} apis={apiNames} onClose={() => setEditing(undefined)} />
           {editing?.spec && <DeployHistory kind="cdn" name={editing.spec.name} revision={editing.source?.revision} />}
         </div>
       ) : (
@@ -85,7 +85,7 @@ export function CdnPage() {
             </div>
           ) : dists.data.distributions.length === 0 ? (
             <EmptyState title="まだ CDN がありません">
-              バケットに置いたサイトや、関数の応答を、名前の付いた URL で公開できます。名前は API と合わせて、この環境の中で重複できません。
+              バケットに置いたサイトや、API Gateway の応答を、名前の付いた URL で出せます（ログインあり）。名前は API と合わせて、この環境の中で重複できません。
             </EmptyState>
           ) : (
             <div className="overflow-x-auto">
@@ -130,7 +130,7 @@ export function CdnPage() {
                             <ul className="space-y-0.5">
                               {(d.spec?.behaviors ?? []).map((b) => (
                                 <li key={b.path}>
-                                  <Mono>{b.path}</Mono> → {b.originType === "function" ? "関数" : "バケット"} <Mono>{b.origin}</Mono>
+                                  <Mono>{b.path}</Mono> → {b.originType === "api" ? "API" : "バケット"} <Mono>{b.origin}</Mono>
                                   {b.spa && <span className="ml-1.5 rounded bg-accent-soft px-1.5 py-0.5 text-xs text-accent">SPA</span>}
                                 </li>
                               ))}
@@ -140,7 +140,7 @@ export function CdnPage() {
                                     <Mono>/</Mono> →{" "}
                                   </>
                                 )}
-                                {d.spec?.originType === "function" ? "関数" : "バケット"} <Mono>{d.spec?.origin}</Mono>
+                                {d.spec?.originType === "api" ? "API" : "バケット"} <Mono>{d.spec?.origin}</Mono>
                                 {d.spec?.spa && <span className="ml-1.5 rounded bg-accent-soft px-1.5 py-0.5 text-xs text-accent">SPA</span>}
                               </li>
                             </ul>
@@ -164,13 +164,13 @@ function Editor({
   dist,
   opt,
   buckets,
-  functions,
+  apis,
   onClose,
 }: {
   dist: Distribution | null;
   opt: GetHostingOptionsResponse;
   buckets: string[];
-  functions: string[];
+  apis: string[];
   onClose: () => void;
 }) {
   const isNew = dist === null;
@@ -183,7 +183,7 @@ function Editor({
   const set = (patch: Partial<DistributionForm>) => setForm((f) => ({ ...f, ...patch }));
   const err = (k: Exclude<keyof DistributionForm, "behaviors">) => (showErrors ? errors[k] : undefined);
   const host = `${form.name.trim() || "<名前>"}${opt.cdnHostSuffix}`;
-  const origins = form.originType === "bucket" ? buckets : functions;
+  const origins = form.originType === "bucket" ? buckets : apis;
   // 一覧にない元（消された）も、選択肢に残して見えるようにする
   const choices = form.origin && !origins.includes(form.origin) ? [...origins, form.origin] : origins;
   const done = applyDistribution.data ?? deleteDistribution.data;
@@ -207,7 +207,7 @@ function Editor({
         )
       }
       onDelete={() => {
-        if (!dist?.spec || !window.confirm(`${dist.spec.name} を消します。https://${dist.host} は使えなくなります（元のバケット・関数は残ります）。`)) return;
+        if (!dist?.spec || !window.confirm(`${dist.spec.name} を消します。https://${dist.host} は使えなくなります（元のバケット・API は残ります）。`)) return;
         deleteDistribution.mutate({ name: dist.spec.name, revision: dist.source?.revision ?? "" }, { onSuccess: (res) => !res.dnsProblem && onClose() });
       }}
       onClose={onClose}
@@ -229,24 +229,24 @@ function Editor({
       </Field>
 
       <fieldset>
-        <Legend info={<>どこから中身を取ってくるかです。下の「パスごとの元」に当たらないパス（<code>/</code>）は、すべてここに送ります。バケットなら、置いたファイルをパスのとおりに返します（読むだけ）。関数なら、関数の応答にキャッシュの長さを付けて返します（関数が自分で <code>Cache-Control</code> を付けていればそちらを使います）。</>}>元（オリジン）・既定</Legend>
+        <Legend info={<>どこから中身を取ってくるかです。下の「パスごとの元」に当たらないパス（<code>/</code>）は、すべてここに送ります。バケットなら、置いたファイルをパスのとおりに返します（読むだけ）。API なら、その API（API Gateway）に渡し、API のルート・認証・CORS がそのまま効きます。応答にはキャッシュの長さを付けます（関数が自分で <code>Cache-Control</code> を付けていればそちらを使います）。</>}>元（オリジン）・既定</Legend>
         <div className="flex flex-wrap gap-2">
-          {(["bucket", "function"] as const).map((t) => (
+          {(["bucket", "api"] as const).map((t) => (
             <label key={t} className={`cursor-pointer rounded border px-3 py-2 ${form.originType === t ? "border-accent bg-accent-soft" : "border-line-strong hover:bg-surface-2"}`}>
               <input
                 type="radio"
                 name="origin-type"
                 className="sr-only"
                 checked={form.originType === t}
-                onChange={() => set({ originType: t, origin: (t === "bucket" ? buckets : functions)[0] ?? "", spa: false })}
+                onChange={() => set({ originType: t, origin: (t === "bucket" ? buckets : apis)[0] ?? "", spa: false })}
               />
-              <span className="block font-medium text-ink">{t === "bucket" ? "バケット" : "関数"}</span>
-              <span className="block text-xs text-muted">{t === "bucket" ? "置いたファイルをそのまま配る" : "関数の応答をキャッシュする"}</span>
+              <span className="block font-medium text-ink">{t === "bucket" ? "バケット" : "API Gateway"}</span>
+              <span className="block text-xs text-muted">{t === "bucket" ? "置いたファイルをそのまま配る" : "API の応答を出す（キャッシュもできる）"}</span>
             </label>
           ))}
         </div>
         <div className="mt-3 max-w-sm">
-          <Field label={form.originType === "bucket" ? "バケット" : "関数"} error={err("origin")} info={form.originType === "bucket" ? <>中身を配るバケットです。<code>/</code> で終わるパスには、その下の <code>index.html</code> を返します。</> : <>応答をキャッシュさせる関数です。関数が 0 台なら、最初のリクエストで起こします。</>}>
+          <Field label={form.originType === "bucket" ? "バケット" : "API"} error={err("origin")} info={form.originType === "bucket" ? <>中身を配るバケットです。<code>/</code> で終わるパスには、その下の <code>index.html</code> を返します。</> : <>元にする API です。<code>&lt;API&gt;-apigw-cloud</code> に届くのと同じように、API のルートで関数に渡ります（関数が 0 台なら起こします）。</>}>
             <select className={input} value={form.origin} onChange={(e) => set({ origin: e.target.value })}>
               <option value="">選ぶ</option>
               {choices.map((n) => (
@@ -302,8 +302,8 @@ function Editor({
         <Legend
           info={
             <>
-              CloudFront の behavior にあたります。パスの前方一致ごとに、別の元に送れます（例: <code>/api</code> は関数、それ以外は画面のバケット）。長いパスが先に当たり、どれにも当たらないものは上の既定の元に行きます。
-              パスはそのまま元に渡ります（<code>/api/x</code> なら関数にも <code>/api/x</code> が届きます）。画面と API を同じホスト名にまとめると、Cloudflare Access のログインもそのまま使えます。
+              CloudFront の behavior にあたります。パスの前方一致ごとに、別の元に送れます（例: <code>/api</code> は API、それ以外は画面のバケット）。長いパスが先に当たり、どれにも当たらないものは上の既定の元に行きます。
+              パスはそのまま元に渡ります（<code>/api/x</code> なら API にも <code>/api/x</code> が届きます）。画面と API を同じホスト名にまとめると、Cloudflare Access のログインもそのまま使えます。
             </>
           }
         >
@@ -318,7 +318,7 @@ function Editor({
                 key={i}
                 row={b}
                 buckets={buckets}
-                functions={functions}
+                apis={apis}
                 error={showErrors ? errors.behaviors?.[i] : undefined}
                 onChange={(patch) => set({ behaviors: form.behaviors.map((x, j) => (j === i ? { ...x, ...patch } : x)) })}
                 onRemove={() => set({ behaviors: form.behaviors.filter((_, j) => j !== i) })}
@@ -331,7 +331,7 @@ function Editor({
           type="button"
           className="mt-2 rounded border border-line-strong px-3 py-1.5 text-sm text-ink-2 hover:bg-surface-2 disabled:opacity-50"
           disabled={form.behaviors.length >= MAX_BEHAVIORS}
-          onClick={() => set({ behaviors: [...form.behaviors, emptyBehavior(buckets, functions)] })}
+          onClick={() => set({ behaviors: [...form.behaviors, emptyBehavior(buckets, apis)] })}
         >
           パスを足す
         </button>
@@ -346,19 +346,19 @@ function Editor({
 function BehaviorRow({
   row,
   buckets,
-  functions,
+  apis,
   error,
   onChange,
   onRemove,
 }: {
   row: BehaviorForm;
   buckets: string[];
-  functions: string[];
+  apis: string[];
   error?: string;
   onChange: (patch: Partial<BehaviorForm>) => void;
   onRemove: () => void;
 }) {
-  const origins = row.originType === "bucket" ? buckets : functions;
+  const origins = row.originType === "bucket" ? buckets : apis;
   const choices = row.origin && !origins.includes(row.origin) ? [...origins, row.origin] : origins;
   const presets: { seconds: number; label: string }[] = [...cachePresets];
   if (!presets.some((p) => String(p.seconds) === row.cacheSeconds)) presets.push({ seconds: Number(row.cacheSeconds) || 0, label: formatCache(Number(row.cacheSeconds) || 0) });
@@ -372,14 +372,14 @@ function BehaviorRow({
           aria-label="元の種類"
           value={row.originType}
           onChange={(e) => {
-            const t = e.target.value === "function" ? "function" : "bucket";
-            onChange({ originType: t, origin: (t === "bucket" ? buckets : functions)[0] ?? "", spa: false, cacheSeconds: t === "function" ? "0" : "300" });
+            const t = e.target.value === "api" ? "api" : "bucket";
+            onChange({ originType: t, origin: (t === "bucket" ? buckets : apis)[0] ?? "", spa: false, cacheSeconds: t === "api" ? "0" : "300" });
           }}
         >
           <option value="bucket">バケット</option>
-          <option value="function">関数</option>
+          <option value="api">API</option>
         </select>
-        <select className={`${input} w-48`} aria-label={row.originType === "bucket" ? "バケット" : "関数"} value={row.origin} onChange={(e) => onChange({ origin: e.target.value })}>
+        <select className={`${input} w-48`} aria-label={row.originType === "bucket" ? "バケット" : "API"} value={row.origin} onChange={(e) => onChange({ origin: e.target.value })}>
           <option value="">選ぶ</option>
           {choices.map((n) => (
             <option key={n} value={n}>

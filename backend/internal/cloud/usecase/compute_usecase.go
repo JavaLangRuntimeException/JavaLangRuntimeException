@@ -258,13 +258,6 @@ func (u *ConsoleUsecaseImpl) DeleteFunction(ctx context.Context, in DeleteFuncti
 	if used := apisOf(apis)[in.Name]; len(used) > 0 {
 		return nil, errs.New(errs.ErrorTypeBadRequest, fmt.Sprintf("API %v がこの関数に渡しています。先に API のルートを変えるか、API を消してください", used)).WithCode("function_in_use")
 	}
-	dists, err := u.distributionSpecs(ctx)
-	if err != nil {
-		return nil, storeErr(err)
-	}
-	if used := originsOf(dists, service.OriginFunction)[in.Name]; len(used) > 0 {
-		return nil, errs.New(errs.ErrorTypeBadRequest, fmt.Sprintf("CDN %v がこの関数を元にしています。先に CDN を消してください", used)).WithCode("function_in_use")
-	}
 	if err := store.Delete(ctx, gateway.KindFunctions, in.Name, in.Revision, u.commitMessage(ctx, "delete", "function", in.Name)); err != nil {
 		return nil, storeErr(err)
 	}
@@ -399,6 +392,14 @@ func (u *ConsoleUsecaseImpl) DeleteApi(ctx context.Context, in DeleteApiInput) (
 	}
 	if !service.ValidName(in.Name) {
 		return nil, storeErr(gateway.ErrResourceNotFound)
+	}
+	// CDN の元になっている API は消せない（消すと、その CDN のパスが 404 になる）
+	dists, err := u.distributionSpecs(ctx)
+	if err != nil {
+		return nil, storeErr(err)
+	}
+	if used := originsOf(dists, service.OriginAPI)[in.Name]; len(used) > 0 {
+		return nil, errs.New(errs.ErrorTypeBadRequest, fmt.Sprintf("CDN %v がこの API を元にしています。先に CDN の元を変えるか、CDN を消してください", used)).WithCode("api_in_use")
 	}
 	if err := store.Delete(ctx, gateway.KindAPIs, in.Name, in.Revision, u.commitMessage(ctx, "delete", "api", in.Name)); err != nil {
 		return nil, storeErr(err)

@@ -14,16 +14,19 @@ const (
 	// LabelBucket はバケットの ConfigMap に付けるバケット名（ストレージがこのラベルの ConfigMap を見てバケットを作る）
 	LabelBucket = "cloud.taramanji.com/bucket"
 	// CDN の HTTPRoute が API Gateway（cloud-gw）に渡すヘッダー
-	HeaderBucket   = "X-Cloud-Bucket"
-	HeaderCacheTTL = "X-Cloud-Cache-Ttl"
-	HeaderSPA      = "X-Cloud-Spa"
+	HeaderBucket = "X-Cloud-Bucket"
+	// HeaderAPIOrigin は CDN の元が API のとき、その API の名前（cloud-gw がその API のホスト名で Envoy に渡し直す）
+	HeaderAPIOrigin = "X-Cloud-Api"
+	HeaderCacheTTL  = "X-Cloud-Cache-Ttl"
+	HeaderSPA       = "X-Cloud-Spa"
 	// API Gateway の認証（API キー）と CORS。API の HTTPRoute だけが付け、ほかの HTTPRoute は消す（利用者が付けてきても効かせない）
 	HeaderAuth    = "X-Cloud-Auth"
 	HeaderAPIKeys = "X-Cloud-Api-Keys"
 	HeaderCORS    = "X-Cloud-Cors"
 
-	OriginBucket   = "bucket"
-	OriginFunction = "function"
+	OriginBucket = "bucket"
+	// OriginAPI は API Gateway（CloudFront の元を API Gateway にするのと同じ）。API のルート・認証・CORS がそのまま効く
+	OriginAPI = "api"
 	// キャッシュさせる長さの上限（1 年）
 	MaxCacheSeconds = int32(365 * 24 * 3600)
 )
@@ -70,8 +73,8 @@ func RenderBucketYAML(name string, public bool, t APITarget) (string, error) {
 	f.RequestHeaderModifier.Set = []headerValue{{Name: HeaderBucket, Value: name},
 		{Name: HeaderCacheTTL, Value: strconv.Itoa(PublicBucketCacheSeconds)},
 		{Name: HeaderSPA, Value: "false"}}
-	// 関数を直接呼ばせない
-	f.RequestHeaderModifier.Remove = append([]string{HeaderFunction}, apiOnlyHeaders...)
+	// 関数を直接呼ばせない（バケット以外のヘッダーは全部消す）
+	f.RequestHeaderModifier.Remove = removeOthers(f.RequestHeaderModifier.Set)
 	rule.Filters = []routeFilter{f}
 	rule.BackendRefs = []backendRef{{Name: InvokerService, Namespace: t.InvokerNamespace, Port: InvokerPort}}
 	r.Spec.Rules = []routeRule{rule}
@@ -220,11 +223,11 @@ func (s DistributionSpec) Normalize() DistributionSpec {
 }
 
 func (o DistributionOrigin) validate(field, where string) error {
-	if o.OriginType != OriginBucket && o.OriginType != OriginFunction {
-		return fieldErr(field, "%s元はバケットか関数です", where)
+	if o.OriginType != OriginBucket && o.OriginType != OriginAPI {
+		return fieldErr(field, "%s元はバケットか API です", where)
 	}
 	if !ValidName(o.Origin) {
-		return fieldErr(field, "%s元の%sを選んでください", where, map[string]string{OriginBucket: "バケット", OriginFunction: "関数"}[o.OriginType])
+		return fieldErr(field, "%s元の%sを選んでください", where, map[string]string{OriginBucket: "バケット", OriginAPI: "API"}[o.OriginType])
 	}
 	if o.CacheSeconds < 0 || o.CacheSeconds > MaxCacheSeconds {
 		return fieldErr(field, "%sキャッシュの長さは 0〜%d 秒です", where, MaxCacheSeconds)
@@ -241,11 +244,11 @@ func (s DistributionSpec) Validate() error {
 	}
 	d := s.Default()
 	// 既定の元のエラーは、今までどおりフォームの欄ごとに返す
-	if d.OriginType != OriginBucket && d.OriginType != OriginFunction {
-		return fieldErr("origin_type", "元はバケットか関数です")
+	if d.OriginType != OriginBucket && d.OriginType != OriginAPI {
+		return fieldErr("origin_type", "元はバケットか API です")
 	}
 	if !ValidName(d.Origin) {
-		return fieldErr("origin", "元の%sを選んでください", map[string]string{OriginBucket: "バケット", OriginFunction: "関数"}[d.OriginType])
+		return fieldErr("origin", "元の%sを選んでください", map[string]string{OriginBucket: "バケット", OriginAPI: "API"}[d.OriginType])
 	}
 	if d.CacheSeconds < 0 || d.CacheSeconds > MaxCacheSeconds {
 		return fieldErr("cache_seconds", "キャッシュの長さは 0〜%d 秒です", MaxCacheSeconds)
@@ -308,19 +311,15 @@ func RenderDistributionYAML(s DistributionSpec, t APITarget) (string, error) {
 		rule.Matches = []routeMatch{m}
 		f := routeFilter{Type: "RequestHeaderModifier"}
 		// 3 つとも毎回 set する（付けないと、利用者が付けてきた値がそのまま通ってしまう）
-		origin := headerValue{Name: HeaderFunction, Value: o.Origin}
+		origin := headerValue{Name: HeaderAPIOrigin, Value: o.Origin}
 		if o.OriginType == OriginBucket {
 			origin.Name = HeaderBucket
 		}
 		f.RequestHeaderModifier.Set = []headerValue{origin,
 			{Name: HeaderCacheTTL, Value: strconv.Itoa(int(o.CacheSeconds))},
 			{Name: HeaderSPA, Value: strconv.FormatBool(o.SPA)}}
-		// 元でない方のヘッダーは消す（利用者が X-Cloud-Function を付けて、関数を直接呼ぶのを防ぐ）
-		other := HeaderBucket
-		if o.OriginType == OriginBucket {
-			other = HeaderFunction
-		}
-		f.RequestHeaderModifier.Remove = append([]string{other}, apiOnlyHeaders...)
+		// 元でないヘッダーは全部消す（利用者が X-Cloud-Function を付けて関数を直接呼ぶ・認証の設定を付けるのを防ぐ）
+		f.RequestHeaderModifier.Remove = removeOthers(f.RequestHeaderModifier.Set)
 		rule.Filters = []routeFilter{f}
 		rule.BackendRefs = []backendRef{{Name: InvokerService, Namespace: t.InvokerNamespace, Port: InvokerPort}}
 		r.Spec.Rules = append(r.Spec.Rules, rule)
@@ -363,8 +362,8 @@ func ParseDistributionYAML(name, src string, t APITarget) (*ParsedDistribution, 
 			switch {
 			case strings.EqualFold(h.Name, HeaderBucket):
 				o.OriginType, o.Origin = OriginBucket, h.Value
-			case strings.EqualFold(h.Name, HeaderFunction):
-				o.OriginType, o.Origin = OriginFunction, h.Value
+			case strings.EqualFold(h.Name, HeaderAPIOrigin):
+				o.OriginType, o.Origin = OriginAPI, h.Value
 			case strings.EqualFold(h.Name, HeaderCacheTTL):
 				n, _ := strconv.Atoi(h.Value)
 				o.CacheSeconds = int32(n)

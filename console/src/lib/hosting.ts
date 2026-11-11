@@ -213,11 +213,14 @@ export function formatIdle(seconds: number): string {
 // ---- CDN ----
 
 /** パスごとの元（CloudFront の behavior）。パスはそのまま元に渡る */
-export type BehaviorForm = { path: string; originType: "bucket" | "function"; origin: string; cacheSeconds: string; spa: boolean };
+/** 元: バケットか API（API Gateway。関数は API を通して出す） */
+export type OriginType = "bucket" | "api";
+
+export type BehaviorForm = { path: string; originType: OriginType; origin: string; cacheSeconds: string; spa: boolean };
 
 export type DistributionForm = {
   name: string;
-  originType: "bucket" | "function";
+  originType: OriginType;
   origin: string;
   cacheSeconds: string;
   spa: boolean;
@@ -242,17 +245,17 @@ export function emptyDistributionForm(buckets: readonly string[]): DistributionF
   return { name: "", originType: "bucket", origin: buckets[0] ?? "", cacheSeconds: "300", spa: false, behaviors: [], aliases: [] };
 }
 
-/** 足すパスの最初の値: 関数があれば /api → 関数（キャッシュしない）。なければバケット */
-export function emptyBehavior(buckets: readonly string[], functions: readonly string[]): BehaviorForm {
-  return functions.length > 0
-    ? { path: "/api", originType: "function", origin: functions[0], cacheSeconds: "0", spa: false }
+/** 足すパスの最初の値: API があれば /api → API（キャッシュしない）。なければバケット */
+export function emptyBehavior(buckets: readonly string[], apis: readonly string[]): BehaviorForm {
+  return apis.length > 0
+    ? { path: "/api", originType: "api", origin: apis[0], cacheSeconds: "0", spa: false }
     : { path: "/", originType: "bucket", origin: buckets[0] ?? "", cacheSeconds: "300", spa: false };
 }
 
 type OriginSpec = { originType: string; origin: string; cacheSeconds: number; spa: boolean };
 
 export function distributionFormOf(spec: OriginSpec & { name: string; behaviors?: (OriginSpec & { path: string })[]; aliases?: readonly string[] }): DistributionForm {
-  const type = (t: string) => (t === "function" ? "function" : "bucket");
+  const type = (t: string): OriginType => (t === "api" ? "api" : "bucket");
   return {
     name: spec.name,
     originType: type(spec.originType),
@@ -300,7 +303,7 @@ export type DistributionFormErrors = Partial<Record<Exclude<keyof DistributionFo
 export function distributionFormErrors(form: DistributionForm): DistributionFormErrors {
   const e: DistributionFormErrors = {};
   if (!NAME_RE.test(form.name.trim())) e.name = "英小文字で始め、英小文字・数字・ハイフンで 40 文字まで";
-  if (form.origin === "") e.origin = form.originType === "bucket" ? "元のバケットを選んでください" : "元の関数を選んでください";
+  if (form.origin === "") e.origin = form.originType === "bucket" ? "元のバケットを選んでください" : "元の API を選んでください";
   if (!isCache(form.cacheSeconds)) e.cacheSeconds = "0〜31536000 秒（1 年）";
   const rows: Record<number, string> = {};
   const seen = new Set<string>();
@@ -309,7 +312,7 @@ export function distributionFormErrors(form: DistributionForm): DistributionForm
     if (p === "/") rows[i] = "/ は既定の元です。ほかのパスにしてください";
     else if (!PATH_RE.test(p) || p.includes("//") || p.includes("..")) rows[i] = "パスは / で始め、英数字と . _ ~ - / にしてください";
     else if (seen.has(p)) rows[i] = "パスが重複しています";
-    else if (b.origin === "") rows[i] = b.originType === "bucket" ? "元のバケットを選んでください" : "元の関数を選んでください";
+    else if (b.origin === "") rows[i] = b.originType === "bucket" ? "元のバケットを選んでください" : "元の API を選んでください";
     else if (!isCache(b.cacheSeconds)) rows[i] = "キャッシュは 0〜31536000 秒（1 年）";
     seen.add(p);
   });

@@ -100,22 +100,22 @@ describe("CDN のフォーム", () => {
   it("最初のバケットを元にして、5 分のキャッシュから始める", () => {
     expect(emptyDistributionForm(["site"])).toMatchObject({ originType: "bucket", origin: "site", cacheSeconds: "300", spa: false, aliases: [] });
   });
-  it("API の形にして、読み戻せる。関数が元なら SPA は付けない", () => {
-    const form = { name: " www ", originType: "function" as const, origin: "blog", cacheSeconds: "60", spa: true, behaviors: [], aliases: ["qa.taramanji.com"] };
+  it("API の形にして、読み戻せる。API が元なら SPA は付けない", () => {
+    const form = { name: " www ", originType: "api" as const, origin: "blog", cacheSeconds: "60", spa: true, behaviors: [], aliases: ["qa.taramanji.com"] };
     const spec = distributionSpecOf(form);
-    expect(spec).toEqual({ name: "www", originType: "function", origin: "blog", cacheSeconds: 60, spa: false, behaviors: [], aliases: ["qa.taramanji.com"] });
-    expect(distributionFormOf(spec)).toEqual({ name: "www", originType: "function", origin: "blog", cacheSeconds: "60", spa: false, behaviors: [], aliases: ["qa.taramanji.com"] });
+    expect(spec).toEqual({ name: "www", originType: "api", origin: "blog", cacheSeconds: 60, spa: false, behaviors: [], aliases: ["qa.taramanji.com"] });
+    expect(distributionFormOf(spec)).toEqual({ name: "www", originType: "api", origin: "blog", cacheSeconds: "60", spa: false, behaviors: [], aliases: ["qa.taramanji.com"] });
   });
   it("間違いを返す", () => {
     const ok = { ...emptyDistributionForm(["site"]), name: "www" };
     expect(distributionFormErrors(ok)).toEqual({});
     expect(Object.keys(distributionFormErrors({ ...ok, name: "WWW", origin: "", cacheSeconds: "x" })).sort()).toEqual(["cacheSeconds", "name", "origin"]);
   });
-  it("パスごとの元: 末尾の / を落として送り、関数には SPA を付けない", () => {
-    const form = { ...emptyDistributionForm(["front"]), name: "vrst", behaviors: [{ path: " /api/ ", originType: "function" as const, origin: "backend", cacheSeconds: "0", spa: true }] };
+  it("パスごとの元: 末尾の / を落として送り、API には SPA を付けない", () => {
+    const form = { ...emptyDistributionForm(["front"]), name: "vrst", behaviors: [{ path: " /api/ ", originType: "api" as const, origin: "backend", cacheSeconds: "0", spa: true }] };
     const spec = distributionSpecOf(form);
-    expect(spec.behaviors).toEqual([{ path: "/api", originType: "function", origin: "backend", cacheSeconds: 0, spa: false }]);
-    expect(distributionFormOf(spec).behaviors).toEqual([{ path: "/api", originType: "function", origin: "backend", cacheSeconds: "0", spa: false }]);
+    expect(spec.behaviors).toEqual([{ path: "/api", originType: "api", origin: "backend", cacheSeconds: 0, spa: false }]);
+    expect(distributionFormOf(spec).behaviors).toEqual([{ path: "/api", originType: "api", origin: "backend", cacheSeconds: "0", spa: false }]);
     expect(distributionFormErrors(form)).toEqual({});
   });
   it("独自ドメインのラベルを確かめる", () => {
@@ -123,12 +123,12 @@ describe("CDN のフォーム", () => {
     expect(aliasLabelError("QA ")).toBeUndefined();
     for (const bad of ["", "a.b", "x-cdn-cloud", "cloud", "cloud-stg", "-x", "*"]) expect(aliasLabelError(bad)).toBeDefined();
   });
-  it("足すパスの最初の値は、関数があれば /api → 関数", () => {
-    expect(emptyBehavior(["front"], ["backend"])).toMatchObject({ path: "/api", originType: "function", origin: "backend", cacheSeconds: "0" });
+  it("足すパスの最初の値は、API があれば /api → API", () => {
+    expect(emptyBehavior(["front"], ["backend"])).toMatchObject({ path: "/api", originType: "api", origin: "backend", cacheSeconds: "0" });
     expect(emptyBehavior(["front"], [])).toMatchObject({ originType: "bucket", origin: "front" });
   });
   it("パスごとの元の間違いを、行ごとに返す", () => {
-    const row = { path: "/api", originType: "function" as const, origin: "backend", cacheSeconds: "0", spa: false };
+    const row = { path: "/api", originType: "api" as const, origin: "backend", cacheSeconds: "0", spa: false };
     const form = {
       ...emptyDistributionForm(["front"]),
       name: "vrst",

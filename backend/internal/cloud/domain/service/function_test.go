@@ -275,8 +275,8 @@ func TestBucketAndDistributionYAML(t *testing.T) {
 		t.Fatalf("読み戻し: %+v %v", p, err)
 	}
 	// 関数が元のときは、バケットのヘッダーを消す
-	fn, _ := RenderDistributionYAML(DistributionSpec{Name: "fast", OriginType: OriginFunction, Origin: "blog", CacheSeconds: 60}, target)
-	if !strings.Contains(fn, "- X-Cloud-Bucket") || !strings.Contains(fn, "name: X-Cloud-Function") {
+	fn, _ := RenderDistributionYAML(DistributionSpec{Name: "fast", OriginType: OriginAPI, Origin: "shop", CacheSeconds: 60}, target)
+	if !strings.Contains(fn, "- X-Cloud-Bucket") || !strings.Contains(fn, "- X-Cloud-Function") || !strings.Contains(fn, "name: X-Cloud-Api\n") {
 		t.Fatalf("function origin:\n%s", fn)
 	}
 	// 形を変えた YAML（よそのホスト名・ほかの送り先・ヘッダーを消さない）は通さない
@@ -293,7 +293,8 @@ func TestBucketAndDistributionYAML(t *testing.T) {
 		"元の種類":      {Name: "www", OriginType: "s3", Origin: "site"},
 		"元なし":       {Name: "www", OriginType: OriginBucket},
 		"長すぎるキャッシュ": {Name: "www", OriginType: OriginBucket, Origin: "site", CacheSeconds: MaxCacheSeconds + 1},
-		"関数に SPA":   {Name: "www", OriginType: OriginFunction, Origin: "blog", SPA: true},
+		"API に SPA": {Name: "www", OriginType: OriginAPI, Origin: "shop", SPA: true},
+		"関数を元にする":   {Name: "www", OriginType: "function", Origin: "blog"},
 	} {
 		if bad.Validate() == nil {
 			t.Errorf("%s は通さない", name)

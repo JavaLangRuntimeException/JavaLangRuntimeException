@@ -3741,7 +3741,7 @@ type DistributionSpec struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// ホスト名の先頭（<名前>-cdn-cloud.taramanji.com）。API と合わせて、環境の中で重複できない
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	// bucket / function
+	// bucket / api（API Gateway。CloudFront の元を API Gateway にするのと同じ。API のルート・認証・CORS が効く）
 	OriginType string `protobuf:"bytes,2,opt,name=origin_type,json=originType,proto3" json:"origin_type,omitempty"`
 	Origin     string `protobuf:"bytes,3,opt,name=origin,proto3" json:"origin,omitempty"`
 	// キャッシュさせる秒数（Cache-Control: public, max-age）。0 ならキャッシュさせない
@@ -3841,7 +3841,7 @@ type DistributionBehavior struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// / で始まるパス（/api など）。/ そのものは既定の元なので書かない
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	// bucket / function
+	// bucket / api（API Gateway。CloudFront の元を API Gateway にするのと同じ。API のルート・認証・CORS が効く）
 	OriginType    string `protobuf:"bytes,2,opt,name=origin_type,json=originType,proto3" json:"origin_type,omitempty"`
 	Origin        string `protobuf:"bytes,3,opt,name=origin,proto3" json:"origin,omitempty"`
 	CacheSeconds  int32  `protobuf:"varint,4,opt,name=cache_seconds,json=cacheSeconds,proto3" json:"cache_seconds,omitempty"`

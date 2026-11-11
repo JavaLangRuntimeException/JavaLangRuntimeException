@@ -8,6 +8,9 @@ package invoker
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"io"
 	"log/slog"
@@ -41,6 +44,14 @@ type Config struct {
 	StorageURL *url.URL
 	// Transport はテストで差し替える
 	Transport http.RoundTripper
+	// GatewayURL は cloud の Envoy（http://taramanji-cloud-gateway.envoy-gateway-system.svc.cluster.local）。
+	// CDN の元が API のとき、その API のホスト名（APIHost）でここに渡し直す（API のルート・認証・CORS がそのまま効く）。nil なら API を元にした CDN は使えない
+	GatewayURL *url.URL
+	// APIHost は API の名前 → 公開ホスト名（<名前>-apigw-cloud.taramanji.com）
+	APIHost func(name string) string
+	// InternalSecret は、CDN から API に渡し直したリクエストに付ける署名の鍵（cloud-gw の Pod で同じもの）。
+	// CDN は Cloudflare Access のログインの後ろなので、署名の付いたリクエストには API キーを求めない。空なら署名しない（API キーを求める）
+	InternalSecret []byte
 }
 
 const (
@@ -78,7 +89,8 @@ func New(c Config) *Invoker {
 		c.Log = slog.Default()
 	}
 	if c.Transport == nil {
-		c.Transport = &http.Transport{MaxIdleConnsPerHost: 16, IdleConnTimeout: 30 * time.Second, ResponseHeaderTimeout: 60 * time.Second}
+		// 応答を待つのは、関数の 60 秒に起動を待つ時間を足した分（CDN の元が API のときは、Envoy の先でもう一度起動を待つことがあるため）
+		c.Transport = &http.Transport{MaxIdleConnsPerHost: 16, IdleConnTimeout: 30 * time.Second, ResponseHeaderTimeout: 60*time.Second + c.ColdStartTimeout}
 	}
 	return &Invoker{c: c, fns: map[string]*fnState{}}
 }
@@ -97,14 +109,22 @@ func (i *Invoker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ttl, _ := strconv.Atoi(r.Header.Get(service.HeaderCacheTTL))
 	spa := r.Header.Get(service.HeaderSPA) == "true"
 	bucket := r.Header.Get(service.HeaderBucket)
+	apiOrigin := r.Header.Get(service.HeaderAPIOrigin)
+	// CDN（ログイン済み）から渡し直したリクエストか。利用者が付けてきた値は、署名が合わないので使われない
+	viaCDN := i.verifyCDN(r.Header.Get(HeaderViaCDN), r.Host)
+	r.Header.Del(HeaderViaCDN)
 	// 認証・CORS は API の HTTPRoute が付ける（ほかの HTTPRoute は消す）
 	auth, keys := r.Header.Get(service.HeaderAuth), r.Header.Get(service.HeaderAPIKeys)
 	cors := strings.Fields(r.Header.Get(service.HeaderCORS))
-	for _, h := range []string{service.HeaderCacheTTL, service.HeaderSPA, service.HeaderBucket, service.HeaderAuth, service.HeaderAPIKeys, service.HeaderCORS, HeaderKeyName} {
+	for _, h := range []string{service.HeaderCacheTTL, service.HeaderSPA, service.HeaderBucket, service.HeaderAPIOrigin, service.HeaderAuth, service.HeaderAPIKeys, service.HeaderCORS, HeaderKeyName} {
 		r.Header.Del(h)
 	}
 	if bucket != "" {
 		i.serveBucket(w, r, bucket, ttl, spa)
+		return
+	}
+	if apiOrigin != "" {
+		i.serveAPI(w, r, apiOrigin, ttl)
 		return
 	}
 	name := r.Header.Get(service.HeaderFunction)
@@ -126,7 +146,7 @@ func (i *Invoker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	// API キー: 当たらなければ関数を起こさずに 401。当たったら、キーの名前を関数に渡す（キーそのものは渡さない）
-	if auth == service.AuthAPIKey {
+	if auth == service.AuthAPIKey && !viaCDN {
 		keyName, ok := service.MatchAPIKey(keys, r.Header.Get(HeaderAPIKey))
 		if !ok {
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -171,6 +191,80 @@ func (i *Invoker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	r.Header.Del(service.HeaderFunction)
 	i.proxy(name, ttl, len(cors) > 0).ServeHTTP(w, r)
+}
+
+// serveAPI は CDN の元が API のとき、その API のホスト名で cloud の Envoy に渡し直す。
+// Envoy が API の HTTPRoute（パスごとの関数・認証・CORS）を当てて、もう一度ここ（関数の呼び出し）に来る。
+// 利用者が見ていたホスト名（CDN）は X-Forwarded-Host で関数に届く
+func (i *Invoker) serveAPI(w http.ResponseWriter, r *http.Request, name string, ttl int) {
+	if !service.ValidName(name) || i.c.GatewayURL == nil || i.c.APIHost == nil {
+		http.Error(w, "no api is routed for this request", http.StatusNotFound)
+		return
+	}
+	host := i.c.APIHost(name)
+	(&httputil.ReverseProxy{
+		Rewrite: func(pr *httputil.ProxyRequest) {
+			pr.SetURL(i.c.GatewayURL)
+			pr.Out.Host = host
+			pr.SetXForwarded()
+			if len(i.c.InternalSecret) > 0 {
+				pr.Out.Header.Set(HeaderViaCDN, i.signCDN(host, i.c.Clock()))
+			}
+		},
+		// CDN のキャッシュの長さ: 関数が自分で決めていなければ、GET の 200 に付ける
+		ModifyResponse: func(res *http.Response) error {
+			if ttl > 0 && res.Request.Method == http.MethodGet && res.StatusCode == http.StatusOK && res.Header.Get("Cache-Control") == "" {
+				res.Header.Set("Cache-Control", cacheControl(ttl))
+			}
+			return nil
+		},
+		Transport: i.c.Transport,
+		ErrorHandler: func(w http.ResponseWriter, _ *http.Request, err error) {
+			i.c.Log.Warn("api origin failed", "api", name, "error", err)
+			http.Error(w, "api did not respond", http.StatusBadGateway)
+		},
+	}).ServeHTTP(w, r)
+}
+
+// HeaderViaCDN は CDN から API に渡し直したリクエストの署名（<UNIX 秒>.<HMAC-SHA256(鍵, 秒 + "\n" + API のホスト名)>）
+const HeaderViaCDN = "X-Cloud-Cdn"
+
+// cdnSignatureTTL より古い署名は使わない（ログに残った値を、あとから使い回させない）
+const cdnSignatureTTL = time.Minute
+
+func (i *Invoker) signCDN(host string, now time.Time) string {
+	ts := strconv.FormatInt(now.Unix(), 10)
+	return ts + "." + i.cdnMAC(ts, host)
+}
+
+func (i *Invoker) cdnMAC(ts, host string) string {
+	m := hmac.New(sha256.New, i.c.InternalSecret)
+	m.Write([]byte(ts + "\n" + host))
+	return hex.EncodeToString(m.Sum(nil))
+}
+
+// FromCDN は、CDN から API に渡し直したリクエスト（署名が合う）か
+func (i *Invoker) FromCDN(r *http.Request) bool {
+	return i.verifyCDN(r.Header.Get(HeaderViaCDN), r.Host)
+}
+
+// verifyCDN は署名が、このホスト名に向けて、この 1 分のうちに cloud-gw が付けたものか
+func (i *Invoker) verifyCDN(v, host string) bool {
+	if v == "" || len(i.c.InternalSecret) == 0 {
+		return false
+	}
+	ts, mac, ok := strings.Cut(v, ".")
+	if !ok {
+		return false
+	}
+	sec, err := strconv.ParseInt(ts, 10, 64)
+	if err != nil {
+		return false
+	}
+	if d := i.c.Clock().Sub(time.Unix(sec, 0)); d > cdnSignatureTTL || d < -cdnSignatureTTL {
+		return false
+	}
+	return hmac.Equal([]byte(mac), []byte(i.cdnMAC(ts, host)))
 }
 
 // API キーのヘッダー（利用者が送る）と、当たったキーの名前（関数に渡す）

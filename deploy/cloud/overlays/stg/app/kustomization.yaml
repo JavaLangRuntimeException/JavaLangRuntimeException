@@ -49,6 +49,7 @@ patches:
                   - { name: CLOUD_ENV, value: stg }
                   - { name: APP_ENV, value: staging }
                   - { name: APPS_NAMESPACE, value: taramanji-cloud-stg }
+                  - { name: HOST_SUFFIX, value: "-cloud-stg.taramanji.com" }
   - patch: |-
       apiVersion: apps/v1
       kind: StatefulSet
