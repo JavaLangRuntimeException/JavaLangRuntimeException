@@ -117,7 +117,8 @@ spec:
           # 満杯になったら古いキーを消さず、書き込みをエラーにする（データベースとして使うので、黙って消さない）。
           # ユーザー（ACL）はメモリにだけ置く。再起動したら、コントローラーが 20 秒以内に作り直す
           args:
-            - exec redis-server --requirepass "$REDIS_ADMIN_PASSWORD" --appendonly yes --dir /data --maxmemory 96mb --maxmemory-policy noeviction
+            # パスワードの末尾の改行は落とす（Secret はファイルから作るので改行が付く。コントローラーも落として使う）
+            - exec redis-server --requirepass "$(printf '%s' "$REDIS_ADMIN_PASSWORD" | tr -d '\r\n ')" --appendonly yes --dir /data --maxmemory 96mb --maxmemory-policy noeviction
           ports:
             - { name: redis, containerPort: 6379 }
           env:
