@@ -193,6 +193,14 @@ type AccessHosts interface {
 	SetHosts(ctx context.Context, hosts []string) error
 }
 
+// CachePurger は Cloudflare のエッジのキャッシュを消す（ブラウザが持っている分は消えない）
+type CachePurger interface {
+	// PurgeHosts はホスト名ごと全部消す
+	PurgeHosts(ctx context.Context, hosts []string) error
+	// PurgeURLs は URL（https://host/path）ごとに消す
+	PurgeURLs(ctx context.Context, urls []string) error
+}
+
 // LabeledObject は ConfigMap / Secret / Namespace の、名前・ラベル・注釈（ConfigMap は data も）
 type LabeledObject struct {
 	Name        string

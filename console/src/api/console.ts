@@ -162,11 +162,22 @@ export function useStorageMutations() {
     deleteBucket: useMutation({ mutationFn: (req: Parameters<typeof consoleApi.deleteBucket>[0]) => consoleApi.deleteBucket(req), onSuccess: refresh }),
     deleteObject: useMutation({ mutationFn: (req: Parameters<typeof consoleApi.deleteObject>[0]) => consoleApi.deleteObject(req), onSuccess: refresh }),
     upload: useMutation({
-      // items のパスはバケットの中のキー（planUpload で今いるフォルダーを付けたもの）。少しずつ並べて置く
-      mutationFn: ({ bucket, items, onProgress }: { bucket: string; items: UploadItem[]; onProgress: (done: number, total: number) => void }) =>
-        uploadAll(items, (it) => uploadObject(bucket, it.path, it.file), onProgress),
+      // items のパスはバケットの中のキー（planUpload で今いるフォルダーを付けたもの）。少しずつ並べて置く。
+      // 置いたあと、同じ名前の古いファイルが Cloudflare のエッジに残らないよう、その URL のキャッシュを消す（purge が false なら消さない）。
+      // 返り値はキャッシュを消せなかった理由（空なら問題なし）
+      mutationFn: async ({ bucket, items, onProgress, purge }: { bucket: string; items: UploadItem[]; onProgress: (done: number, total: number) => void; purge: boolean }) => {
+        await uploadAll(items, (it) => uploadObject(bucket, it.path, it.file), onProgress);
+        if (!purge) return "";
+        const problems: string[] = [];
+        for (let i = 0; i < items.length; i += 100) {
+          const res = await consoleApi.purgeCache({ kind: "bucket", name: bucket, keys: items.slice(i, i + 100).map((it) => it.path) });
+          if (res.problem) problems.push(res.problem);
+        }
+        return problems[0] ?? "";
+      },
       onSettled: refresh,
     }),
+    purgeCache: useMutation({ mutationFn: (req: Parameters<typeof consoleApi.purgeCache>[0]) => consoleApi.purgeCache(req) }),
     applyDistribution: useMutation({ mutationFn: (req: Parameters<typeof consoleApi.applyDistribution>[0]) => consoleApi.applyDistribution(req), onSuccess: refresh }),
     deleteDistribution: useMutation({ mutationFn: (req: Parameters<typeof consoleApi.deleteDistribution>[0]) => consoleApi.deleteDistribution(req), onSuccess: refresh }),
   };

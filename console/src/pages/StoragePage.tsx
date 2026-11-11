@@ -53,7 +53,7 @@ export function StoragePage() {
       ) : !opt?.storeEnabled ? (
         <StoreDisabled repository={opt?.repository ?? ""} />
       ) : current ? (
-        <Objects bucket={current} storageEnabled={opt.storageEnabled} dnsEnabled={opt.dnsEnabled} onClose={() => setOpen(null)} />
+        <Objects bucket={current} storageEnabled={opt.storageEnabled} dnsEnabled={opt.dnsEnabled} purgeEnabled={opt.cachePurgeEnabled} onClose={() => setOpen(null)} />
       ) : (
         <div className="space-y-4">
           {creating && <CreateBucket storageHostSuffix={opt.storageHostSuffix} dnsEnabled={opt.dnsEnabled} onClose={() => setCreating(false)} />}
@@ -192,10 +192,25 @@ function BucketTable({ buckets, onOpen }: { buckets: Bucket[]; onOpen: (name: st
   );
 }
 
-function Objects({ bucket, storageEnabled, dnsEnabled, onClose }: { bucket: Bucket; storageEnabled: boolean; dnsEnabled: boolean; onClose: () => void }) {
+function Objects({
+  bucket,
+  storageEnabled,
+  dnsEnabled,
+  purgeEnabled,
+  onClose,
+}: {
+  bucket: Bucket;
+  storageEnabled: boolean;
+  dnsEnabled: boolean;
+  purgeEnabled: boolean;
+  onClose: () => void;
+}) {
   const [prefix, setPrefix] = useState("");
   const objects = useObjects(bucket.name, prefix);
-  const { upload, deleteObject, deleteBucket } = useStorageMutations();
+  const { upload, deleteObject, deleteBucket, purgeCache } = useStorageMutations();
+  // 配っている URL（公開・CDN）があるか。なければキャッシュは消さなくてよい
+  const served = bucket.public || bucket.distributions.length > 0;
+  const cacheProblem = upload.data || deleteObject.data?.cacheProblem || purgeCache.data?.problem || "";
   const fileInput = useRef<HTMLInputElement>(null);
   const folderInput = useRef<HTMLInputElement>(null);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
@@ -208,7 +223,10 @@ function Objects({ bucket, storageEnabled, dnsEnabled, onClose }: { bucket: Buck
     const plan = planUpload(prefix, items);
     setSkipped(plan.hidden.length + plan.invalid.length > 0 ? { hidden: plan.hidden, invalid: plan.invalid } : null);
     if (plan.upload.length === 0) return;
-    upload.mutate({ bucket: bucket.name, items: plan.upload, onProgress: (done, total) => setProgress({ done, total }) }, { onSettled: () => setProgress(null) });
+    upload.mutate(
+      { bucket: bucket.name, items: plan.upload, onProgress: (done, total) => setProgress({ done, total }), purge: purgeEnabled && served },
+      { onSettled: () => setProgress(null) },
+    );
   };
   const onDrop = async (e: DragEvent) => {
     e.preventDefault();
@@ -269,6 +287,17 @@ function Objects({ bucket, storageEnabled, dnsEnabled, onClose }: { bucket: Buck
                 e.target.value = "";
               }}
             />
+            {purgeEnabled && served && (
+              <button
+                type="button"
+                className={btn}
+                disabled={purgeCache.isPending}
+                title="公開の URL と、このバケットを元にしている CDN の、Cloudflare のエッジのキャッシュを消します"
+                onClick={() => purgeCache.mutate({ kind: "bucket", name: bucket.name, keys: [] })}
+              >
+                {purgeCache.isPending ? "消しています…" : "キャッシュを消す"}
+              </button>
+            )}
             <button type="button" className={btn} disabled={!usable || upload.isPending} onClick={() => folderInput.current?.click()}>
               フォルダーを選ぶ
             </button>
@@ -315,6 +344,17 @@ function Objects({ bucket, storageEnabled, dnsEnabled, onClose }: { bucket: Buck
         {deleteObject.isError && (
           <p role="alert" className="border-b border-line px-4 py-2 text-bad">
             {describeMutationError(deleteObject.error)}
+          </p>
+        )}
+        {cacheProblem && <p className="border-b border-line px-4 py-2 text-[13px] text-warn">{cacheProblem}</p>}
+        {purgeCache.isError && (
+          <p role="alert" className="border-b border-line px-4 py-2 text-bad">
+            {describeMutationError(purgeCache.error)}
+          </p>
+        )}
+        {purgeCache.data && !purgeCache.data.problem && (
+          <p className="border-b border-line px-4 py-2 text-[13px] text-ok">
+            Cloudflare のキャッシュを消しました（{purgeCache.data.hosts.join("・") || "配っている URL はありません"}）。ブラウザに残った分は、期限まで見えることがあります。
           </p>
         )}
 
@@ -410,7 +450,9 @@ function Objects({ bucket, storageEnabled, dnsEnabled, onClose }: { bucket: Buck
 function PublicPanel({ bucket, dnsEnabled }: { bucket: Bucket; dnsEnabled: boolean }) {
   const { updateBucket } = useStorageMutations();
   const host = bucket.publicHost || "";
-  const warning = updateBucket.data ? dnsNote(dnsEnabled, updateBucket.data.dnsProblem, updateBucket.data.bucket?.publicHost || host) : undefined;
+  const warning = updateBucket.data
+    ? [dnsNote(dnsEnabled, updateBucket.data.dnsProblem, updateBucket.data.bucket?.publicHost || host), updateBucket.data.cacheProblem].filter(Boolean).join(" ") || undefined
+    : undefined;
   const toggle = (next: boolean) => {
     const msg = next
       ? `バケット ${bucket.name} を公開します。置いたファイルは、URL を知っている人なら誰でもログインなしで読めます。`

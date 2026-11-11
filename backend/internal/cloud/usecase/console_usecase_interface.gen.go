@@ -90,6 +90,12 @@ type DeleteObjectInput struct {
 	Key    string
 }
 
+type PurgeCacheInput struct {
+	Kind string
+	Name string
+	Keys []string
+}
+
 type ListDistributionsInput struct{}
 
 type PreviewDistributionInput struct {
@@ -162,6 +168,7 @@ type GetHostingOptionsOutput struct {
 	CdnHostSuffix      string            `json:"cdn_host_suffix"`
 	StorageHostSuffix  string            `json:"storage_host_suffix"`
 	CustomDomainZone   string            `json:"custom_domain_zone"`
+	CachePurgeEnabled  bool              `json:"cache_purge_enabled"`
 	InstanceFamilies   []*InstanceFamily `json:"instance_families"`
 	StorageEnabled     bool              `json:"storage_enabled"`
 	DnsEnabled         bool              `json:"dns_enabled"`
@@ -221,17 +228,28 @@ type CreateBucketOutput struct {
 }
 
 type UpdateBucketOutput struct {
-	Bucket     *Bucket `json:"bucket"`
-	DnsProblem string  `json:"dns_problem"`
+	Bucket       *Bucket `json:"bucket"`
+	DnsProblem   string  `json:"dns_problem"`
+	CacheProblem string  `json:"cache_problem"`
 }
 
 type DeleteBucketOutput struct {
-	DnsProblem string `json:"dns_problem"`
+	DnsProblem   string `json:"dns_problem"`
+	CacheProblem string `json:"cache_problem"`
 }
 
 type ListObjectsOutput struct {
 	Objects   []*StorageObject `json:"objects"`
 	Truncated bool             `json:"truncated"`
+}
+
+type DeleteObjectOutput struct {
+	CacheProblem string `json:"cache_problem"`
+}
+
+type PurgeCacheOutput struct {
+	Hosts   []string `json:"hosts"`
+	Problem string   `json:"problem"`
 }
 
 type ListDistributionsOutput struct {
@@ -245,10 +263,12 @@ type PreviewDistributionOutput struct {
 type ApplyDistributionOutput struct {
 	Distribution *Distribution `json:"distribution"`
 	DnsProblem   string        `json:"dns_problem"`
+	CacheProblem string        `json:"cache_problem"`
 }
 
 type DeleteDistributionOutput struct {
-	DnsProblem string `json:"dns_problem"`
+	DnsProblem   string `json:"dns_problem"`
+	CacheProblem string `json:"cache_problem"`
 }
 
 type ListDatabasesOutput struct {
@@ -494,7 +514,8 @@ type ConsoleUsecase interface {
 	UpdateBucket(ctx context.Context, input UpdateBucketInput) (*UpdateBucketOutput, error)
 	DeleteBucket(ctx context.Context, input DeleteBucketInput) (*DeleteBucketOutput, error)
 	ListObjects(ctx context.Context, input ListObjectsInput) (*ListObjectsOutput, error)
-	DeleteObject(ctx context.Context, input DeleteObjectInput) error
+	DeleteObject(ctx context.Context, input DeleteObjectInput) (*DeleteObjectOutput, error)
+	PurgeCache(ctx context.Context, input PurgeCacheInput) (*PurgeCacheOutput, error)
 	ListDistributions(ctx context.Context, input ListDistributionsInput) (*ListDistributionsOutput, error)
 	PreviewDistribution(ctx context.Context, input PreviewDistributionInput) (*PreviewDistributionOutput, error)
 	ApplyDistribution(ctx context.Context, input ApplyDistributionInput) (*ApplyDistributionOutput, error)

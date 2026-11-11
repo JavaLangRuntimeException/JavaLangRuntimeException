@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"reflect"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -472,10 +474,10 @@ func TestBucketsAndCDN(t *testing.T) {
 	if _, err := uc.DeleteBucket(ctx, DeleteBucketInput{Name: "site", Revision: rev}); code(err) != "bucket_not_empty" {
 		t.Fatalf("bucket_not_empty: %v", err)
 	}
-	if err := uc.DeleteObject(ctx, DeleteObjectInput{Bucket: "site", Key: "index.html"}); err != nil {
+	if _, err := uc.DeleteObject(ctx, DeleteObjectInput{Bucket: "site", Key: "index.html"}); err != nil {
 		t.Fatal(err)
 	}
-	if err := uc.DeleteObject(ctx, DeleteObjectInput{Bucket: "site", Key: "index.html"}); code(err) != "not_found" {
+	if _, err := uc.DeleteObject(ctx, DeleteObjectInput{Bucket: "site", Key: "index.html"}); code(err) != "not_found" {
 		t.Fatalf("not_found: %v", err)
 	}
 	if _, err := uc.DeleteBucket(ctx, DeleteBucketInput{Name: "site", Revision: rev}); err != nil {
@@ -716,5 +718,92 @@ func TestCDNAliases(t *testing.T) {
 	other = store.files["cdn/other"]
 	if _, err := uc.ApplyDistribution(ctx, ApplyDistributionInput{Spec: &DistributionSpec{Name: "other", OriginType: "bucket", Origin: "front", Aliases: []string{"qa.taramanji.com"}}, Revision: other.Revision}); code(err) != "invalid" {
 		t.Fatalf("Access なし: %v", err)
+	}
+}
+
+type fakePurger struct {
+	hosts, urls []string
+}
+
+func (p *fakePurger) PurgeHosts(_ context.Context, hosts []string) error {
+	p.hosts = append(p.hosts, hosts...)
+	return nil
+}
+
+func (p *fakePurger) PurgeURLs(_ context.Context, urls []string) error {
+	p.urls = append(p.urls, urls...)
+	return nil
+}
+
+// キャッシュの消去: 公開をやめたとき・ファイルを消したとき・CDN を変えた・消したとき。手でも消せる
+func TestCachePurge(t *testing.T) {
+	uc, store, _ := newComputeUC()
+	purger := &fakePurger{}
+	uc.d.Objects, uc.d.DNS = &fakeObjects{objects: map[string][]gateway.StoredObject{"site": {{Key: "index.html", Size: 1}, {Key: "img/a b.png", Size: 1}}}}, &fakeDNS{hosts: map[string]bool{}}
+	ctx := context.Background()
+	if _, err := uc.PurgeCache(ctx, PurgeCacheInput{Kind: "bucket", Name: "site"}); code(err) != "purge_disabled" {
+		t.Fatalf("トークンなし: %v", err)
+	}
+	uc.d.Purger = purger
+	if o, _ := uc.GetHostingOptions(ctx, GetHostingOptionsInput{}); !o.CachePurgeEnabled {
+		t.Fatal("cache_purge_enabled")
+	}
+	made, _ := uc.CreateBucket(ctx, CreateBucketInput{Name: "site", Public: true})
+	cdn, err := uc.ApplyDistribution(ctx, ApplyDistributionInput{Spec: &DistributionSpec{Name: "www", OriginType: "bucket", Origin: "site", CacheSeconds: 300, Spa: true}})
+	if err != nil || len(purger.hosts) != 0 {
+		t.Fatalf("作るときは消さない: %v %v", err, purger.hosts)
+	}
+
+	// ファイルを消すと、公開の URL と CDN の URL を消す。index.html はディレクトリの URL も、SPA の CDN はホスト名ごと
+	if out, err := uc.DeleteObject(ctx, DeleteObjectInput{Bucket: "site", Key: "img/a b.png"}); err != nil || out.CacheProblem != "" {
+		t.Fatal(out, err)
+	}
+	want := []string{"https://site-storage-cloud.taramanji.com/img/a%20b.png", "https://www-cdn-cloud.taramanji.com/img/a%20b.png"}
+	if !reflect.DeepEqual(purger.urls, want) || len(purger.hosts) != 0 {
+		t.Fatalf("urls %v hosts %v", purger.urls, purger.hosts)
+	}
+	purger.urls = nil
+	if _, err := uc.DeleteObject(ctx, DeleteObjectInput{Bucket: "site", Key: "index.html"}); err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Contains(purger.urls, "https://site-storage-cloud.taramanji.com/") || !reflect.DeepEqual(purger.hosts, []string{"www-cdn-cloud.taramanji.com"}) {
+		t.Fatalf("index: urls %v hosts %v", purger.urls, purger.hosts)
+	}
+
+	// 手で: バケット（ホスト名ごと・キーだけ）、CDN
+	purger.hosts, purger.urls = nil, nil
+	if out, err := uc.PurgeCache(ctx, PurgeCacheInput{Kind: "bucket", Name: "site"}); err != nil || len(out.Hosts) != 2 || len(purger.hosts) != 2 {
+		t.Fatalf("bucket: %+v %v %v", out, err, purger.hosts)
+	}
+	if _, err := uc.PurgeCache(ctx, PurgeCacheInput{Kind: "bucket", Name: "site", Keys: []string{"a.js"}}); err != nil || len(purger.urls) != 2 {
+		t.Fatalf("keys: %v %v", err, purger.urls)
+	}
+	purger.hosts = nil
+	if out, err := uc.PurgeCache(ctx, PurgeCacheInput{Kind: "cdn", Name: "www"}); err != nil || !reflect.DeepEqual(out.Hosts, []string{"www-cdn-cloud.taramanji.com"}) || len(purger.hosts) != 1 {
+		t.Fatalf("cdn: %+v %v", out, err)
+	}
+	if _, err := uc.PurgeCache(ctx, PurgeCacheInput{Kind: "api", Name: "www"}); code(err) != "invalid" {
+		t.Fatalf("kind: %v", err)
+	}
+
+	// CDN を変えたら消す・消したら消す
+	purger.hosts = nil
+	updated, err := uc.ApplyDistribution(ctx, ApplyDistributionInput{Spec: &DistributionSpec{Name: "www", OriginType: "bucket", Origin: "site", CacheSeconds: 60}, Revision: cdn.Distribution.Source.Revision})
+	if err != nil || !reflect.DeepEqual(purger.hosts, []string{"www-cdn-cloud.taramanji.com"}) {
+		t.Fatalf("update: %v %v", err, purger.hosts)
+	}
+	purger.hosts = nil
+	if _, err := uc.DeleteDistribution(ctx, DeleteDistributionInput{Name: "www", Revision: updated.Distribution.Source.Revision}); err != nil || !reflect.DeepEqual(purger.hosts, []string{"www-cdn-cloud.taramanji.com"}) {
+		t.Fatalf("delete cdn: %v %v", err, purger.hosts)
+	}
+
+	// 公開をやめたら、公開のホスト名ごと消す（オンにしたときは消さない）
+	purger.hosts = nil
+	if _, err := uc.UpdateBucket(ctx, UpdateBucketInput{Name: "site", Public: false, Revision: made.Bucket.Source.Revision}); err != nil || !reflect.DeepEqual(purger.hosts, []string{"site-storage-cloud.taramanji.com"}) {
+		t.Fatalf("public off: %v %v", err, purger.hosts)
+	}
+	purger.hosts = nil
+	if _, err := uc.UpdateBucket(ctx, UpdateBucketInput{Name: "site", Public: true, Revision: store.files["buckets/site"].Revision}); err != nil || len(purger.hosts) != 0 {
+		t.Fatalf("public on: %v %v", err, purger.hosts)
 	}
 }

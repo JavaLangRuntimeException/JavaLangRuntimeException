@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
 	"slices"
 	"sort"
 	"strings"
@@ -144,7 +145,8 @@ func (u *ConsoleUsecaseImpl) UpdateBucket(ctx context.Context, in UpdateBucketIn
 	if err != nil {
 		return nil, storeErr(err)
 	}
-	if _, err := service.ParseBucketYAML(in.Name, cur.YAML, u.d.APITarget); err != nil {
+	was, err := service.ParseBucketYAML(in.Name, cur.YAML, u.d.APITarget)
+	if err != nil {
 		return nil, invalid(err)
 	}
 	y, err := service.RenderBucketYAML(in.Name, in.Public, u.d.APITarget)
@@ -161,6 +163,10 @@ func (u *ConsoleUsecaseImpl) UpdateBucket(ctx context.Context, in UpdateBucketIn
 		out.DnsProblem = u.ensureDNS(ctx, host)
 	} else {
 		out.DnsProblem = u.removeDNS(ctx, host)
+		// 公開をやめたら、エッジに残ったファイルも消す（ブラウザが持っている分は期限まで残る）
+		if was.Public {
+			out.CacheProblem = u.purgeHosts(ctx, []string{host})
+		}
 	}
 	return out, nil
 }
@@ -210,7 +216,9 @@ func (u *ConsoleUsecaseImpl) DeleteBucket(ctx context.Context, in DeleteBucketIn
 	}
 	out := &DeleteBucketOutput{}
 	if public {
-		out.DnsProblem = u.removeDNS(ctx, u.d.APITarget.Host(service.HostStorage, in.Name))
+		host := u.d.APITarget.Host(service.HostStorage, in.Name)
+		out.DnsProblem = u.removeDNS(ctx, host)
+		out.CacheProblem = u.purgeHosts(ctx, []string{host})
 	}
 	return out, nil
 }
@@ -234,18 +242,141 @@ func (u *ConsoleUsecaseImpl) ListObjects(ctx context.Context, in ListObjectsInpu
 	return out, nil
 }
 
-func (u *ConsoleUsecaseImpl) DeleteObject(ctx context.Context, in DeleteObjectInput) error {
+func (u *ConsoleUsecaseImpl) DeleteObject(ctx context.Context, in DeleteObjectInput) (*DeleteObjectOutput, error) {
 	objs, err := u.objects()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if !service.ValidName(in.Bucket) {
-		return objectErr(gateway.ErrObjectNotFound)
+		return nil, objectErr(gateway.ErrObjectNotFound)
 	}
 	if err := objs.Delete(ctx, in.Bucket, in.Key); err != nil {
-		return objectErr(err)
+		return nil, objectErr(err)
 	}
-	return nil
+	// 消したファイルが、公開の URL や CDN のエッジに残らないようにする
+	return &DeleteObjectOutput{CacheProblem: u.purgeKeys(ctx, in.Bucket, []string{in.Key})}, nil
+}
+
+// ---- キャッシュの消去 ----
+
+// MaxPurgeKeys は 1 回に URL で消せるファイルの数
+const MaxPurgeKeys = 100
+
+// PurgeCache は Cloudflare のエッジのキャッシュを消す。バケットなら、そのバケットを配っている公開の URL と CDN、CDN ならその CDN のホスト名
+func (u *ConsoleUsecaseImpl) PurgeCache(ctx context.Context, in PurgeCacheInput) (*PurgeCacheOutput, error) {
+	if u.d.Purger == nil {
+		return nil, errs.New(errs.ErrorTypeBadRequest, "キャッシュを消すトークン（Cloudflare の Cache Purge の権限）がありません").WithCode("purge_disabled")
+	}
+	if !service.ValidName(in.Name) {
+		return nil, storeErr(gateway.ErrResourceNotFound)
+	}
+	switch in.Kind {
+	case "bucket":
+		if len(in.Keys) > MaxPurgeKeys {
+			return nil, errs.NewValidationError("keys", fmt.Sprintf("一度に消せるのは %d 個までです", MaxPurgeKeys)).WithCode("invalid")
+		}
+		hosts, _, err := u.bucketHosts(ctx, in.Name)
+		if err != nil {
+			return nil, err
+		}
+		out := &PurgeCacheOutput{Hosts: hosts}
+		if len(in.Keys) > 0 {
+			out.Problem = u.purgeKeys(ctx, in.Name, in.Keys)
+		} else {
+			out.Problem = u.purgeHosts(ctx, hosts)
+		}
+		return out, nil
+	case "cdn":
+		store, err := u.store()
+		if err != nil {
+			return nil, err
+		}
+		cur, err := store.Get(ctx, gateway.KindCDN, in.Name)
+		if err != nil {
+			return nil, storeErr(err)
+		}
+		parsed, err := service.ParseDistributionYAML(in.Name, cur.YAML, u.d.APITarget)
+		if err != nil {
+			return nil, invalid(err)
+		}
+		hosts := parsed.Spec.Hosts(u.d.APITarget)
+		return &PurgeCacheOutput{Hosts: hosts, Problem: u.purgeHosts(ctx, hosts)}, nil
+	default:
+		return nil, errs.NewValidationError("kind", "bucket か cdn を指定してください").WithCode("invalid")
+	}
+}
+
+// bucketHosts はバケットを配っているホスト名（公開しているなら <バケット>-storage-cloud と、そのバケットを元にしている CDN のホスト名・独自ドメイン）。
+// spa はそのうち、SPA（ないパスに index.html を返す）で配っているホスト名
+func (u *ConsoleUsecaseImpl) bucketHosts(ctx context.Context, bucket string) (hosts, spa []string, err error) {
+	store, err := u.store()
+	if err != nil {
+		return nil, nil, err
+	}
+	hosts, spa = []string{}, []string{}
+	if cur, err := store.Get(ctx, gateway.KindBuckets, bucket); err == nil {
+		if parsed, err := service.ParseBucketYAML(bucket, cur.YAML, u.d.APITarget); err == nil && parsed.Public {
+			hosts = append(hosts, u.d.APITarget.Host(service.HostStorage, bucket))
+		}
+	}
+	dists, err := u.distributionSpecs(ctx)
+	if err != nil {
+		return nil, nil, storeErr(err)
+	}
+	for _, d := range dists {
+		if !slices.Contains(d.Uses(service.OriginBucket), bucket) {
+			continue
+		}
+		hs := d.Hosts(u.d.APITarget)
+		hosts = append(hosts, hs...)
+		if slices.ContainsFunc(d.Origins(), func(o service.DistributionOrigin) bool {
+			return o.OriginType == service.OriginBucket && o.Origin == bucket && o.SPA
+		}) {
+			spa = append(spa, hs...)
+		}
+	}
+	return hosts, spa, nil
+}
+
+// purgeHosts はホスト名ごとキャッシュを消す。消せなくても処理は戻さず、理由を返す（空なら問題なし）
+func (u *ConsoleUsecaseImpl) purgeHosts(ctx context.Context, hosts []string) string {
+	if u.d.Purger == nil || len(hosts) == 0 {
+		return ""
+	}
+	if err := u.d.Purger.PurgeHosts(ctx, hosts); err != nil {
+		return "キャッシュを消せませんでした（期限が切れるまで古いものが見えます）: " + err.Error()
+	}
+	return ""
+}
+
+// purgeKeys はバケットのファイル（keys）の URL だけキャッシュを消す。<dir>/index.html は <dir>/ の URL も消す。
+// SPA で配っている CDN は、ないパスの応答も index.html なので、index.html が変わったらホスト名ごと消す
+func (u *ConsoleUsecaseImpl) purgeKeys(ctx context.Context, bucket string, keys []string) string {
+	if u.d.Purger == nil || len(keys) == 0 {
+		return ""
+	}
+	hosts, spa, err := u.bucketHosts(ctx, bucket)
+	if err != nil || len(hosts) == 0 {
+		return ""
+	}
+	urls := []string{}
+	indexChanged := false
+	for _, h := range hosts {
+		for _, k := range keys {
+			urls = append(urls, (&url.URL{Scheme: "https", Host: h, Path: "/" + k}).String())
+			if k == "index.html" || strings.HasSuffix(k, "/index.html") {
+				indexChanged = true
+				urls = append(urls, (&url.URL{Scheme: "https", Host: h, Path: "/" + strings.TrimSuffix(k, "index.html")}).String())
+			}
+		}
+	}
+	if err := u.d.Purger.PurgeURLs(ctx, urls); err != nil {
+		return "キャッシュを消せませんでした（期限が切れるまで古いものが見えます）: " + err.Error()
+	}
+	if indexChanged && len(spa) > 0 {
+		return u.purgeHosts(ctx, spa)
+	}
+	return ""
 }
 
 // ---- CDN ----
@@ -393,7 +524,12 @@ func (u *ConsoleUsecaseImpl) ApplyDistribution(ctx context.Context, in ApplyDist
 			problems = append(problems, "Access から外せませんでした（ログインは要るままです）: "+err.Error())
 		}
 	}
-	return &ApplyDistributionOutput{Distribution: u.distributionOf(gateway.ResourceFile{Name: name, YAML: y, Revision: rev}), DnsProblem: strings.Join(problems, "・")}, nil
+	out := &ApplyDistributionOutput{Distribution: u.distributionOf(gateway.ResourceFile{Name: name, YAML: y, Revision: rev}), DnsProblem: strings.Join(problems, "・")}
+	// 変えたら（元・キャッシュの長さなど）、前の設定で持っていたキャッシュを消す
+	if in.Revision != "" {
+		out.CacheProblem = u.purgeHosts(ctx, append(spec.Hosts(u.d.APITarget), plan.removed...))
+	}
+	return out, nil
 }
 
 // customDomainZone は独自ドメインに使えるゾーン。Access と DNS のどちらかがなければ使えない（"" を返す）
@@ -494,5 +630,6 @@ func (u *ConsoleUsecaseImpl) DeleteDistribution(ctx context.Context, in DeleteDi
 			problems = append(problems, "Access から外せませんでした（ログインは要るままです）: "+err.Error())
 		}
 	}
-	return &DeleteDistributionOutput{DnsProblem: strings.Join(problems, "・")}, nil
+	cache := u.purgeHosts(ctx, append([]string{u.d.APITarget.Host(service.HostCDN, in.Name)}, plan.removed...))
+	return &DeleteDistributionOutput{DnsProblem: strings.Join(problems, "・"), CacheProblem: cache}, nil
 }

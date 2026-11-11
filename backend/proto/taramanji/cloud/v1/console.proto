@@ -47,6 +47,9 @@ service ConsoleService {
   rpc DeleteBucket(DeleteBucketRequest) returns (DeleteBucketResponse) {}
   rpc ListObjects(ListObjectsRequest) returns (ListObjectsResponse) {}
   rpc DeleteObject(DeleteObjectRequest) returns (DeleteObjectResponse) {}
+  // Cloudflare のエッジのキャッシュを消す（バケットなら、そのバケットを配っている公開の URL と CDN。CDN なら、その CDN のホスト名）。
+  // keys を渡すと、そのファイルの URL だけ消す（アップロードのあと）
+  rpc PurgeCache(PurgeCacheRequest) returns (PurgeCacheResponse) {}
   // オブジェクトを置く・取り出すのは Connect ではなく HTTP: PUT / GET /_objects/<バケット>/<キー>
 
   // CDN: 公開するホスト名（<名前>-cloud.taramanji.com）と、その元（バケットか関数）、キャッシュの長さ
@@ -231,6 +234,8 @@ message GetHostingOptionsResponse {
   string storage_host_suffix = 21;
   // CDN の独自ドメインに使えるゾーン（taramanji.com）。空なら独自ドメインは使えない（Access と DNS のトークンがない環境）
   string custom_domain_zone = 22;
+  // Cloudflare のキャッシュを消せるか（Cache Purge の権限のトークンがあるか）
+  bool cache_purge_enabled = 23;
   // 系統（画面で型をまとめて見せる順）
   repeated InstanceFamily instance_families = 18;
   // オブジェクトストレージが動いているか
@@ -473,6 +478,8 @@ message UpdateBucketRequest {
 message UpdateBucketResponse {
   Bucket bucket = 1;
   string dns_problem = 2;
+  // キャッシュを消せなかった理由（公開をやめたとき。空なら問題なし）
+  string cache_problem = 3;
 }
 
 message DeleteBucketRequest {
@@ -482,6 +489,7 @@ message DeleteBucketRequest {
 
 message DeleteBucketResponse {
   string dns_problem = 1;
+  string cache_problem = 2;
 }
 
 message StorageObject {
@@ -507,7 +515,25 @@ message DeleteObjectRequest {
   string key = 2;
 }
 
-message DeleteObjectResponse {}
+message DeleteObjectResponse {
+  // キャッシュを消せなかった理由（空なら問題なし）
+  string cache_problem = 1;
+}
+
+message PurgeCacheRequest {
+  // bucket / cdn
+  string kind = 1;
+  string name = 2;
+  // バケットの中のキー（渡すと、そのファイルの URL だけを消す。100 個まで）
+  repeated string keys = 3;
+}
+
+message PurgeCacheResponse {
+  // キャッシュを消したホスト名
+  repeated string hosts = 1;
+  // 消せなかった理由（空なら問題なし）
+  string problem = 2;
+}
 
 message DistributionSpec {
   // ホスト名の先頭（<名前>-cdn-cloud.taramanji.com）。API と合わせて、環境の中で重複できない
@@ -566,6 +592,8 @@ message ApplyDistributionRequest {
 message ApplyDistributionResponse {
   Distribution distribution = 1;
   string dns_problem = 2;
+  // 変えたときにキャッシュを消せなかった理由
+  string cache_problem = 3;
 }
 
 message DeleteDistributionRequest {
@@ -575,6 +603,7 @@ message DeleteDistributionRequest {
 
 message DeleteDistributionResponse {
   string dns_problem = 1;
+  string cache_problem = 2;
 }
 
 message Database {

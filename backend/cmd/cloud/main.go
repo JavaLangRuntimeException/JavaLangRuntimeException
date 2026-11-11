@@ -110,6 +110,8 @@ func main() {
 			log.Fatal(err)
 		}
 	}
+	// Cloudflare のエッジのキャッシュの消去（Cache Purge の権限のトークン。CF_PURGE_API_TOKEN がなければ DNS のトークンを使う）
+	purger := cachePurger(hostSuffix, aliasZone)
 	// CDN の独自ドメインを Cloudflare Access で守る（Access: Apps and Policies の編集のトークン）。なければ独自ドメインは足せない
 	var access gateway.AccessHosts
 	if token := secretEnv("CF_ACCESS_API_TOKEN", false); token != "" && aliasZone != "" {
@@ -137,6 +139,7 @@ func main() {
 		DatabasesEnabled: env.Optional("DATABASES_ENABLED", "") == "true",
 		DNS:              dns,
 		Access:           access,
+		Purger:           purger,
 		IdleTimeout:      idleTimeout(),
 		MetricsScope: service.MetricsScope{
 			Cluster:     cluster,
@@ -217,6 +220,28 @@ func runGateway() {
 	if err := server.RunNamed(gatewayServiceName, name, func(mux *http.ServeMux) { mux.Handle("/", handler) }); err != nil {
 		log.Fatal(err)
 	}
+}
+
+// cachePurger はキャッシュを消す。トークンに Cache Purge の権限がなければ nil（起動のときに、何も持っていない URL を 1 つ消して確かめる）
+func cachePurger(hostSuffix, aliasZone string) gateway.CachePurger {
+	token := secretEnv("CF_PURGE_API_TOKEN", false)
+	if token == "" {
+		token = env.Optional("CF_DNS_API_TOKEN", "")
+	}
+	if token == "" {
+		return nil
+	}
+	p, err := infragw.NewCloudflarePurge(infragw.CloudflarePurgeConfig{Token: token, ZoneID: env.Required("CF_ZONE_ID"), HostSuffix: hostSuffix, AliasZone: aliasZone})
+	if err != nil {
+		log.Fatal(err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := p.PurgeURLs(ctx, []string{"https://purge-check" + hostSuffix + "/"}); err != nil {
+		logger.L().Warn("cache purge is disabled", "error", err)
+		return nil
+	}
+	return p
 }
 
 // envInt は正の整数の環境変数（なければ def）
