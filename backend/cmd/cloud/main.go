@@ -70,28 +70,29 @@ func main() {
 	}
 	cloudEnv := env.Required("CLOUD_ENV")
 	// アプリの YAML の置き場（アプリ専用のリポジトリ）。トークンがなければホスティングは使えない（容量・メトリクスは動く）
-	var apps gateway.AppStore
+	var apps gateway.ResourceStore
 	appsRepo := env.Optional("APPS_REPO", "")
 	if token := env.Optional("APPS_REPO_TOKEN", ""); token != "" && appsRepo != "" {
-		if apps, err = infragw.NewGitHubAppStore(infragw.GitHubConfig{Repo: appsRepo, Branch: env.Optional("APPS_REPO_BRANCH", "main"), Dir: cloudEnv, Token: token}); err != nil {
+		if apps, err = infragw.NewGitHubResourceStore(infragw.GitHubConfig{Repo: appsRepo, Branch: env.Optional("APPS_REPO_BRANCH", "main"), Dir: cloudEnv, Token: token}); err != nil {
 			log.Fatal(err)
 		}
 	}
 	cluster := env.Optional("METRICS_CLUSTER", "taramanji-kind")
 
 	uc := usecase.NewConsoleUsecase(usecase.Deps{
-		Environment:       cloudEnv,
-		StorageHostSuffix: env.Required("STORAGE_HOST_SUFFIX"),
-		HostingHostSuffix: env.Required("HOSTING_HOST_SUFFIX"),
-		Cluster:           kube,
-		Capacity:          kube,
+		Environment: cloudEnv,
+		Cluster:     kube,
+		Capacity:    kube,
 		// taramanji.com・gws の伸びしろ（既定 2 GiB）。アプリの「あと何個」はこれを除いた空きで数える
 		MemoryReserve:  int64(reserveMiB) << 20,
 		Metrics:        metrics,
 		Apps:           apps,
 		AppsRepository: appsRepo,
 		Monitors:       monitors,
-		AlertScope:     service.AlertScope{Environment: cloudEnv, Cluster: cluster, Namespace: env.Required("APPS_NAMESPACE"), Gateway: "cloud"},
+		AlertScope: service.AlertScope{Environment: cloudEnv, Cluster: cluster, Namespace: env.Required("APPS_NAMESPACE"),
+			APMEnv: env.Optional("DD_ENV", "prod"), InvokerService: gatewayServiceName},
+		APITarget:   service.APITarget{HostSuffix: env.Required("HOST_SUFFIX"), InvokerNamespace: namespace},
+		IdleTimeout: idleTimeout(),
 		MetricsScope: service.MetricsScope{
 			Cluster:     cluster,
 			Namespaces:  strings.Split(env.Optional("METRICS_NAMESPACES", namespace), ","),
@@ -118,10 +119,7 @@ func runGateway() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	idle, err := time.ParseDuration(env.Optional("FUNCTION_IDLE_TIMEOUT", "5m"))
-	if err != nil || idle < time.Minute {
-		log.Fatal("FUNCTION_IDLE_TIMEOUT must be a duration of at least 1m")
-	}
+	idle := idleTimeout()
 	inv := invoker.New(invoker.Config{
 		Scaler: kube,
 		Upstream: func(name string) *url.URL {
@@ -135,8 +133,22 @@ func runGateway() {
 	defer cancel()
 	go inv.Run(ctx, 30*time.Second)
 	// パスは関数しだいなので、APM のリソース名は関数名にする
-	name := func(r *http.Request) string { return r.Method + " " + r.Header.Get(service.HeaderFunction) }
+	name := func(r *http.Request) string {
+		if fn := r.Header.Get(service.HeaderFunction); service.ValidName(fn) {
+			return fn
+		}
+		return "unrouted"
+	}
 	if err := server.RunNamed(gatewayServiceName, name, func(mux *http.ServeMux) { mux.Handle("/", inv) }); err != nil {
 		log.Fatal(err)
 	}
+}
+
+// idleTimeout はリクエストが来なくなってから関数を 0 台に戻すまでの時間（コンソールの表示と API Gateway で同じ値を使う）
+func idleTimeout() time.Duration {
+	idle, err := time.ParseDuration(env.Optional("FUNCTION_IDLE_TIMEOUT", "5m"))
+	if err != nil || idle < time.Minute {
+		log.Fatal("FUNCTION_IDLE_TIMEOUT must be a duration of at least 1m")
+	}
+	return idle
 }

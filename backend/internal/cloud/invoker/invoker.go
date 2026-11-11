@@ -85,7 +85,7 @@ func (i *Invoker) state(name string) *fnState {
 
 func (i *Invoker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	name := r.Header.Get(service.HeaderFunction)
-	if !service.ValidAppName(name) {
+	if !service.ValidName(name) {
 		// API（HTTPRoute）を通っていない
 		http.Error(w, "no function is routed for this request", http.StatusNotFound)
 		return
