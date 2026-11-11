@@ -25,6 +25,8 @@ const (
 	ErrorTypeConcurrency  ErrorType = "CONCURRENCY_ERROR"
 	// ErrorTypeUpstream は外部 API（Google など）の失敗。メッセージと詳細はクライアントに返す
 	ErrorTypeUpstream ErrorType = "UPSTREAM_ERROR"
+	// ErrorTypeRateLimited は同じ利用者からのリクエストが多すぎる（429 相当）
+	ErrorTypeRateLimited ErrorType = "RATE_LIMITED"
 )
 
 type DomainError struct {
@@ -90,6 +92,8 @@ func New(errType ErrorType, message string) *DomainError {
 		e.StatusCode = http.StatusServiceUnavailable
 	case ErrorTypeUpstream:
 		e.StatusCode = http.StatusBadGateway
+	case ErrorTypeRateLimited:
+		e.StatusCode = http.StatusTooManyRequests
 	default:
 		e.StatusCode = http.StatusInternalServerError
 	}

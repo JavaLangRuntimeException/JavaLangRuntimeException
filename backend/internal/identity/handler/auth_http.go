@@ -1,24 +1,26 @@
 package handler
 
 import (
-	"encoding/base64"
-	"encoding/json"
 	"log/slog"
 	"net/http"
-	"strings"
 
 	"github.com/javalangruntimeexception/taramanji/backend/internal/identity/domain/service"
 	"github.com/javalangruntimeexception/taramanji/backend/internal/identity/usecase"
 	"github.com/javalangruntimeexception/taramanji/backend/pkg/util/auth"
 )
 
-const flowCookie = "taramanji_oauth"
+const (
+	// Cloudflare Access が、守っているパスへのリクエストに付けるヘッダー
+	accessHeader = "Cf-Access-Jwt-Assertion"
+	// Access のログイン後にブラウザが持つ Cookie（ヘッダーが付かないパスでも、同じホストなら届く）
+	accessCookie = "CF_Authorization"
+)
 
-// AuthHandlers は旧 NextAuth と同じ URL（/api/auth/...）でログイン・ログアウトを受ける。
-// Google に登録済みのリダイレクト URI（/api/auth/callback/google）を変えずに済む
+// AuthHandlers は旧 NextAuth と同じ /api/auth/... でログイン・ログアウトを受ける。
+// ログインは Cloudflare Access だけ（Access を通ったトークンを検証して、アプリのセッションに替える）
 type AuthHandlers struct {
 	uc *usecase.IdentityUsecaseImpl
-	// secure は本番（https）なら true。Cookie の Secure 属性とリダイレクト URI の scheme に使う
+	// secure は本番（https）なら true。Cookie の Secure 属性に使う
 	secure bool
 }
 
@@ -27,64 +29,25 @@ func NewAuthHandlers(uc *usecase.IdentityUsecaseImpl, secure bool) *AuthHandlers
 }
 
 func (h *AuthHandlers) Register(mux *http.ServeMux) {
-	mux.HandleFunc("GET /api/auth/signin/google", h.signin)
-	mux.HandleFunc("POST /api/auth/signin/google", h.signin)
-	mux.HandleFunc("GET /api/auth/callback/google", h.callback)
+	mux.HandleFunc("GET /api/auth/signin/access", h.signin)
 	mux.HandleFunc("POST /api/auth/signout", h.signout)
 	mux.HandleFunc("GET /api/auth/signout", h.signout)
 }
 
-// host は Gateway（Envoy）が渡す元のホスト名
-func host(r *http.Request) string {
-	h := r.Header.Get("X-Forwarded-Host")
-	if h == "" {
-		h = r.Host
+func accessToken(r *http.Request) string {
+	if t := r.Header.Get(accessHeader); t != "" {
+		return t
 	}
-	h, _, _ = strings.Cut(h, ",")
-	if i := strings.LastIndex(h, ":"); i > 0 && !strings.Contains(h[i:], "]") {
-		h = h[:i]
+	if c, err := r.Cookie(accessCookie); err == nil {
+		return c.Value
 	}
-	return strings.TrimSpace(h)
-}
-
-func (h *AuthHandlers) setFlow(w http.ResponseWriter, f *usecase.Flow) {
-	raw, _ := json.Marshal(f)
-	http.SetCookie(w, &http.Cookie{Name: flowCookie, Value: base64.RawURLEncoding.EncodeToString(raw), Path: "/api/auth/",
-		MaxAge: 600, HttpOnly: true, Secure: h.secure, SameSite: http.SameSiteLaxMode})
-}
-
-func (h *AuthHandlers) takeFlow(w http.ResponseWriter, r *http.Request) *usecase.Flow {
-	c, err := r.Cookie(flowCookie)
-	http.SetCookie(w, &http.Cookie{Name: flowCookie, Value: "", Path: "/api/auth/", MaxAge: -1, HttpOnly: true, Secure: h.secure, SameSite: http.SameSiteLaxMode})
-	if err != nil {
-		return nil
-	}
-	raw, err := base64.RawURLEncoding.DecodeString(c.Value)
-	if err != nil {
-		return nil
-	}
-	var f usecase.Flow
-	if json.Unmarshal(raw, &f) != nil {
-		return nil
-	}
-	return &f
+	return ""
 }
 
 func (h *AuthHandlers) signin(w http.ResponseWriter, r *http.Request) {
-	target, flow, err := h.uc.BeginLogin(host(r), h.secure, r.FormValue("callbackUrl"))
+	res, err := h.uc.LoginWithAccess(r.Context(), accessToken(r), r.FormValue("callbackUrl"))
 	if err != nil {
-		http.Error(w, "login is not available on this host", http.StatusNotFound)
-		return
-	}
-	h.setFlow(w, flow)
-	http.Redirect(w, r, target, http.StatusFound)
-}
-
-func (h *AuthHandlers) callback(w http.ResponseWriter, r *http.Request) {
-	q := r.URL.Query()
-	res, err := h.uc.FinishLogin(r.Context(), host(r), h.secure, h.takeFlow(w, r), q.Get("state"), q.Get("code"), q.Get("error"))
-	if err != nil {
-		slog.ErrorContext(r.Context(), "login failed", "error", err)
+		slog.WarnContext(r.Context(), "login failed", "error", err)
 		http.Redirect(w, r, "/admin/login?error=Callback", http.StatusFound)
 		return
 	}

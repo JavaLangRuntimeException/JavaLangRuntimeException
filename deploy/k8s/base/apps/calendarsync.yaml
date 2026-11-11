@@ -73,6 +73,8 @@ spec:
               valueFrom: { resourceFieldRef: { resource: limits.memory } }
             - { name: AUTH_URL, value: "https://gws.taramanji.com" }
             - { name: SYNC_DAYS, value: "90" }
+            # Discord のリマインドの先頭で呼び出す人（Discord のユーザー ID。Webhook がない環境では使わない）
+            - { name: DISCORD_MENTION_USER_ID, value: "692695641549307926" }
           envFrom:
             - secretRef: { name: calendarsync-env }
           startupProbe:

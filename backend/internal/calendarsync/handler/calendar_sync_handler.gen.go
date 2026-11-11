@@ -50,6 +50,14 @@ func (h *CalendarSyncHandler) RunSync(ctx context.Context, req *connect.Request[
 	return connect.NewResponse(&calendarsyncv1.RunSyncResponse{Run: calendarSyncLastRunToPb(out.Run), Skipped: out.Skipped}), nil
 }
 
+func (h *CalendarSyncHandler) RunReminder(ctx context.Context, req *connect.Request[calendarsyncv1.RunReminderRequest]) (*connect.Response[calendarsyncv1.RunReminderResponse], error) {
+	out, err := h.usecase.RunReminder(ctx, usecase.RunReminderInput{})
+	if err != nil {
+		return nil, errs.ToConnect(ctx, err)
+	}
+	return connect.NewResponse(&calendarsyncv1.RunReminderResponse{Notified: out.Notified, Failed: out.Failed}), nil
+}
+
 func (h *CalendarSyncHandler) UpdateSettings(ctx context.Context, req *connect.Request[calendarsyncv1.UpdateSettingsRequest]) (*connect.Response[calendarsyncv1.UpdateSettingsResponse], error) {
 	if err := h.usecase.UpdateSettings(ctx, usecase.UpdateSettingsInput{
 		SetMaster:         req.Msg.GetSetMaster(),

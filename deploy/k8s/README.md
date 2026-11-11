@@ -10,7 +10,7 @@
                                                    ├─ /api/metrics/pageview  → analytics
                                                    └─ /                      → web（nginx + React）
      HTTPRoute gws: gws.taramanji.com             ─── /admin・ログイン・カレンダー同期だけ。他は taramanji.com へ 308
-ns: taramanji  Go サービス 8 つ（各 2 Pod・PDB・ゾーン分散）+ web + CronJob（5 分ごとの同期）
+ns: taramanji  Go サービス 8 つ（各 2 Pod・PDB・ゾーン分散）+ web + CronJob（5 分ごとの同期・予定の Discord 通知）
                inquiry ─gRPC→ notification（内部専用） / reservation ─gRPC→ worklocation
 ns: data       Redis StatefulSet（AOF・PVC standard-rwo・サービスごとの ACL と DB 番号）
 ns: datadog    Datadog Agent（APM・DogStatsD・ログ・イベント・Envoy/Redis/nginx/cloudflared/Argo CD/Argo Rollouts・HTTP Check）
@@ -101,6 +101,12 @@ deploy/k8s/scripts/make-secrets.sh dev     # 平文を作る / 作り直す（�
 for e in dev01 dev02 dev03; do deploy/k8s/scripts/seal.sh $e; done   # secrets/dev/ を各 devN の namespace 向けに暗号化 → コミット
 ```
 
+予定の Discord 通知を有効にする（本番だけ。初回だけ URL を渡せば以後は使い回す）:
+
+```bash
+DISCORD_WEBHOOK_URL='https://discord.com/api/webhooks/…' deploy/k8s/scripts/make-secrets.sh prod && deploy/k8s/scripts/seal.sh prod
+```
+
 Secret を変えたら Pod を作り直す（`kubectl rollout restart` / Rollout は `kubectl argo rollouts restart`）。
 
 ## dev 環境（dev01〜03）
@@ -183,13 +189,18 @@ python3 deploy/cloudflare/access.py <API トークンのファイル>
 
 Access の Google ログインには、同じ OAuth クライアントのリダイレクト URI に `https://solitary-sun-32e2.cloudflareaccess.com/cdn-cgi/access/callback` が要る。
 
-Google の OAuth クライアント（taramanji-calendar-sync）の「承認済みのリダイレクト URI」。ログインは identity の `LOGIN_HOSTS` のホストごと、カレンダー同期は calendarsync の `AUTH_URL`（gws）に要る:
+管理画面のログインは Cloudflare Access だけ。identity は Access のトークン（`Cf-Access-Jwt-Assertion` / `CF_Authorization`）を検証してセッションに替える。
+環境ごとの Access アプリの AUD を identity の `CF_ACCESS_AUD` に入れる（本番は base、stg・dev01〜03 は各 overlay）。
+本番の `/api/auth/signin/access` も `taramanji-admin` に入れてある（access.py）ので、アプリを足し直したら AUD を確かめる。
+
+Google の OAuth クライアント（taramanji-calendar-sync）の「承認済みのリダイレクト URI」。カレンダー同期は calendarsync の `AUTH_URL`（gws）に要る
+（`/api/auth/callback/google` は管理画面のログインに使っていたもの。今は使わないので消してよい）:
 
 | 環境 | リダイレクト URI |
 | --- | --- |
-| 本番 | `https://taramanji.com/api/auth/callback/google`・`https://www.taramanji.com/api/auth/callback/google`・`https://gws.taramanji.com/api/auth/callback/google`・`https://gws.taramanji.com/api/calendar-sync/callback` |
-| stg | `https://stg.taramanji.com/api/auth/callback/google`・`https://stg-gws.taramanji.com/api/auth/callback/google`・`https://stg-gws.taramanji.com/api/calendar-sync/callback` |
-| dev01〜03 | `https://devNN.taramanji.com/api/auth/callback/google`・`https://devNN-gws.taramanji.com/api/auth/callback/google`・`https://devNN-gws.taramanji.com/api/calendar-sync/callback`（NN = 01〜03） |
+| 本番 | `https://gws.taramanji.com/api/calendar-sync/callback` |
+| stg | `https://stg-gws.taramanji.com/api/calendar-sync/callback` |
+| dev01〜03 | `https://devNN-gws.taramanji.com/api/calendar-sync/callback`（NN = 01〜03） |
 
 ## よく使う操作
 
@@ -221,6 +232,7 @@ bash deploy/mac/ssh-logs/install.sh
 | トンネルの接続が減った | `kubectl -n cloudflared logs deploy/cloudflared`、Mac mini のネットワーク |
 | Redis のメモリ | `redis-cli --user admin INFO memory`、キャッシュ（`content:*`）の量 |
 | カレンダー同期の失敗・停止・要再接続 | gws.taramanji.com/admin の前回の結果、CronJob `calendarsync-run` の Job のログ |
+| 予定の Discord 通知が来ない | CronJob `calendarsync-remind` の Job のログ、calendarsync のログ（`reminder:`）、`calendar_sync.reminder.failed`。Webhook は `secrets/prod/calendarsync.env` の `DISCORD_WEBHOOK_URL` |
 | 予約の作成失敗 | `reservation.created{status:failed}` の reason タグ、サービスアカウントの鍵とドメイン全体の委任（Workspace の管理コンソール） |
 | メール送信の失敗 | notification のログ、SES の送信制限・認証情報 |
 

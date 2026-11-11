@@ -2,9 +2,12 @@ import { signOutAccess } from "@/shared/lib/access";
 
 // ログイン・ログアウトは identity サービスの HTTP（旧 NextAuth と同じ /api/auth/*）。ブラウザごと移動する
 
-/** Google でログイン（戻り先は同じサイトのパスだけ） */
+/**
+ * Cloudflare Access でログイン（戻り先は同じサイトのパスだけ）。
+ * Access を通ったトークンを identity がアプリのセッションに替える。Access にまだ入っていなければ Access のログイン画面へ
+ */
 export function signIn(callbackUrl = "/admin") {
-  window.location.assign(`/api/auth/signin/google?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+  window.location.assign(`/api/auth/signin/access?callbackUrl=${encodeURIComponent(callbackUrl)}`);
 }
 
 /** アプリと Cloudflare Access の両方からログアウトする（管理画面。/admin は Access の後ろにある） */

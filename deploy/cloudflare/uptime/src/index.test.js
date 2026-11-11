@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { next, probe, rawMessage } from "./index.js";
+import { discordMessage, next, notify, probe, rawMessage } from "./index.js";
 
 const ok = { ok: true }, ng = { ok: false };
 
@@ -43,4 +43,43 @@ test("件名と本文を UTF-8 の base64 にする", () => {
   assert.match(raw, /^From: a@x\r\nTo: b@x\r\nSubject: =\?UTF-8\?B\?/);
   const body = raw.split("\r\n\r\n")[1].replace(/\r\n/g, "");
   assert.equal(new TextDecoder().decode(Uint8Array.from(atob(body), (c) => c.charCodeAt(0))), "本文");
+});
+
+test("Discord の Webhook がなければメールだけ、あれば両方に送る", async () => {
+  const sent = [];
+  const senders = { mail: async () => sent.push("mail"), discord: async () => sent.push("discord") };
+  await notify({}, "件名", "本文", senders);
+  assert.deepEqual(sent, ["mail"]);
+  sent.length = 0;
+  await notify({ DISCORD_WEBHOOK_ALERT_URL: "https://discord.com/api/webhooks/1/x" }, "件名", "本文", senders);
+  assert.deepEqual(sent.sort(), ["discord", "mail"]);
+});
+
+test("片方に届けば成功、両方失敗したときだけエラー（状態を進めず次の分に送り直す）", async () => {
+  const env = { DISCORD_WEBHOOK_ALERT_URL: "https://discord.com/api/webhooks/1/x" };
+  const ng = async () => { throw new Error("ng"); }, ok = async () => {};
+  const quiet = console.error;
+  console.error = () => {};
+  try {
+    await notify(env, "s", "t", { mail: ng, discord: ok });
+    await notify(env, "s", "t", { mail: ok, discord: ng });
+    await assert.rejects(notify(env, "s", "t", { mail: ng, discord: ng }), /mail: ng \/ discord: ng/);
+    await assert.rejects(notify({}, "s", "t", { mail: ng, discord: ok }), /mail: ng/);
+  } finally {
+    console.error = quiet;
+  }
+});
+
+test("Discord のメッセージは 2,000 文字までで、誰も呼び出さない", () => {
+  const m = discordMessage("落ちています", "@everyone " + "あ".repeat(3000));
+  assert.equal(m.content.length, 2000);
+  assert.match(m.content, /^\*\*落ちています\*\*\n@everyone/);
+  assert.deepEqual(m.allowed_mentions, { parse: [], users: [] });
+});
+
+test("DISCORD_MENTION_USER_ID の人だけを先頭で呼び出す", () => {
+  const m = discordMessage("落ちています", "@everyone 本文", "692695641549307926");
+  assert.match(m.content, /^<@692695641549307926> \*\*落ちています\*\*\n@everyone 本文$/);
+  assert.deepEqual(m.allowed_mentions, { parse: [], users: ["692695641549307926"] });
+  assert.doesNotMatch(discordMessage("s", "t", "<@everyone>").content, /<@/);
 });

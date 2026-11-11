@@ -15,8 +15,9 @@ import (
 
 const userinfoURL = "https://openidconnect.googleapis.com/v1/userinfo"
 
-// Scopes は calendar.events だけで予定の読み書きができる。メールアドレスは userinfo（email スコープ）で取る
-var Scopes = []string{"openid", "email", "https://www.googleapis.com/auth/calendar.events"}
+// Scopes は calendar.events だけで予定の読み書きができる。メールアドレスは userinfo（email スコープ）で取る。
+// tasks.readonly は Google ToDo をマスターに出すため（同意画面で外されても、カレンダーの同期はそのまま動く）
+var Scopes = []string{"openid", "email", "https://www.googleapis.com/auth/calendar.events", "https://www.googleapis.com/auth/tasks.readonly"}
 
 // NewOAuthConfig はアカウント接続用の OAuth クライアント（管理画面ログインと同じ taramanji-calendar-sync）
 func NewOAuthConfig(clientID, clientSecret, redirectURL string) *oauth2.Config {

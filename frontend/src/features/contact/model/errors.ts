@@ -23,6 +23,8 @@ export function submitErrorMessage(code: string | undefined, detail?: string, lo
       return ja ? "ファイルは最大5個まで添付できます。" : "You can attach up to 5 files.";
     case "file_too_large":
       return ja ? "ファイルサイズが大きすぎます。1ファイルあたり3MB以下にしてください。" : "A file is too large. Each file must be 3 MB or smaller.";
+    case "rate_limited":
+      return ja ? "送信回数が多すぎます。しばらく時間をおいてから再度お試しください。" : "Too many submissions. Please wait a while and try again.";
     default:
       return DEFAULT[locale];
   }

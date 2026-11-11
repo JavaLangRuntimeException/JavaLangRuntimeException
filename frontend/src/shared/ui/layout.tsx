@@ -49,7 +49,7 @@ export function PageHeader({ eyebrow, title, description, actions }: { eyebrow?:
   );
 }
 
-export function Section({ title, description, actions, children, className, id }: { title?: ReactNode; description?: ReactNode; actions?: ReactNode; children: ReactNode; className?: string; id?: string }) {
+export function Section({ title, titleAside, description, actions, children, className, id }: { title?: ReactNode; /** 見出しのすぐ右に置くもの */ titleAside?: ReactNode; description?: ReactNode; actions?: ReactNode; children: ReactNode; className?: string; id?: string }) {
   // スクロールで見出しが出終わってから、説明と中身の文字を順に記号から定めて出す（見出しが文字でないときは画面に入ったら）
   const decoded = typeof title === "string";
   const [titleShown, setTitleShown] = useState(false);
@@ -65,9 +65,12 @@ export function Section({ title, description, actions, children, className, id }
         <div className="flex items-end justify-between gap-4">
           <div className="flex flex-col gap-1.5">
             {title && (
-              <h2 className="text-[1.375rem] font-semibold leading-snug tracking-[-0.005em] text-text-primary">
-                {decoded ? <DecodeText text={title} delay={150} onShown={() => setTitleShown(true)} /> : title}
-              </h2>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                <h2 className="text-[1.375rem] font-semibold leading-snug tracking-[-0.005em] text-text-primary">
+                  {decoded ? <DecodeText text={title} delay={150} onShown={() => setTitleShown(true)} /> : title}
+                </h2>
+                {titleAside}
+              </div>
             )}
             {description && (
               <DecodeReveal show={after}>

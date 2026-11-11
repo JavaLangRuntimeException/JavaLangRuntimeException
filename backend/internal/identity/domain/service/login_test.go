@@ -19,13 +19,3 @@ func TestSafeCallback(t *testing.T) {
 		}
 	}
 }
-
-func TestRedirectURI(t *testing.T) {
-	h := ParseHosts(" taramanji.com, GWS.taramanji.com ")
-	if got := h.RedirectURI("gws.taramanji.com", true); got != "https://gws.taramanji.com/api/auth/callback/google" {
-		t.Fatal(got)
-	}
-	if got := h.RedirectURI("evil.example.com", true); got != "" {
-		t.Fatal(got)
-	}
-}

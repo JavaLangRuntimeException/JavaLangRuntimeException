@@ -2,10 +2,12 @@ syntax = "proto3";
 
 package taramanji.calendarsync.v1;
 
-// 複数 Google アカウントのカレンダー同期（管理者用。RunSync は CronJob からも呼ぶ）
+// 複数 Google アカウントのカレンダー同期（管理者用。RunSync・RunReminder は CronJob からも呼ぶ）
 service CalendarSyncService {
   rpc GetStatus(GetStatusRequest) returns (GetStatusResponse) {}
   rpc RunSync(RunSyncRequest) returns (RunSyncResponse) {}
+  // 接続した全アカウントから、もうすぐ始まる予定を Discord に知らせる（CronJob が 5 分ごとに呼ぶ）
+  rpc RunReminder(RunReminderRequest) returns (RunReminderResponse) {}
   rpc UpdateSettings(UpdateSettingsRequest) returns (UpdateSettingsResponse) {}
   rpc Disconnect(DisconnectRequest) returns (DisconnectResponse) {}
 }
@@ -86,6 +88,15 @@ message RunSyncResponse {
   // ok は errors が 0 件のとき true。前の回が実行中なら skipped（CronJob）または error（管理画面）
   LastRun run = 1;
   bool skipped = 2;
+}
+
+message RunReminderRequest {}
+
+message RunReminderResponse {
+  // 今回 Discord に送った予定の数（前の回までに送ったものは数えない）
+  int32 notified = 1;
+  // 読めなかったアカウント・送れなかった予定の数（次の回でやり直す）
+  int32 failed = 2;
 }
 
 message UpdateSettingsRequest {
