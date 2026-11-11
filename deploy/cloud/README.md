@@ -137,7 +137,16 @@ deploy/cloud/
 
 5. **アプリ用のリポジトリ**（ホスティングを使うとき。なくてもコンソールのほかの画面は動く）
    - GitHub に private の `JavaLangRuntimeException/taramanji-cloud-apps` を作り、`prod/`・`stg/`・`dev/` に空のファイル（`.gitkeep`）を置く
-   - Argo CD が読む鍵: `deploy/cloud/scripts/seal-apps-repo.sh` の先頭の手順（Deploy key を読み取りだけで登録 → SealedSecret を apply）
+   - Argo CD が読む鍵（済み。クラスターを作り直したときだけ）: Deploy key を作って読み取りだけで登録し、SealedSecret にする
+     ```sh
+     ssh-keygen -t ed25519 -N "" -C argocd-cloud-apps -f deploy/cloud/secrets/apps-repo-deploy-key
+     gh api repos/JavaLangRuntimeException/taramanji-cloud-apps/keys -f title=argocd -f key="$(cat deploy/cloud/secrets/apps-repo-deploy-key.pub)" -F read_only=true
+     kubectl create secret generic repo-taramanji-cloud-apps -n argocd --dry-run=client -o json \
+       --from-literal=type=git --from-literal=url=git@github.com:JavaLangRuntimeException/taramanji-cloud-apps.git \
+       --from-file=sshPrivateKey=deploy/cloud/secrets/apps-repo-deploy-key \
+       | jq '.metadata.labels["argocd.argoproj.io/secret-type"]="repository"' \
+       | kubeseal --controller-namespace kube-system --format yaml > deploy/gitops/sealed/repo-taramanji-cloud-apps.yaml
+     ```
    - コンソールが書くトークン: そのリポジトリだけ・Contents の Read and write だけの fine-grained PAT を `deploy/cloud/secrets/apps-repo-token` に置き、4 の `seal.sh` を実行し直す
    - 監視を使うなら、Datadog のアプリケーションキーのスコープに `monitors_read`・`monitors_write` を足し、
      `python3 deploy/cloudflare/uptime/datadog-webhook.py <Worker の URL> <トークンのファイル>` で Webhook を作り、Worker を `npx wrangler deploy` し直す
