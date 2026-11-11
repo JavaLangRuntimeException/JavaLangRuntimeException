@@ -64,8 +64,10 @@ func (u *ConsoleUsecaseImpl) bucketOf(f gateway.ResourceFile, usage *gateway.Buc
 	if b.Distributions == nil {
 		b.Distributions = []string{}
 	}
-	if err := service.ParseBucketYAML(f.Name, f.YAML); err != nil {
+	if parsed, err := service.ParseBucketYAML(f.Name, f.YAML, u.d.APITarget); err != nil {
 		b.Source.Problem = err.Error()
+	} else if parsed.Public {
+		b.Public, b.PublicHost = true, u.d.APITarget.Host(service.HostStorage, f.Name)
 	}
 	if usage != nil {
 		b.Ready, b.Objects, b.Bytes = true, usage.Objects, usage.Bytes
@@ -110,9 +112,10 @@ func (u *ConsoleUsecaseImpl) CreateBucket(ctx context.Context, in CreateBucketIn
 		return nil, err
 	}
 	if !service.ValidName(in.Name) {
-		return nil, invalid(service.ParseBucketYAML(in.Name, ""))
+		_, err := service.ParseBucketYAML(in.Name, "", u.d.APITarget)
+		return nil, invalid(err)
 	}
-	y, err := service.RenderBucketYAML(in.Name)
+	y, err := service.RenderBucketYAML(in.Name, in.Public, u.d.APITarget)
 	if err != nil {
 		return nil, errs.NewInternalError(err)
 	}
@@ -120,46 +123,95 @@ func (u *ConsoleUsecaseImpl) CreateBucket(ctx context.Context, in CreateBucketIn
 	if err != nil {
 		return nil, storeErr(err)
 	}
-	return &CreateBucketOutput{Bucket: u.bucketOf(gateway.ResourceFile{Name: in.Name, YAML: y, Revision: rev}, nil, nil)}, nil
+	out := &CreateBucketOutput{Bucket: u.bucketOf(gateway.ResourceFile{Name: in.Name, YAML: y, Revision: rev}, nil, nil)}
+	if in.Public {
+		out.DnsProblem = u.ensureDNS(ctx, u.d.APITarget.Host(service.HostStorage, in.Name))
+	}
+	return out, nil
 }
 
-func (u *ConsoleUsecaseImpl) DeleteBucket(ctx context.Context, in DeleteBucketInput) error {
+// UpdateBucket は公開（ログインなしの配信）を切り替える。オンにすると <バケット>-storage-cloud.taramanji.com の DNS を登録し、オフにすると消す
+func (u *ConsoleUsecaseImpl) UpdateBucket(ctx context.Context, in UpdateBucketInput) (*UpdateBucketOutput, error) {
 	store, err := u.store()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if !service.ValidName(in.Name) {
-		return storeErr(gateway.ErrResourceNotFound)
+		return nil, storeErr(gateway.ErrResourceNotFound)
+	}
+	cur, err := store.Get(ctx, gateway.KindBuckets, in.Name)
+	if err != nil {
+		return nil, storeErr(err)
+	}
+	if _, err := service.ParseBucketYAML(in.Name, cur.YAML, u.d.APITarget); err != nil {
+		return nil, invalid(err)
+	}
+	y, err := service.RenderBucketYAML(in.Name, in.Public, u.d.APITarget)
+	if err != nil {
+		return nil, errs.NewInternalError(err)
+	}
+	rev, err := store.Put(ctx, gateway.KindBuckets, in.Name, y, in.Revision, u.commitMessage(ctx, "update", "bucket", in.Name))
+	if err != nil {
+		return nil, storeErr(err)
+	}
+	host := u.d.APITarget.Host(service.HostStorage, in.Name)
+	out := &UpdateBucketOutput{Bucket: u.bucketOf(gateway.ResourceFile{Name: in.Name, YAML: y, Revision: rev}, nil, nil)}
+	if in.Public {
+		out.DnsProblem = u.ensureDNS(ctx, host)
+	} else {
+		out.DnsProblem = u.removeDNS(ctx, host)
+	}
+	return out, nil
+}
+
+// DeleteBucket は空で、どこからも使われていないバケットを消す。公開していたら、そのホスト名の DNS も消す
+func (u *ConsoleUsecaseImpl) DeleteBucket(ctx context.Context, in DeleteBucketInput) (*DeleteBucketOutput, error) {
+	store, err := u.store()
+	if err != nil {
+		return nil, err
+	}
+	if !service.ValidName(in.Name) {
+		return nil, storeErr(gateway.ErrResourceNotFound)
 	}
 	dists, err := u.distributionSpecs(ctx)
 	if err != nil {
-		return storeErr(err)
+		return nil, storeErr(err)
 	}
 	if used := originsOf(dists, service.OriginBucket)[in.Name]; len(used) > 0 {
-		return errs.New(errs.ErrorTypeBadRequest, fmt.Sprintf("CDN %v がこのバケットを元にしています。先に CDN を消してください", used)).WithCode("bucket_in_use")
+		return nil, errs.New(errs.ErrorTypeBadRequest, fmt.Sprintf("CDN %v がこのバケットを元にしています。先に CDN を消してください", used)).WithCode("bucket_in_use")
 	}
 	fns, err := u.functionSpecs(ctx)
 	if err != nil {
-		return storeErr(err)
+		return nil, storeErr(err)
 	}
 	if used := connectedBy(fns, bucketsOf)[in.Name]; len(used) > 0 {
-		return errs.New(errs.ErrorTypeBadRequest, fmt.Sprintf("関数 %v がこのバケットをつないでいます。先に関数から外してください", used)).WithCode("bucket_in_use")
+		return nil, errs.New(errs.ErrorTypeBadRequest, fmt.Sprintf("関数 %v がこのバケットをつないでいます。先に関数から外してください", used)).WithCode("bucket_in_use")
 	}
 	// 中身があるバケットは消させない（YAML を消しても、ストレージは中身のあるバケットを残す）。
 	// ストレージが動いていない・読めないときは、空かどうかわからないので消さない
 	if u.d.Objects != nil {
 		objs, _, err := u.d.Objects.List(ctx, in.Name, "")
 		if err != nil && !errors.Is(err, gateway.ErrObjectNotFound) {
-			return objectErr(err)
+			return nil, objectErr(err)
 		}
 		if len(objs) > 0 {
-			return errs.New(errs.ErrorTypeBadRequest, "バケットにオブジェクトが残っています。先に全部消してください").WithCode("bucket_not_empty")
+			return nil, errs.New(errs.ErrorTypeBadRequest, "バケットにオブジェクトが残っています。先に全部消してください").WithCode("bucket_not_empty")
+		}
+	}
+	public := false
+	if cur, err := store.Get(ctx, gateway.KindBuckets, in.Name); err == nil {
+		if parsed, err := service.ParseBucketYAML(in.Name, cur.YAML, u.d.APITarget); err == nil {
+			public = parsed.Public
 		}
 	}
 	if err := store.Delete(ctx, gateway.KindBuckets, in.Name, in.Revision, u.commitMessage(ctx, "delete", "bucket", in.Name)); err != nil {
-		return storeErr(err)
+		return nil, storeErr(err)
 	}
-	return nil
+	out := &DeleteBucketOutput{}
+	if public {
+		out.DnsProblem = u.removeDNS(ctx, u.d.APITarget.Host(service.HostStorage, in.Name))
+	}
+	return out, nil
 }
 
 func (u *ConsoleUsecaseImpl) ListObjects(ctx context.Context, in ListObjectsInput) (*ListObjectsOutput, error) {
@@ -211,7 +263,7 @@ func distributionSpecOf(s *DistributionSpec) service.DistributionSpec {
 }
 
 func (u *ConsoleUsecaseImpl) distributionOf(f gateway.ResourceFile) *Distribution {
-	d := &Distribution{Spec: &DistributionSpec{Name: f.Name}, Host: service.HostOf(f.Name, u.d.APITarget.HostSuffix),
+	d := &Distribution{Spec: &DistributionSpec{Name: f.Name}, Host: u.d.APITarget.Host(service.HostCDN, f.Name),
 		Source: &Source{Yaml: f.YAML, Revision: f.Revision, URL: u.d.Apps.URL(gateway.KindCDN, f.Name)}}
 	parsed, err := service.ParseDistributionYAML(f.Name, f.YAML, u.d.APITarget)
 	if err != nil {
@@ -310,7 +362,7 @@ func (u *ConsoleUsecaseImpl) ApplyDistribution(ctx context.Context, in ApplyDist
 	if err != nil {
 		return nil, storeErr(err)
 	}
-	return &ApplyDistributionOutput{Distribution: u.distributionOf(gateway.ResourceFile{Name: name, YAML: y, Revision: rev}), DnsProblem: u.ensureDNS(ctx, name)}, nil
+	return &ApplyDistributionOutput{Distribution: u.distributionOf(gateway.ResourceFile{Name: name, YAML: y, Revision: rev}), DnsProblem: u.ensureDNS(ctx, u.d.APITarget.Host(service.HostCDN, name))}, nil
 }
 
 func (u *ConsoleUsecaseImpl) DeleteDistribution(ctx context.Context, in DeleteDistributionInput) (*DeleteDistributionOutput, error) {
@@ -324,5 +376,5 @@ func (u *ConsoleUsecaseImpl) DeleteDistribution(ctx context.Context, in DeleteDi
 	if err := store.Delete(ctx, gateway.KindCDN, in.Name, in.Revision, u.commitMessage(ctx, "delete", "cdn", in.Name)); err != nil {
 		return nil, storeErr(err)
 	}
-	return &DeleteDistributionOutput{DnsProblem: u.removeDNS(ctx, in.Name)}, nil
+	return &DeleteDistributionOutput{DnsProblem: u.removeDNS(ctx, u.d.APITarget.Host(service.HostCDN, in.Name))}, nil
 }

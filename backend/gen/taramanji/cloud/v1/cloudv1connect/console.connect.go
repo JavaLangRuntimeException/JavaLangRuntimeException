@@ -73,6 +73,9 @@ const (
 	// ConsoleServiceCreateBucketProcedure is the fully-qualified name of the ConsoleService's
 	// CreateBucket RPC.
 	ConsoleServiceCreateBucketProcedure = "/taramanji.cloud.v1.ConsoleService/CreateBucket"
+	// ConsoleServiceUpdateBucketProcedure is the fully-qualified name of the ConsoleService's
+	// UpdateBucket RPC.
+	ConsoleServiceUpdateBucketProcedure = "/taramanji.cloud.v1.ConsoleService/UpdateBucket"
 	// ConsoleServiceDeleteBucketProcedure is the fully-qualified name of the ConsoleService's
 	// DeleteBucket RPC.
 	ConsoleServiceDeleteBucketProcedure = "/taramanji.cloud.v1.ConsoleService/DeleteBucket"
@@ -132,9 +135,12 @@ type ConsoleServiceClient interface {
 	PreviewApi(context.Context, *connect.Request[v1.PreviewApiRequest]) (*connect.Response[v1.PreviewApiResponse], error)
 	ApplyApi(context.Context, *connect.Request[v1.ApplyApiRequest]) (*connect.Response[v1.ApplyApiResponse], error)
 	DeleteApi(context.Context, *connect.Request[v1.DeleteApiRequest]) (*connect.Response[v1.DeleteApiResponse], error)
-	// バケット: ファイルの置き場（<環境>/buckets/<名前>.yaml の ConfigMap）。外には CDN を通してだけ出せる
+	// バケット: ファイルの置き場（<環境>/buckets/<名前>.yaml の ConfigMap）。外には CDN（ログインあり）か、
+	// 公開をオンにしたバケットだけ <バケット>-storage-cloud.taramanji.com（ログインなし）で出せる
 	ListBuckets(context.Context, *connect.Request[v1.ListBucketsRequest]) (*connect.Response[v1.ListBucketsResponse], error)
 	CreateBucket(context.Context, *connect.Request[v1.CreateBucketRequest]) (*connect.Response[v1.CreateBucketResponse], error)
+	// 公開（ログインなしの配信）を切り替える
+	UpdateBucket(context.Context, *connect.Request[v1.UpdateBucketRequest]) (*connect.Response[v1.UpdateBucketResponse], error)
 	// 空で、どの CDN からも使われていないバケットだけ消せる
 	DeleteBucket(context.Context, *connect.Request[v1.DeleteBucketRequest]) (*connect.Response[v1.DeleteBucketResponse], error)
 	ListObjects(context.Context, *connect.Request[v1.ListObjectsRequest]) (*connect.Response[v1.ListObjectsResponse], error)
@@ -253,6 +259,12 @@ func NewConsoleServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 			connect.WithSchema(consoleServiceMethods.ByName("CreateBucket")),
 			connect.WithClientOptions(opts...),
 		),
+		updateBucket: connect.NewClient[v1.UpdateBucketRequest, v1.UpdateBucketResponse](
+			httpClient,
+			baseURL+ConsoleServiceUpdateBucketProcedure,
+			connect.WithSchema(consoleServiceMethods.ByName("UpdateBucket")),
+			connect.WithClientOptions(opts...),
+		),
 		deleteBucket: connect.NewClient[v1.DeleteBucketRequest, v1.DeleteBucketResponse](
 			httpClient,
 			baseURL+ConsoleServiceDeleteBucketProcedure,
@@ -344,6 +356,7 @@ type consoleServiceClient struct {
 	deleteApi           *connect.Client[v1.DeleteApiRequest, v1.DeleteApiResponse]
 	listBuckets         *connect.Client[v1.ListBucketsRequest, v1.ListBucketsResponse]
 	createBucket        *connect.Client[v1.CreateBucketRequest, v1.CreateBucketResponse]
+	updateBucket        *connect.Client[v1.UpdateBucketRequest, v1.UpdateBucketResponse]
 	deleteBucket        *connect.Client[v1.DeleteBucketRequest, v1.DeleteBucketResponse]
 	listObjects         *connect.Client[v1.ListObjectsRequest, v1.ListObjectsResponse]
 	deleteObject        *connect.Client[v1.DeleteObjectRequest, v1.DeleteObjectResponse]
@@ -428,6 +441,11 @@ func (c *consoleServiceClient) CreateBucket(ctx context.Context, req *connect.Re
 	return c.createBucket.CallUnary(ctx, req)
 }
 
+// UpdateBucket calls taramanji.cloud.v1.ConsoleService.UpdateBucket.
+func (c *consoleServiceClient) UpdateBucket(ctx context.Context, req *connect.Request[v1.UpdateBucketRequest]) (*connect.Response[v1.UpdateBucketResponse], error) {
+	return c.updateBucket.CallUnary(ctx, req)
+}
+
 // DeleteBucket calls taramanji.cloud.v1.ConsoleService.DeleteBucket.
 func (c *consoleServiceClient) DeleteBucket(ctx context.Context, req *connect.Request[v1.DeleteBucketRequest]) (*connect.Response[v1.DeleteBucketResponse], error) {
 	return c.deleteBucket.CallUnary(ctx, req)
@@ -509,9 +527,12 @@ type ConsoleServiceHandler interface {
 	PreviewApi(context.Context, *connect.Request[v1.PreviewApiRequest]) (*connect.Response[v1.PreviewApiResponse], error)
 	ApplyApi(context.Context, *connect.Request[v1.ApplyApiRequest]) (*connect.Response[v1.ApplyApiResponse], error)
 	DeleteApi(context.Context, *connect.Request[v1.DeleteApiRequest]) (*connect.Response[v1.DeleteApiResponse], error)
-	// バケット: ファイルの置き場（<環境>/buckets/<名前>.yaml の ConfigMap）。外には CDN を通してだけ出せる
+	// バケット: ファイルの置き場（<環境>/buckets/<名前>.yaml の ConfigMap）。外には CDN（ログインあり）か、
+	// 公開をオンにしたバケットだけ <バケット>-storage-cloud.taramanji.com（ログインなし）で出せる
 	ListBuckets(context.Context, *connect.Request[v1.ListBucketsRequest]) (*connect.Response[v1.ListBucketsResponse], error)
 	CreateBucket(context.Context, *connect.Request[v1.CreateBucketRequest]) (*connect.Response[v1.CreateBucketResponse], error)
+	// 公開（ログインなしの配信）を切り替える
+	UpdateBucket(context.Context, *connect.Request[v1.UpdateBucketRequest]) (*connect.Response[v1.UpdateBucketResponse], error)
 	// 空で、どの CDN からも使われていないバケットだけ消せる
 	DeleteBucket(context.Context, *connect.Request[v1.DeleteBucketRequest]) (*connect.Response[v1.DeleteBucketResponse], error)
 	ListObjects(context.Context, *connect.Request[v1.ListObjectsRequest]) (*connect.Response[v1.ListObjectsResponse], error)
@@ -626,6 +647,12 @@ func NewConsoleServiceHandler(svc ConsoleServiceHandler, opts ...connect.Handler
 		connect.WithSchema(consoleServiceMethods.ByName("CreateBucket")),
 		connect.WithHandlerOptions(opts...),
 	)
+	consoleServiceUpdateBucketHandler := connect.NewUnaryHandler(
+		ConsoleServiceUpdateBucketProcedure,
+		svc.UpdateBucket,
+		connect.WithSchema(consoleServiceMethods.ByName("UpdateBucket")),
+		connect.WithHandlerOptions(opts...),
+	)
 	consoleServiceDeleteBucketHandler := connect.NewUnaryHandler(
 		ConsoleServiceDeleteBucketProcedure,
 		svc.DeleteBucket,
@@ -728,6 +755,8 @@ func NewConsoleServiceHandler(svc ConsoleServiceHandler, opts ...connect.Handler
 			consoleServiceListBucketsHandler.ServeHTTP(w, r)
 		case ConsoleServiceCreateBucketProcedure:
 			consoleServiceCreateBucketHandler.ServeHTTP(w, r)
+		case ConsoleServiceUpdateBucketProcedure:
+			consoleServiceUpdateBucketHandler.ServeHTTP(w, r)
 		case ConsoleServiceDeleteBucketProcedure:
 			consoleServiceDeleteBucketHandler.ServeHTTP(w, r)
 		case ConsoleServiceListObjectsProcedure:
@@ -815,6 +844,10 @@ func (UnimplementedConsoleServiceHandler) ListBuckets(context.Context, *connect.
 
 func (UnimplementedConsoleServiceHandler) CreateBucket(context.Context, *connect.Request[v1.CreateBucketRequest]) (*connect.Response[v1.CreateBucketResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.cloud.v1.ConsoleService.CreateBucket is not implemented"))
+}
+
+func (UnimplementedConsoleServiceHandler) UpdateBucket(context.Context, *connect.Request[v1.UpdateBucketRequest]) (*connect.Response[v1.UpdateBucketResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.cloud.v1.ConsoleService.UpdateBucket is not implemented"))
 }
 
 func (UnimplementedConsoleServiceHandler) DeleteBucket(context.Context, *connect.Request[v1.DeleteBucketRequest]) (*connect.Response[v1.DeleteBucketResponse], error) {

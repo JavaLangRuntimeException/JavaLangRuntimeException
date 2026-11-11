@@ -28,7 +28,7 @@ export function ApisPage() {
         description={
           opt ? (
             <>
-              <Mono>https://&lt;名前&gt;{opt.hostSuffix}</Mono> で公開し、パスごとに関数へ渡します。関数が 0 台なら、最初のリクエストで起こします。
+              <Mono>https://&lt;名前&gt;{opt.apiHostSuffix}</Mono> で公開し、パスごとに関数へ渡します（ログインなし。認証は関数か API キーで）。関数が 0 台なら、最初のリクエストで起こします。
             </>
           ) : (
             "ホスト名を付けて公開し、パスごとに関数へ渡します。"
@@ -144,7 +144,7 @@ function Editor({ api, opt, functions, onClose }: { api: Api | null; opt: GetHos
   const errors = apiFormErrors(form);
   const setRoute = (i: number, patch: Partial<{ path: string; function: string }>) =>
     setForm((f) => ({ ...f, routes: f.routes.map((r, j) => (j === i ? { ...r, ...patch } : r)) }));
-  const host = `${form.name.trim() || "<名前>"}${opt.hostSuffix}`;
+  const host = `${form.name.trim() || "<名前>"}${opt.apiHostSuffix}`;
   const done = applyApi.data ?? deleteApi.data;
   // 一覧にない関数（消された・読めない）に渡しているルートも、選択肢に残して見えるようにする
   const choices = [...new Set([...functions, ...form.routes.map((r) => r.function).filter((n) => n !== "")])];
@@ -177,13 +177,13 @@ function Editor({ api, opt, functions, onClose }: { api: Api | null; opt: GetHos
     >
       <Field
         label="名前"
-        info={<>公開するホスト名の先頭です。<code>&lt;名前&gt;{opt.hostSuffix}</code> になり、DNS は作ったときに自動で登録されます。CDN と同じ名前は使えません（同じホスト名になるため）。</>}
+        info={<>公開するホスト名の先頭です。<code>&lt;名前&gt;{opt.apiHostSuffix}</code> になり、DNS は作ったときに自動で登録されます。ログインなしで誰でも呼べるので、認証は関数側で確かめてください。CDN と同じ名前は使えません。</>}
         error={showErrors ? errors.name : undefined}
         hint={
           <>
             <Mono>
               https://{form.name.trim() || "<名前>"}
-              {opt.hostSuffix}
+              {opt.apiHostSuffix}
             </Mono>{" "}
             で公開されます。この環境の中で重複できず、あとから変えられません
           </>

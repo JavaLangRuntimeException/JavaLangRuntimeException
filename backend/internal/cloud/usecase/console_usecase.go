@@ -63,7 +63,8 @@ func (u *ConsoleUsecaseImpl) GetOverview(ctx context.Context, _ GetOverviewInput
 		return nil, errs.NewInternalError(err)
 	}
 	out := &GetOverviewOutput{Environment: u.d.Environment, Email: cfaccess.EmailFrom(ctx), MetricsEnabled: u.d.Metrics != nil,
-		Components: []*Component{}, StorageHostSuffix: u.d.APITarget.HostSuffix, HostingHostSuffix: u.d.APITarget.HostSuffix}
+		Components: []*Component{}, StorageHostSuffix: u.d.APITarget.Suffix(service.HostStorage), HostingHostSuffix: u.d.APITarget.Suffix(service.HostAPI),
+		CdnHostSuffix: u.d.APITarget.Suffix(service.HostCDN)}
 	for _, w := range ws {
 		out.Components = append(out.Components, &Component{Name: w.Name, Ready: w.Ready, Desired: w.Desired, Version: service.Version(w.Image)})
 	}

@@ -248,7 +248,7 @@ func (d *Deployer) objects(kind string, f gateway.ResourceFile) ([]object, error
 	case gateway.KindCDN:
 		_, err = service.ParseDistributionYAML(f.Name, f.YAML, d.c.Target)
 	case gateway.KindBuckets:
-		err = service.ParseBucketYAML(f.Name, f.YAML)
+		_, err = service.ParseBucketYAML(f.Name, f.YAML, d.c.Target)
 	case gateway.KindDatabases:
 		_, err = service.ParseDatabaseYAML(f.Name, f.YAML)
 	default:

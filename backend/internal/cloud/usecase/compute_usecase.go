@@ -21,6 +21,7 @@ func (u *ConsoleUsecaseImpl) GetHostingOptions(_ context.Context, _ GetHostingOp
 		StoreEnabled: u.d.Apps != nil, AlertsEnabled: u.d.Monitors != nil,
 		Repository: u.d.AppsRepository, Directory: u.d.Environment,
 		IdleTimeoutSeconds: int32(u.d.IdleTimeout.Seconds()), HostSuffix: u.d.APITarget.HostSuffix,
+		ApiHostSuffix: u.d.APITarget.Suffix(service.HostAPI), CdnHostSuffix: u.d.APITarget.Suffix(service.HostCDN), StorageHostSuffix: u.d.APITarget.Suffix(service.HostStorage),
 		StorageEnabled: u.d.Objects != nil, DnsEnabled: u.d.DNS != nil, DatabasesEnabled: u.d.DatabasesEnabled,
 	}
 	for _, t := range service.InstanceTypes {
@@ -289,7 +290,7 @@ func apiSpecOf(s *ApiSpec) service.APISpec {
 }
 
 func (u *ConsoleUsecaseImpl) apiOf(f gateway.ResourceFile) *Api {
-	api := &Api{Spec: &ApiSpec{Name: f.Name, Routes: []*ApiRoute{}}, Host: service.HostOf(f.Name, u.d.APITarget.HostSuffix),
+	api := &Api{Spec: &ApiSpec{Name: f.Name, Routes: []*ApiRoute{}}, Host: u.d.APITarget.Host(service.HostAPI, f.Name),
 		Source: &Source{Yaml: f.YAML, Revision: f.Revision, URL: u.d.Apps.URL(gateway.KindAPIs, f.Name)}}
 	parsed, err := service.ParseAPIYAML(f.Name, f.YAML, u.d.APITarget)
 	if err != nil {
@@ -374,7 +375,7 @@ func (u *ConsoleUsecaseImpl) ApplyApi(ctx context.Context, in ApplyApiInput) (*A
 	if err != nil {
 		return nil, storeErr(err)
 	}
-	return &ApplyApiOutput{API: u.apiOf(gateway.ResourceFile{Name: name, YAML: y, Revision: rev}), DnsProblem: u.ensureDNS(ctx, name)}, nil
+	return &ApplyApiOutput{API: u.apiOf(gateway.ResourceFile{Name: name, YAML: y, Revision: rev}), DnsProblem: u.ensureDNS(ctx, u.d.APITarget.Host(service.HostAPI, name))}, nil
 }
 
 func (u *ConsoleUsecaseImpl) DeleteApi(ctx context.Context, in DeleteApiInput) (*DeleteApiOutput, error) {
@@ -388,12 +389,13 @@ func (u *ConsoleUsecaseImpl) DeleteApi(ctx context.Context, in DeleteApiInput) (
 	if err := store.Delete(ctx, gateway.KindAPIs, in.Name, in.Revision, u.commitMessage(ctx, "delete", "api", in.Name)); err != nil {
 		return nil, storeErr(err)
 	}
-	return &DeleteApiOutput{DnsProblem: u.removeDNS(ctx, in.Name)}, nil
+	return &DeleteApiOutput{DnsProblem: u.removeDNS(ctx, u.d.APITarget.Host(service.HostAPI, in.Name))}, nil
 }
 
-// ---- ホスト名（API と CDN で共通。<名前> + 接尾辞）----
+// ---- ホスト名（<名前>-<サービス>-cloud.taramanji.com）----
 
-// hostFree は新しく作るとき、もう一方の種類（API なら CDN、CDN なら API）が同じ名前＝同じホスト名を使っていないか確かめる。
+// hostFree は新しく作るとき、もう一方の種類（API なら CDN、CDN なら API）が同じ名前を使っていないか確かめる。
+// ホスト名はサービスごとに分かれているが、HTTPRoute の名前（= <名前>）が同じ namespace でぶつかるので、名前は API と CDN で共通にする。
 // 同じ種類どうしはファイル名が同じになるので、置き場が弾く
 func (u *ConsoleUsecaseImpl) hostFree(ctx context.Context, otherKind, name, revision string) error {
 	if revision != "" {
@@ -406,25 +408,26 @@ func (u *ConsoleUsecaseImpl) hostFree(ctx context.Context, otherKind, name, revi
 	if err != nil {
 		return storeErr(err)
 	}
-	return errs.New(errs.ErrorTypeDuplicate, fmt.Sprintf("%s は既に使われています", service.HostOf(name, u.d.APITarget.HostSuffix))).WithCode("host_taken")
+	other := map[string]string{gateway.KindAPIs: "API", gateway.KindCDN: "CDN"}[otherKind]
+	return errs.New(errs.ErrorTypeDuplicate, fmt.Sprintf("%s は %s が使っています（API と CDN で同じ名前は使えません）", name, other)).WithCode("host_taken")
 }
 
 // ensureDNS はホスト名の DNS を登録する。失敗しても YAML の保存は戻さず、理由を返す（空なら問題なし）
-func (u *ConsoleUsecaseImpl) ensureDNS(ctx context.Context, name string) string {
+func (u *ConsoleUsecaseImpl) ensureDNS(ctx context.Context, host string) string {
 	if u.d.DNS == nil {
 		return ""
 	}
-	if err := u.d.DNS.Ensure(ctx, service.HostOf(name, u.d.APITarget.HostSuffix)); err != nil {
+	if err := u.d.DNS.Ensure(ctx, host); err != nil {
 		return err.Error()
 	}
 	return ""
 }
 
-func (u *ConsoleUsecaseImpl) removeDNS(ctx context.Context, name string) string {
+func (u *ConsoleUsecaseImpl) removeDNS(ctx context.Context, host string) string {
 	if u.d.DNS == nil {
 		return ""
 	}
-	if err := u.d.DNS.Remove(ctx, service.HostOf(name, u.d.APITarget.HostSuffix)); err != nil {
+	if err := u.d.DNS.Remove(ctx, host); err != nil {
 		return err.Error()
 	}
 	return ""

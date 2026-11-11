@@ -9,7 +9,15 @@ taramanji.com・gws.taramanji.com と同じクラスター（kind）で動くが
 | stg | https://cloud-stg.taramanji.com | `taramanji-cloud-stg` | なし |
 | dev | https://cloud-dev.taramanji.com | `taramanji-cloud-dev` | なし |
 
-公開する URL は 1 階層のサブドメイン（Universal SSL がそのまま使える）: `<名前>-cloud.taramanji.com`。
+公開する URL は 1 階層のサブドメイン（Universal SSL がそのまま使える）。サービスごとに印を付けて分け、入口ごとにログインの有無を決める:
+
+| 入口 | ホスト名 | ログイン |
+|---|---|---|
+| CDN | `<名前>-cdn-cloud.taramanji.com` | あり（Cloudflare Access。自分だけ） |
+| API Gateway | `<名前>-apigw-cloud.taramanji.com` | なし（認証は関数か API キー） |
+| 公開バケット | `<バケット>-storage-cloud.taramanji.com` | なし（公開をオンにしたバケットだけ。既定はオフ） |
+
+印が違えばホスト名はぶつからない（末尾が -cdn・-apigw・-storage のどれかに決まる）。Access は `*-cdn-cloud` だけを守るので、ワイルドカード同士の優先順位に頼らない。
 
 **アプリ（関数・API・CDN・バケット・データベース）は本番だけ**。stg・dev には基盤（コンソール・cloud-api・cloud-gw・コントローラー・ストレージ・PostgreSQL・Redis）だけを置き、基盤そのものを試すのに使う（アプリ用のリポジトリを渡さないので、コンソールからアプリは作れず、デプロイヤーも動かない。`components/nonprod`）。
 
@@ -51,16 +59,17 @@ VM のメモリを増やしたら `overlays/prod/workloads` の枠を広げる�
 
 ## ログイン（Cloudflare Access）
 
-使うのは本人だけなので、コンソールも、公開する関数・CDN も、すべて Cloudflare Access の後ろに置く（stg・dev と同じ。`deploy/cloudflare/access.py`）。
+コンソールと CDN は Cloudflare Access の後ろに置く（stg・dev と同じ。`deploy/cloudflare/access.py`）。API Gateway と公開バケットは、AWS の API Gateway・S3 のように単体で使えるよう、ログインなしにする。
 
 | Access のアプリ | ホスト名 |
 |---|---|
 | `taramanji-cloud` | `cloud`・`cloud-stg`・`cloud-dev`.taramanji.com（コンソール。API は JWT の aud も確かめる） |
-| `taramanji-cloud-apps` | `*-cloud`・`*-cloud-stg`・`*-cloud-dev`.taramanji.com（API・CDN で公開するもの） |
+| `taramanji-cloud-apps` | `*-cdn-cloud`・`*-cdn-cloud-stg`・`*-cdn-cloud-dev`.taramanji.com（CDN だけ。API Gateway・公開バケットは守らない） |
 
 - ブラウザで開くと Google のログインが出て、`ADMIN_EMAIL` のアカウントだけが通る。セッションは 24 時間
-- ブラウザ以外（curl・スクリプト）から呼ぶときは `cloudflared access curl https://<名前>-cloud.taramanji.com/`（最初にブラウザでログインする）
-- 外部のサービスから Webhook を受ける関数は、このままでは呼べない（Access のサービストークンか、Access から外すホスト名が要る）
+- CDN をブラウザ以外（curl・スクリプト）から呼ぶときは `cloudflared access curl https://<名前>-cdn-cloud.taramanji.com/`（最初にブラウザでログインする）
+- API Gateway（`-apigw-cloud`）はログインなしなので、Webhook も受けられる。その代わり誰でも呼べる。自分だけの API は CDN の「パスごとの元」で `/api` を関数に向ける
+- 公開バケット（`-storage-cloud`）は 1 ファイルずつの取得だけ（一覧・書き込みはできない）。5 分キャッシュ
 
 ## 関数と API Gateway
 
@@ -69,7 +78,7 @@ Lambda と API Gateway にあたるもの。リソースの正は、**アプリ�
 | リソース | YAML の場所 | 中身 |
 |---|---|---|
 | 関数 | `<環境>/functions/<名前>.yaml` | 登録の ConfigMap と、関数ごとの namespace に入る Deployment・Service。コンテナイメージを、リクエストが来たときだけ動かす |
-| API | `<環境>/apis/<名前>.yaml` | HTTPRoute 1 つ。`<名前>-cloud.taramanji.com`のパスごとに、渡し先の関数を決める |
+| API | `<環境>/apis/<名前>.yaml` | HTTPRoute 1 つ。`<名前>-apigw-cloud.taramanji.com` のパスごとに、渡し先の関数を決める |
 
 - コンソール（関数・API Gateway）のフォームか YAML で作る・変える・消すと、cloud-api がそのファイルをコミットする。クラスターには書かない
 - **デプロイヤー**（cloud-ctl の中で動く）が 15 秒ごとにリポジトリを見て、変わっていたら入れる（関数は関数ごとの namespace、ほかは環境の共有の namespace）。**Argo CD は使わない**。YAML を手で書いて push しても同じ
@@ -130,8 +139,8 @@ S3 と CloudFront にあたるもの。
 
 | リソース | YAML の場所 | 中身 |
 |---|---|---|
-| バケット | `<環境>/buckets/<名前>.yaml` | ConfigMap `bucket-<名前>`（ラベル `cloud.taramanji.com/bucket`）。あることがバケットの定義 |
-| CDN | `<環境>/cdn/<名前>.yaml` | HTTPRoute 1 つ。`<名前>-cloud.taramanji.com` を、バケットか関数に向ける。パスごとに別の元にも向けられる（behavior） |
+| バケット | `<環境>/buckets/<名前>.yaml` | ConfigMap `bucket-<名前>`（ラベル `cloud.taramanji.com/bucket`）。あることがバケットの定義。公開するときは HTTPRoute `bucket.<名前>`（`<名前>-storage-cloud.taramanji.com` の全パスをこのバケットへ）も |
+| CDN | `<環境>/cdn/<名前>.yaml` | HTTPRoute 1 つ。`<名前>-cdn-cloud.taramanji.com` を、バケットか関数に向ける。パスごとに別の元にも向けられる（behavior） |
 
 - **ストレージ**（`cloud-storage`。cloud のイメージを `CLOUD_MODE=storage` で動かす StatefulSet）: バケットは PVC の上のディレクトリ。
   ラベル付きの ConfigMap を 15 秒ごとに見て、バケットを作る。ConfigMap が消えても、中身のあるバケットは消さない

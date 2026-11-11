@@ -39,7 +39,7 @@ func (h *ConsoleHandler) GetOverview(ctx context.Context, req *connect.Request[c
 			out = append(out, consoleComponentToPb(v))
 		}
 		return out
-	}(out.Components), StorageHostSuffix: out.StorageHostSuffix, HostingHostSuffix: out.HostingHostSuffix}), nil
+	}(out.Components), StorageHostSuffix: out.StorageHostSuffix, HostingHostSuffix: out.HostingHostSuffix, CdnHostSuffix: out.CdnHostSuffix}), nil
 }
 
 func (h *ConsoleHandler) GetMetrics(ctx context.Context, req *connect.Request[cloudv1.GetMetricsRequest]) (*connect.Response[cloudv1.GetMetricsResponse], error) {
@@ -110,7 +110,7 @@ func (h *ConsoleHandler) GetHostingOptions(ctx context.Context, req *connect.Req
 			out = append(out, consoleAlertPresetToPb(v))
 		}
 		return out
-	}(out.AlertPresets), NotifyChannels: out.NotifyChannels, MinCpuMillis: out.MinCpuMillis, MaxCpuMillis: out.MaxCpuMillis, MinMemory: out.MinMemory, MaxMemory: out.MaxMemory, StoreEnabled: out.StoreEnabled, AlertsEnabled: out.AlertsEnabled, Repository: out.Repository, Directory: out.Directory, IdleTimeoutSeconds: out.IdleTimeoutSeconds, HostSuffix: out.HostSuffix, InstanceFamilies: func(l []*usecase.InstanceFamily) []*cloudv1.InstanceFamily {
+	}(out.AlertPresets), NotifyChannels: out.NotifyChannels, MinCpuMillis: out.MinCpuMillis, MaxCpuMillis: out.MaxCpuMillis, MinMemory: out.MinMemory, MaxMemory: out.MaxMemory, StoreEnabled: out.StoreEnabled, AlertsEnabled: out.AlertsEnabled, Repository: out.Repository, Directory: out.Directory, IdleTimeoutSeconds: out.IdleTimeoutSeconds, HostSuffix: out.HostSuffix, ApiHostSuffix: out.ApiHostSuffix, CdnHostSuffix: out.CdnHostSuffix, StorageHostSuffix: out.StorageHostSuffix, InstanceFamilies: func(l []*usecase.InstanceFamily) []*cloudv1.InstanceFamily {
 		if l == nil {
 			return nil
 		}
@@ -241,22 +241,36 @@ func (h *ConsoleHandler) ListBuckets(ctx context.Context, req *connect.Request[c
 
 func (h *ConsoleHandler) CreateBucket(ctx context.Context, req *connect.Request[cloudv1.CreateBucketRequest]) (*connect.Response[cloudv1.CreateBucketResponse], error) {
 	out, err := h.usecase.CreateBucket(ctx, usecase.CreateBucketInput{
-		Name: req.Msg.GetName(),
+		Name:   req.Msg.GetName(),
+		Public: req.Msg.GetPublic(),
 	})
 	if err != nil {
 		return nil, errs.ToConnect(ctx, err)
 	}
-	return connect.NewResponse(&cloudv1.CreateBucketResponse{Bucket: consoleBucketToPb(out.Bucket)}), nil
+	return connect.NewResponse(&cloudv1.CreateBucketResponse{Bucket: consoleBucketToPb(out.Bucket), DnsProblem: out.DnsProblem}), nil
+}
+
+func (h *ConsoleHandler) UpdateBucket(ctx context.Context, req *connect.Request[cloudv1.UpdateBucketRequest]) (*connect.Response[cloudv1.UpdateBucketResponse], error) {
+	out, err := h.usecase.UpdateBucket(ctx, usecase.UpdateBucketInput{
+		Name:     req.Msg.GetName(),
+		Public:   req.Msg.GetPublic(),
+		Revision: req.Msg.GetRevision(),
+	})
+	if err != nil {
+		return nil, errs.ToConnect(ctx, err)
+	}
+	return connect.NewResponse(&cloudv1.UpdateBucketResponse{Bucket: consoleBucketToPb(out.Bucket), DnsProblem: out.DnsProblem}), nil
 }
 
 func (h *ConsoleHandler) DeleteBucket(ctx context.Context, req *connect.Request[cloudv1.DeleteBucketRequest]) (*connect.Response[cloudv1.DeleteBucketResponse], error) {
-	if err := h.usecase.DeleteBucket(ctx, usecase.DeleteBucketInput{
+	out, err := h.usecase.DeleteBucket(ctx, usecase.DeleteBucketInput{
 		Name:     req.Msg.GetName(),
 		Revision: req.Msg.GetRevision(),
-	}); err != nil {
+	})
+	if err != nil {
 		return nil, errs.ToConnect(ctx, err)
 	}
-	return connect.NewResponse(&cloudv1.DeleteBucketResponse{}), nil
+	return connect.NewResponse(&cloudv1.DeleteBucketResponse{DnsProblem: out.DnsProblem}), nil
 }
 
 func (h *ConsoleHandler) ListObjects(ctx context.Context, req *connect.Request[cloudv1.ListObjectsRequest]) (*connect.Response[cloudv1.ListObjectsResponse], error) {
@@ -865,6 +879,8 @@ func consolePbToBucket(p *cloudv1.Bucket) *usecase.Bucket {
 		Objects:       p.GetObjects(),
 		Bytes:         p.GetBytes(),
 		Distributions: p.GetDistributions(),
+		Public:        p.GetPublic(),
+		PublicHost:    p.GetPublicHost(),
 	}
 }
 
@@ -879,6 +895,8 @@ func consoleBucketToPb(u *usecase.Bucket) *cloudv1.Bucket {
 		Objects:       u.Objects,
 		Bytes:         u.Bytes,
 		Distributions: u.Distributions,
+		Public:        u.Public,
+		PublicHost:    u.PublicHost,
 	}
 }
 

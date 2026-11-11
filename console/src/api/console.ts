@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ConsoleService } from "./gen/taramanji/cloud/v1/console_pb";
 import { client } from "./transport";
+import { uploadAll, type UploadItem } from "@/lib/upload";
 
 export const consoleApi = client(ConsoleService);
 
@@ -156,14 +157,14 @@ export function useStorageMutations() {
     void qc.invalidateQueries({ queryKey: ["console", "objects"] });
   };
   return {
-    createBucket: useMutation({ mutationFn: (name: string) => consoleApi.createBucket({ name }), onSuccess: refresh }),
+    createBucket: useMutation({ mutationFn: (req: { name: string; public: boolean }) => consoleApi.createBucket(req), onSuccess: refresh }),
+    updateBucket: useMutation({ mutationFn: (req: Parameters<typeof consoleApi.updateBucket>[0]) => consoleApi.updateBucket(req), onSuccess: refresh }),
     deleteBucket: useMutation({ mutationFn: (req: Parameters<typeof consoleApi.deleteBucket>[0]) => consoleApi.deleteBucket(req), onSuccess: refresh }),
     deleteObject: useMutation({ mutationFn: (req: Parameters<typeof consoleApi.deleteObject>[0]) => consoleApi.deleteObject(req), onSuccess: refresh }),
     upload: useMutation({
-      mutationFn: async ({ bucket, prefix, files }: { bucket: string; prefix: string; files: File[] }) => {
-        // 1 つずつ置く（並べて送ると、大きいファイルがあるときに全部が遅くなる）
-        for (const f of files) await uploadObject(bucket, prefix + (f.webkitRelativePath || f.name), f);
-      },
+      // items のパスはバケットの中のキー（planUpload で今いるフォルダーを付けたもの）。少しずつ並べて置く
+      mutationFn: ({ bucket, items, onProgress }: { bucket: string; items: UploadItem[]; onProgress: (done: number, total: number) => void }) =>
+        uploadAll(items, (it) => uploadObject(bucket, it.path, it.file), onProgress),
       onSettled: refresh,
     }),
     applyDistribution: useMutation({ mutationFn: (req: Parameters<typeof consoleApi.applyDistribution>[0]) => consoleApi.applyDistribution(req), onSuccess: refresh }),

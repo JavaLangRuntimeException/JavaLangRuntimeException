@@ -17,7 +17,9 @@ export type Article = {
   body: () => ReactNode;
 };
 
-const host = <C>&lt;名前&gt;-cloud.taramanji.com</C>;
+const cdnHost = <C>&lt;名前&gt;-cdn-cloud.taramanji.com</C>;
+const apiHost = <C>&lt;名前&gt;-apigw-cloud.taramanji.com</C>;
+const storageHost = <C>&lt;バケット&gt;-storage-cloud.taramanji.com</C>;
 
 export const articles: Article[] = [
   {
@@ -30,6 +32,7 @@ export const articles: Article[] = [
     toc: [
       { id: "what", label: "何ができるか" },
       { id: "flow", label: "リクエストの流れ" },
+      { id: "entry", label: "入口ごとのログイン" },
       { id: "yaml", label: "設定は YAML で残る" },
       { id: "env", label: "環境（本番・stg・dev）" },
       { id: "names", label: "名前と URL" },
@@ -47,7 +50,7 @@ export const articles: Article[] = [
             [<To to="/functions">関数</To>, "Lambda", "コンテナイメージを、リクエストが来たときだけ動かす"],
             [<To to="/apis">API Gateway</To>, "API Gateway", "ホスト名とパスを、関数に結びつけて公開する"],
             [<To to="/storage">ストレージ</To>, "S3", "ファイルを置くバケット"],
-            [<To to="/cdn">CDN</To>, "CloudFront", "バケットや関数を公開し、Cloudflare にキャッシュさせる"],
+            [<To to="/cdn">CDN</To>, "CloudFront", "バケットや関数を自分だけに出し（ログインあり）、Cloudflare にキャッシュさせる"],
             [<To to="/databases">データベース</To>, "RDS / ElastiCache", "PostgreSQL と Redis を切り出して、関数につなぐ"],
           ]}
         />
@@ -57,7 +60,7 @@ export const articles: Article[] = [
         <ArchitectureDiagram />
         <UL>
           <li>
-            利用者は {host} にアクセスします。Cloudflare が証明書と DNS を受け持ち、トンネルで家のクラスターに届けます。
+            利用者は CDN（{cdnHost}）・API Gateway（{apiHost}）・公開バケット（{storageHost}）にアクセスします。Cloudflare が証明書と DNS を受け持ち、トンネルで家のクラスターに届けます。
           </li>
           <li>
             API Gateway（<C>cloud-gw</C>）が、その名前の API か CDN の設定を見て、渡し先の関数かバケットを決めます。
@@ -68,9 +71,20 @@ export const articles: Article[] = [
             には届きません。
           </li>
         </UL>
-        <Note title="使えるのは自分だけです">
-          コンソールも、公開した {host} も、Cloudflare Access の後ろにあります。開くと Google のログインが出て、管理者のアカウントだけが通ります（stg・dev
-          と同じしくみ）。ブラウザ以外から呼ぶときは <C>cloudflared access curl</C> を使います。
+        <H2 id="entry">入口ごとのログイン</H2>
+        <P>ホスト名はサービスごとに分かれていて、ログインが要るかどうかも入口で決まります（AWS で CloudFront は署名付き、API Gateway・S3 は単体で使えるのと同じ考え方）。</P>
+        <Table
+          rows={[
+            ["入口", "ホスト名", "ログイン", "向いている使い方"],
+            ["コンソール", <C>cloud.taramanji.com</C>, "あり（自分だけ）", "管理"],
+            ["CDN", cdnHost, "あり（自分だけ）", "自分だけのアプリ。画面と /api をパスごとの元でまとめる"],
+            ["API Gateway", apiHost, "なし（誰でも）", "公開する API・Webhook・スクリプトから呼ぶ。認証は関数か API キー"],
+            ["公開バケット", storageHost, "なし（誰でも）", "画像やサイトの配信。公開をオンにしたバケットだけ"],
+          ]}
+        />
+        <Note kind="warn" title="ログインなしの入口は、誰でも届きます">
+          API Gateway の関数は、インターネットの誰からでも呼ばれます。認証が要る処理は、関数の中で確かめてください。公開バケットのファイルは、URL を知っている人なら誰でも読めます（一覧は出ません）。秘密のファイルは置かないでください。
+          ログインが要る CDN は、開くと Google のログインが出て、管理者のアカウントだけが通ります。ブラウザ以外から呼ぶときは <C>cloudflared access curl</C> を使います。
         </Note>
 
         <H2 id="yaml">設定は YAML で残る</H2>
@@ -94,7 +108,7 @@ export const articles: Article[] = [
         <Table
           rows={[
             ["環境", "コンソール", "公開する URL", "監視（Datadog）"],
-            ["本番", <C>cloud.taramanji.com</C>, <C>&lt;名前&gt;-cloud.taramanji.com</C>, "あり"],
+            ["本番", <C>cloud.taramanji.com</C>, <C>&lt;名前&gt;-cdn / -apigw / -storage-cloud.taramanji.com</C>, "あり"],
             ["stg", <C>cloud-stg.taramanji.com</C>, "なし（アプリは本番だけ）", "なし"],
             ["dev", <C>cloud-dev.taramanji.com</C>, "なし（アプリは本番だけ）", "なし"],
           ]}
@@ -102,8 +116,8 @@ export const articles: Article[] = [
 
         <H2 id="names">名前と URL</H2>
         <P>
-          名前は英小文字で始め、英小文字・数字・ハイフンで 40 文字までです。あとから変えられません。API と CDN の名前はそのままホスト名になるので、
-          同じ環境の中で API と CDN をまたいで重複できません。DNS は作ったときに自動で登録され、消すと削除されます。
+          名前は英小文字で始め、英小文字・数字・ハイフンで 40 文字までです。あとから変えられません。名前はホスト名の先頭になります（<C>&lt;名前&gt;-cdn-cloud</C>・
+          <C>&lt;名前&gt;-apigw-cloud</C>・<C>&lt;バケット&gt;-storage-cloud</C>）。API と CDN は同じ名前を使えません。DNS は作ったとき（バケットは公開したとき）に自動で登録され、消すと削除されます。
         </P>
       </>
     ),
@@ -172,7 +186,7 @@ CMD ["node", "server.js"]
             <To to="/apis">API Gateway</To> を開き、「API を作る」を押します。
           </li>
           <li>
-            名前（例: <C>hello</C>）を入れます。<C>https://hello-cloud.taramanji.com</C> で公開されます。
+            名前（例: <C>hello</C>）を入れます。<C>https://hello-apigw-cloud.taramanji.com</C> で公開されます（ログインなし）。
           </li>
           <li>
             ルートは最初から <C>/ → hello</C> が入っています。そのまま「作る」を押します。DNS も自動で登録されます。
@@ -185,15 +199,15 @@ CMD ["node", "server.js"]
 
         <H2 id="call">4. 呼んでみる</H2>
         <P>
-          ブラウザで <C>https://hello-cloud.taramanji.com/</C> を開きます。公開したものも Cloudflare Access の後ろにあるので、最初に Google のログインが出ます
-          （管理者のアカウントだけが通ります）。ターミナルから呼ぶときは <C>cloudflared access curl</C> を使います（最初の 1 回はブラウザでログインします）。
+          ブラウザで <C>https://hello-apigw-cloud.taramanji.com/</C> を開くか、ターミナルから呼びます。API Gateway はログインなしなので、そのまま届きます。
         </P>
-        <Code lang="sh">{`cloudflared access curl https://hello-cloud.taramanji.com/`}</Code>
+        <Code lang="sh">{`curl https://hello-apigw-cloud.taramanji.com/`}</Code>
         <P>
           最初の 1 回は関数の起動を待つので、数秒かかります。2 回目からはすぐ返ります。関数の画面で、状態が「実行中」に変わるのを確かめてください。
         </P>
-        <Note kind="warn" title="外部のサービスからは呼べません">
-          Access の後ろにあるので、GitHub や Stripe などの Webhook を受ける関数は、そのままでは呼ばれません。
+        <Note kind="warn" title="誰でも呼べます">
+          API Gateway はログインなしなので、GitHub や Stripe などの Webhook も受けられます。その代わり、インターネットの誰からでも呼ばれます。
+          自分だけが使う関数なら、CDN の「パスごとの元」で <C>/api</C> を関数に向けて、ログインの後ろに置いてください（<To to="/guide/static-site">静的なサイトをバケットと CDN で配る</To>）。
         </Note>
 
         <H2 id="cold">0 台からの起動について</H2>
@@ -234,11 +248,11 @@ CMD ["node", "server.js"]
 
         <H2 id="upload">2. ファイルを置く</H2>
         <P>
-          バケットの名前を押して開き、「アップロード」でファイルを選びます。今いるフォルダーの下に置かれます。<C>index.html</C> を一番上に置いてください。
-          1 つのファイルは 1 GiB までです。
+          バケットの名前を押して開き、ビルドしたフォルダー（<C>dist</C> など）の中身を、枠にドラッグ&ドロップします。フォルダーの中の構造のまま、今いるフォルダーの下に置かれます。
+          「ファイルを選ぶ」「フォルダーを選ぶ」でも置けます。<C>index.html</C> が一番上に来るように置いてください。1 つのファイルは 1 GiB までです。
         </P>
         <Note>
-          フォルダーごとまとめて置くには、関数からバケットに書く方法（<To to="/guide/connect">データベースとバケットをつなぐ</To>）を使います。
+          <C>.</C> で始まるファイル（<C>.env</C>・<C>.git/</C>・<C>.DS_Store</C> など）は置きません（<C>.well-known/</C> だけは置きます）。秘密のファイルを公開バケットに置き間違えないためです。
         </Note>
 
         <H2 id="cdn">3. CDN を作る</H2>
@@ -255,12 +269,15 @@ CMD ["node", "server.js"]
           <li>キャッシュの長さを選び、「作る」を押します。</li>
         </Steps>
         <P>
-          <C>https://www-cloud.taramanji.com</C> でサイトが見られます。<C>/</C> で終わるパスは、その下の <C>index.html</C> を返します。
+          <C>https://www-cdn-cloud.taramanji.com</C> でサイトが見られます（ログインあり）。<C>/</C> で終わるパスは、その下の <C>index.html</C> を返します。
         </P>
+        <Note title="誰にでも見せるサイトなら">
+          CDN を作らずに、バケットの画面で「公開する」を押す方法もあります。<C>https://site-storage-cloud.taramanji.com/</C> で、ログインなしで配られます（5 分キャッシュ。SPA の設定はありません）。
+        </Note>
 
         <H2 id="paths">4. API を同じホスト名にまとめる（パスごとの元）</H2>
         <P>
-          画面（バケット）と API（関数）を、同じ <C>https://www-cloud.taramanji.com</C> から出せます。CloudFront の behavior と同じ考え方で、パスごとに元を分けます。
+          画面（バケット）と API（関数）を、同じ <C>https://www-cdn-cloud.taramanji.com</C> から出せます。CloudFront の behavior と同じ考え方で、パスごとに元を分けます。
           同じホスト名なので、画面から <C>fetch("/api/...")</C> と呼ぶだけで、Cloudflare Access のログインもそのまま使えます（別のホスト名にすると、ログインの Cookie が届きません）。
         </P>
         <Steps>
@@ -632,7 +649,7 @@ spec:
 
         <H2 id="isolation">囲い</H2>
         <UL>
-          <li>公開したもの（{host}）も Cloudflare Access の後ろにあり、使えるのは管理者のアカウントだけです。</li>
+          <li>CDN（{cdnHost}）は Cloudflare Access の後ろにあり、使えるのは管理者のアカウントだけです。API Gateway と公開バケットはログインなしです。</li>
           <li>
             関数は 1 つずつ別の namespace（<C>taramanji-cloud-fn-&lt;名前&gt;</C>）で動きます。namespace と囲い（量の上限・通信の制限・Pod Security・権限）は
             コントローラーが作り、YAML のリポジトリからは作れません。
@@ -648,8 +665,7 @@ spec:
           <li>負荷に合わせて関数の台数を増やす（今は 1 台まで）</li>
           <li>自分で決める秘密の環境変数、GHCR・Docker Hub 以外の非公開のイメージ</li>
           <li>データベースのバックアップ、CDN のキャッシュの消去</li>
-          <li>コンソールからフォルダーごとアップロードする</li>
-          <li>外部のサービスからの Webhook を受ける（Access の後ろにあるため）</li>
+          <li>公開バケットの署名付き URL（期限付きで非公開のファイルを渡す）</li>
         </UL>
       </>
     ),

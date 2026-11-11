@@ -46,7 +46,7 @@ export function CdnPage() {
         description={
           opt ? (
             <>
-              バケットか関数を <Mono>https://&lt;名前&gt;{opt.hostSuffix}</Mono> で公開し、Cloudflare のエッジにキャッシュさせます。
+              バケットか関数を <Mono>https://&lt;名前&gt;{opt.cdnHostSuffix}</Mono> で出し、Cloudflare のエッジにキャッシュさせます（Cloudflare Access のログインあり）。
             </>
           ) : (
             "バケットか関数にホスト名を付けて公開し、キャッシュさせます。"
@@ -176,7 +176,7 @@ function Editor({
   const errors = distributionFormErrors(form);
   const set = (patch: Partial<DistributionForm>) => setForm((f) => ({ ...f, ...patch }));
   const err = (k: Exclude<keyof DistributionForm, "behaviors">) => (showErrors ? errors[k] : undefined);
-  const host = `${form.name.trim() || "<名前>"}${opt.hostSuffix}`;
+  const host = `${form.name.trim() || "<名前>"}${opt.cdnHostSuffix}`;
   const origins = form.originType === "bucket" ? buckets : functions;
   // 一覧にない元（消された）も、選択肢に残して見えるようにする
   const choices = form.origin && !origins.includes(form.origin) ? [...origins, form.origin] : origins;
@@ -211,7 +211,7 @@ function Editor({
     >
       <Field
         label="名前"
-        info={<>公開するホスト名の先頭です。<code>&lt;名前&gt;{opt.hostSuffix}</code> になり、DNS は作ったときに自動で登録されます。API と同じ名前は使えません（同じホスト名になるため）。</>}
+        info={<>ホスト名の先頭です。<code>&lt;名前&gt;{opt.cdnHostSuffix}</code> になり、DNS は作ったときに自動で登録されます。開くと Cloudflare Access のログインが出ます（自分だけ）。API と同じ名前は使えません。</>}
         error={err("name")}
         hint={
           <>

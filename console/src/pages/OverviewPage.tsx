@@ -100,13 +100,21 @@ export function OverviewPage() {
 
         <Panel title="URL の形" className="lg:col-span-1">
           <dl className="grid gap-x-6 gap-y-2 px-4 py-3 sm:grid-cols-[auto_1fr] lg:grid-cols-1">
-            <dt className="text-muted">API</dt>
+            <dt className="text-muted">CDN（ログインあり）</dt>
+            <dd className="min-w-0 break-all">
+              {data ? <Mono>https://&lt;名前&gt;{data.cdnHostSuffix}</Mono> : <Skeleton className="h-5 w-64" />}
+            </dd>
+            <dt className="text-muted">API Gateway（ログインなし）</dt>
             <dd className="min-w-0 break-all">
               {data ? <Mono>https://&lt;名前&gt;{data.hostingHostSuffix}</Mono> : <Skeleton className="h-5 w-64" />}
             </dd>
+            <dt className="text-muted">公開バケット（ログインなし）</dt>
+            <dd className="min-w-0 break-all">
+              {data ? <Mono>https://&lt;バケット&gt;{data.storageHostSuffix}/&lt;キー&gt;</Mono> : <Skeleton className="h-5 w-64" />}
+            </dd>
           </dl>
           <p className="border-t border-line px-4 py-2.5 text-[13px] text-muted">
-            API Gateway で名前を決めると、この形の URL で関数を公開できます。名前はこの環境の中で重複できません。
+            サービスごとにホスト名が分かれています。CDN は自分だけ（Cloudflare Access）、API Gateway と公開をオンにしたバケットは誰でも届きます。
           </p>
         </Panel>
       </div>
