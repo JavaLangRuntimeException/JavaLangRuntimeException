@@ -11,8 +11,15 @@ spec:
     repoURL: git@github.com:JavaLangRuntimeException/taramanji-cloud-apps.git
     targetRevision: main
     path: prod
+    # <環境>/functions・<環境>/apis の下まで読む
+    directory: { recurse: true }
   destination:
     server: https://kubernetes.default.svc
     namespace: cloud-apps
   syncPolicy:
     automated: { prune: true, selfHeal: true }
+  # 関数の台数は API Gateway（cloud-gw）が 0 と 1 を行き来させる。Argo CD は戻さない
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers: [/spec/replicas]

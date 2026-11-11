@@ -88,8 +88,9 @@ spec:
             # この環境のアプリ用 namespace（容量の枠を読む）
             - { name: APPS_NAMESPACE, value: cloud-apps }
             - { name: CONSOLE_ORIGIN, value: "https://cloud.taramanji.com" }
-            - { name: STORAGE_HOST_SUFFIX, value: "-storage.taramanji.com" }
-            - { name: HOSTING_HOST_SUFFIX, value: "-hosting.taramanji.com" }
+            # 公開するホスト名は <名前> + これ（1 階層にして、Cloudflare の無料の証明書の範囲に収める）
+            - { name: HOST_SUFFIX, value: "-cloud.taramanji.com" }
+            - { name: FUNCTION_IDLE_TIMEOUT, value: 5m }
             # アプリの YAML を置く専用リポジトリ（<環境>/<名前>.yaml）。書き込むトークン（APPS_REPO_TOKEN）は cloud-api-env に入れる。
             # トークンがなければホスティングは使えないだけで、ほかは動く
             - { name: APPS_REPO, value: "JavaLangRuntimeException/taramanji-cloud-apps" }

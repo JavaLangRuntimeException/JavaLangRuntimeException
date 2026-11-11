@@ -28,3 +28,29 @@ subjects:
   - kind: ServiceAccount
     name: cloud-api
     namespace: cloud
+---
+# API Gateway（cloud-gw）が関数を起こす・寝かせる。台数（scale）と、最後のリクエストの時刻の注釈だけを書く
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cloud-gw
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "patch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments/scale"]
+    verbs: ["get", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cloud-gw
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: cloud-gw
+subjects:
+  - kind: ServiceAccount
+    name: cloud-gw
+    namespace: cloud
