@@ -128,7 +128,7 @@ func main() {
 	if err := server.Run(serviceName, func(mux *http.ServeMux) {
 		handlers.Register(mux, connect.WithInterceptors(verifier.Interceptor()))
 		if objects != nil {
-			mux.Handle("/storage/{bucket}/{key...}", verifier.Middleware(objectHandler(objects)))
+			mux.Handle("/_objects/{bucket}/{key...}", verifier.Middleware(objectHandler(objects)))
 		}
 	}); err != nil {
 		log.Fatal(err)

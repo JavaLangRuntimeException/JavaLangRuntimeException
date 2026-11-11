@@ -173,3 +173,78 @@ export function apiFormErrors(form: ApiForm): Partial<Record<keyof ApiForm, stri
 export function formatIdle(seconds: number): string {
   return seconds % 60 === 0 ? `${seconds / 60} 分` : `${seconds} 秒`;
 }
+
+// ---- CDN ----
+
+export type DistributionForm = { name: string; originType: "bucket" | "function"; origin: string; cacheSeconds: string; spa: boolean };
+
+/** キャッシュの長さの選択肢（秒）。自由に入れることもできる */
+export const cachePresets = [
+  { seconds: 0, label: "キャッシュしない" },
+  { seconds: 300, label: "5 分" },
+  { seconds: 3600, label: "1 時間" },
+  { seconds: 86400, label: "1 日" },
+  { seconds: 31536000, label: "1 年" },
+] as const;
+
+export function emptyDistributionForm(buckets: readonly string[]): DistributionForm {
+  return { name: "", originType: "bucket", origin: buckets[0] ?? "", cacheSeconds: "300", spa: false };
+}
+
+export function distributionFormOf(spec: { name: string; originType: string; origin: string; cacheSeconds: number; spa: boolean }): DistributionForm {
+  return { name: spec.name, originType: spec.originType === "function" ? "function" : "bucket", origin: spec.origin, cacheSeconds: String(spec.cacheSeconds), spa: spec.spa };
+}
+
+export function distributionSpecOf(form: DistributionForm) {
+  return { name: form.name.trim(), originType: form.originType, origin: form.origin, cacheSeconds: Number(form.cacheSeconds) || 0, spa: form.originType === "bucket" && form.spa };
+}
+
+export function distributionFormErrors(form: DistributionForm): Partial<Record<keyof DistributionForm, string>> {
+  const e: Partial<Record<keyof DistributionForm, string>> = {};
+  if (!NAME_RE.test(form.name.trim())) e.name = "英小文字で始め、英小文字・数字・ハイフンで 40 文字まで";
+  if (form.origin === "") e.origin = form.originType === "bucket" ? "元のバケットを選んでください" : "元の関数を選んでください";
+  if (!isInt(form.cacheSeconds) || Number(form.cacheSeconds) > 31536000) e.cacheSeconds = "0〜31536000 秒（1 年）";
+  return e;
+}
+
+/** 「5 分」「1 時間」「90 秒」「キャッシュしない」 */
+export function formatCache(seconds: number): string {
+  if (seconds <= 0) return "キャッシュしない";
+  for (const [unit, label] of [[86400, "日"], [3600, "時間"], [60, "分"]] as const) {
+    if (seconds % unit === 0) return `${seconds / unit} ${label}`;
+  }
+  return `${seconds} 秒`;
+}
+
+// ---- オブジェクト ----
+
+export type Entry = { name: string; key: string; folder: boolean; size: number; modifiedMs: number; count: number };
+
+/** prefix の直下を、フォルダー（/ で区切った次の階層）とファイルに分ける。フォルダーが先、名前の順 */
+export function entriesOf(objects: readonly { key: string; size: bigint | number; modifiedMs: bigint | number }[], prefix: string): Entry[] {
+  const folders = new Map<string, Entry>();
+  const files: Entry[] = [];
+  for (const o of objects) {
+    if (!o.key.startsWith(prefix)) continue;
+    const rest = o.key.slice(prefix.length);
+    const i = rest.indexOf("/");
+    if (i < 0) {
+      files.push({ name: rest, key: o.key, folder: false, size: num(o.size), modifiedMs: num(o.modifiedMs), count: 1 });
+      continue;
+    }
+    const name = rest.slice(0, i);
+    const f = folders.get(name) ?? { name, key: prefix + name + "/", folder: true, size: 0, modifiedMs: 0, count: 0 };
+    f.size += num(o.size);
+    f.count += 1;
+    f.modifiedMs = Math.max(f.modifiedMs, num(o.modifiedMs));
+    folders.set(name, f);
+  }
+  const byName = (a: Entry, b: Entry) => a.name.localeCompare(b.name);
+  return [...[...folders.values()].sort(byName), ...files.sort(byName)];
+}
+
+/** パンくず: "a/b/" → [{name:"a", prefix:"a/"}, {name:"b", prefix:"a/b/"}] */
+export function crumbsOf(prefix: string): { name: string; prefix: string }[] {
+  const parts = prefix.split("/").filter((p) => p !== "");
+  return parts.map((name, i) => ({ name, prefix: parts.slice(0, i + 1).join("/") + "/" }));
+}

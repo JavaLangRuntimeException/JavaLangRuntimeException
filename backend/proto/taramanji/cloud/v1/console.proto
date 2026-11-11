@@ -41,7 +41,7 @@ service ConsoleService {
   rpc DeleteBucket(DeleteBucketRequest) returns (DeleteBucketResponse) {}
   rpc ListObjects(ListObjectsRequest) returns (ListObjectsResponse) {}
   rpc DeleteObject(DeleteObjectRequest) returns (DeleteObjectResponse) {}
-  // オブジェクトを置く・取り出すのは Connect ではなく HTTP: PUT / GET /storage/<バケット>/<キー>
+  // オブジェクトを置く・取り出すのは Connect ではなく HTTP: PUT / GET /_objects/<バケット>/<キー>
 
   // CDN: 公開するホスト名（<名前>-cloud.taramanji.com）と、その元（バケットか関数）、キャッシュの長さ
   rpc ListDistributions(ListDistributionsRequest) returns (ListDistributionsResponse) {}
