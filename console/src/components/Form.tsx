@@ -3,9 +3,11 @@ import type { ReactNode } from "react";
 // フォームの部品の見た目（色は styles.css の変数だけ）
 export const input =
   "w-full rounded border border-line-strong bg-surface px-2.5 py-1.5 text-ink placeholder:text-muted disabled:bg-surface-2 disabled:text-muted";
-export const btn = "rounded border border-line-strong px-3 py-1.5 font-medium text-ink hover:bg-surface-2 disabled:opacity-50";
-export const btnPrimary = "rounded border border-accent bg-accent px-3 py-1.5 font-medium text-surface hover:opacity-90 disabled:opacity-50";
-export const btnDanger = "rounded border border-line-strong px-3 py-1.5 font-medium text-bad hover:bg-surface-2 disabled:opacity-50";
+// ボタンは 3 種類: 主（橙。作る・保存する。1 つの面に 1 つ）・ふつう（白地に枠）・消す（赤い字）
+const btnBase = "inline-flex items-center justify-center rounded-full border px-4 py-1 font-semibold whitespace-nowrap disabled:opacity-50";
+export const btn = `${btnBase} border-line-strong bg-surface text-ink-2 hover:bg-surface-2 hover:text-ink`;
+export const btnPrimary = `${btnBase} border-primary bg-primary text-primary-ink hover:border-primary-hover hover:bg-primary-hover`;
+export const btnDanger = `${btnBase} border-line-strong bg-surface text-bad hover:bg-surface-2`;
 
 /** ラベル付きの入力。間違いがあれば補足の代わりに出す */
 export function Field({ label, hint, error, children }: { label: string; hint?: ReactNode; error?: string; children: ReactNode }) {

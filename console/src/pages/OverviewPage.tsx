@@ -3,11 +3,13 @@ import { useCapacity, useOverview } from "@/api/console";
 import { EnvBadge } from "@/components/EnvBadge";
 import { Mono, PageHeader, Panel, Skeleton } from "@/components/Page";
 import { QueryError } from "@/components/QueryError";
+import { ServiceIcon } from "@/components/ServiceIcon";
 import { StatusDot, statusOf } from "@/components/StatusDot";
 import { UsageBar } from "@/components/UsageBar";
 import { formatPercent, levelOf, limitedByLabel, pickFit, usage } from "@/lib/capacity";
 import { toEnv } from "@/lib/env";
 import { formatBytes } from "@/lib/format";
+import { serviceGroups } from "@/lib/nav";
 
 const envDescription = { prod: "本番", stg: "ステージング", dev: "開発" } as const;
 
@@ -17,7 +19,7 @@ export function OverviewPage() {
   if (overview.isError) {
     return (
       <>
-        <PageHeader title="概要" />
+        <PageHeader title="コンソールのホーム" />
         <QueryError error={overview.error} onRetry={() => overview.refetch()} />
       </>
     );
@@ -28,7 +30,30 @@ export function OverviewPage() {
 
   return (
     <>
-      <PageHeader title="概要" description="このコンソールが動いている環境と、部品の状態です。" />
+      <PageHeader title="コンソールのホーム" description="サービスの一覧と、この環境の状態です。" />
+
+      <Panel title="サービス" className="mb-4">
+        <div className="grid gap-x-6 gap-y-5 px-5 py-4 sm:grid-cols-2 lg:grid-cols-3">
+          {serviceGroups.map((g) => (
+            <section key={g.label}>
+              <h3 className="mb-1.5 text-xs font-semibold text-muted">{g.label}</h3>
+              <ul className="space-y-1">
+                {g.services.map((sv) => (
+                  <li key={sv.id}>
+                    <Link to={sv.to} className="-mx-2 flex items-center gap-3 rounded px-2 py-1.5 hover:bg-surface-2">
+                      <ServiceIcon id={sv.id} size={32} />
+                      <span className="min-w-0">
+                        <span className="block font-semibold text-accent">{sv.label}</span>
+                        <span className="block truncate text-[13px] text-muted">{sv.description}</span>
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ))}
+        </div>
+      </Panel>
 
       <div className="grid gap-4 lg:grid-cols-3">
         <Panel title="環境" className="lg:col-span-1">

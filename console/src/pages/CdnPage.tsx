@@ -74,15 +74,15 @@ export function CdnPage() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full min-w-[640px] text-left">
-                <thead className="border-b border-line text-xs text-muted">
+                <thead className="border-b border-line bg-surface-2 text-[13px] text-ink-2">
                   <tr>
-                    <th className="px-4 py-2 font-medium">名前</th>
-                    <th className="px-4 py-2 font-medium">URL</th>
-                    <th className="px-4 py-2 font-medium">元</th>
-                    <th className="px-4 py-2 font-medium">キャッシュ</th>
+                    <th className="px-4 py-2 font-semibold">名前</th>
+                    <th className="px-4 py-2 font-semibold">URL</th>
+                    <th className="px-4 py-2 font-semibold">元</th>
+                    <th className="px-4 py-2 font-semibold">キャッシュ</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-line">
+                <tbody className="divide-y divide-line [&>tr:hover]:bg-surface-2">
                   {dists.data.distributions.map((d) => (
                     <tr key={d.spec?.name}>
                       <td className="px-4 py-2.5">

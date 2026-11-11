@@ -104,16 +104,16 @@ function BucketTable({ buckets, onOpen }: { buckets: Bucket[]; onOpen: (name: st
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[560px] text-left">
-        <thead className="border-b border-line text-xs text-muted">
+        <thead className="border-b border-line bg-surface-2 text-[13px] text-ink-2">
           <tr>
-            <th className="px-4 py-2 font-medium">名前</th>
-            <th className="px-4 py-2 font-medium">状態</th>
-            <th className="px-4 py-2 text-right font-medium">オブジェクト</th>
-            <th className="px-4 py-2 text-right font-medium">サイズ</th>
-            <th className="px-4 py-2 font-medium">CDN</th>
+            <th className="px-4 py-2 font-semibold">名前</th>
+            <th className="px-4 py-2 font-semibold">状態</th>
+            <th className="px-4 py-2 text-right font-semibold">オブジェクト</th>
+            <th className="px-4 py-2 text-right font-semibold">サイズ</th>
+            <th className="px-4 py-2 font-semibold">CDN</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-line">
+        <tbody className="divide-y divide-line [&>tr:hover]:bg-surface-2">
           {buckets.map((b) => (
             <tr key={b.name}>
               <td className="px-4 py-2.5">
@@ -222,15 +222,15 @@ function Objects({ bucket, storageEnabled, onClose }: { bucket: Bucket; storageE
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[560px] text-left">
-              <thead className="border-b border-line text-xs text-muted">
+              <thead className="border-b border-line bg-surface-2 text-[13px] text-ink-2">
                 <tr>
-                  <th className="px-4 py-2 font-medium">名前</th>
-                  <th className="px-4 py-2 text-right font-medium">サイズ</th>
-                  <th className="px-4 py-2 font-medium">更新</th>
+                  <th className="px-4 py-2 font-semibold">名前</th>
+                  <th className="px-4 py-2 text-right font-semibold">サイズ</th>
+                  <th className="px-4 py-2 font-semibold">更新</th>
                   <th className="px-4 py-2" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-line">
+              <tbody className="divide-y divide-line [&>tr:hover]:bg-surface-2">
                 {entries.map((e) => (
                   <tr key={e.key}>
                     <td className="px-4 py-2 font-mono text-[13px]">

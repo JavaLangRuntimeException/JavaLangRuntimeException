@@ -8,6 +8,8 @@ React 19 + Vite + TypeScript + React Router v8 + Tailwind CSS v4 + TanStack Quer
 - API は同じオリジンの Connect（`taramanji.cloud.v1.ConsoleService`、proto は `../backend/proto/taramanji/cloud/v1/console.proto`）
 - `src/api/gen` は `npm run gen`（buf + protoc-gen-es）が作るファイル。手で直さない。proto を変えたら作り直してコミットする（Docker のビルドは proto を見られないため）
 - 外部の CDN・フォント・スクリプトは使わない（nginx の CSP が `'self'` だけ）。グラフはライブラリを使わず SVG で描く（`src/components/LineChart.tsx`）
+- 見た目は AWS のコンソールにならう: 暗い色の上の帯（ロゴ・「サービス」メニュー・環境・アカウント）、左にサービスの一覧（分類ごと）、右にパンくず → 見出し → 面（`Panel`）。主ボタン（作る・保存する）は橙、リンクと選択中は青
+- サービスの一覧は `src/lib/nav.ts`（メニュー・左のナビ・ホーム・パンくずが見る）。アイコンは `src/components/ServiceIcon.tsx`: 分類ごとの色の四角に、同じ太さの白い線画を 1 つ。グラデーション・飾りは使わず、外部のアイコン集も使わない
 - 色は `src/app/styles.css` の変数だけで決める。ライト / ダークは OS の設定に従う。グラフの系列色（`--s1`〜`--s8`）は検証済みの並びなので順番を変えない
 - 本番以外（stg / dev）はヘッダーの色付きバッジと上端の帯で示す。取り違え防止のため消さない
 
