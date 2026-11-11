@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ConsoleService } from "./gen/taramanji/cloud/v1/console_pb";
 import { client } from "./transport";
 
@@ -36,4 +36,40 @@ export function useCapacity() {
     staleTime: 15_000,
     refetchInterval: 30_000,
   });
+}
+
+/** ホスティングで選べるもの（インスタンスタイプ・用意した監視・通知先）。ほぼ変わらないので長く持つ */
+export function useHostingOptions() {
+  return useQuery({
+    queryKey: ["console", "hosting", "options"],
+    queryFn: ({ signal }) => consoleApi.getHostingOptions({}, { signal }),
+    staleTime: 5 * 60_000,
+  });
+}
+
+const appsKey = ["console", "hosting", "apps"] as const;
+
+/** アプリの一覧（リポジトリの YAML + クラスターでの状態）。反映待ちが稼働中に変わるのを見るので短めに読み直す */
+export function useApps(enabled: boolean) {
+  return useQuery({
+    queryKey: appsKey,
+    queryFn: ({ signal }) => consoleApi.listApps({}, { signal }),
+    enabled,
+    staleTime: 10_000,
+    refetchInterval: 20_000,
+  });
+}
+
+/** 保存・削除・監視の同期。終わったら一覧と容量を読み直す */
+export function useHostingMutations() {
+  const qc = useQueryClient();
+  const refresh = () => {
+    void qc.invalidateQueries({ queryKey: appsKey });
+    void qc.invalidateQueries({ queryKey: ["console", "capacity"] });
+  };
+  return {
+    apply: useMutation({ mutationFn: (req: Parameters<typeof consoleApi.applyApp>[0]) => consoleApi.applyApp(req), onSuccess: refresh }),
+    remove: useMutation({ mutationFn: (req: Parameters<typeof consoleApi.deleteApp>[0]) => consoleApi.deleteApp(req), onSuccess: refresh }),
+    syncAlerts: useMutation({ mutationFn: () => consoleApi.syncAlerts({}) }),
+  };
 }

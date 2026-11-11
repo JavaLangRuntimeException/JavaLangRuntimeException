@@ -58,11 +58,6 @@ export function limitedByLabel(code: string): string {
   return limitedByLabels[code] ?? (code || "—");
 }
 
-/** s / m / l / xl を画面では大文字にする */
-export function sizeLabel(name: string): string {
-  return name.toUpperCase();
-}
-
 export type MachineMemory = {
   total: number;
   used: number;
@@ -90,7 +85,7 @@ export function machineMemory(m: { memoryTotal: bigint | number; memoryUsed: big
   return { total, used, reserved, free, over: shortage > 0, shortage, segments: { used: u, reserved: r, free: Math.max(0, 1 - u - r) } };
 }
 
-/** 概要のカードで出す大きさ。ふだん基準にする M を探し、なければ最初のもの */
-export function pickFit<T extends { name: string }>(fits: readonly T[], preferred = "m"): T | undefined {
+/** 概要のカードで出すインスタンスタイプ。ふだん基準にする t1.medium を探し、なければ最初のもの */
+export function pickFit<T extends { name: string }>(fits: readonly T[], preferred = "t1.medium"): T | undefined {
   return fits.find((f) => f.name.toLowerCase() === preferred) ?? fits[0];
 }

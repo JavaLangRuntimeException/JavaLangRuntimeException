@@ -2,18 +2,11 @@ import { NavLink, useParams } from "react-router";
 import { useOverview } from "@/api/console";
 import { Mono, PageHeader, Panel } from "@/components/Page";
 import { Planned } from "@/components/Planned";
+import { ContainersPanel } from "@/pages/ContainersPanel";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { hostingKinds, type HostingKind } from "@/lib/nav";
 
-const plans: Record<HostingKind, { lead: string; items: { title: string; body: string }[] }> = {
-  containers: {
-    lead: "コンテナの一覧と操作はまだありません。次の機能を追加する予定です。",
-    items: [
-      { title: "コンテナの作成", body: "イメージとポート・環境変数を指定して、常に動かしておく。" },
-      { title: "GitHub 連携のデプロイ", body: "リポジトリとブランチを選ぶと、push のたびにビルドして入れ替える。" },
-      { title: "ログと状態", body: "動いている数・再起動の回数・直近のログを見る。" },
-    ],
-  },
+const plans: Record<Exclude<HostingKind, "containers">, { lead: string; items: { title: string; body: string }[] }> = {
   functions: {
     lead: "関数の一覧と操作はまだありません。次の機能を追加する予定です。",
     items: [
@@ -37,7 +30,6 @@ export function HostingPage() {
   const suffix = useOverview().data?.hostingHostSuffix;
   const current = hostingKinds.find((k) => k.kind === kind);
   if (!current) return <NotFoundPage />;
-  const plan = plans[current.kind];
 
   return (
     <>
@@ -67,9 +59,13 @@ export function HostingPage() {
           </NavLink>
         ))}
       </nav>
-      <Panel title={current.label} aside="近日追加">
-        <Planned lead={plan.lead} items={plan.items} />
-      </Panel>
+      {current.kind === "containers" ? (
+        <ContainersPanel />
+      ) : (
+        <Panel title={current.label} aside="近日追加">
+          <Planned lead={plans[current.kind].lead} items={plans[current.kind].items} />
+        </Panel>
+      )}
     </>
   );
 }

@@ -8,20 +8,6 @@ import (
 
 const mib = int64(1) << 20
 
-// Size はアプリ 1 つの大きさ（コンソールで「あと何個」を数える単位。④ でアプリを作るときの選択肢と同じ）
-type Size struct {
-	Name        string
-	MemoryBytes int64
-	CPUMillis   int64
-}
-
-var Sizes = []Size{
-	{Name: "s", MemoryBytes: 128 * mib, CPUMillis: 100},
-	{Name: "m", MemoryBytes: 256 * mib, CPUMillis: 250},
-	{Name: "l", MemoryBytes: 512 * mib, CPUMillis: 500},
-	{Name: "xl", MemoryBytes: 1024 * mib, CPUMillis: 1000},
-}
-
 // 何で数が止まるか
 const (
 	LimitedByQuotaMemory   = "quota_memory"
@@ -64,18 +50,18 @@ func MachineFree(m Machine, reserve int64, q gateway.QuotaStatus, pods []gateway
 	return max(m.MemoryTotal-m.MemoryUsed-reserve-committed, 0)
 }
 
-// Fit はある大きさのアプリをあと何個置けるか
+// Fit はある型（InstanceType）のアプリをあと何個置けるか
 type Fit struct {
-	Size      Size
+	Type      InstanceType
 	Count     int64
 	LimitedBy string
 }
 
-// Fits は大きさごとに、この環境の枠（ResourceQuota）と Mac mini の空きの、先に尽きる方で数える
+// Fits は型ごとに、この環境の枠（ResourceQuota）と Mac mini の空きの、先に尽きる方で数える
 func Fits(q gateway.QuotaStatus, machineFree int64) []Fit {
-	out := make([]Fit, 0, len(Sizes))
-	for _, s := range Sizes {
-		f := Fit{Size: s, Count: math.MaxInt64}
+	out := make([]Fit, 0, len(InstanceTypes))
+	for _, s := range InstanceTypes {
+		f := Fit{Type: s, Count: math.MaxInt64}
 		take := func(n int64, by string) {
 			if n < f.Count {
 				f.Count, f.LimitedBy = n, by

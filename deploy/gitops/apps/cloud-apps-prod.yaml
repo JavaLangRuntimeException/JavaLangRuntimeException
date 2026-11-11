@@ -1,0 +1,18 @@
+# taramanji cloud の prod に置くアプリ。アプリ専用のリポジトリの prod/ にある YAML を、そのまま cloud-apps に入れる。
+# コンソールで作る・変える・消すと prod/<名前>.yaml がコミットされ、ここが同期する（手で push しても同じ）
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cloud-apps-prod
+  namespace: argocd
+spec:
+  project: cloud-apps
+  source:
+    repoURL: git@github.com:JavaLangRuntimeException/taramanji-cloud-apps.git
+    targetRevision: main
+    path: prod
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cloud-apps
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }

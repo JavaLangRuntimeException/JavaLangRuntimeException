@@ -3,6 +3,7 @@ package gateway
 
 import (
 	"context"
+	"errors"
 	"time"
 )
 
@@ -69,5 +70,52 @@ type Capacity interface {
 	AppsNamespace() string
 	AppQuota(ctx context.Context) (QuotaStatus, error)
 	AppPods(ctx context.Context) ([]PodUsage, error)
+	// AppWorkloads はアプリ用 namespace の Deployment（アプリが実際に動いているか）
+	AppWorkloads(ctx context.Context) ([]Workload, error)
 	Nodes(ctx context.Context) ([]NodeStatus, error)
+}
+
+// AppFile はアプリ用のリポジトリにある、アプリ 1 つの YAML
+type AppFile struct {
+	Name string
+	YAML string
+	// Revision はファイルの版（git の blob の SHA）。更新・削除のとき、読んだあとに誰かが変えていないかを確かめる
+	Revision string
+}
+
+var (
+	// ErrAppNotFound は YAML がない
+	ErrAppNotFound = errors.New("app not found")
+	// ErrAppConflict は読んだあとに誰か（別の画面・git push）が変えた
+	ErrAppConflict = errors.New("app was changed by someone else")
+)
+
+// AppStore はアプリの YAML の置き場（アプリ専用の git リポジトリ。Argo CD がそこからクラスターに入れる）。
+// コンソールはクラスターに直接は書かない
+type AppStore interface {
+	List(ctx context.Context) ([]AppFile, error)
+	Get(ctx context.Context, name string) (AppFile, error)
+	// Put は revision が空なら新しく作り、あればその版からの更新。新しい版を返す
+	Put(ctx context.Context, name, yaml, revision, message string) (string, error)
+	Delete(ctx context.Context, name, revision, message string) error
+	// URL は YAML を人が見るページ（GitHub）
+	URL(name string) string
+}
+
+// Monitor は Datadog のモニター 1 つ（ID は Datadog が振る。作るときは 0）
+type Monitor struct {
+	ID      int64
+	Name    string
+	Query   string
+	Message string
+	Tags    []string
+}
+
+// Monitors は Datadog のモニターの読み書き（本番だけ。アプリケーションキーに monitors_read・monitors_write が要る）
+type Monitors interface {
+	// List は tags を全部持つモニター
+	List(ctx context.Context, tags []string) ([]Monitor, error)
+	Create(ctx context.Context, m Monitor) error
+	Update(ctx context.Context, m Monitor) error
+	Delete(ctx context.Context, id int64) error
 }

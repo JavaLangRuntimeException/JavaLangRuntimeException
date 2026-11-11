@@ -87,6 +87,100 @@ func (h *ConsoleHandler) GetCapacity(ctx context.Context, req *connect.Request[c
 	}(out.Pods)}), nil
 }
 
+func (h *ConsoleHandler) GetHostingOptions(ctx context.Context, req *connect.Request[cloudv1.GetHostingOptionsRequest]) (*connect.Response[cloudv1.GetHostingOptionsResponse], error) {
+	out, err := h.usecase.GetHostingOptions(ctx, usecase.GetHostingOptionsInput{})
+	if err != nil {
+		return nil, errs.ToConnect(ctx, err)
+	}
+	return connect.NewResponse(&cloudv1.GetHostingOptionsResponse{InstanceTypes: func(l []*usecase.InstanceType) []*cloudv1.InstanceType {
+		if l == nil {
+			return nil
+		}
+		out := make([]*cloudv1.InstanceType, 0, len(l))
+		for _, v := range l {
+			out = append(out, consoleInstanceTypeToPb(v))
+		}
+		return out
+	}(out.InstanceTypes), AlertPresets: func(l []*usecase.AlertPreset) []*cloudv1.AlertPreset {
+		if l == nil {
+			return nil
+		}
+		out := make([]*cloudv1.AlertPreset, 0, len(l))
+		for _, v := range l {
+			out = append(out, consoleAlertPresetToPb(v))
+		}
+		return out
+	}(out.AlertPresets), NotifyChannels: out.NotifyChannels, MinCpuMillis: out.MinCpuMillis, MaxCpuMillis: out.MaxCpuMillis, MinMemory: out.MinMemory, MaxMemory: out.MaxMemory, MaxReplicas: out.MaxReplicas, StoreEnabled: out.StoreEnabled, AlertsEnabled: out.AlertsEnabled, Repository: out.Repository, Directory: out.Directory}), nil
+}
+
+func (h *ConsoleHandler) ListApps(ctx context.Context, req *connect.Request[cloudv1.ListAppsRequest]) (*connect.Response[cloudv1.ListAppsResponse], error) {
+	out, err := h.usecase.ListApps(ctx, usecase.ListAppsInput{})
+	if err != nil {
+		return nil, errs.ToConnect(ctx, err)
+	}
+	return connect.NewResponse(&cloudv1.ListAppsResponse{Apps: func(l []*usecase.App) []*cloudv1.App {
+		if l == nil {
+			return nil
+		}
+		out := make([]*cloudv1.App, 0, len(l))
+		for _, v := range l {
+			out = append(out, consoleAppToPb(v))
+		}
+		return out
+	}(out.Apps)}), nil
+}
+
+func (h *ConsoleHandler) GetApp(ctx context.Context, req *connect.Request[cloudv1.GetAppRequest]) (*connect.Response[cloudv1.GetAppResponse], error) {
+	out, err := h.usecase.GetApp(ctx, usecase.GetAppInput{
+		Name: req.Msg.GetName(),
+	})
+	if err != nil {
+		return nil, errs.ToConnect(ctx, err)
+	}
+	return connect.NewResponse(&cloudv1.GetAppResponse{App: consoleAppToPb(out.App)}), nil
+}
+
+func (h *ConsoleHandler) PreviewApp(ctx context.Context, req *connect.Request[cloudv1.PreviewAppRequest]) (*connect.Response[cloudv1.PreviewAppResponse], error) {
+	out, err := h.usecase.PreviewApp(ctx, usecase.PreviewAppInput{
+		Spec: consolePbToAppSpec(req.Msg.GetSpec()),
+	})
+	if err != nil {
+		return nil, errs.ToConnect(ctx, err)
+	}
+	return connect.NewResponse(&cloudv1.PreviewAppResponse{Yaml: out.Yaml}), nil
+}
+
+func (h *ConsoleHandler) ApplyApp(ctx context.Context, req *connect.Request[cloudv1.ApplyAppRequest]) (*connect.Response[cloudv1.ApplyAppResponse], error) {
+	out, err := h.usecase.ApplyApp(ctx, usecase.ApplyAppInput{
+		Spec:     consolePbToAppSpec(req.Msg.GetSpec()),
+		Yaml:     req.Msg.GetYaml(),
+		Revision: req.Msg.GetRevision(),
+	})
+	if err != nil {
+		return nil, errs.ToConnect(ctx, err)
+	}
+	return connect.NewResponse(&cloudv1.ApplyAppResponse{App: consoleAppToPb(out.App), AlertsProblem: out.AlertsProblem}), nil
+}
+
+func (h *ConsoleHandler) DeleteApp(ctx context.Context, req *connect.Request[cloudv1.DeleteAppRequest]) (*connect.Response[cloudv1.DeleteAppResponse], error) {
+	out, err := h.usecase.DeleteApp(ctx, usecase.DeleteAppInput{
+		Name:     req.Msg.GetName(),
+		Revision: req.Msg.GetRevision(),
+	})
+	if err != nil {
+		return nil, errs.ToConnect(ctx, err)
+	}
+	return connect.NewResponse(&cloudv1.DeleteAppResponse{AlertsProblem: out.AlertsProblem}), nil
+}
+
+func (h *ConsoleHandler) SyncAlerts(ctx context.Context, req *connect.Request[cloudv1.SyncAlertsRequest]) (*connect.Response[cloudv1.SyncAlertsResponse], error) {
+	out, err := h.usecase.SyncAlerts(ctx, usecase.SyncAlertsInput{})
+	if err != nil {
+		return nil, errs.ToConnect(ctx, err)
+	}
+	return connect.NewResponse(&cloudv1.SyncAlertsResponse{Created: out.Created, Updated: out.Updated, Deleted: out.Deleted}), nil
+}
+
 func consolePbToComponent(p *cloudv1.Component) *usecase.Component {
 	if p == nil {
 		return nil
@@ -256,5 +350,163 @@ func consolePodUsageToPb(u *usecase.PodUsage) *cloudv1.PodUsage {
 		MemoryUsed:    u.MemoryUsed,
 		MemoryLimit:   u.MemoryLimit,
 		CpuUsedMillis: u.CpuUsedMillis,
+	}
+}
+
+func consolePbToInstanceType(p *cloudv1.InstanceType) *usecase.InstanceType {
+	if p == nil {
+		return nil
+	}
+	return &usecase.InstanceType{
+		Name:      p.GetName(),
+		Family:    p.GetFamily(),
+		Memory:    p.GetMemory(),
+		CpuMillis: p.GetCpuMillis(),
+	}
+}
+
+func consoleInstanceTypeToPb(u *usecase.InstanceType) *cloudv1.InstanceType {
+	if u == nil {
+		return nil
+	}
+	return &cloudv1.InstanceType{
+		Name:      u.Name,
+		Family:    u.Family,
+		Memory:    u.Memory,
+		CpuMillis: u.CpuMillis,
+	}
+}
+
+func consolePbToAlertPreset(p *cloudv1.AlertPreset) *usecase.AlertPreset {
+	if p == nil {
+		return nil
+	}
+	return &usecase.AlertPreset{
+		ID:          p.GetId(),
+		Label:       p.GetLabel(),
+		Description: p.GetDescription(),
+	}
+}
+
+func consoleAlertPresetToPb(u *usecase.AlertPreset) *cloudv1.AlertPreset {
+	if u == nil {
+		return nil
+	}
+	return &cloudv1.AlertPreset{
+		Id:          u.ID,
+		Label:       u.Label,
+		Description: u.Description,
+	}
+}
+
+func consolePbToEnvVar(p *cloudv1.EnvVar) *usecase.EnvVar {
+	if p == nil {
+		return nil
+	}
+	return &usecase.EnvVar{
+		Name:  p.GetName(),
+		Value: p.GetValue(),
+	}
+}
+
+func consoleEnvVarToPb(u *usecase.EnvVar) *cloudv1.EnvVar {
+	if u == nil {
+		return nil
+	}
+	return &cloudv1.EnvVar{
+		Name:  u.Name,
+		Value: u.Value,
+	}
+}
+
+func consolePbToAppSpec(p *cloudv1.AppSpec) *usecase.AppSpec {
+	if p == nil {
+		return nil
+	}
+	return &usecase.AppSpec{
+		Name:         p.GetName(),
+		Image:        p.GetImage(),
+		Port:         p.GetPort(),
+		Replicas:     p.GetReplicas(),
+		InstanceType: p.GetInstanceType(),
+		CpuMillis:    p.GetCpuMillis(),
+		Memory:       p.GetMemory(),
+		Env: func(l []*cloudv1.EnvVar) []*usecase.EnvVar {
+			if l == nil {
+				return nil
+			}
+			out := make([]*usecase.EnvVar, 0, len(l))
+			for _, v := range l {
+				out = append(out, consolePbToEnvVar(v))
+			}
+			return out
+		}(p.GetEnv()),
+		Alerts: p.GetAlerts(),
+		Notify: p.GetNotify(),
+	}
+}
+
+func consoleAppSpecToPb(u *usecase.AppSpec) *cloudv1.AppSpec {
+	if u == nil {
+		return nil
+	}
+	return &cloudv1.AppSpec{
+		Name:         u.Name,
+		Image:        u.Image,
+		Port:         u.Port,
+		Replicas:     u.Replicas,
+		InstanceType: u.InstanceType,
+		CpuMillis:    u.CpuMillis,
+		Memory:       u.Memory,
+		Env: func(l []*usecase.EnvVar) []*cloudv1.EnvVar {
+			if l == nil {
+				return nil
+			}
+			out := make([]*cloudv1.EnvVar, 0, len(l))
+			for _, v := range l {
+				out = append(out, consoleEnvVarToPb(v))
+			}
+			return out
+		}(u.Env),
+		Alerts: u.Alerts,
+		Notify: u.Notify,
+	}
+}
+
+func consolePbToApp(p *cloudv1.App) *usecase.App {
+	if p == nil {
+		return nil
+	}
+	return &usecase.App{
+		Spec:            consolePbToAppSpec(p.GetSpec()),
+		Yaml:            p.GetYaml(),
+		Revision:        p.GetRevision(),
+		FormEditable:    p.GetFormEditable(),
+		CustomResources: p.GetCustomResources(),
+		Host:            p.GetHost(),
+		SourceURL:       p.GetSourceUrl(),
+		Deployed:        p.GetDeployed(),
+		Ready:           p.GetReady(),
+		Desired:         p.GetDesired(),
+		Problem:         p.GetProblem(),
+	}
+}
+
+func consoleAppToPb(u *usecase.App) *cloudv1.App {
+	if u == nil {
+		return nil
+	}
+	return &cloudv1.App{
+		Spec:            consoleAppSpecToPb(u.Spec),
+		Yaml:            u.Yaml,
+		Revision:        u.Revision,
+		FormEditable:    u.FormEditable,
+		CustomResources: u.CustomResources,
+		Host:            u.Host,
+		SourceUrl:       u.SourceURL,
+		Deployed:        u.Deployed,
+		Ready:           u.Ready,
+		Desired:         u.Desired,
+		Problem:         u.Problem,
 	}
 }

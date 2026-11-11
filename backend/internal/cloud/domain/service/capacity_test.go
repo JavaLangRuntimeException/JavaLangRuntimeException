@@ -41,14 +41,14 @@ func TestFits(t *testing.T) {
 		n  int64
 		by string
 	}{
-		"s":  {16, LimitedByQuotaMemory}, // 2048MiB / 128
-		"m":  {8, LimitedByQuotaMemory},
-		"l":  {4, LimitedByQuotaMemory},
-		"xl": {2, LimitedByQuotaMemory},
+		"t1.small":  {16, LimitedByQuotaMemory}, // 2048MiB / 128
+		"t1.medium": {8, LimitedByQuotaMemory},
+		"t1.large":  {4, LimitedByQuotaMemory},
+		"t1.xlarge": {2, LimitedByQuotaMemory},
 	}
 	for _, f := range fits {
-		if w := want[f.Size.Name]; f.Count != w.n || f.LimitedBy != w.by {
-			t.Errorf("%s: got %d %s want %d %s", f.Size.Name, f.Count, f.LimitedBy, w.n, w.by)
+		if w := want[f.Type.Name]; f.Count != w.n || f.LimitedBy != w.by {
+			t.Errorf("%s: got %d %s want %d %s", f.Type.Name, f.Count, f.LimitedBy, w.n, w.by)
 		}
 	}
 

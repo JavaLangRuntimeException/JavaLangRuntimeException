@@ -90,6 +90,9 @@ spec:
             - { name: CONSOLE_ORIGIN, value: "https://cloud.taramanji.com" }
             - { name: STORAGE_HOST_SUFFIX, value: "-storage.taramanji.com" }
             - { name: HOSTING_HOST_SUFFIX, value: "-hosting.taramanji.com" }
+            # アプリの YAML を置く専用リポジトリ（<環境>/<名前>.yaml）。書き込むトークン（APPS_REPO_TOKEN）は cloud-api-env に入れる。
+            # トークンがなければホスティングは使えないだけで、ほかは動く
+            - { name: APPS_REPO, value: "JavaLangRuntimeException/taramanji-cloud-apps" }
             - { name: CF_ACCESS_TEAM_DOMAIN, value: "https://solitary-sun-32e2.cloudflareaccess.com" }
           envFrom:
             # CF_ACCESS_AUD・ADMIN_EMAIL（本番は DD_METRICS_API_KEY・DD_METRICS_APP_KEY も）

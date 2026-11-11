@@ -35,6 +35,10 @@ args=(--from-literal=CF_ACCESS_AUD="$AUD" --from-literal=ADMIN_EMAIL="$EMAIL")
 if [ "$ENV" = prod ] && [ -f "$SRC/datadog-api-key" ]; then
   args+=(--from-file=DD_METRICS_API_KEY="$SRC/datadog-api-key" --from-file=DD_METRICS_APP_KEY="$SRC/datadog-app-key")
 fi
+# アプリ用のリポジトリに書くトークン（そのリポジトリの Contents の読み書きだけを許した fine-grained PAT）。なければホスティングは使えない
+if [ -f "$SRC/apps-repo-token" ]; then
+  args+=(--from-file=APPS_REPO_TOKEN="$SRC/apps-repo-token")
+fi
 seal cloud-api-env "$NS" "${args[@]}"
 
 if [ "$ENV" = prod ]; then

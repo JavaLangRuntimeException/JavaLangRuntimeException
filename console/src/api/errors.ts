@@ -21,3 +21,17 @@ export function describeError(err: unknown): string {
       return `API がエラーを返しました（${Code[e.code]}）。`;
   }
 }
+
+/** API が付けたエラーの種類（x-error-code。例: app_conflict / invalid_app） */
+export function errorCode(err: unknown): string {
+  if (err == null) return "";
+  return ConnectError.from(err).metadata.get("x-error-code") ?? "";
+}
+
+/** 保存・削除の失敗を一文にする。API が日本語の理由を返すもの（入力の間違い・競合など）はそれを出す */
+export function describeMutationError(err: unknown): string {
+  if (isAuthError(err)) return "ログインの有効期限が切れています。ページを読み直してください。";
+  const e = ConnectError.from(err);
+  if (errorCode(err) !== "" && e.code !== Code.Internal && e.rawMessage) return e.rawMessage;
+  return describeError(err);
+}

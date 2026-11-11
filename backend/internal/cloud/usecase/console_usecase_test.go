@@ -107,10 +107,11 @@ func TestGetMetricsUpstreamError(t *testing.T) {
 }
 
 type fakeCapacity struct {
-	quota gateway.QuotaStatus
-	pods  []gateway.PodUsage
-	nodes []gateway.NodeStatus
-	err   error
+	quota     gateway.QuotaStatus
+	pods      []gateway.PodUsage
+	nodes     []gateway.NodeStatus
+	err       error
+	workloads []gateway.Workload
 }
 
 func (f *fakeCapacity) AppsNamespace() string { return "cloud-apps" }
@@ -119,6 +120,9 @@ func (f *fakeCapacity) AppQuota(context.Context) (gateway.QuotaStatus, error) {
 }
 func (f *fakeCapacity) AppPods(context.Context) ([]gateway.PodUsage, error) { return f.pods, nil }
 func (f *fakeCapacity) Nodes(context.Context) ([]gateway.NodeStatus, error) { return f.nodes, nil }
+func (f *fakeCapacity) AppWorkloads(context.Context) ([]gateway.Workload, error) {
+	return f.workloads, f.err
+}
 
 func TestGetCapacity(t *testing.T) {
 	const mib = int64(1) << 20
@@ -144,7 +148,7 @@ func TestGetCapacity(t *testing.T) {
 		t.Fatalf("machine %+v", m)
 	}
 	// 空き = 12 - 7 - 2 - (512MiB 予約 - 256MiB 使用中) = 2816MiB。枠の残り（2048MiB）の方が先に尽きる
-	if f := out.Fits[1]; f.Name != "m" || f.Count != 8 || f.LimitedBy != service.LimitedByQuotaMemory {
+	if f := out.Fits[1]; f.Name != "t1.medium" || f.Count != 8 || f.LimitedBy != service.LimitedByQuotaMemory {
 		t.Fatalf("fit m %+v", f)
 	}
 	if out.Pods[0].Name != "web-a" || len(out.Pods) != 2 {

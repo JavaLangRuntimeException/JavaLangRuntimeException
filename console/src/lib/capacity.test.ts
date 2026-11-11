@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatCpu, formatPercent, levelOf, limitedByLabel, machineMemory, pickFit, sizeLabel, usage } from "./capacity";
+import { formatCpu, formatPercent, levelOf, limitedByLabel, machineMemory, pickFit, usage } from "./capacity";
 
 const GIB = 1024 ** 3;
 
@@ -40,16 +40,12 @@ describe("formatPercent / levelOf", () => {
   });
 });
 
-describe("formatCpu / sizeLabel / limitedByLabel", () => {
+describe("formatCpu / limitedByLabel", () => {
   it("ミリコアを CPU の数にする", () => {
     expect(formatCpu(250)).toBe("0.25 CPU");
     expect(formatCpu(1000)).toBe("1 CPU");
     expect(formatCpu(12)).toBe("0.012 CPU");
     expect(formatCpu(10000)).toBe("10 CPU");
-  });
-
-  it("大きさの名前は大文字", () => {
-    expect(sizeLabel("xl")).toBe("XL");
   });
 
   it("何で止まるかを日本語にする。知らない値はそのまま", () => {
@@ -94,9 +90,9 @@ describe("machineMemory", () => {
 });
 
 describe("pickFit", () => {
-  it("M を優先し、なければ最初", () => {
-    expect(pickFit([{ name: "s" }, { name: "m" }])?.name).toBe("m");
-    expect(pickFit([{ name: "s" }, { name: "l" }])?.name).toBe("s");
+  it("t1.medium を優先し、なければ最初", () => {
+    expect(pickFit([{ name: "t1.small" }, { name: "t1.medium" }])?.name).toBe("t1.medium");
+    expect(pickFit([{ name: "t1.small" }, { name: "t1.large" }])?.name).toBe("t1.small");
     expect(pickFit([])).toBeUndefined();
   });
 });
