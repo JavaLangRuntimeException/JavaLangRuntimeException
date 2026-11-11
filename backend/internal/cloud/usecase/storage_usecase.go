@@ -137,6 +137,13 @@ func (u *ConsoleUsecaseImpl) DeleteBucket(ctx context.Context, in DeleteBucketIn
 	if used := originsOf(dists, service.OriginBucket)[in.Name]; len(used) > 0 {
 		return errs.New(errs.ErrorTypeBadRequest, fmt.Sprintf("CDN %v がこのバケットを元にしています。先に CDN を消してください", used)).WithCode("bucket_in_use")
 	}
+	fns, err := u.functionSpecs(ctx)
+	if err != nil {
+		return storeErr(err)
+	}
+	if used := connectedBy(fns, bucketsOf)[in.Name]; len(used) > 0 {
+		return errs.New(errs.ErrorTypeBadRequest, fmt.Sprintf("関数 %v がこのバケットをつないでいます。先に関数から外してください", used)).WithCode("bucket_in_use")
+	}
 	// 中身があるバケットは消させない（YAML を消しても、ストレージは中身のあるバケットを残す）。
 	// ストレージが動いていない・読めないときは、空かどうかわからないので消さない
 	if u.d.Objects != nil {

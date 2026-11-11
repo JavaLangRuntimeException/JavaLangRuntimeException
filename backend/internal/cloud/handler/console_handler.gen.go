@@ -110,7 +110,7 @@ func (h *ConsoleHandler) GetHostingOptions(ctx context.Context, req *connect.Req
 			out = append(out, consoleAlertPresetToPb(v))
 		}
 		return out
-	}(out.AlertPresets), NotifyChannels: out.NotifyChannels, MinCpuMillis: out.MinCpuMillis, MaxCpuMillis: out.MaxCpuMillis, MinMemory: out.MinMemory, MaxMemory: out.MaxMemory, StoreEnabled: out.StoreEnabled, AlertsEnabled: out.AlertsEnabled, Repository: out.Repository, Directory: out.Directory, IdleTimeoutSeconds: out.IdleTimeoutSeconds, HostSuffix: out.HostSuffix, StorageEnabled: out.StorageEnabled, DnsEnabled: out.DnsEnabled}), nil
+	}(out.AlertPresets), NotifyChannels: out.NotifyChannels, MinCpuMillis: out.MinCpuMillis, MaxCpuMillis: out.MaxCpuMillis, MinMemory: out.MinMemory, MaxMemory: out.MaxMemory, StoreEnabled: out.StoreEnabled, AlertsEnabled: out.AlertsEnabled, Repository: out.Repository, Directory: out.Directory, IdleTimeoutSeconds: out.IdleTimeoutSeconds, HostSuffix: out.HostSuffix, StorageEnabled: out.StorageEnabled, DnsEnabled: out.DnsEnabled, DatabasesEnabled: out.DatabasesEnabled}), nil
 }
 
 func (h *ConsoleHandler) ListFunctions(ctx context.Context, req *connect.Request[cloudv1.ListFunctionsRequest]) (*connect.Response[cloudv1.ListFunctionsResponse], error) {
@@ -328,6 +328,44 @@ func (h *ConsoleHandler) DeleteDistribution(ctx context.Context, req *connect.Re
 		return nil, errs.ToConnect(ctx, err)
 	}
 	return connect.NewResponse(&cloudv1.DeleteDistributionResponse{DnsProblem: out.DnsProblem}), nil
+}
+
+func (h *ConsoleHandler) ListDatabases(ctx context.Context, req *connect.Request[cloudv1.ListDatabasesRequest]) (*connect.Response[cloudv1.ListDatabasesResponse], error) {
+	out, err := h.usecase.ListDatabases(ctx, usecase.ListDatabasesInput{})
+	if err != nil {
+		return nil, errs.ToConnect(ctx, err)
+	}
+	return connect.NewResponse(&cloudv1.ListDatabasesResponse{Databases: func(l []*usecase.Database) []*cloudv1.Database {
+		if l == nil {
+			return nil
+		}
+		out := make([]*cloudv1.Database, 0, len(l))
+		for _, v := range l {
+			out = append(out, consoleDatabaseToPb(v))
+		}
+		return out
+	}(out.Databases)}), nil
+}
+
+func (h *ConsoleHandler) CreateDatabase(ctx context.Context, req *connect.Request[cloudv1.CreateDatabaseRequest]) (*connect.Response[cloudv1.CreateDatabaseResponse], error) {
+	out, err := h.usecase.CreateDatabase(ctx, usecase.CreateDatabaseInput{
+		Name:   req.Msg.GetName(),
+		Engine: req.Msg.GetEngine(),
+	})
+	if err != nil {
+		return nil, errs.ToConnect(ctx, err)
+	}
+	return connect.NewResponse(&cloudv1.CreateDatabaseResponse{Database: consoleDatabaseToPb(out.Database)}), nil
+}
+
+func (h *ConsoleHandler) DeleteDatabase(ctx context.Context, req *connect.Request[cloudv1.DeleteDatabaseRequest]) (*connect.Response[cloudv1.DeleteDatabaseResponse], error) {
+	if err := h.usecase.DeleteDatabase(ctx, usecase.DeleteDatabaseInput{
+		Name:     req.Msg.GetName(),
+		Revision: req.Msg.GetRevision(),
+	}); err != nil {
+		return nil, errs.ToConnect(ctx, err)
+	}
+	return connect.NewResponse(&cloudv1.DeleteDatabaseResponse{}), nil
 }
 
 func (h *ConsoleHandler) SyncAlerts(ctx context.Context, req *connect.Request[cloudv1.SyncAlertsRequest]) (*connect.Response[cloudv1.SyncAlertsResponse], error) {
@@ -597,8 +635,10 @@ func consolePbToFunctionSpec(p *cloudv1.FunctionSpec) *usecase.FunctionSpec {
 			}
 			return out
 		}(p.GetEnv()),
-		Alerts: p.GetAlerts(),
-		Notify: p.GetNotify(),
+		Alerts:    p.GetAlerts(),
+		Notify:    p.GetNotify(),
+		Databases: p.GetDatabases(),
+		Buckets:   p.GetBuckets(),
 	}
 }
 
@@ -623,8 +663,10 @@ func consoleFunctionSpecToPb(u *usecase.FunctionSpec) *cloudv1.FunctionSpec {
 			}
 			return out
 		}(u.Env),
-		Alerts: u.Alerts,
-		Notify: u.Notify,
+		Alerts:    u.Alerts,
+		Notify:    u.Notify,
+		Databases: u.Databases,
+		Buckets:   u.Buckets,
 	}
 }
 
@@ -859,5 +901,35 @@ func consoleDistributionToPb(u *usecase.Distribution) *cloudv1.Distribution {
 		Spec:   consoleDistributionSpecToPb(u.Spec),
 		Source: consoleSourceToPb(u.Source),
 		Host:   u.Host,
+	}
+}
+
+func consolePbToDatabase(p *cloudv1.Database) *usecase.Database {
+	if p == nil {
+		return nil
+	}
+	return &usecase.Database{
+		Name:      p.GetName(),
+		Engine:    p.GetEngine(),
+		Source:    consolePbToSource(p.GetSource()),
+		Status:    p.GetStatus(),
+		Ready:     p.GetReady(),
+		EnvNames:  p.GetEnvNames(),
+		Functions: p.GetFunctions(),
+	}
+}
+
+func consoleDatabaseToPb(u *usecase.Database) *cloudv1.Database {
+	if u == nil {
+		return nil
+	}
+	return &cloudv1.Database{
+		Name:      u.Name,
+		Engine:    u.Engine,
+		Source:    consoleSourceToPb(u.Source),
+		Status:    u.Status,
+		Ready:     u.Ready,
+		EnvNames:  u.EnvNames,
+		Functions: u.Functions,
 	}
 }

@@ -21,7 +21,7 @@ func (u *ConsoleUsecaseImpl) GetHostingOptions(_ context.Context, _ GetHostingOp
 		StoreEnabled: u.d.Apps != nil, AlertsEnabled: u.d.Monitors != nil,
 		Repository: u.d.AppsRepository, Directory: u.d.Environment,
 		IdleTimeoutSeconds: int32(u.d.IdleTimeout.Seconds()), HostSuffix: u.d.APITarget.HostSuffix,
-		StorageEnabled: u.d.Objects != nil, DnsEnabled: u.d.DNS != nil,
+		StorageEnabled: u.d.Objects != nil, DnsEnabled: u.d.DNS != nil, DatabasesEnabled: u.d.DatabasesEnabled,
 	}
 	for _, t := range service.InstanceTypes {
 		out.InstanceTypes = append(out.InstanceTypes, &InstanceType{Name: t.Name, Family: service.InstanceFamily(t.Name), Memory: t.MemoryBytes, CpuMillis: t.CPUMillis})
@@ -77,7 +77,7 @@ func functionSpecOf(s *FunctionSpec) service.FunctionSpec {
 		return service.FunctionSpec{}
 	}
 	out := service.FunctionSpec{Name: s.Name, Image: s.Image, Port: s.Port, InstanceType: s.InstanceType,
-		CPUMillis: s.CpuMillis, MemoryBytes: s.Memory, Alerts: s.Alerts, Notify: s.Notify}
+		CPUMillis: s.CpuMillis, MemoryBytes: s.Memory, Alerts: s.Alerts, Notify: s.Notify, Databases: s.Databases, Buckets: s.Buckets}
 	for _, e := range s.Env {
 		if e != nil {
 			out.Env = append(out.Env, service.EnvVar{Name: e.Name, Value: e.Value})
@@ -88,7 +88,7 @@ func functionSpecOf(s *FunctionSpec) service.FunctionSpec {
 
 func functionSpecOut(s service.FunctionSpec) *FunctionSpec {
 	out := &FunctionSpec{Name: s.Name, Image: s.Image, Port: s.Port, InstanceType: s.InstanceType,
-		CpuMillis: s.CPUMillis, Memory: s.MemoryBytes, Env: []*EnvVar{}, Alerts: s.Alerts, Notify: s.Notify}
+		CpuMillis: s.CPUMillis, Memory: s.MemoryBytes, Env: []*EnvVar{}, Alerts: s.Alerts, Notify: s.Notify, Databases: s.Databases, Buckets: s.Buckets}
 	for _, e := range s.Env {
 		out.Env = append(out.Env, &EnvVar{Name: e.Name, Value: e.Value})
 	}
@@ -98,7 +98,7 @@ func functionSpecOut(s service.FunctionSpec) *FunctionSpec {
 // functionOf はリポジトリの YAML と、クラスターの状態（なければ nil）から関数を作る。
 // 手で push した YAML が読めないときも一覧から消さず、problem に理由を入れる
 func (u *ConsoleUsecaseImpl) functionOf(f gateway.ResourceFile, w *gateway.Workload, apis []string) *Function {
-	fn := &Function{Spec: &FunctionSpec{Name: f.Name, Env: []*EnvVar{}, Alerts: []string{}, Notify: []string{}}, Apis: apis,
+	fn := &Function{Spec: &FunctionSpec{Name: f.Name, Env: []*EnvVar{}, Alerts: []string{}, Notify: []string{}, Databases: []string{}, Buckets: []string{}}, Apis: apis,
 		Source: &Source{Yaml: f.YAML, Revision: f.Revision, URL: u.d.Apps.URL(gateway.KindFunctions, f.Name)}}
 	if fn.Apis == nil {
 		fn.Apis = []string{}
@@ -202,16 +202,24 @@ func (u *ConsoleUsecaseImpl) ApplyFunction(ctx context.Context, in ApplyFunction
 		return nil, invalid(service.FunctionSpec{}.Validate())
 	}
 	name, y := in.Spec.Name, in.Yaml
+	var spec service.FunctionSpec
 	if y == "" {
-		spec := functionSpecOf(in.Spec)
+		spec = functionSpecOf(in.Spec)
 		if err := spec.Validate(); err != nil {
 			return nil, invalid(err)
 		}
 		if y, err = service.RenderFunctionYAML(spec); err != nil {
 			return nil, errs.NewInternalError(err)
 		}
-	} else if _, err := service.ParseFunctionYAML(name, y); err != nil {
-		return nil, invalid(err)
+	} else {
+		parsed, err := service.ParseFunctionYAML(name, y)
+		if err != nil {
+			return nil, invalid(err)
+		}
+		spec = parsed.Spec
+	}
+	if err := u.checkConnections(ctx, spec); err != nil {
+		return nil, err
 	}
 	rev, err := store.Put(ctx, gateway.KindFunctions, name, y, in.Revision, u.commitMessage(ctx, verbOf(in.Revision), "function", name))
 	if err != nil {

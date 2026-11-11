@@ -88,6 +88,18 @@ type DeleteDistributionInput struct {
 	Revision string
 }
 
+type ListDatabasesInput struct{}
+
+type CreateDatabaseInput struct {
+	Name   string
+	Engine string
+}
+
+type DeleteDatabaseInput struct {
+	Name     string
+	Revision string
+}
+
 type SyncAlertsInput struct{}
 
 type GetOverviewOutput struct {
@@ -126,6 +138,7 @@ type GetHostingOptionsOutput struct {
 	HostSuffix         string          `json:"host_suffix"`
 	StorageEnabled     bool            `json:"storage_enabled"`
 	DnsEnabled         bool            `json:"dns_enabled"`
+	DatabasesEnabled   bool            `json:"databases_enabled"`
 }
 
 type ListFunctionsOutput struct {
@@ -192,6 +205,14 @@ type DeleteDistributionOutput struct {
 	DnsProblem string `json:"dns_problem"`
 }
 
+type ListDatabasesOutput struct {
+	Databases []*Database `json:"databases"`
+}
+
+type CreateDatabaseOutput struct {
+	Database *Database `json:"database"`
+}
+
 type SyncAlertsOutput struct {
 	Created int32 `json:"created"`
 	Updated int32 `json:"updated"`
@@ -241,6 +262,16 @@ type Component struct {
 	Version string `json:"version"`
 }
 
+type Database struct {
+	Name      string   `json:"name"`
+	Engine    string   `json:"engine"`
+	Source    *Source  `json:"source"`
+	Status    string   `json:"status"`
+	Ready     bool     `json:"ready"`
+	EnvNames  []string `json:"env_names"`
+	Functions []string `json:"functions"`
+}
+
 type Distribution struct {
 	Spec   *DistributionSpec `json:"spec"`
 	Source *Source           `json:"source"`
@@ -280,6 +311,8 @@ type FunctionSpec struct {
 	Env          []*EnvVar `json:"env"`
 	Alerts       []string  `json:"alerts"`
 	Notify       []string  `json:"notify"`
+	Databases    []string  `json:"databases"`
+	Buckets      []string  `json:"buckets"`
 }
 
 type InstanceType struct {
@@ -367,5 +400,8 @@ type ConsoleUsecase interface {
 	PreviewDistribution(ctx context.Context, input PreviewDistributionInput) (*PreviewDistributionOutput, error)
 	ApplyDistribution(ctx context.Context, input ApplyDistributionInput) (*ApplyDistributionOutput, error)
 	DeleteDistribution(ctx context.Context, input DeleteDistributionInput) (*DeleteDistributionOutput, error)
+	ListDatabases(ctx context.Context, input ListDatabasesInput) (*ListDatabasesOutput, error)
+	CreateDatabase(ctx context.Context, input CreateDatabaseInput) (*CreateDatabaseOutput, error)
+	DeleteDatabase(ctx context.Context, input DeleteDatabaseInput) error
 	SyncAlerts(ctx context.Context, input SyncAlertsInput) (*SyncAlertsOutput, error)
 }

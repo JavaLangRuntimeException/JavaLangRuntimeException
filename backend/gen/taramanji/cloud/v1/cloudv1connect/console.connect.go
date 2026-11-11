@@ -94,6 +94,15 @@ const (
 	// ConsoleServiceDeleteDistributionProcedure is the fully-qualified name of the ConsoleService's
 	// DeleteDistribution RPC.
 	ConsoleServiceDeleteDistributionProcedure = "/taramanji.cloud.v1.ConsoleService/DeleteDistribution"
+	// ConsoleServiceListDatabasesProcedure is the fully-qualified name of the ConsoleService's
+	// ListDatabases RPC.
+	ConsoleServiceListDatabasesProcedure = "/taramanji.cloud.v1.ConsoleService/ListDatabases"
+	// ConsoleServiceCreateDatabaseProcedure is the fully-qualified name of the ConsoleService's
+	// CreateDatabase RPC.
+	ConsoleServiceCreateDatabaseProcedure = "/taramanji.cloud.v1.ConsoleService/CreateDatabase"
+	// ConsoleServiceDeleteDatabaseProcedure is the fully-qualified name of the ConsoleService's
+	// DeleteDatabase RPC.
+	ConsoleServiceDeleteDatabaseProcedure = "/taramanji.cloud.v1.ConsoleService/DeleteDatabase"
 	// ConsoleServiceSyncAlertsProcedure is the fully-qualified name of the ConsoleService's SyncAlerts
 	// RPC.
 	ConsoleServiceSyncAlertsProcedure = "/taramanji.cloud.v1.ConsoleService/SyncAlerts"
@@ -132,6 +141,13 @@ type ConsoleServiceClient interface {
 	PreviewDistribution(context.Context, *connect.Request[v1.PreviewDistributionRequest]) (*connect.Response[v1.PreviewDistributionResponse], error)
 	ApplyDistribution(context.Context, *connect.Request[v1.ApplyDistributionRequest]) (*connect.Response[v1.ApplyDistributionResponse], error)
 	DeleteDistribution(context.Context, *connect.Request[v1.DeleteDistributionRequest]) (*connect.Response[v1.DeleteDistributionResponse], error)
+	// ---- データベース ----
+	// 共有の PostgreSQL / Redis から、データベース（とユーザー）を切り出す（<環境>/databases/<名前>.yaml の ConfigMap）。
+	// つなぎ方は、関数の「つなぐデータベース」に足す（接続先が環境変数に入る）。パスワードは画面にも git にも出ない
+	ListDatabases(context.Context, *connect.Request[v1.ListDatabasesRequest]) (*connect.Response[v1.ListDatabasesResponse], error)
+	CreateDatabase(context.Context, *connect.Request[v1.CreateDatabaseRequest]) (*connect.Response[v1.CreateDatabaseResponse], error)
+	// どの関数にもつながれていないデータベースだけ消せる。中身は残る（ログインだけ止める）
+	DeleteDatabase(context.Context, *connect.Request[v1.DeleteDatabaseRequest]) (*connect.Response[v1.DeleteDatabaseResponse], error)
 	// リポジトリの YAML に合わせて、Datadog のモニターを作り直す（git に直接 push したあとに呼ぶ）
 	SyncAlerts(context.Context, *connect.Request[v1.SyncAlertsRequest]) (*connect.Response[v1.SyncAlertsResponse], error)
 }
@@ -273,6 +289,24 @@ func NewConsoleServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 			connect.WithSchema(consoleServiceMethods.ByName("DeleteDistribution")),
 			connect.WithClientOptions(opts...),
 		),
+		listDatabases: connect.NewClient[v1.ListDatabasesRequest, v1.ListDatabasesResponse](
+			httpClient,
+			baseURL+ConsoleServiceListDatabasesProcedure,
+			connect.WithSchema(consoleServiceMethods.ByName("ListDatabases")),
+			connect.WithClientOptions(opts...),
+		),
+		createDatabase: connect.NewClient[v1.CreateDatabaseRequest, v1.CreateDatabaseResponse](
+			httpClient,
+			baseURL+ConsoleServiceCreateDatabaseProcedure,
+			connect.WithSchema(consoleServiceMethods.ByName("CreateDatabase")),
+			connect.WithClientOptions(opts...),
+		),
+		deleteDatabase: connect.NewClient[v1.DeleteDatabaseRequest, v1.DeleteDatabaseResponse](
+			httpClient,
+			baseURL+ConsoleServiceDeleteDatabaseProcedure,
+			connect.WithSchema(consoleServiceMethods.ByName("DeleteDatabase")),
+			connect.WithClientOptions(opts...),
+		),
 		syncAlerts: connect.NewClient[v1.SyncAlertsRequest, v1.SyncAlertsResponse](
 			httpClient,
 			baseURL+ConsoleServiceSyncAlertsProcedure,
@@ -305,6 +339,9 @@ type consoleServiceClient struct {
 	previewDistribution *connect.Client[v1.PreviewDistributionRequest, v1.PreviewDistributionResponse]
 	applyDistribution   *connect.Client[v1.ApplyDistributionRequest, v1.ApplyDistributionResponse]
 	deleteDistribution  *connect.Client[v1.DeleteDistributionRequest, v1.DeleteDistributionResponse]
+	listDatabases       *connect.Client[v1.ListDatabasesRequest, v1.ListDatabasesResponse]
+	createDatabase      *connect.Client[v1.CreateDatabaseRequest, v1.CreateDatabaseResponse]
+	deleteDatabase      *connect.Client[v1.DeleteDatabaseRequest, v1.DeleteDatabaseResponse]
 	syncAlerts          *connect.Client[v1.SyncAlertsRequest, v1.SyncAlertsResponse]
 }
 
@@ -413,6 +450,21 @@ func (c *consoleServiceClient) DeleteDistribution(ctx context.Context, req *conn
 	return c.deleteDistribution.CallUnary(ctx, req)
 }
 
+// ListDatabases calls taramanji.cloud.v1.ConsoleService.ListDatabases.
+func (c *consoleServiceClient) ListDatabases(ctx context.Context, req *connect.Request[v1.ListDatabasesRequest]) (*connect.Response[v1.ListDatabasesResponse], error) {
+	return c.listDatabases.CallUnary(ctx, req)
+}
+
+// CreateDatabase calls taramanji.cloud.v1.ConsoleService.CreateDatabase.
+func (c *consoleServiceClient) CreateDatabase(ctx context.Context, req *connect.Request[v1.CreateDatabaseRequest]) (*connect.Response[v1.CreateDatabaseResponse], error) {
+	return c.createDatabase.CallUnary(ctx, req)
+}
+
+// DeleteDatabase calls taramanji.cloud.v1.ConsoleService.DeleteDatabase.
+func (c *consoleServiceClient) DeleteDatabase(ctx context.Context, req *connect.Request[v1.DeleteDatabaseRequest]) (*connect.Response[v1.DeleteDatabaseResponse], error) {
+	return c.deleteDatabase.CallUnary(ctx, req)
+}
+
 // SyncAlerts calls taramanji.cloud.v1.ConsoleService.SyncAlerts.
 func (c *consoleServiceClient) SyncAlerts(ctx context.Context, req *connect.Request[v1.SyncAlertsRequest]) (*connect.Response[v1.SyncAlertsResponse], error) {
 	return c.syncAlerts.CallUnary(ctx, req)
@@ -451,6 +503,13 @@ type ConsoleServiceHandler interface {
 	PreviewDistribution(context.Context, *connect.Request[v1.PreviewDistributionRequest]) (*connect.Response[v1.PreviewDistributionResponse], error)
 	ApplyDistribution(context.Context, *connect.Request[v1.ApplyDistributionRequest]) (*connect.Response[v1.ApplyDistributionResponse], error)
 	DeleteDistribution(context.Context, *connect.Request[v1.DeleteDistributionRequest]) (*connect.Response[v1.DeleteDistributionResponse], error)
+	// ---- データベース ----
+	// 共有の PostgreSQL / Redis から、データベース（とユーザー）を切り出す（<環境>/databases/<名前>.yaml の ConfigMap）。
+	// つなぎ方は、関数の「つなぐデータベース」に足す（接続先が環境変数に入る）。パスワードは画面にも git にも出ない
+	ListDatabases(context.Context, *connect.Request[v1.ListDatabasesRequest]) (*connect.Response[v1.ListDatabasesResponse], error)
+	CreateDatabase(context.Context, *connect.Request[v1.CreateDatabaseRequest]) (*connect.Response[v1.CreateDatabaseResponse], error)
+	// どの関数にもつながれていないデータベースだけ消せる。中身は残る（ログインだけ止める）
+	DeleteDatabase(context.Context, *connect.Request[v1.DeleteDatabaseRequest]) (*connect.Response[v1.DeleteDatabaseResponse], error)
 	// リポジトリの YAML に合わせて、Datadog のモニターを作り直す（git に直接 push したあとに呼ぶ）
 	SyncAlerts(context.Context, *connect.Request[v1.SyncAlertsRequest]) (*connect.Response[v1.SyncAlertsResponse], error)
 }
@@ -588,6 +647,24 @@ func NewConsoleServiceHandler(svc ConsoleServiceHandler, opts ...connect.Handler
 		connect.WithSchema(consoleServiceMethods.ByName("DeleteDistribution")),
 		connect.WithHandlerOptions(opts...),
 	)
+	consoleServiceListDatabasesHandler := connect.NewUnaryHandler(
+		ConsoleServiceListDatabasesProcedure,
+		svc.ListDatabases,
+		connect.WithSchema(consoleServiceMethods.ByName("ListDatabases")),
+		connect.WithHandlerOptions(opts...),
+	)
+	consoleServiceCreateDatabaseHandler := connect.NewUnaryHandler(
+		ConsoleServiceCreateDatabaseProcedure,
+		svc.CreateDatabase,
+		connect.WithSchema(consoleServiceMethods.ByName("CreateDatabase")),
+		connect.WithHandlerOptions(opts...),
+	)
+	consoleServiceDeleteDatabaseHandler := connect.NewUnaryHandler(
+		ConsoleServiceDeleteDatabaseProcedure,
+		svc.DeleteDatabase,
+		connect.WithSchema(consoleServiceMethods.ByName("DeleteDatabase")),
+		connect.WithHandlerOptions(opts...),
+	)
 	consoleServiceSyncAlertsHandler := connect.NewUnaryHandler(
 		ConsoleServiceSyncAlertsProcedure,
 		svc.SyncAlerts,
@@ -638,6 +715,12 @@ func NewConsoleServiceHandler(svc ConsoleServiceHandler, opts ...connect.Handler
 			consoleServiceApplyDistributionHandler.ServeHTTP(w, r)
 		case ConsoleServiceDeleteDistributionProcedure:
 			consoleServiceDeleteDistributionHandler.ServeHTTP(w, r)
+		case ConsoleServiceListDatabasesProcedure:
+			consoleServiceListDatabasesHandler.ServeHTTP(w, r)
+		case ConsoleServiceCreateDatabaseProcedure:
+			consoleServiceCreateDatabaseHandler.ServeHTTP(w, r)
+		case ConsoleServiceDeleteDatabaseProcedure:
+			consoleServiceDeleteDatabaseHandler.ServeHTTP(w, r)
 		case ConsoleServiceSyncAlertsProcedure:
 			consoleServiceSyncAlertsHandler.ServeHTTP(w, r)
 		default:
@@ -731,6 +814,18 @@ func (UnimplementedConsoleServiceHandler) ApplyDistribution(context.Context, *co
 
 func (UnimplementedConsoleServiceHandler) DeleteDistribution(context.Context, *connect.Request[v1.DeleteDistributionRequest]) (*connect.Response[v1.DeleteDistributionResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.cloud.v1.ConsoleService.DeleteDistribution is not implemented"))
+}
+
+func (UnimplementedConsoleServiceHandler) ListDatabases(context.Context, *connect.Request[v1.ListDatabasesRequest]) (*connect.Response[v1.ListDatabasesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.cloud.v1.ConsoleService.ListDatabases is not implemented"))
+}
+
+func (UnimplementedConsoleServiceHandler) CreateDatabase(context.Context, *connect.Request[v1.CreateDatabaseRequest]) (*connect.Response[v1.CreateDatabaseResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.cloud.v1.ConsoleService.CreateDatabase is not implemented"))
+}
+
+func (UnimplementedConsoleServiceHandler) DeleteDatabase(context.Context, *connect.Request[v1.DeleteDatabaseRequest]) (*connect.Response[v1.DeleteDatabaseResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.cloud.v1.ConsoleService.DeleteDatabase is not implemented"))
 }
 
 func (UnimplementedConsoleServiceHandler) SyncAlerts(context.Context, *connect.Request[v1.SyncAlertsRequest]) (*connect.Response[v1.SyncAlertsResponse], error) {
