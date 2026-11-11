@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { databaseStatus, engineLabel, envPrefix, familyOf, groupByFamily } from "./hosting";
-import { cachePresets, crumbsOf, distributionFormErrors, distributionFormOf, distributionSpecOf, emptyDistributionForm, entriesOf, formatCache } from "./hosting";
+import { cachePresets, crumbsOf, distributionFormErrors, distributionFormOf, distributionSpecOf, emptyBehavior, emptyDistributionForm, entriesOf, formatCache, MAX_BEHAVIORS } from "./hosting";
 import { apiFormErrors, apiFormOf, apiSpecOf, emptyApiForm, emptyForm, formatIdle, formErrors, formOf, isCustom, specOf, statusOf, toggle, typeOptions, withInstanceType } from "./hosting";
 
 const MIB = 1024 ** 2;
@@ -88,15 +88,37 @@ describe("CDN のフォーム", () => {
     expect(emptyDistributionForm(["site"])).toMatchObject({ originType: "bucket", origin: "site", cacheSeconds: "300", spa: false });
   });
   it("API の形にして、読み戻せる。関数が元なら SPA は付けない", () => {
-    const form = { name: " www ", originType: "function" as const, origin: "blog", cacheSeconds: "60", spa: true };
+    const form = { name: " www ", originType: "function" as const, origin: "blog", cacheSeconds: "60", spa: true, behaviors: [] };
     const spec = distributionSpecOf(form);
-    expect(spec).toEqual({ name: "www", originType: "function", origin: "blog", cacheSeconds: 60, spa: false });
-    expect(distributionFormOf(spec)).toEqual({ name: "www", originType: "function", origin: "blog", cacheSeconds: "60", spa: false });
+    expect(spec).toEqual({ name: "www", originType: "function", origin: "blog", cacheSeconds: 60, spa: false, behaviors: [] });
+    expect(distributionFormOf(spec)).toEqual({ name: "www", originType: "function", origin: "blog", cacheSeconds: "60", spa: false, behaviors: [] });
   });
   it("間違いを返す", () => {
     const ok = { ...emptyDistributionForm(["site"]), name: "www" };
     expect(distributionFormErrors(ok)).toEqual({});
     expect(Object.keys(distributionFormErrors({ ...ok, name: "WWW", origin: "", cacheSeconds: "x" })).sort()).toEqual(["cacheSeconds", "name", "origin"]);
+  });
+  it("パスごとの元: 末尾の / を落として送り、関数には SPA を付けない", () => {
+    const form = { ...emptyDistributionForm(["front"]), name: "vrst", behaviors: [{ path: " /api/ ", originType: "function" as const, origin: "backend", cacheSeconds: "0", spa: true }] };
+    const spec = distributionSpecOf(form);
+    expect(spec.behaviors).toEqual([{ path: "/api", originType: "function", origin: "backend", cacheSeconds: 0, spa: false }]);
+    expect(distributionFormOf(spec).behaviors).toEqual([{ path: "/api", originType: "function", origin: "backend", cacheSeconds: "0", spa: false }]);
+    expect(distributionFormErrors(form)).toEqual({});
+  });
+  it("足すパスの最初の値は、関数があれば /api → 関数", () => {
+    expect(emptyBehavior(["front"], ["backend"])).toMatchObject({ path: "/api", originType: "function", origin: "backend", cacheSeconds: "0" });
+    expect(emptyBehavior(["front"], [])).toMatchObject({ originType: "bucket", origin: "front" });
+  });
+  it("パスごとの元の間違いを、行ごとに返す", () => {
+    const row = { path: "/api", originType: "function" as const, origin: "backend", cacheSeconds: "0", spa: false };
+    const form = {
+      ...emptyDistributionForm(["front"]),
+      name: "vrst",
+      behaviors: [row, { ...row, path: "/api/" }, { ...row, path: "/" }, { ...row, path: "/a b" }, { ...row, path: "/x", origin: "" }, { ...row, path: "/y", cacheSeconds: "99999999" }],
+    };
+    expect(Object.keys(distributionFormErrors(form).behaviors ?? {})).toEqual(["1", "2", "3", "4", "5"]);
+    const many = { ...form, behaviors: Array.from({ length: MAX_BEHAVIORS + 1 }, (_, i) => ({ ...row, path: `/p${i}` })) };
+    expect(distributionFormErrors(many).behaviors?.[MAX_BEHAVIORS]).toContain("15 個まで");
   });
   it("キャッシュの長さを読みやすくする", () => {
     expect(cachePresets.map((p) => formatCache(p.seconds))).toEqual(["キャッシュしない", "5 分", "1 時間", "1 日", "365 日"]);

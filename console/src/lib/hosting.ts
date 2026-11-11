@@ -187,7 +187,17 @@ export function formatIdle(seconds: number): string {
 
 // ---- CDN ----
 
-export type DistributionForm = { name: string; originType: "bucket" | "function"; origin: string; cacheSeconds: string; spa: boolean };
+/** パスごとの元（CloudFront の behavior）。パスはそのまま元に渡る */
+export type BehaviorForm = { path: string; originType: "bucket" | "function"; origin: string; cacheSeconds: string; spa: boolean };
+
+export type DistributionForm = {
+  name: string;
+  originType: "bucket" | "function";
+  origin: string;
+  cacheSeconds: string;
+  spa: boolean;
+  behaviors: BehaviorForm[];
+};
 
 /** キャッシュの長さの選択肢（秒）。自由に入れることもできる */
 export const cachePresets = [
@@ -198,24 +208,81 @@ export const cachePresets = [
   { seconds: 31536000, label: "1 年" },
 ] as const;
 
+/** 既定（/）のほかに足せるパスの数（HTTPRoute の rules は 16 まで） */
+export const MAX_BEHAVIORS = 15;
+
 export function emptyDistributionForm(buckets: readonly string[]): DistributionForm {
-  return { name: "", originType: "bucket", origin: buckets[0] ?? "", cacheSeconds: "300", spa: false };
+  return { name: "", originType: "bucket", origin: buckets[0] ?? "", cacheSeconds: "300", spa: false, behaviors: [] };
 }
 
-export function distributionFormOf(spec: { name: string; originType: string; origin: string; cacheSeconds: number; spa: boolean }): DistributionForm {
-  return { name: spec.name, originType: spec.originType === "function" ? "function" : "bucket", origin: spec.origin, cacheSeconds: String(spec.cacheSeconds), spa: spec.spa };
+/** 足すパスの最初の値: 関数があれば /api → 関数（キャッシュしない）。なければバケット */
+export function emptyBehavior(buckets: readonly string[], functions: readonly string[]): BehaviorForm {
+  return functions.length > 0
+    ? { path: "/api", originType: "function", origin: functions[0], cacheSeconds: "0", spa: false }
+    : { path: "/", originType: "bucket", origin: buckets[0] ?? "", cacheSeconds: "300", spa: false };
+}
+
+type OriginSpec = { originType: string; origin: string; cacheSeconds: number; spa: boolean };
+
+export function distributionFormOf(spec: OriginSpec & { name: string; behaviors?: (OriginSpec & { path: string })[] }): DistributionForm {
+  const type = (t: string) => (t === "function" ? "function" : "bucket");
+  return {
+    name: spec.name,
+    originType: type(spec.originType),
+    origin: spec.origin,
+    cacheSeconds: String(spec.cacheSeconds),
+    spa: spec.spa,
+    behaviors: (spec.behaviors ?? []).map((b) => ({ path: b.path, originType: type(b.originType), origin: b.origin, cacheSeconds: String(b.cacheSeconds), spa: b.spa })),
+  };
 }
 
 export function distributionSpecOf(form: DistributionForm) {
-  return { name: form.name.trim(), originType: form.originType, origin: form.origin, cacheSeconds: Number(form.cacheSeconds) || 0, spa: form.originType === "bucket" && form.spa };
+  return {
+    name: form.name.trim(),
+    originType: form.originType,
+    origin: form.origin,
+    cacheSeconds: Number(form.cacheSeconds) || 0,
+    spa: form.originType === "bucket" && form.spa,
+    behaviors: form.behaviors.map((b) => ({
+      path: normalizePath(b.path),
+      originType: b.originType,
+      origin: b.origin,
+      cacheSeconds: Number(b.cacheSeconds) || 0,
+      spa: b.originType === "bucket" && b.spa,
+    })),
+  };
 }
 
-export function distributionFormErrors(form: DistributionForm): Partial<Record<keyof DistributionForm, string>> {
-  const e: Partial<Record<keyof DistributionForm, string>> = {};
+function normalizePath(p: string): string {
+  const t = p.trim();
+  return t.length > 1 ? t.replace(/\/+$/, "") : t;
+}
+
+export type DistributionFormErrors = Partial<Record<Exclude<keyof DistributionForm, "behaviors">, string>> & { behaviors?: Record<number, string> };
+
+export function distributionFormErrors(form: DistributionForm): DistributionFormErrors {
+  const e: DistributionFormErrors = {};
   if (!NAME_RE.test(form.name.trim())) e.name = "英小文字で始め、英小文字・数字・ハイフンで 40 文字まで";
   if (form.origin === "") e.origin = form.originType === "bucket" ? "元のバケットを選んでください" : "元の関数を選んでください";
-  if (!isInt(form.cacheSeconds) || Number(form.cacheSeconds) > 31536000) e.cacheSeconds = "0〜31536000 秒（1 年）";
+  if (!isCache(form.cacheSeconds)) e.cacheSeconds = "0〜31536000 秒（1 年）";
+  const rows: Record<number, string> = {};
+  const seen = new Set<string>();
+  form.behaviors.forEach((b, i) => {
+    const p = normalizePath(b.path);
+    if (p === "/") rows[i] = "/ は既定の元です。ほかのパスにしてください";
+    else if (!PATH_RE.test(p) || p.includes("//") || p.includes("..")) rows[i] = "パスは / で始め、英数字と . _ ~ - / にしてください";
+    else if (seen.has(p)) rows[i] = "パスが重複しています";
+    else if (b.origin === "") rows[i] = b.originType === "bucket" ? "元のバケットを選んでください" : "元の関数を選んでください";
+    else if (!isCache(b.cacheSeconds)) rows[i] = "キャッシュは 0〜31536000 秒（1 年）";
+    seen.add(p);
+  });
+  if (form.behaviors.length > MAX_BEHAVIORS) rows[MAX_BEHAVIORS] = `パスごとの元は ${MAX_BEHAVIORS} 個までです`;
+  if (Object.keys(rows).length > 0) e.behaviors = rows;
   return e;
+}
+
+function isCache(v: string): boolean {
+  return isInt(v) && Number(v) <= 31536000;
 }
 
 /** 「5 分」「1 時間」「90 秒」「キャッシュしない」 */

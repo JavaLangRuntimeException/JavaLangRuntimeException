@@ -45,8 +45,9 @@ func (u *ConsoleUsecaseImpl) distributionSpecs(ctx context.Context) ([]service.D
 func originsOf(dists []service.DistributionSpec, originType string) map[string][]string {
 	out := map[string][]string{}
 	for _, d := range dists {
-		if d.OriginType == originType {
-			out[d.Origin] = append(out[d.Origin], d.Name)
+		// パスごとの元も数える（1 つの CDN が同じ元を何度使っても 1 回）
+		for _, o := range d.Uses(originType) {
+			out[o] = append(out[o], d.Name)
 		}
 	}
 	for _, names := range out {
@@ -200,7 +201,13 @@ func distributionSpecOf(s *DistributionSpec) service.DistributionSpec {
 	if s == nil {
 		return service.DistributionSpec{}
 	}
-	return service.DistributionSpec{Name: s.Name, OriginType: s.OriginType, Origin: s.Origin, CacheSeconds: s.CacheSeconds, SPA: s.Spa}
+	spec := service.DistributionSpec{Name: s.Name, OriginType: s.OriginType, Origin: s.Origin, CacheSeconds: s.CacheSeconds, SPA: s.Spa}
+	for _, b := range s.Behaviors {
+		if b != nil {
+			spec.Behaviors = append(spec.Behaviors, service.DistributionOrigin{Path: b.Path, OriginType: b.OriginType, Origin: b.Origin, CacheSeconds: b.CacheSeconds, SPA: b.Spa})
+		}
+	}
+	return spec.Normalize()
 }
 
 func (u *ConsoleUsecaseImpl) distributionOf(f gateway.ResourceFile) *Distribution {
@@ -213,6 +220,9 @@ func (u *ConsoleUsecaseImpl) distributionOf(f gateway.ResourceFile) *Distributio
 	}
 	sp := parsed.Spec
 	d.Spec = &DistributionSpec{Name: sp.Name, OriginType: sp.OriginType, Origin: sp.Origin, CacheSeconds: sp.CacheSeconds, Spa: sp.SPA}
+	for _, b := range sp.Behaviors {
+		d.Spec.Behaviors = append(d.Spec.Behaviors, &DistributionBehavior{Path: b.Path, OriginType: b.OriginType, Origin: b.Origin, CacheSeconds: b.CacheSeconds, Spa: b.SPA})
+	}
 	d.Source.FormEditable = parsed.FormEditable
 	return d
 }
@@ -271,17 +281,27 @@ func (u *ConsoleUsecaseImpl) ApplyDistribution(ctx context.Context, in ApplyDist
 		}
 		spec = parsed.Spec
 	}
-	// ない元には向けられない
-	kind, label := gateway.KindBuckets, "バケット"
-	if spec.OriginType == service.OriginFunction {
-		kind, label = gateway.KindFunctions, "関数"
-	}
-	origins, err := store.List(ctx, kind)
-	if err != nil {
-		return nil, storeErr(err)
-	}
-	if !slices.ContainsFunc(origins, func(f gateway.ResourceFile) bool { return f.Name == spec.Origin }) {
-		return nil, errs.NewValidationError("origin", fmt.Sprintf("%s %q がありません", label, spec.Origin)).WithCode("invalid")
+	// ない元には向けられない（既定の元も、パスごとの元も）
+	for _, t := range []struct{ originType, kind, label string }{
+		{service.OriginBucket, gateway.KindBuckets, "バケット"}, {service.OriginFunction, gateway.KindFunctions, "関数"},
+	} {
+		used := spec.Uses(t.originType)
+		if len(used) == 0 {
+			continue
+		}
+		origins, err := store.List(ctx, t.kind)
+		if err != nil {
+			return nil, storeErr(err)
+		}
+		for _, name := range used {
+			if !slices.ContainsFunc(origins, func(f gateway.ResourceFile) bool { return f.Name == name }) {
+				field := "behaviors"
+				if d := spec.Default(); d.OriginType == t.originType && d.Origin == name {
+					field = "origin"
+				}
+				return nil, errs.NewValidationError(field, fmt.Sprintf("%s %q がありません", t.label, name)).WithCode("invalid")
+			}
+		}
 	}
 	if err := u.hostFree(ctx, gateway.KindAPIs, name, in.Revision); err != nil {
 		return nil, err

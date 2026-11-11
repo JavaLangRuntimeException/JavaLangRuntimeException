@@ -217,6 +217,7 @@ CMD ["node", "server.js"]
       { id: "bucket", label: "1. バケットを作る" },
       { id: "upload", label: "2. ファイルを置く" },
       { id: "cdn", label: "3. CDN を作る" },
+      { id: "paths", label: "4. API を同じホスト名にまとめる" },
       { id: "cache", label: "キャッシュのしくみ" },
     ],
     body: () => (
@@ -256,6 +257,26 @@ CMD ["node", "server.js"]
         <P>
           <C>https://www-cloud.taramanji.com</C> でサイトが見られます。<C>/</C> で終わるパスは、その下の <C>index.html</C> を返します。
         </P>
+
+        <H2 id="paths">4. API を同じホスト名にまとめる（パスごとの元）</H2>
+        <P>
+          画面（バケット）と API（関数）を、同じ <C>https://www-cloud.taramanji.com</C> から出せます。CloudFront の behavior と同じ考え方で、パスごとに元を分けます。
+          同じホスト名なので、画面から <C>fetch("/api/...")</C> と呼ぶだけで、Cloudflare Access のログインもそのまま使えます（別のホスト名にすると、ログインの Cookie が届きません）。
+        </P>
+        <Steps>
+          <li>CDN の編集画面の「パスごとの元」で「パスを足す」を押します。</li>
+          <li>
+            パスに <C>/api</C> を入れ、元に「関数」と API の関数を選びます。キャッシュは「キャッシュしない」にします。
+          </li>
+          <li>「保存」を押します。15 秒ほどで、<C>/api</C> で始まるパスだけが関数に届きます。</li>
+        </Steps>
+        <UL>
+          <li>長いパスが先に当たります。どれにも当たらないパスは、既定の元（上の「元」）に行きます。</li>
+          <li>
+            パスはそのまま元に渡ります。<C>/api/users</C> なら、関数にも <C>/api/users</C> が届きます（<C>/api</C> は取り除きません）。
+          </li>
+          <li>既定のほかに 15 個まで足せます。行ごとに、元・キャッシュの長さ・SPA を決められます。</li>
+        </UL>
 
         <H2 id="cache">キャッシュのしくみ</H2>
         <UL>
