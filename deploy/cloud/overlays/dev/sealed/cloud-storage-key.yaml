@@ -1,0 +1,13 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: cloud-storage-key
+  namespace: cloud-dev
+spec:
+  encryptedData:
+    STORAGE_MASTER_KEY: AgA0GVup9cULFegIIvgjyrZaSHMvZkWnWJc+0KNkZ7crFrs1VKlnAB8YolCXIxKSWb1/mlnJ9fl7AQXSWc4QYGgSnvM0H4ciDeM6K9Ag6ur0LxXccer0hZcB5OFukwtdVcPj98iaafHrFwiEERg4llgtwCflPMR5v6C9zLTgfCKJ9D0mGcFg6G2VnUPFcMTNBmmfqIPoEymA5cRUhcXHWWCIJylqEP19IqVpYQi2W0+yIp75WCJjh2w8yBtU3dL5akGrvg2y3mCf6UZsdwdjrGXc4VT/S3LeXWftb4DPda4O7R4KmmUVEItv0hp3b54I8LdU7ORg0mOQICf9/ma8jfth9tFQ/ZvPMwnCWOmUg6CZyI6kNxDRI5Uuie3RKuiW8MERsIhJXW5JEzppMTxgucdbPI1s4M+7FEYHxbfZAMRxGUkAZWX3Sgf9be3400MqkyCYao3vFGAD9NJsRbiy7vLCHWF5JqOSWRgeSyr6GkC2yGhzMclcOvt9eh8xZtc/OPVPXkLU1VeieXu6UI0hyQG5EQ/UJ9F4lE04FTvvIBAolUUe1aEYRy2FgDY9BtnIFN6I8GHjOVrbgfjJjWMsmySNfj9ewlJCliOw5uw5Wp/6+/e/aOIkZ0Ufp8sP/P+FsbOO/wl22FzCToZ4wo+vcxvZl1al7aojhLLXCkQ5iPD9rq96Ck0HwR0bZjjiGY/kJN/DPU0DWqTttEfOxyGro112GDH4Q6Nvz0nq3w3KjPqwJWjzlhPluDEXIrXfW+vUw54nRsfSbOG7zx39kILWE8vmLw==
+  template:
+    metadata:
+      name: cloud-storage-key
+      namespace: cloud-dev
