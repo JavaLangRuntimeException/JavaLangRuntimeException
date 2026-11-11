@@ -33,29 +33,72 @@ type k8sConfigMap struct {
 // BucketObjectName はバケットの ConfigMap の名前（関数の名前とぶつからないように接頭辞を付ける）
 func BucketObjectName(name string) string { return "bucket-" + name }
 
-// RenderBucketYAML はバケットを Kubernetes の YAML（ConfigMap 1 つ）にする。中身はなく、あることがバケットの定義
-func RenderBucketYAML(name string) (string, error) {
+// PublicBucketCacheSeconds は公開バケットの配信に付ける Cache-Control: public, max-age（5 分）。
+// 同じファイルは Cloudflare のエッジが返すので、Mac mini まで来ない
+const PublicBucketCacheSeconds = 300
+
+// BucketRouteName は公開バケットの HTTPRoute の名前。API・CDN の HTTPRoute（名前 = <名前>、. を含められない）とぶつからないよう . で区切る
+func BucketRouteName(name string) string { return "bucket." + name }
+
+// RenderBucketYAML はバケットを Kubernetes の YAML にする。ConfigMap 1 つ（中身はなく、あることがバケットの定義）。
+// 公開するときは、<バケット>-storage-cloud.taramanji.com の全パスをこのバケットに向ける HTTPRoute を足す（読むだけ・ログインなし）
+func RenderBucketYAML(name string, public bool, t APITarget) (string, error) {
 	var c k8sConfigMap
 	c.APIVersion, c.Kind = "v1", "ConfigMap"
 	c.Metadata = objectMeta{Name: BucketObjectName(name), Labels: map[string]string{LabelKind: KindBucket, LabelBucket: name}}
-	return encodeDocs(c)
+	if !public {
+		return encodeDocs(c)
+	}
+	var r k8sHTTPRoute
+	r.APIVersion, r.Kind = "gateway.networking.k8s.io/v1", "HTTPRoute"
+	r.Metadata = objectMeta{Name: BucketRouteName(name), Labels: map[string]string{LabelKind: KindBucket, LabelBucket: name}}
+	r.Spec.ParentRefs = append(r.Spec.ParentRefs, struct {
+		Name        string `yaml:"name"`
+		Namespace   string `yaml:"namespace"`
+		SectionName string `yaml:"sectionName"`
+	}{Name: gatewayName, Namespace: gatewayNamespace, SectionName: gatewayListener})
+	r.Spec.Hostnames = []string{t.Host(HostStorage, name)}
+	var rule routeRule
+	var m routeMatch
+	m.Path.Type, m.Path.Value = "PathPrefix", "/"
+	rule.Matches = []routeMatch{m}
+	f := routeFilter{Type: "RequestHeaderModifier"}
+	f.RequestHeaderModifier.Set = []headerValue{{Name: HeaderBucket, Value: name},
+		{Name: HeaderCacheTTL, Value: strconv.Itoa(PublicBucketCacheSeconds)},
+		{Name: HeaderSPA, Value: "false"}}
+	// 関数を直接呼ばせない
+	f.RequestHeaderModifier.Remove = []string{HeaderFunction}
+	rule.Filters = []routeFilter{f}
+	rule.BackendRefs = []backendRef{{Name: InvokerService, Namespace: t.InvokerNamespace, Port: InvokerPort}}
+	r.Spec.Rules = []routeRule{rule}
+	return encodeDocs(c, r)
 }
 
-// ParseBucketYAML はバケットの YAML が、決まった形の ConfigMap 1 つであることを確かめる
-func ParseBucketYAML(name, src string) error {
+// ParsedBucket は YAML から読み取ったバケット
+type ParsedBucket struct {
+	Public bool
+}
+
+// ParseBucketYAML はバケットの YAML が決まった形（ConfigMap 1 つ、公開なら HTTPRoute も 1 つ）であることを確かめる
+func ParseBucketYAML(name, src string, t APITarget) (*ParsedBucket, error) {
 	if !ValidName(name) {
-		return fieldErr("name", "名前は英小文字で始め、英小文字・数字・ハイフンで 40 文字までにしてください")
+		return nil, fieldErr("name", "名前は英小文字で始め、英小文字・数字・ハイフンで 40 文字までにしてください")
 	}
 	docs, err := parseDocs(src)
 	if err != nil {
-		return err
+		return nil, err
 	}
-	want, _ := RenderBucketYAML(name)
-	wantDocs, _ := splitDocs(want)
-	if !reflect.DeepEqual(docs, wantDocs) {
-		return fieldErr("yaml", "バケットの YAML は、ラベル %s: %s の付いた ConfigMap %s だけにしてください", LabelBucket, name, BucketObjectName(name))
+	for _, public := range []bool{false, true} {
+		want, err := RenderBucketYAML(name, public, t)
+		if err != nil {
+			return nil, err
+		}
+		if wantDocs, _ := splitDocs(want); reflect.DeepEqual(docs, wantDocs) {
+			return &ParsedBucket{Public: public}, nil
+		}
 	}
-	return nil
+	return nil, fieldErr("yaml", "バケットの YAML は、ラベル %s: %s の付いた ConfigMap %s（公開するなら、%s を配る HTTPRoute %s も）だけにしてください",
+		LabelBucket, name, BucketObjectName(name), t.Host(HostStorage, name), BucketRouteName(name))
 }
 
 // DistributionOrigin は、パスの前方一致ごとの元（CloudFront の behavior にあたる）。
@@ -194,7 +237,7 @@ func RenderDistributionYAML(s DistributionSpec, t APITarget) (string, error) {
 		Namespace   string `yaml:"namespace"`
 		SectionName string `yaml:"sectionName"`
 	}{Name: gatewayName, Namespace: gatewayNamespace, SectionName: gatewayListener})
-	r.Spec.Hostnames = []string{HostOf(s.Name, t.HostSuffix)}
+	r.Spec.Hostnames = []string{t.Host(HostCDN, s.Name)}
 	for _, o := range s.Origins() {
 		var rule routeRule
 		var m routeMatch
@@ -281,7 +324,7 @@ func ParseDistributionYAML(name, src string, t APITarget) (*ParsedDistribution, 
 		return nil, err
 	}
 	if want, _ := splitDocs(again); !reflect.DeepEqual(docs, want) {
-		return nil, fieldErr("yaml", "CDN の YAML は、コンソールが作る形（ホスト名 %s・パスごとに cloud-gw へ・ヘッダー 3 つ・長いパスから順で最後が /）から変えられません", HostOf(name, t.HostSuffix))
+		return nil, fieldErr("yaml", "CDN の YAML は、コンソールが作る形（ホスト名 %s・パスごとに cloud-gw へ・ヘッダー 3 つ・長いパスから順で最後が /）から変えられません", t.Host(HostCDN, name))
 	}
 	return &ParsedDistribution{Spec: spec, FormEditable: true}, nil
 }

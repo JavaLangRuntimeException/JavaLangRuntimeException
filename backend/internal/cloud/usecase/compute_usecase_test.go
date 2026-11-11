@@ -127,6 +127,10 @@ func TestHostingOptions(t *testing.T) {
 		out.IdleTimeoutSeconds != 300 || out.HostSuffix != "-cloud.taramanji.com" {
 		t.Fatalf("options: %+v", out)
 	}
+	// ホスト名はサービスごと（CDN はログインあり、API と公開バケットはログインなし）
+	if out.ApiHostSuffix != "-apigw-cloud.taramanji.com" || out.CdnHostSuffix != "-cdn-cloud.taramanji.com" || out.StorageHostSuffix != "-storage-cloud.taramanji.com" {
+		t.Fatalf("suffix: %+v", out)
+	}
 	off, _ := newUC(nil).GetHostingOptions(context.Background(), GetHostingOptionsInput{})
 	if off.StoreEnabled || off.AlertsEnabled {
 		t.Fatal("リポジトリも Datadog もなければ使えない")
@@ -184,7 +188,7 @@ func TestFunctionLifecycle(t *testing.T) {
 		t.Fatalf("ない関数: %v", err)
 	}
 	madeAPI, err := uc.ApplyApi(ctx, ApplyApiInput{Spec: api})
-	if err != nil || madeAPI.API.Host != "shop-cloud.taramanji.com" || !madeAPI.API.Source.FormEditable || len(madeAPI.API.Spec.Routes) != 1 {
+	if err != nil || madeAPI.API.Host != "shop-apigw-cloud.taramanji.com" || !madeAPI.API.Source.FormEditable || len(madeAPI.API.Spec.Routes) != 1 {
 		t.Fatalf("api: %+v %v", madeAPI, err)
 	}
 	list, err := uc.ListFunctions(ctx, ListFunctionsInput{})
@@ -287,6 +291,46 @@ func (f *fakeObjects) Delete(_ context.Context, bucket, key string) error {
 
 func (f *fakeObjects) Proxy(http.ResponseWriter, *http.Request, string, string) {}
 
+// 公開バケット: オンにすると <バケット>-storage-cloud.taramanji.com の HTTPRoute と DNS ができ、オフ・削除で消える
+func TestPublicBucket(t *testing.T) {
+	uc, store, _ := newComputeUC()
+	dns := &fakeDNS{hosts: map[string]bool{}}
+	uc.d.Objects, uc.d.DNS = &fakeObjects{objects: map[string][]gateway.StoredObject{}}, dns
+	ctx := context.Background()
+	const host = "assets-storage-cloud.taramanji.com"
+
+	// 既定は非公開（HTTPRoute も DNS もない）
+	made, err := uc.CreateBucket(ctx, CreateBucketInput{Name: "assets"})
+	if err != nil || made.Bucket.Public || made.Bucket.PublicHost != "" || dns.hosts[host] || strings.Contains(store.files["buckets/assets"].YAML, "HTTPRoute") {
+		t.Fatalf("private: %+v %v", made, err)
+	}
+	on, err := uc.UpdateBucket(ctx, UpdateBucketInput{Name: "assets", Public: true, Revision: made.Bucket.Source.Revision})
+	if err != nil || !on.Bucket.Public || on.Bucket.PublicHost != host || on.DnsProblem != "" || !dns.hosts[host] ||
+		!strings.Contains(store.files["buckets/assets"].YAML, "name: bucket.assets") {
+		t.Fatalf("public: %+v %v", on, err)
+	}
+	// 古い版では変えられない
+	if _, err := uc.UpdateBucket(ctx, UpdateBucketInput{Name: "assets", Public: false, Revision: made.Bucket.Source.Revision}); err == nil {
+		t.Fatal("古い版で上書きできてしまう")
+	}
+	list, err := uc.ListBuckets(ctx, ListBucketsInput{})
+	if err != nil || len(list.Buckets) != 1 || !list.Buckets[0].Public || list.Buckets[0].PublicHost != host {
+		t.Fatalf("list: %+v %v", list, err)
+	}
+	off, err := uc.UpdateBucket(ctx, UpdateBucketInput{Name: "assets", Public: false, Revision: on.Bucket.Source.Revision})
+	if err != nil || off.Bucket.Public || dns.hosts[host] || strings.Contains(store.files["buckets/assets"].YAML, "HTTPRoute") {
+		t.Fatalf("off: %+v %v", off, err)
+	}
+	// 公開で作って消すと、DNS も消える
+	pub, err := uc.CreateBucket(ctx, CreateBucketInput{Name: "pub", Public: true})
+	if err != nil || !dns.hosts["pub-storage-cloud.taramanji.com"] {
+		t.Fatalf("create public: %+v %v", pub, err)
+	}
+	if out, err := uc.DeleteBucket(ctx, DeleteBucketInput{Name: "pub", Revision: pub.Bucket.Source.Revision}); err != nil || out.DnsProblem != "" || dns.hosts["pub-storage-cloud.taramanji.com"] {
+		t.Fatalf("delete: %+v %v", out, err)
+	}
+}
+
 type fakeDNS struct {
 	hosts map[string]bool
 	err   error
@@ -335,7 +379,7 @@ func TestBucketsAndCDN(t *testing.T) {
 	}
 	spec.Origin = "site"
 	dist, err := uc.ApplyDistribution(ctx, ApplyDistributionInput{Spec: spec})
-	if err != nil || dist.Distribution.Host != "www-cloud.taramanji.com" || dist.DnsProblem != "" || !dns.hosts["www-cloud.taramanji.com"] ||
+	if err != nil || dist.Distribution.Host != "www-cdn-cloud.taramanji.com" || dist.DnsProblem != "" || !dns.hosts["www-cdn-cloud.taramanji.com"] ||
 		!dist.Distribution.Spec.Spa || dist.Distribution.Spec.CacheSeconds != 300 {
 		t.Fatalf("cdn: %+v %v", dist, err)
 	}
@@ -347,7 +391,7 @@ func TestBucketsAndCDN(t *testing.T) {
 		t.Fatalf("host_taken: %v", err)
 	}
 	api, err := uc.ApplyApi(ctx, ApplyApiInput{Spec: &ApiSpec{Name: "shop", Routes: []*ApiRoute{{Path: "/", Function: "blog"}}}})
-	if err != nil || !dns.hosts["shop-cloud.taramanji.com"] {
+	if err != nil || !dns.hosts["shop-apigw-cloud.taramanji.com"] {
 		t.Fatalf("api の DNS: %v", err)
 	}
 	if _, err := uc.ApplyDistribution(ctx, ApplyDistributionInput{Spec: &DistributionSpec{Name: "shop", OriginType: "function", Origin: "blog"}}); code(err) != "host_taken" {
@@ -366,13 +410,13 @@ func TestBucketsAndCDN(t *testing.T) {
 		t.Fatalf("function_in_use: %v", err)
 	}
 	rev := store.files["buckets/site"].Revision
-	if err := uc.DeleteBucket(ctx, DeleteBucketInput{Name: "site", Revision: rev}); code(err) != "bucket_in_use" {
+	if _, err := uc.DeleteBucket(ctx, DeleteBucketInput{Name: "site", Revision: rev}); code(err) != "bucket_in_use" {
 		t.Fatalf("bucket_in_use: %v", err)
 	}
-	if out, err := uc.DeleteDistribution(ctx, DeleteDistributionInput{Name: "www", Revision: dist.Distribution.Source.Revision}); err != nil || out.DnsProblem != "" || dns.hosts["www-cloud.taramanji.com"] {
+	if out, err := uc.DeleteDistribution(ctx, DeleteDistributionInput{Name: "www", Revision: dist.Distribution.Source.Revision}); err != nil || out.DnsProblem != "" || dns.hosts["www-cdn-cloud.taramanji.com"] {
 		t.Fatalf("delete cdn: %v", err)
 	}
-	if err := uc.DeleteBucket(ctx, DeleteBucketInput{Name: "site", Revision: rev}); code(err) != "bucket_not_empty" {
+	if _, err := uc.DeleteBucket(ctx, DeleteBucketInput{Name: "site", Revision: rev}); code(err) != "bucket_not_empty" {
 		t.Fatalf("bucket_not_empty: %v", err)
 	}
 	if err := uc.DeleteObject(ctx, DeleteObjectInput{Bucket: "site", Key: "index.html"}); err != nil {
@@ -381,10 +425,10 @@ func TestBucketsAndCDN(t *testing.T) {
 	if err := uc.DeleteObject(ctx, DeleteObjectInput{Bucket: "site", Key: "index.html"}); code(err) != "not_found" {
 		t.Fatalf("not_found: %v", err)
 	}
-	if err := uc.DeleteBucket(ctx, DeleteBucketInput{Name: "site", Revision: rev}); err != nil {
+	if _, err := uc.DeleteBucket(ctx, DeleteBucketInput{Name: "site", Revision: rev}); err != nil {
 		t.Fatal(err)
 	}
-	if out, err := uc.DeleteApi(ctx, DeleteApiInput{Name: "shop", Revision: api.API.Source.Revision}); err != nil || out.DnsProblem != "" || dns.hosts["shop-cloud.taramanji.com"] {
+	if out, err := uc.DeleteApi(ctx, DeleteApiInput{Name: "shop", Revision: api.API.Source.Revision}); err != nil || out.DnsProblem != "" || dns.hosts["shop-apigw-cloud.taramanji.com"] {
 		t.Fatalf("api の DNS を消す: %v", err)
 	}
 }
@@ -470,7 +514,7 @@ func TestDatabasesAndConnections(t *testing.T) {
 	if err := uc.DeleteDatabase(ctx, DeleteDatabaseInput{Name: "main", Revision: store.files["databases/main"].Revision}); code(err) != "database_in_use" {
 		t.Fatalf("database_in_use: %v", err)
 	}
-	if err := uc.DeleteBucket(ctx, DeleteBucketInput{Name: "site", Revision: store.files["buckets/site"].Revision}); code(err) != "bucket_in_use" {
+	if _, err := uc.DeleteBucket(ctx, DeleteBucketInput{Name: "site", Revision: store.files["buckets/site"].Revision}); code(err) != "bucket_in_use" {
 		t.Fatalf("bucket_in_use: %v", err)
 	}
 	if err := uc.DeleteDatabase(ctx, DeleteDatabaseInput{Name: "cache", Revision: store.files["databases/cache"].Revision}); err != nil {

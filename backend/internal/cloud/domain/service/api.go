@@ -34,8 +34,21 @@ type APISpec struct {
 	Routes []APIRoute
 }
 
-// HostOf は公開ホスト名（<名前> + "-cloud.taramanji.com" など）
+// HostOf は公開ホスト名（<名前> + 接尾辞）
 func HostOf(name, hostSuffix string) string { return name + hostSuffix }
+
+// 公開ホスト名のサービスの印。<名前>-<印>-cloud.taramanji.com のように、サービスごとにホスト名を分ける。
+// 入口の守り方（Cloudflare Access のログインの有無）をホスト名のワイルドカードで分けられるようにするため:
+//   - cdn:     CDN（ログインあり。*-cdn-cloud.taramanji.com を Access で守る）
+//   - apigw:   API Gateway（ログインなし。認証は API キーか関数）
+//   - storage: 公開バケット（ログインなし。公開をオンにしたバケットだけ）
+//
+// 印が違えば、名前が何であってもホスト名はぶつからない（末尾が -cdn・-apigw・-storage のどれかに決まる）
+const (
+	HostCDN     = "cdn"
+	HostAPI     = "apigw"
+	HostStorage = "storage"
+)
 
 // Normalize はパスの末尾の / を落とし、長いパスが先に来るように並べる
 func (s APISpec) Normalize() APISpec {
@@ -148,11 +161,17 @@ type k8sHTTPRoute struct {
 
 // APITarget は API の YAML を作る・確かめるときの、この環境の値
 type APITarget struct {
-	// HostSuffix は "-cloud.taramanji.com" など
+	// HostSuffix は共通の接尾辞 "-cloud.taramanji.com" など。実際のホスト名は Host で作る
 	HostSuffix string
 	// InvokerNamespace は API Gateway（cloud-gw）がいる namespace（cloud / taramanji-cloud-stg / taramanji-cloud-dev）
 	InvokerNamespace string
 }
+
+// Suffix はサービスのホスト名の接尾辞（"-apigw-cloud.taramanji.com" など）
+func (t APITarget) Suffix(kind string) string { return "-" + kind + t.HostSuffix }
+
+// Host はサービスの公開ホスト名（<名前>-apigw-cloud.taramanji.com など）
+func (t APITarget) Host(kind, name string) string { return HostOf(name, t.Suffix(kind)) }
 
 // RenderAPIYAML は定義を Kubernetes の YAML（HTTPRoute 1 つ）にする
 func RenderAPIYAML(s APISpec, t APITarget) (string, error) {
@@ -164,7 +183,7 @@ func RenderAPIYAML(s APISpec, t APITarget) (string, error) {
 		Namespace   string `yaml:"namespace"`
 		SectionName string `yaml:"sectionName"`
 	}{Name: gatewayName, Namespace: gatewayNamespace, SectionName: gatewayListener})
-	r.Spec.Hostnames = []string{HostOf(s.Name, t.HostSuffix)}
+	r.Spec.Hostnames = []string{t.Host(HostAPI, s.Name)}
 	for _, route := range s.Routes {
 		var rule routeRule
 		var m routeMatch
@@ -208,7 +227,7 @@ func ParseAPIYAML(name, src string, t APITarget) (*ParsedAPI, error) {
 	if n != 1 || r.Metadata.Name != name {
 		return nil, fieldErr("yaml", "HTTPRoute は %q という名前で 1 つだけ書いてください", name)
 	}
-	host := HostOf(name, t.HostSuffix)
+	host := t.Host(HostAPI, name)
 	if len(r.Spec.Hostnames) != 1 || r.Spec.Hostnames[0] != host {
 		return nil, fieldErr("yaml", "hostnames は %s だけにしてください", host)
 	}

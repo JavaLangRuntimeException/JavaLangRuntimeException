@@ -138,7 +138,7 @@ func TestAPIYAMLRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"kind: HTTPRoute", "shop-cloud.taramanji.com", "name: X-Cloud-Function", "value: api", "name: cloud-gw", "namespace: taramanji-cloud\n", "cloud.taramanji.com/kind: api"} {
+	for _, want := range []string{"kind: HTTPRoute", "shop-apigw-cloud.taramanji.com", "name: X-Cloud-Function", "value: api", "name: cloud-gw", "namespace: taramanji-cloud\n", "cloud.taramanji.com/kind: api"} {
 		if !strings.Contains(y, want) {
 			t.Errorf("YAML に %q がない:\n%s", want, y)
 		}
@@ -149,7 +149,7 @@ func TestAPIYAMLRoundTrip(t *testing.T) {
 	}
 
 	rejected := map[string]string{
-		"よそのホスト名":         strings.Replace(y, "shop-cloud.taramanji.com", "cloud.taramanji.com", 1),
+		"よそのホスト名":         strings.Replace(y, "shop-apigw-cloud.taramanji.com", "cloud.taramanji.com", 1),
 		"ほかの Service に送る": strings.Replace(y, "name: cloud-gw", "name: cloud-api", 1),
 		"ほかの namespace":   strings.Replace(y, "namespace: taramanji-cloud\n", "namespace: taramanji\n", 1),
 		"関数名なし":           strings.ReplaceAll(y, "X-Cloud-Function", "X-Other"),
@@ -227,15 +227,37 @@ func TestMonitors(t *testing.T) {
 }
 
 func TestBucketAndDistributionYAML(t *testing.T) {
-	y, err := RenderBucketYAML("site")
-	if err != nil || !strings.Contains(y, "name: bucket-site") || !strings.Contains(y, "cloud.taramanji.com/bucket: site") {
+	y, err := RenderBucketYAML("site", false, target)
+	if err != nil || !strings.Contains(y, "name: bucket-site") || !strings.Contains(y, "cloud.taramanji.com/bucket: site") || strings.Contains(y, "HTTPRoute") {
 		t.Fatalf("bucket: %v\n%s", err, y)
 	}
-	if err := ParseBucketYAML("site", y); err != nil {
+	if p, err := ParseBucketYAML("site", y, target); err != nil || p.Public {
+		t.Fatal(p, err)
+	}
+	if _, err := ParseBucketYAML("site", strings.Replace(y, "bucket: site", "bucket: other", 1), target); err == nil {
+		t.Fatal("ほかのバケット名のラベルは通さない")
+	}
+	// 公開: <バケット>-storage-cloud.taramanji.com の全パスを、このバケットに 5 分のキャッシュで向ける（関数は呼ばせない）
+	pub, err := RenderBucketYAML("site", true, target)
+	if err != nil {
 		t.Fatal(err)
 	}
-	if err := ParseBucketYAML("site", strings.Replace(y, "bucket: site", "bucket: other", 1)); err == nil {
-		t.Fatal("ほかのバケット名のラベルは通さない")
+	for _, want := range []string{"kind: HTTPRoute", "name: bucket.site", "site-storage-cloud.taramanji.com", "name: X-Cloud-Bucket", "value: \"300\"", "- X-Cloud-Function", "name: cloud-gw"} {
+		if !strings.Contains(pub, want) {
+			t.Errorf("公開の YAML に %q がない:\n%s", want, pub)
+		}
+	}
+	if p, err := ParseBucketYAML("site", pub, target); err != nil || !p.Public {
+		t.Fatal(p, err)
+	}
+	for name, src := range map[string]string{
+		"よそのホスト名": strings.Replace(pub, "site-storage-cloud.taramanji.com", "taramanji.com", 1),
+		"ほかのバケット": strings.Replace(pub, "value: site", "value: other", 1),
+		"関数へ":     strings.Replace(pub, "name: X-Cloud-Bucket", "name: X-Cloud-Function", 1),
+	} {
+		if _, err := ParseBucketYAML("site", src, target); src == pub || err == nil {
+			t.Errorf("%s は通さない", name)
+		}
 	}
 
 	s := DistributionSpec{Name: "www", OriginType: OriginBucket, Origin: "site", CacheSeconds: 300, SPA: true}
@@ -243,7 +265,7 @@ func TestBucketAndDistributionYAML(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"www-cloud.taramanji.com", "name: X-Cloud-Bucket", "value: site", "value: \"300\"", "name: X-Cloud-Spa", "- X-Cloud-Function", "cloud.taramanji.com/kind: cdn"} {
+	for _, want := range []string{"www-cdn-cloud.taramanji.com", "name: X-Cloud-Bucket", "value: site", "value: \"300\"", "name: X-Cloud-Spa", "- X-Cloud-Function", "cloud.taramanji.com/kind: cdn"} {
 		if !strings.Contains(d, want) {
 			t.Errorf("YAML に %q がない:\n%s", want, d)
 		}
@@ -259,7 +281,7 @@ func TestBucketAndDistributionYAML(t *testing.T) {
 	}
 	// 形を変えた YAML（よそのホスト名・ほかの送り先・ヘッダーを消さない）は通さない
 	for name, src := range map[string]string{
-		"よそのホスト名":   strings.Replace(d, "www-cloud.taramanji.com", "cloud.taramanji.com", 1),
+		"よそのホスト名":   strings.Replace(d, "www-cdn-cloud.taramanji.com", "cloud.taramanji.com", 1),
 		"ほかの送り先":    strings.Replace(d, "name: cloud-gw", "name: cloud-api", 1),
 		"ヘッダーを消さない": strings.Replace(d, "- X-Cloud-Function", "- X-Other", 1),
 	} {

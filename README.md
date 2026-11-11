@@ -111,9 +111,9 @@ AWS のコンソールのように使える、自分専用の小さなクラウ�
 | | サービス | AWS でいうと | できること |
 |---|---|---|---|
 | <img src="docs/diagrams/icons/cloud/functions.svg" width="32" /> | Functions | Lambda | コンテナイメージを、リクエストが来たときだけ動かす（0 ⇄ 1 台） |
-| <img src="docs/diagrams/icons/cloud/apis.svg" width="32" /> | API Gateway | API Gateway | `<名前>-cloud.taramanji.com` のパスごとに関数へ渡す |
-| <img src="docs/diagrams/icons/cloud/cdn.svg" width="32" /> | CDN | CloudFront | バケットや関数を公開し、Cloudflare にキャッシュさせる |
-| <img src="docs/diagrams/icons/cloud/storage.svg" width="32" /> | Storage | S3 | ファイルを置くバケット |
+| <img src="docs/diagrams/icons/cloud/apis.svg" width="32" /> | API Gateway | API Gateway | `<名前>-apigw-cloud.taramanji.com` のパスごとに関数へ渡す（ログインなし） |
+| <img src="docs/diagrams/icons/cloud/cdn.svg" width="32" /> | CDN | CloudFront | バケットや関数を `<名前>-cdn-cloud.taramanji.com` で自分だけに出し（ログインあり）、Cloudflare にキャッシュさせる。パスごとに元を分けられる |
+| <img src="docs/diagrams/icons/cloud/storage.svg" width="32" /> | Storage | S3 | ファイルを置くバケット。ドラッグ&ドロップでフォルダーごと置ける。公開をオンにすると `<バケット>-storage-cloud.taramanji.com` でログインなしに配る |
 | <img src="docs/diagrams/icons/cloud/databases.svg" width="32" /> | Databases | RDS / ElastiCache | PostgreSQL と Redis を切り出して、関数につなぐ |
 | <img src="docs/diagrams/icons/cloud/capacity.svg" width="32" /> | Capacity | — | インスタンスタイプ（汎用 `t1`・コンピューティング最適化 `c1`・メモリ最適化 `r1`）があと何個置けるか |
 | <img src="docs/diagrams/icons/cloud/metrics.svg" width="32" /> | Metrics | CloudWatch | リクエスト・エラー・CPU・メモリ（本番だけ） |
@@ -124,7 +124,7 @@ AWS のコンソールのように使える、自分専用の小さなクラウ�
 - **切り離し**: トンネル・Gateway・Cloudflare Access のアプリを taramanji.com と分けている。関数などはデプロイヤー（cloud-ctl）が YAML から入れる（Argo CD は入れない。Argo CD の画面では関数ごとに Pod が動いているかだけ見られる）。taramanji の Secret・セッション・Redis は使わない
 - **関数ごとの namespace**: 関数は 1 つずつ `taramanji-cloud-fn-<名前>` で動く。namespace と囲い（Quota・NetworkPolicy・Pod Security・権限）はコントローラーが作り、YAML のリポジトリからは作れない
 - **接続先**: データベースとバケットのパスワード・トークンは、つないだ関数の namespace にだけ置く。git にもコンソールにも出ない
-- **使えるのは自分だけ**: コンソールも、公開した関数・CDN も Cloudflare Access の後ろ
+- **入口ごとのログイン**: コンソールと CDN（`<名前>-cdn-cloud`）は Cloudflare Access の後ろ（自分だけ）。API Gateway（`<名前>-apigw-cloud`）と公開バケット（`<バケット>-storage-cloud`、既定はオフ）はログインなしで、AWS のように単体で使える
 - **メモリ**: 関数の合計は本番 2.5 GiB まで（taramanji.com・gws の伸びしろを残す）。足りなくなったら taramanji より先に止まる
 - **環境**: アプリ（関数など）は本番だけ。stg・dev には基盤だけを置き、taramanji と同じく stg はいつも、dev は PR のときだけ動く
 - **デプロイの様子**: YAML を push すると 15 秒ほどで入り、コンソールの各画面に「デプロイ」の状態と履歴が出る

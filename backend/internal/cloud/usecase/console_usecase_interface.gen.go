@@ -53,7 +53,14 @@ type DeleteApiInput struct {
 type ListBucketsInput struct{}
 
 type CreateBucketInput struct {
-	Name string
+	Name   string
+	Public bool
+}
+
+type UpdateBucketInput struct {
+	Name     string
+	Public   bool
+	Revision string
 }
 
 type DeleteBucketInput struct {
@@ -111,6 +118,7 @@ type GetOverviewOutput struct {
 	Components        []*Component `json:"components"`
 	StorageHostSuffix string       `json:"storage_host_suffix"`
 	HostingHostSuffix string       `json:"hosting_host_suffix"`
+	CdnHostSuffix     string       `json:"cdn_host_suffix"`
 }
 
 type GetMetricsOutput struct {
@@ -138,6 +146,9 @@ type GetHostingOptionsOutput struct {
 	Directory          string            `json:"directory"`
 	IdleTimeoutSeconds int32             `json:"idle_timeout_seconds"`
 	HostSuffix         string            `json:"host_suffix"`
+	ApiHostSuffix      string            `json:"api_host_suffix"`
+	CdnHostSuffix      string            `json:"cdn_host_suffix"`
+	StorageHostSuffix  string            `json:"storage_host_suffix"`
 	InstanceFamilies   []*InstanceFamily `json:"instance_families"`
 	StorageEnabled     bool              `json:"storage_enabled"`
 	DnsEnabled         bool              `json:"dns_enabled"`
@@ -183,7 +194,17 @@ type ListBucketsOutput struct {
 }
 
 type CreateBucketOutput struct {
-	Bucket *Bucket `json:"bucket"`
+	Bucket     *Bucket `json:"bucket"`
+	DnsProblem string  `json:"dns_problem"`
+}
+
+type UpdateBucketOutput struct {
+	Bucket     *Bucket `json:"bucket"`
+	DnsProblem string  `json:"dns_problem"`
+}
+
+type DeleteBucketOutput struct {
+	DnsProblem string `json:"dns_problem"`
 }
 
 type ListObjectsOutput struct {
@@ -261,6 +282,8 @@ type Bucket struct {
 	Objects       int64    `json:"objects"`
 	Bytes         int64    `json:"bytes"`
 	Distributions []string `json:"distributions"`
+	Public        bool     `json:"public"`
+	PublicHost    string   `json:"public_host"`
 }
 
 type Component struct {
@@ -435,7 +458,8 @@ type ConsoleUsecase interface {
 	DeleteApi(ctx context.Context, input DeleteApiInput) (*DeleteApiOutput, error)
 	ListBuckets(ctx context.Context, input ListBucketsInput) (*ListBucketsOutput, error)
 	CreateBucket(ctx context.Context, input CreateBucketInput) (*CreateBucketOutput, error)
-	DeleteBucket(ctx context.Context, input DeleteBucketInput) error
+	UpdateBucket(ctx context.Context, input UpdateBucketInput) (*UpdateBucketOutput, error)
+	DeleteBucket(ctx context.Context, input DeleteBucketInput) (*DeleteBucketOutput, error)
 	ListObjects(ctx context.Context, input ListObjectsInput) (*ListObjectsOutput, error)
 	DeleteObject(ctx context.Context, input DeleteObjectInput) error
 	ListDistributions(ctx context.Context, input ListDistributionsInput) (*ListDistributionsOutput, error)

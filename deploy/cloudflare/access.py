@@ -48,9 +48,11 @@ APPS = {
     # taramanji cloud のコンソール（全環境）。taramanji.com とは別のアプリにして Audience タグを分ける
     # （コンソールの API は自分のアプリの JWT しか受け付けない）。公開する関数・CDN の URL は、下の taramanji-cloud-apps で守る
     CLOUD_APP: ["cloud.taramanji.com", "cloud-stg.taramanji.com", "cloud-dev.taramanji.com"],
-    # taramanji cloud で公開する関数・CDN（API・CDN の <名前>-cloud.taramanji.com など）。使うのは本人だけなので、ここも守る。
-    # 関数には Access の JWT（Cf-Access-Jwt-Assertion）が付いて届く。ブラウザ以外から呼ぶときは `cloudflared access curl`
-    "taramanji-cloud-apps": ["*-cloud.taramanji.com", "*-cloud-stg.taramanji.com", "*-cloud-dev.taramanji.com"],
+    # taramanji cloud の CDN（<名前>-cdn-cloud.taramanji.com）。自分だけのアプリの入口なので守る。
+    # 関数には Access の JWT（Cf-Access-Jwt-Assertion）が付いて届く。ブラウザ以外から呼ぶときは `cloudflared access curl`。
+    # API Gateway（<名前>-apigw-cloud）と公開バケット（<バケット>-storage-cloud）は、AWS のように単体で使えるよう守らない（ログインなし）。
+    # *-cloud.taramanji.com でまとめて守ると apigw・storage も入ってしまうので、CDN の印（-cdn-cloud）で絞る
+    "taramanji-cloud-apps": ["*-cdn-cloud.taramanji.com", "*-cdn-cloud-stg.taramanji.com", "*-cdn-cloud-dev.taramanji.com"],
 }
 
 
