@@ -47,13 +47,13 @@ spec:
         - podSelector: { matchLabels: { app.kubernetes.io/name: cloud-gw } }
       ports:
         - { port: 8081 }
-    # バケットをつないだ関数（アプリ用 namespace。overlays が環境ごとの namespace に書き換える）。トークンが要る
+    # バケットをつないだ関数（関数ごとの namespace。この環境のものだけ。overlays が環境ごとに書き換える）。トークンが要る
     - from:
-        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: cloud-apps } }
+        - namespaceSelector: { matchLabels: { cloud.taramanji.com/tier: function, cloud.taramanji.com/registry: cloud-apps } }
       ports:
         - { port: 8080 }
 ---
-# 共有の PostgreSQL / Redis: コントローラー（cloud-ctl）と、データベースをつないだ関数（アプリ用 namespace）からだけ。
+# 共有の PostgreSQL / Redis: コントローラー（cloud-ctl）と、この環境の関数（関数ごとの namespace）からだけ。
 # 関数は自分のユーザーとパスワードでしか入れない
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -67,7 +67,7 @@ spec:
   ingress:
     - from:
         - podSelector: { matchLabels: { app.kubernetes.io/name: cloud-ctl } }
-        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: cloud-apps } }
+        - namespaceSelector: { matchLabels: { cloud.taramanji.com/tier: function, cloud.taramanji.com/registry: cloud-apps } }
       ports:
         - { port: 5432 }
         - { port: 6379 }

@@ -28,7 +28,22 @@ patches:
               - name: app
                 env:
                   # コンソールのメトリクスで見る namespace（コンソール自身とアプリ用）
-                  - { name: METRICS_NAMESPACES, value: "cloud,cloud-apps" }
+                  - { name: METRICS_NAMESPACES, value: "cloud,cloud-apps,cloud-fn-*" }
+                  # 本番の関数の合計の枠（Mac mini のメモリから、taramanji.com・gws の伸びしろを残した分）
+                  - { name: FUNCTION_MEMORY_CAP_MIB, value: "2560" }
+                  - { name: FUNCTION_CPU_CAP_MILLIS, value: "4000" }
+                  - { name: FUNCTION_POD_CAP, value: "30" }
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata: { name: cloud-gw }
+      spec:
+        template:
+          spec:
+            containers:
+              - name: app
+                env:
+                  - { name: FUNCTION_MEMORY_CAP_MIB, value: "2560" }
                   # アプリの監視を Datadog のモニターにする（アプリケーションキーに monitors_read・monitors_write が要る）
                   - { name: ALERTS_ENABLED, value: "true" }
 

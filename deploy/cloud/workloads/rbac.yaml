@@ -5,19 +5,9 @@ kind: Role
 metadata:
   name: cloud-api-capacity
 rules:
-  - apiGroups: [""]
-    resources: ["resourcequotas", "pods"]
-    verbs: ["get", "list"]
-  # アプリ（Argo CD がアプリ用のリポジトリから入れた Deployment）が動いているかを見る。書き込みはしない
-  - apiGroups: ["apps"]
-    resources: ["deployments"]
-    verbs: ["get", "list"]
   # データベースの状態（コントローラーが ConfigMap の注釈に書く）を読む。Secret は読めない
   - apiGroups: [""]
     resources: ["configmaps"]
-    verbs: ["get", "list"]
-  - apiGroups: ["metrics.k8s.io"]
-    resources: ["pods"]
     verbs: ["get", "list"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -31,32 +21,6 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: cloud-api
-    namespace: cloud
----
-# API Gateway（cloud-gw）が関数を起こす・寝かせる。台数（scale）と、最後のリクエストの時刻の注釈だけを書く
-apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
-metadata:
-  name: cloud-gw
-rules:
-  - apiGroups: ["apps"]
-    resources: ["deployments"]
-    verbs: ["get", "list", "patch"]
-  - apiGroups: ["apps"]
-    resources: ["deployments/scale"]
-    verbs: ["get", "patch"]
----
-apiVersion: rbac.authorization.k8s.io/v1
-kind: RoleBinding
-metadata:
-  name: cloud-gw
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: Role
-  name: cloud-gw
-subjects:
-  - kind: ServiceAccount
-    name: cloud-gw
     namespace: cloud
 ---
 # オブジェクトストレージ（cloud-storage）が、バケットの定義（ラベル付きの ConfigMap）を読む

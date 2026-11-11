@@ -1,5 +1,5 @@
 # taramanji cloud に置くアプリ（コンソールが作る / 手で書く Kubernetes の YAML）の Argo CD プロジェクト。
-# 元はアプリ専用のリポジトリだけ。入れられるのはアプリ用の namespace だけで、種類も Deployment・Service・HTTPRoute・ConfigMap・PVC に限る。
+# 元はアプリ専用のリポジトリだけ。入れられるのは環境の共有の namespace と関数ごとの namespace だけで、種類も Deployment・Service・HTTPRoute・ConfigMap・PVC に限る。
 # コンソールのトークンやこのリポジトリが乗っ取られても、taramanji.com・コンソール自身・クラスター全体のものには書けない
 apiVersion: argoproj.io/v1alpha1
 kind: AppProject
@@ -14,6 +14,10 @@ spec:
     - { server: https://kubernetes.default.svc, namespace: cloud-apps }
     - { server: https://kubernetes.default.svc, namespace: cloud-stg-apps }
     - { server: https://kubernetes.default.svc, namespace: cloud-dev-apps }
+    # 関数ごとの namespace（コントローラーが作る。ここからは作れない = clusterResourceWhitelist が空）
+    - { server: https://kubernetes.default.svc, namespace: "cloud-fn-*" }
+    - { server: https://kubernetes.default.svc, namespace: "cloud-stg-fn-*" }
+    - { server: https://kubernetes.default.svc, namespace: "cloud-dev-fn-*" }
   clusterResourceWhitelist: []
   namespaceResourceWhitelist:
     - { group: apps, kind: Deployment }
