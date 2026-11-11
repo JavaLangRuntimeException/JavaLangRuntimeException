@@ -340,7 +340,7 @@ func (u *ConsoleUsecaseImpl) ApplyDistribution(ctx context.Context, in ApplyDist
 	}
 	// ない元には向けられない（既定の元も、パスごとの元も）
 	for _, t := range []struct{ originType, kind, label string }{
-		{service.OriginBucket, gateway.KindBuckets, "バケット"}, {service.OriginFunction, gateway.KindFunctions, "関数"},
+		{service.OriginBucket, gateway.KindBuckets, "バケット"}, {service.OriginAPI, gateway.KindAPIs, "API"},
 	} {
 		used := spec.Uses(t.originType)
 		if len(used) == 0 {

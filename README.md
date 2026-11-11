@@ -112,7 +112,7 @@ AWS のコンソールのように使える、自分専用の小さなクラウ�
 |---|---|---|---|
 | <img src="docs/diagrams/icons/cloud/functions.svg" width="32" /> | Functions | Lambda | コンテナイメージを、リクエストが来たときだけ動かす（0 ⇄ 1 台） |
 | <img src="docs/diagrams/icons/cloud/apis.svg" width="32" /> | API Gateway | API Gateway | `<名前>-apigw-cloud.taramanji.com` のパスごとに関数へ渡す（ログインなし） |
-| <img src="docs/diagrams/icons/cloud/cdn.svg" width="32" /> | CDN | CloudFront | バケットや関数を `<名前>-cdn-cloud.taramanji.com` で自分だけに出し（ログインあり）、Cloudflare にキャッシュさせる。パスごとに元を分けられる |
+| <img src="docs/diagrams/icons/cloud/cdn.svg" width="32" /> | CDN | CloudFront | バケットや API Gateway を `<名前>-cdn-cloud.taramanji.com` で自分だけに出し（ログインあり）、Cloudflare にキャッシュさせる。パスごとに元を分けられる |
 | <img src="docs/diagrams/icons/cloud/storage.svg" width="32" /> | Storage | S3 | ファイルを置くバケット。ドラッグ&ドロップでフォルダーごと置ける。公開をオンにすると `<バケット>-storage-cloud.taramanji.com` でログインなしに配る |
 | <img src="docs/diagrams/icons/cloud/databases.svg" width="32" /> | Databases | RDS / ElastiCache | PostgreSQL と Redis を切り出して、関数につなぐ |
 | <img src="docs/diagrams/icons/cloud/capacity.svg" width="32" /> | Capacity | — | インスタンスタイプ（汎用 `t1`・コンピューティング最適化 `c1`・メモリ最適化 `r1`）があと何個置けるか |

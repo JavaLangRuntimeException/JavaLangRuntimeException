@@ -50,7 +50,7 @@ export const articles: Article[] = [
             [<To to="/functions">関数</To>, "Lambda", "コンテナイメージを、リクエストが来たときだけ動かす"],
             [<To to="/apis">API Gateway</To>, "API Gateway", "ホスト名とパスを、関数に結びつけて公開する"],
             [<To to="/storage">ストレージ</To>, "S3", "ファイルを置くバケット"],
-            [<To to="/cdn">CDN</To>, "CloudFront", "バケットや関数を自分だけに出し（ログインあり）、Cloudflare にキャッシュさせる"],
+            [<To to="/cdn">CDN</To>, "CloudFront", "バケットや API Gateway を自分だけに出し（ログインあり）、Cloudflare にキャッシュさせる"],
             [<To to="/databases">データベース</To>, "RDS / ElastiCache", "PostgreSQL と Redis を切り出して、関数につなぐ"],
           ]}
         />
@@ -63,7 +63,7 @@ export const articles: Article[] = [
             利用者は CDN（{cdnHost}）・API Gateway（{apiHost}）・公開バケット（{storageHost}）にアクセスします。Cloudflare が証明書と DNS を受け持ち、トンネルで家のクラスターに届けます。
           </li>
           <li>
-            API Gateway（<C>cloud-gw</C>）が、その名前の API か CDN の設定を見て、渡し先の関数かバケットを決めます。
+            API Gateway（<C>cloud-gw</C>）が、その名前の API か CDN の設定を見て、渡し先の関数かバケットを決めます。CDN の元が API のときは、その API のホスト名で入口（Envoy）に渡し直すので、API のルート・認証・CORS がそのまま効きます。
           </li>
           <li>関数が 0 台なら、ここで 1 台に起こしてから渡します。しばらくリクエストが来なければ、また 0 台に戻します。</li>
           <li>
@@ -208,7 +208,7 @@ CMD ["node", "server.js"]
         </P>
         <Note kind="warn" title="誰でも呼べます">
           API Gateway はログインなしなので、GitHub や Stripe などの Webhook も受けられます。その代わり、インターネットの誰からでも呼ばれます。
-          自分だけが使う関数なら、CDN の「パスごとの元」で <C>/api</C> を関数に向けて、ログインの後ろに置いてください（<To to="/guide/static-site">静的なサイトをバケットと CDN で配る</To>）。
+          自分だけが使うなら、API を「API キー」にして、ブラウザからは CDN の「パスごとの元」で <C>/api</C> をこの API に向けてください。CDN（ログイン済み）を通ったリクエストには API キーが要りません（<To to="/guide/static-site">静的なサイトをバケットと CDN で配る</To>）。
         </Note>
 
         <H2 id="auth">5. API キーと CORS</H2>
@@ -302,21 +302,25 @@ CMD ["node", "server.js"]
 
         <H2 id="paths">4. API を同じホスト名にまとめる（パスごとの元）</H2>
         <P>
-          画面（バケット）と API（関数）を、同じ <C>https://www-cdn-cloud.taramanji.com</C> から出せます。CloudFront の behavior と同じ考え方で、パスごとに元を分けます。
+          画面（バケット）と API（API Gateway）を、同じ <C>https://www-cdn-cloud.taramanji.com</C> から出せます。CloudFront の behavior と同じ考え方で、パスごとに元を分けます。
           同じホスト名なので、画面から <C>fetch("/api/...")</C> と呼ぶだけで、Cloudflare Access のログインもそのまま使えます（別のホスト名にすると、ログインの Cookie が届きません）。
         </P>
         <Steps>
           <li>CDN の編集画面の「パスごとの元」で「パスを足す」を押します。</li>
           <li>
-            パスに <C>/api</C> を入れ、元に「関数」と API の関数を選びます。キャッシュは「キャッシュしない」にします。
+            パスに <C>/api</C> を入れ、元に「API」と使う API を選びます。キャッシュは「キャッシュしない」にします。
           </li>
-          <li>「保存」を押します。15 秒ほどで、<C>/api</C> で始まるパスだけが関数に届きます。</li>
+          <li>「保存」を押します。15 秒ほどで、<C>/api</C> で始まるパスだけが API に届き、API のルートで関数に渡ります。</li>
         </Steps>
         <UL>
           <li>長いパスが先に当たります。どれにも当たらないパスは、既定の元（上の「元」）に行きます。</li>
           <li>
-            パスはそのまま元に渡ります。<C>/api/users</C> なら、関数にも <C>/api/users</C> が届きます（<C>/api</C> は取り除きません）。
+            パスはそのまま元に渡ります。<C>/api/users</C> なら、API にも <C>/api/users</C> が届きます（<C>/api</C> は取り除きません）。
           </li>
+          <li>
+            CDN（ログイン済み）を通ったリクエストには、API キーは要りません（API Gateway が、CDN から来たことを署名で確かめます）。<C>-apigw-cloud</C> の URL に直接来たものには、API の設定どおり API キーを求めます。
+          </li>
+          <li>関数には、ログインした人の JWT（<C>Cf-Access-Jwt-Assertion</C>）と、CDN のホスト名（<C>X-Forwarded-Host</C>）が届きます。</li>
           <li>既定のほかに 15 個まで足せます。行ごとに、元・キャッシュの長さ・SPA を決められます。</li>
         </UL>
 

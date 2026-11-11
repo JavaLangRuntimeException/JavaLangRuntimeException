@@ -175,6 +175,11 @@ func runGateway() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	gatewayURL, err := url.Parse(env.Optional("GATEWAY_URL", "http://taramanji-cloud-gateway.envoy-gateway-system.svc.cluster.local"))
+	if err != nil || gatewayURL.Host == "" {
+		log.Fatal("GATEWAY_URL must be a URL")
+	}
+	apiTarget := service.APITarget{HostSuffix: env.Required("HOST_SUFFIX")}
 	inv := invoker.New(invoker.Config{
 		StorageURL: storageURL,
 		Scaler:     kube,
@@ -186,6 +191,11 @@ func runGateway() {
 		IdleTimeout:      idle,
 		ColdStartTimeout: 60 * time.Second,
 		Log:              logger.L(),
+		// CDN の元が API のとき、その API のホスト名で cloud の Envoy に渡し直す
+		GatewayURL: gatewayURL,
+		APIHost:    func(name string) string { return apiTarget.Host(service.HostAPI, name) },
+		// CDN（ログイン済み）から API に渡し直したリクエストの署名の鍵。なければ署名せず、API キーを求める
+		InternalSecret: []byte(secretEnv("GATEWAY_INTERNAL_SECRET", false)),
 	})
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -203,7 +213,7 @@ func runGateway() {
 	// ログインなしの入口（*-apigw-cloud・*-storage-cloud）を大量に叩かれても、関数と Mac mini を守る。利用者（IP）ごとに、
 	// 1 秒に GATEWAY_RATE_PER_SEC 回（既定 20）・続けて GATEWAY_RATE_BURST 回（既定 60）まで。Pod ごとに数える（2 台なら最大で 2 倍）
 	perSec, burst := envInt("GATEWAY_RATE_PER_SEC", 20), envInt("GATEWAY_RATE_BURST", 60)
-	handler := invoker.Limit(invoker.RateLimit{PerSecond: perSec, Burst: burst}, inv)
+	handler := invoker.Limit(invoker.RateLimit{PerSecond: perSec, Burst: burst}, inv, inv.FromCDN)
 	if err := server.RunNamed(gatewayServiceName, name, func(mux *http.ServeMux) { mux.Handle("/", handler) }); err != nil {
 		log.Fatal(err)
 	}

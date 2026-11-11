@@ -8,12 +8,25 @@ import (
 	"encoding/json"
 	"reflect"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
 )
 
-// apiOnlyHeaders は API の設定（認証・CORS）を API Gateway に伝えるヘッダー。設定していないルートでは必ず消す
-var apiOnlyHeaders = []string{HeaderAuth, HeaderAPIKeys, HeaderCORS}
+// controlHeaders は HTTPRoute が API Gateway（cloud-gw）に設定を伝えるヘッダー（渡し先・認証・CORS・キャッシュ）。
+// どのルールも、自分が set しないものは全部 remove する（利用者が付けてきた値を、どのルートでも効かせない）
+var controlHeaders = []string{HeaderFunction, HeaderBucket, HeaderAPIOrigin, HeaderCacheTTL, HeaderSPA, HeaderAuth, HeaderAPIKeys, HeaderCORS}
+
+// removeOthers は set に入っていない controlHeaders（決まった順）
+func removeOthers(set []headerValue) []string {
+	out := []string{}
+	for _, h := range controlHeaders {
+		if !slices.ContainsFunc(set, func(v headerValue) bool { return v.Name == h }) {
+			out = append(out, h)
+		}
+	}
+	return out
+}
 
 // cloud の Gateway（deploy/cloud/platform/gateway.yaml）と、関数を呼び出す API Gateway（cloud-gw）の Service
 const (
@@ -308,7 +321,7 @@ func RenderAPIYAML(s APISpec, t APITarget) (string, error) {
 		}
 		r.Metadata.Annotations = map[string]string{AnnotationAPIKeys: string(b)}
 	}
-	set, remove := apiHeaders(s)
+	set := apiHeaders(s)
 	r.Spec.ParentRefs = append(r.Spec.ParentRefs, struct {
 		Name        string `yaml:"name"`
 		Namespace   string `yaml:"namespace"`
@@ -325,7 +338,7 @@ func RenderAPIYAML(s APISpec, t APITarget) (string, error) {
 		f.RequestHeaderModifier.Set = append([]headerValue{{Name: HeaderFunction, Value: route.Function}}, set...)
 		// CDN 用のヘッダーを利用者が付けてきても、API ではバケットを読ませない・キャッシュの長さを決めさせない。
 		// 認証・CORS のヘッダーも、設定していなければ消す（利用者が付けてきた値を使わせない）
-		f.RequestHeaderModifier.Remove = append([]string{HeaderBucket, HeaderCacheTTL, HeaderSPA}, remove...)
+		f.RequestHeaderModifier.Remove = removeOthers(f.RequestHeaderModifier.Set)
 		rule.Filters = []routeFilter{f}
 		rule.BackendRefs = []backendRef{{Name: InvokerService, Namespace: t.InvokerNamespace, Port: InvokerPort}}
 		r.Spec.Rules = append(r.Spec.Rules, rule)
@@ -333,11 +346,11 @@ func RenderAPIYAML(s APISpec, t APITarget) (string, error) {
 	return encodeDocs(r)
 }
 
-// apiHeaders は、認証・CORS の設定を API Gateway に伝えるヘッダー（set）と、設定していないので消すヘッダー（remove）
+// apiHeaders は、認証・CORS の設定を API Gateway に伝えるヘッダー（設定していないものは removeOthers で消す）
 //   - X-Cloud-Auth: api_key（API キーのときだけ）
 //   - X-Cloud-Api-Keys: <名前>=<ハッシュ>,...（キーがなければ "-"。どのキーも当たらない）
 //   - X-Cloud-Cors: 許すオリジンを空白で区切ったもの
-func apiHeaders(s APISpec) (set []headerValue, remove []string) {
+func apiHeaders(s APISpec) (set []headerValue) {
 	if s.Auth == AuthAPIKey {
 		entries := []string{}
 		for _, k := range s.Keys {
@@ -348,15 +361,11 @@ func apiHeaders(s APISpec) (set []headerValue, remove []string) {
 			value = "-"
 		}
 		set = append(set, headerValue{Name: HeaderAuth, Value: AuthAPIKey}, headerValue{Name: HeaderAPIKeys, Value: value})
-	} else {
-		remove = append(remove, HeaderAuth, HeaderAPIKeys)
 	}
 	if len(s.CORSOrigins) > 0 {
 		set = append(set, headerValue{Name: HeaderCORS, Value: strings.Join(s.CORSOrigins, " ")})
-	} else {
-		remove = append(remove, HeaderCORS)
 	}
-	return set, remove
+	return set
 }
 
 // ParsedAPI は YAML から読み取った API

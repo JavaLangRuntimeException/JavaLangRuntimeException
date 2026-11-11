@@ -68,7 +68,7 @@ VM のメモリを増やしたら `overlays/prod/workloads` の枠を広げる�
 
 - ブラウザで開くと Google のログインが出て、`ADMIN_EMAIL` のアカウントだけが通る。セッションは 24 時間
 - CDN をブラウザ以外（curl・スクリプト）から呼ぶときは `cloudflared access curl https://<名前>-cdn-cloud.taramanji.com/`（最初にブラウザでログインする）
-- API Gateway（`-apigw-cloud`）はログインなしなので、Webhook も受けられる。その代わり誰でも呼べる。自分だけの API は CDN の「パスごとの元」で `/api` を関数に向ける
+- API Gateway（`-apigw-cloud`）はログインなしなので、Webhook も受けられる。その代わり誰でも呼べる。自分だけの API は API キーで守り、ブラウザからは CDN の「パスごとの元」で `/api` をその API に向ける（CDN を通ったものには API キーが要らない）
 - 公開バケット（`-storage-cloud`）は 1 ファイルずつの取得だけ（一覧・書き込みはできない）。5 分キャッシュ
 - **レート制限**: cloud-gw が利用者（`Cf-Connecting-Ip`）ごとに 1 秒 20 回・続けて 60 回まで（`GATEWAY_RATE_PER_SEC`・`GATEWAY_RATE_BURST`）。超えたら関数を起こさずに 429。
   Pod ごとに数える（2 台なら最大で 2 倍）。Cloudflare の無料プランのレート制限はホスト名で絞れない（パスだけ）ので、cloud-gw で絞る
@@ -159,7 +159,7 @@ S3 と CloudFront にあたるもの。
 | リソース | YAML の場所 | 中身 |
 |---|---|---|
 | バケット | `<環境>/buckets/<名前>.yaml` | ConfigMap `bucket-<名前>`（ラベル `cloud.taramanji.com/bucket`）。あることがバケットの定義。公開するときは HTTPRoute `bucket.<名前>`（`<名前>-storage-cloud.taramanji.com` の全パスをこのバケットへ）も |
-| CDN | `<環境>/cdn/<名前>.yaml` | HTTPRoute 1 つ。`<名前>-cdn-cloud.taramanji.com` を、バケットか関数に向ける。パスごとに別の元にも向けられる（behavior） |
+| CDN | `<環境>/cdn/<名前>.yaml` | HTTPRoute 1 つ。`<名前>-cdn-cloud.taramanji.com` を、バケットか API（API Gateway）に向ける。パスごとに別の元にも向けられる（behavior） |
 
 - **ストレージ**（`cloud-storage`。cloud のイメージを `CLOUD_MODE=storage` で動かす StatefulSet）: バケットは PVC の上のディレクトリ。
   ラベル付きの ConfigMap を 15 秒ごとに見て、バケットを作る。ConfigMap が消えても、中身のあるバケットは消さない
@@ -167,7 +167,10 @@ S3 と CloudFront にあたるもの。
   - 8081（読むだけ）: トークンなし。届くのは CDN（cloud-gw）だけ
 - **ファイルの出し入れ**: コンソールのストレージの画面から。`PUT / GET /_objects/<バケット>/<キー>` を cloud-api がストレージに渡す（Access の JWT を確かめる）。
   ダウンロードは必ずファイルとして保存させる（置いた HTML がコンソールのオリジンで動かないように）。1 つ 1 GiB まで
-- **CDN**: HTTPRoute が、元（`X-Cloud-Bucket` か `X-Cloud-Function`）・キャッシュの秒数・SPA をヘッダーに付けて cloud-gw に送る
+- **CDN**: HTTPRoute が、元（`X-Cloud-Bucket` か `X-Cloud-Api`）・キャッシュの秒数・SPA をヘッダーに付けて cloud-gw に送る。
+  元が API のときは、cloud-gw がその API のホスト名（`<API>-apigw-cloud`）で cloud の Envoy（`GATEWAY_URL`）に渡し直し、API のルート・認証・CORS をそのまま当てる（CloudFront の元を API Gateway にするのと同じ）。
+  そのとき `X-Cloud-Cdn`（UNIX 秒と HMAC-SHA256。鍵は `GATEWAY_INTERNAL_SECRET`、`seal.sh` が環境ごとに作る）を付け、2 回目の cloud-gw はこれが合えば API キーを求めない（CDN は Access のログインの後ろなので）。1 分より古い・ほかのホスト名宛ての署名は使わない
+- 関数を CDN の元に直接はできない（API を通す）。どのルートも、自分が set しない `X-Cloud-*` のヘッダーは全部 remove する
 - **パスごとの元（behavior）**: CloudFront の behavior にあたる。HTTPRoute のルールをパス（PathPrefix）ごとに分け、ルールごとに元・キャッシュ・SPA のヘッダーを付ける。
   長いパスから順に並べ、最後が既定の `/`。既定のほかに 15 個まで（rules は 16 まで）。パスは取り除かずに元に渡す。画面と API を同じホスト名にまとめると、Access のログインがそのまま使える
   - バケットが元: パスをキーにして返す（GET・HEAD だけ）。`/` で終わるパスは `index.html`。SPA にすると、ファイルがないパスに `/index.html` を返す

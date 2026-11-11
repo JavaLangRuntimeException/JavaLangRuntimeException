@@ -444,18 +444,21 @@ func TestBucketsAndCDN(t *testing.T) {
 	if err != nil || !dns.hosts["shop-apigw-cloud.taramanji.com"] {
 		t.Fatalf("api の DNS: %v", err)
 	}
-	if _, err := uc.ApplyDistribution(ctx, ApplyDistributionInput{Spec: &DistributionSpec{Name: "shop", OriginType: "function", Origin: "blog"}}); code(err) != "host_taken" {
+	if _, err := uc.ApplyDistribution(ctx, ApplyDistributionInput{Spec: &DistributionSpec{Name: "shop", OriginType: "api", Origin: "shop"}}); code(err) != "host_taken" {
 		t.Fatalf("host_taken: %v", err)
 	}
 	// DNS に失敗しても YAML は保存し、理由を返す
 	dns.err = errors.New("cloudflare down")
-	fnDist, err := uc.ApplyDistribution(ctx, ApplyDistributionInput{Spec: &DistributionSpec{Name: "fast", OriginType: "function", Origin: "blog", CacheSeconds: 60}})
+	fnDist, err := uc.ApplyDistribution(ctx, ApplyDistributionInput{Spec: &DistributionSpec{Name: "fast", OriginType: "api", Origin: "shop", CacheSeconds: 60}})
 	if err != nil || fnDist.DnsProblem == "" || store.files["cdn/fast"].YAML == "" {
 		t.Fatalf("dns_problem: %+v %v", fnDist, err)
 	}
 	dns.err = nil
 
-	// 使われている元は消せない。中身のあるバケットも消せない
+	// 使われている元は消せない（CDN の元の API・API が渡している関数）。中身のあるバケットも消せない
+	if _, err := uc.DeleteApi(ctx, DeleteApiInput{Name: "shop", Revision: store.files["apis/shop"].Revision}); code(err) != "api_in_use" {
+		t.Fatalf("api_in_use: %v", err)
+	}
 	if _, err := uc.DeleteFunction(ctx, DeleteFunctionInput{Name: "blog", Revision: store.files["functions/blog"].Revision}); code(err) != "function_in_use" {
 		t.Fatalf("function_in_use: %v", err)
 	}
@@ -478,6 +481,9 @@ func TestBucketsAndCDN(t *testing.T) {
 	if _, err := uc.DeleteBucket(ctx, DeleteBucketInput{Name: "site", Revision: rev}); err != nil {
 		t.Fatal(err)
 	}
+	if _, err := uc.DeleteDistribution(ctx, DeleteDistributionInput{Name: "fast", Revision: store.files["cdn/fast"].Revision}); err != nil {
+		t.Fatal(err)
+	}
 	if out, err := uc.DeleteApi(ctx, DeleteApiInput{Name: "shop", Revision: api.API.Source.Revision}); err != nil || out.DnsProblem != "" || dns.hosts["shop-apigw-cloud.taramanji.com"] {
 		t.Fatalf("api の DNS を消す: %v", err)
 	}
@@ -492,24 +498,31 @@ func TestCDNBehaviors(t *testing.T) {
 		t.Fatal(err)
 	}
 	spec := &DistributionSpec{Name: "vrst", OriginType: "bucket", Origin: "front", CacheSeconds: 300, Spa: true,
-		Behaviors: []*DistributionBehavior{{Path: "/api", OriginType: "function", Origin: "blog"}}}
+		Behaviors: []*DistributionBehavior{{Path: "/api", OriginType: "api", Origin: "backend"}}}
 	// パスごとの元も、ないものには向けられない（欄は behaviors）
 	if _, err := uc.ApplyDistribution(ctx, ApplyDistributionInput{Spec: spec}); code(err) != "invalid" {
-		t.Fatalf("ない関数: %v", err)
+		t.Fatalf("ない API: %v", err)
+	}
+	// 関数は元にできない（API を通す）
+	if _, err := uc.ApplyDistribution(ctx, ApplyDistributionInput{Spec: &DistributionSpec{Name: "vrst", OriginType: "function", Origin: "blog"}}); code(err) != "invalid" {
+		t.Fatalf("関数を元にできてしまう: %v", err)
 	}
 	if _, err := uc.ApplyFunction(ctx, ApplyFunctionInput{Spec: blogSpec()}); err != nil {
 		t.Fatal(err)
 	}
+	if _, err := uc.ApplyApi(ctx, ApplyApiInput{Spec: &ApiSpec{Name: "backend", Routes: []*ApiRoute{{Path: "/", Function: "blog"}}}}); err != nil {
+		t.Fatal(err)
+	}
 	out, err := uc.ApplyDistribution(ctx, ApplyDistributionInput{Spec: spec})
-	if err != nil || len(out.Distribution.Spec.Behaviors) != 1 || out.Distribution.Spec.Behaviors[0].Origin != "blog" || !out.Distribution.Source.FormEditable {
+	if err != nil || len(out.Distribution.Spec.Behaviors) != 1 || out.Distribution.Spec.Behaviors[0].Origin != "backend" || !out.Distribution.Source.FormEditable {
 		t.Fatalf("cdn: %+v %v", out, err)
 	}
-	if y := store.files["cdn/vrst"].YAML; !strings.Contains(y, "value: /api") || !strings.Contains(y, "value: blog") {
+	if y := store.files["cdn/vrst"].YAML; !strings.Contains(y, "value: /api") || !strings.Contains(y, "name: X-Cloud-Api\n") || !strings.Contains(y, "value: backend") {
 		t.Fatalf("yaml:\n%s", y)
 	}
-	// パスごとの元として使われている関数も消せない
-	if _, err := uc.DeleteFunction(ctx, DeleteFunctionInput{Name: "blog", Revision: store.files["functions/blog"].Revision}); code(err) != "function_in_use" {
-		t.Fatalf("function_in_use: %v", err)
+	// パスごとの元として使われている API も消せない
+	if _, err := uc.DeleteApi(ctx, DeleteApiInput{Name: "backend", Revision: store.files["apis/backend"].Revision}); code(err) != "api_in_use" {
+		t.Fatalf("api_in_use: %v", err)
 	}
 }
 

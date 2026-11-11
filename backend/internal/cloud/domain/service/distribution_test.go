@@ -11,7 +11,7 @@ func TestDistributionBehaviors(t *testing.T) {
 	s := DistributionSpec{Name: "vrst", OriginType: OriginBucket, Origin: "front", CacheSeconds: 300, SPA: true,
 		Behaviors: []DistributionOrigin{
 			{Path: "/assets/", OriginType: OriginBucket, Origin: "front", CacheSeconds: MaxCacheSeconds},
-			{Path: " /api ", OriginType: OriginFunction, Origin: "backend"},
+			{Path: " /api ", OriginType: OriginAPI, Origin: "backend"},
 		}}
 	if err := s.Normalize().Validate(); err != nil {
 		t.Fatal(err)
@@ -32,9 +32,10 @@ func TestDistributionBehaviors(t *testing.T) {
 	if !reflect.DeepEqual(paths, []string{"/assets", "/api", "/"}) {
 		t.Fatalf("順番 %v", paths)
 	}
-	// /api のルールは関数へ（バケットのヘッダーは消す）。キャッシュしない
+	// /api のルールは API へ（関数・バケットのヘッダーは消す）。キャッシュしない
 	api := r.Spec.Rules[1].Filters[0].RequestHeaderModifier
-	if api.Set[0] != (headerValue{Name: HeaderFunction, Value: "backend"}) || api.Set[1].Value != "0" || api.Remove[0] != HeaderBucket {
+	if api.Set[0] != (headerValue{Name: HeaderAPIOrigin, Value: "backend"}) || api.Set[1].Value != "0" ||
+		!reflect.DeepEqual(api.Remove, []string{HeaderFunction, HeaderBucket, HeaderAuth, HeaderAPIKeys, HeaderCORS}) {
 		t.Fatalf("/api: %+v", api)
 	}
 
@@ -46,7 +47,7 @@ func TestDistributionBehaviors(t *testing.T) {
 	if got := p.Spec.Uses(OriginBucket); !reflect.DeepEqual(got, []string{"front"}) {
 		t.Fatalf("uses bucket %v", got)
 	}
-	if got := p.Spec.Uses(OriginFunction); !reflect.DeepEqual(got, []string{"backend"}) {
+	if got := p.Spec.Uses(OriginAPI); !reflect.DeepEqual(got, []string{"backend"}) {
 		t.Fatalf("uses function %v", got)
 	}
 
@@ -58,13 +59,13 @@ func TestDistributionBehaviors(t *testing.T) {
 
 	for name, bad := range map[string][]DistributionOrigin{
 		"/ を behavior に":   {{Path: "/", OriginType: OriginBucket, Origin: "front"}},
-		"パスの重複":            {{Path: "/api", OriginType: OriginFunction, Origin: "a"}, {Path: "/api/", OriginType: OriginFunction, Origin: "b"}},
-		"使えない文字":           {{Path: "/a b", OriginType: OriginFunction, Origin: "a"}},
-		"..":               {{Path: "/a/../b", OriginType: OriginFunction, Origin: "a"}},
-		"/ で始まらない":         {{Path: "api", OriginType: OriginFunction, Origin: "a"}},
-		"元なし":              {{Path: "/api", OriginType: OriginFunction}},
-		"関数に SPA":          {{Path: "/api", OriginType: OriginFunction, Origin: "a", SPA: true}},
-		"長すぎるキャッシュ":        {{Path: "/api", OriginType: OriginFunction, Origin: "a", CacheSeconds: MaxCacheSeconds + 1}},
+		"パスの重複":            {{Path: "/api", OriginType: OriginAPI, Origin: "a"}, {Path: "/api/", OriginType: OriginAPI, Origin: "b"}},
+		"使えない文字":           {{Path: "/a b", OriginType: OriginAPI, Origin: "a"}},
+		"..":               {{Path: "/a/../b", OriginType: OriginAPI, Origin: "a"}},
+		"/ で始まらない":         {{Path: "api", OriginType: OriginAPI, Origin: "a"}},
+		"元なし":              {{Path: "/api", OriginType: OriginAPI}},
+		"API に SPA":        {{Path: "/api", OriginType: OriginAPI, Origin: "a", SPA: true}},
+		"長すぎるキャッシュ":        {{Path: "/api", OriginType: OriginAPI, Origin: "a", CacheSeconds: MaxCacheSeconds + 1}},
 		"16 個（既定と合わせて 17）": make16(),
 	} {
 		spec := DistributionSpec{Name: "vrst", OriginType: OriginBucket, Origin: "front", Behaviors: bad}
@@ -84,7 +85,7 @@ func TestDistributionBehaviors(t *testing.T) {
 func make16() []DistributionOrigin {
 	out := make([]DistributionOrigin, 16)
 	for i := range out {
-		out[i] = DistributionOrigin{Path: "/p" + string(rune('a'+i)), OriginType: OriginFunction, Origin: "fn"}
+		out[i] = DistributionOrigin{Path: "/p" + string(rune('a'+i)), OriginType: OriginAPI, Origin: "fn"}
 	}
 	return out
 }

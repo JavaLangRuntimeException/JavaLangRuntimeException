@@ -58,6 +58,10 @@ if [ "$ENV" = prod ]; then
     | kubeseal --context "$CTX" --controller-namespace kube-system --format yaml > ../gitops/sealed/taramanji-cloud-functions-plugin-token.yaml
   echo "  ../gitops/sealed/taramanji-cloud-functions-plugin-token.yaml"
 fi
+# CDN（ログイン済み）から API に渡し直したリクエストに cloud-gw が付ける署名の鍵。環境ごとに 1 回だけ作る（変えても困らない）
+GW_KEY="$SRC/gateway-internal-secret-$ENV"
+[ -f "$GW_KEY" ] || (umask 077 && openssl rand -hex 32 > "$GW_KEY")
+args+=(--from-file=GATEWAY_INTERNAL_SECRET="$GW_KEY")
 seal cloud-api-env "$NS" "${args[@]}"
 
 # オブジェクトストレージのマスターキー（バケットのトークンを導く）。環境ごとに 1 回だけ作り、変えない（変えるとトークンが全部変わる）

@@ -1819,7 +1819,7 @@ export type DistributionSpec = Message<"taramanji.cloud.v1.DistributionSpec"> & 
   name: string;
 
   /**
-   * bucket / function
+   * bucket / api（API Gateway。CloudFront の元を API Gateway にするのと同じ。API のルート・認証・CORS が効く）
    *
    * @generated from field: string origin_type = 2;
    */
@@ -1881,7 +1881,7 @@ export type DistributionBehavior = Message<"taramanji.cloud.v1.DistributionBehav
   path: string;
 
   /**
-   * bucket / function
+   * bucket / api（API Gateway。CloudFront の元を API Gateway にするのと同じ。API のルート・認証・CORS が効く）
    *
    * @generated from field: string origin_type = 2;
    */

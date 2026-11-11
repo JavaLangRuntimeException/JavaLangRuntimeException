@@ -22,8 +22,9 @@ const limiterIdleTTL = 10 * time.Minute
 
 // Limit はログインなしの入口（*-apigw-cloud・*-storage-cloud）を大量に叩かれても、関数と Mac mini を守る。
 // 超えたら 429（Retry-After: 1）を返し、next を呼ばない（関数を起こさない）。Pod ごとに数える（2 台なら最大で 2 倍）。
-// Cloudflare の無料プランのレート制限は、ホスト名で絞れない（パスだけ）ので、ここで絞る
-func Limit(l RateLimit, next http.Handler) http.Handler {
+// Cloudflare の無料プランのレート制限は、ホスト名で絞れない（パスだけ）ので、ここで絞る。
+// skip が true のリクエスト（CDN から API に渡し直したもの。1 回目で数えた）は数えない
+func Limit(l RateLimit, next http.Handler, skip func(*http.Request) bool) http.Handler {
 	type entry struct {
 		limiter  *rate.Limiter
 		lastSeen time.Time
@@ -55,7 +56,7 @@ func Limit(l RateLimit, next http.Handler) http.Handler {
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// ヘッダーがない（クラスターの中から）ときは、全員で 1 つの数えを使う
-		if !allow(r.Header.Get(ClientIPHeader)) {
+		if (skip == nil || !skip(r)) && !allow(r.Header.Get(ClientIPHeader)) {
 			w.Header().Set("Retry-After", "1")
 			w.Header().Set("Content-Type", "application/json; charset=utf-8")
 			w.WriteHeader(http.StatusTooManyRequests)
