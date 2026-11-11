@@ -8,8 +8,8 @@ resources:
 
 # set-version.sh が書き換える（タグ v* の push で CI の deploy-prod ジョブ）。初回のリリースまでイメージはない
 images:
-  - { name: taramanji/cloud, newName: ghcr.io/javalangruntimeexception/taramanji-cloud, newTag: v0.2.13 }
-  - { name: taramanji/console, newName: ghcr.io/javalangruntimeexception/taramanji-console, newTag: v0.2.13 }
+  - { name: taramanji/cloud, newName: ghcr.io/javalangruntimeexception/taramanji-cloud, newTag: v0.2.14 }
+  - { name: taramanji/console, newName: ghcr.io/javalangruntimeexception/taramanji-console, newTag: v0.2.14 }
 
 patches:
   # 2 台にして、片方の入れ替え中・ノードの drain 中も止めない
