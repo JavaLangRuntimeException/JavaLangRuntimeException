@@ -12,7 +12,7 @@ components:
 
 # set-version.sh が書き換える（CI の deploy-stg ジョブ）
 images:
-  - { name: taramanji/cloud, newName: ghcr.io/javalangruntimeexception/taramanji-cloud, newTag: sha-45f410e }
+  - { name: taramanji/cloud, newName: ghcr.io/javalangruntimeexception/taramanji-cloud, newTag: sha-928d757 }
   - { name: taramanji/console, newName: ghcr.io/javalangruntimeexception/taramanji-console, newTag: sha-7e27245 }
 
 patches:
