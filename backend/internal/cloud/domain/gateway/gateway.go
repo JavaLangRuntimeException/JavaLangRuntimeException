@@ -119,3 +119,25 @@ type Monitors interface {
 	Update(ctx context.Context, m Monitor) error
 	Delete(ctx context.Context, id int64) error
 }
+
+// FunctionState は関数（アプリ用 namespace の Deployment）の今の台数
+type FunctionState struct {
+	Name     string
+	Replicas int32
+	Ready    int32
+	// LastRequest は最後にリクエストを受けた時刻（どの API Gateway の Pod が受けたものでも）。まだなければゼロ値
+	LastRequest time.Time
+}
+
+// ErrFunctionNotFound は関数（Deployment）がない
+var ErrFunctionNotFound = errors.New("function not found")
+
+// FunctionScaler は API Gateway が関数を起こす・寝かせるための Kubernetes API。
+// 触れるのは台数（scale）と、最後のリクエストの時刻の注釈だけ
+type FunctionScaler interface {
+	Function(ctx context.Context, name string) (FunctionState, error)
+	// Running は 1 台以上で動いている関数
+	Running(ctx context.Context) ([]FunctionState, error)
+	Scale(ctx context.Context, name string, replicas int32) error
+	Touch(ctx context.Context, name string, at time.Time) error
+}

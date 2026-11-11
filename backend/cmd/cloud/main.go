@@ -3,10 +3,13 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -14,6 +17,7 @@ import (
 	"github.com/javalangruntimeexception/taramanji/backend/internal/cloud/domain/gateway"
 	"github.com/javalangruntimeexception/taramanji/backend/internal/cloud/domain/service"
 	infragw "github.com/javalangruntimeexception/taramanji/backend/internal/cloud/infra/gateway"
+	"github.com/javalangruntimeexception/taramanji/backend/internal/cloud/invoker"
 	"github.com/javalangruntimeexception/taramanji/backend/internal/cloud/usecase"
 	"github.com/javalangruntimeexception/taramanji/backend/pkg/util/cfaccess"
 	"github.com/javalangruntimeexception/taramanji/backend/pkg/util/env"
@@ -28,6 +32,12 @@ func main() {
 	logger.Init()
 	_, stop := observability.Init(serviceName)
 	defer stop()
+
+	// 同じイメージを 2 つの役割で動かす: コンソールの API（既定）と、関数を呼び出す API Gateway（CLOUD_MODE=gateway）
+	if env.Optional("CLOUD_MODE", "api") == "gateway" {
+		runGateway()
+		return
+	}
 
 	verifier, err := cfaccess.New(cfaccess.Config{
 		TeamDomain: env.Required("CF_ACCESS_TEAM_DOMAIN"),
@@ -94,6 +104,39 @@ func main() {
 	if err := server.Run(serviceName, func(mux *http.ServeMux) {
 		handlers.Register(mux, connect.WithInterceptors(verifier.Interceptor()))
 	}); err != nil {
+		log.Fatal(err)
+	}
+}
+
+const gatewayServiceName = "cloud-gw"
+
+// runGateway は API Gateway（データプレーン）。cloud の Envoy から来たリクエストを関数に渡し、
+// 0 台なら起こし、しばらく来なければ 0 台に戻す。利用者の認証はしない（公開する API をそのまま通す）
+func runGateway() {
+	appsNamespace := env.Required("APPS_NAMESPACE")
+	kube, err := infragw.NewInClusterKube(env.Required("POD_NAMESPACE"), appsNamespace)
+	if err != nil {
+		log.Fatal(err)
+	}
+	idle, err := time.ParseDuration(env.Optional("FUNCTION_IDLE_TIMEOUT", "5m"))
+	if err != nil || idle < time.Minute {
+		log.Fatal("FUNCTION_IDLE_TIMEOUT must be a duration of at least 1m")
+	}
+	inv := invoker.New(invoker.Config{
+		Scaler: kube,
+		Upstream: func(name string) *url.URL {
+			return &url.URL{Scheme: "http", Host: name + "." + appsNamespace + ".svc.cluster.local"}
+		},
+		IdleTimeout:      idle,
+		ColdStartTimeout: 60 * time.Second,
+		Log:              logger.L(),
+	})
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go inv.Run(ctx, 30*time.Second)
+	// パスは関数しだいなので、APM のリソース名は関数名にする
+	name := func(r *http.Request) string { return r.Method + " " + r.Header.Get(service.HeaderFunction) }
+	if err := server.RunNamed(gatewayServiceName, name, func(mux *http.ServeMux) { mux.Handle("/", inv) }); err != nil {
 		log.Fatal(err)
 	}
 }

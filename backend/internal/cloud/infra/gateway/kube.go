@@ -2,6 +2,7 @@
 package gateway
 
 import (
+	"bytes"
 	"context"
 	"crypto/tls"
 	"crypto/x509"
@@ -61,14 +62,34 @@ func NewInClusterKube(namespace, appsNamespace string) (*Kube, error) {
 }
 
 func (k *Kube) get(ctx context.Context, path string, out any) error {
+	return k.do(ctx, http.MethodGet, path, nil, out)
+}
+
+// patch は JSON Merge Patch（RFC 7386）を送る
+func (k *Kube) patch(ctx context.Context, path string, body, out any) error {
+	b, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+	return k.do(ctx, http.MethodPatch, path, b, out)
+}
+
+func (k *Kube) do(ctx context.Context, method, path string, body []byte, out any) error {
 	// 投影されたトークンは kubelet が入れ替えるので、毎回読む
 	token, err := os.ReadFile(k.tokenPath)
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, k.base+path, nil)
+	var reader io.Reader
+	if body != nil {
+		reader = bytes.NewReader(body)
+	}
+	req, err := http.NewRequestWithContext(ctx, method, k.base+path, reader)
 	if err != nil {
 		return err
+	}
+	if body != nil {
+		req.Header.Set("Content-Type", "application/merge-patch+json")
 	}
 	req.Header.Set("Authorization", "Bearer "+strings.TrimSpace(string(token)))
 	req.Header.Set("Accept", "application/json")
@@ -77,24 +98,28 @@ func (k *Kube) get(ctx context.Context, path string, out any) error {
 		return err
 	}
 	defer res.Body.Close()
-	body, _ := io.ReadAll(io.LimitReader(res.Body, 8<<20))
+	body, _ = io.ReadAll(io.LimitReader(res.Body, 8<<20))
 	if res.StatusCode != http.StatusOK {
 		if len(body) > 300 {
 			body = body[:300]
 		}
-		return &apiError{path: path, status: res.StatusCode, body: string(body)}
+		return &apiError{method: method, path: path, status: res.StatusCode, body: string(body)}
+	}
+	if out == nil {
+		return nil
 	}
 	return json.Unmarshal(body, out)
 }
 
 type apiError struct {
+	method string
 	path   string
 	status int
 	body   string
 }
 
 func (e *apiError) Error() string {
-	return fmt.Sprintf("kubernetes GET %s: HTTP %d: %s", e.path, e.status, e.body)
+	return fmt.Sprintf("kubernetes %s %s: HTTP %d: %s", e.method, e.path, e.status, e.body)
 }
 
 func isNotFound(err error) bool {

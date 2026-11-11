@@ -22,6 +22,12 @@ import (
 
 // Run は mux にヘルスチェックを足して起動し、SIGTERM で行儀よく止める
 func Run(service string, mount func(mux *http.ServeMux)) error {
+	return RunNamed(service, func(r *http.Request) string { return r.Method + " " + r.URL.Path }, mount)
+}
+
+// RunNamed は APM のリソース名の付け方を変えて起動する。
+// パスが利用者しだいのサービス（リバースプロキシ）は、パスをそのまま名前にすると種類が際限なく増える
+func RunNamed(service string, resourceName func(r *http.Request) string, mount func(mux *http.ServeMux)) error {
 	mux := http.NewServeMux()
 	var ready atomic.Bool
 	ready.Store(true)
@@ -37,9 +43,7 @@ func Run(service string, mount func(mux *http.ServeMux)) error {
 
 	// APM: リソース名は「メソッド + パス」（Connect なら /パッケージ.サービス/RPC 名）
 	handler := httptrace.WrapHandler(mux, service, "",
-		httptrace.WithResourceNamer(func(r *http.Request) string {
-			return r.Method + " " + r.URL.Path
-		}),
+		httptrace.WithResourceNamer(resourceName),
 		// k8s のヘルスチェック（数秒ごと）はトレースしない。混ぜると p95 やエラー率が実際の利用と離れ、
 		// カナリアの自動判定（Datadog の trace.http.request.*）が実態を見なくなる
 		httptrace.WithIgnoreRequest(isHealthCheck),

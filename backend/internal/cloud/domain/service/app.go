@@ -21,6 +21,10 @@ const (
 	// 用意した監視（AlertPresets の ID）と通知先（NotifyChannels）。どちらもカンマ区切り
 	AnnotationAlerts = "cloud.taramanji.com/alerts"
 	AnnotationNotify = "cloud.taramanji.com/notify"
+	// API Gateway が書く、最後にリクエストを受けた時刻（RFC 3339）。しばらく来なければ 0 台に戻す目安にする
+	AnnotationLastRequest = "cloud.taramanji.com/last-request"
+	// 関数を呼ぶとき、Envoy（HTTPRoute の RequestHeaderModifier）が API Gateway に渡す関数名
+	HeaderFunction = "X-Cloud-Function"
 	// アプリ用 namespace は、この優先度が付いていない Pod を作れない（ResourceQuota require-cloud-priority）
 	PriorityClass = "cloud-workload"
 	MaxReplicas   = int32(3)
