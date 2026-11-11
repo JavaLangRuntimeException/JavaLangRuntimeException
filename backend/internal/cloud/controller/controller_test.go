@@ -10,11 +10,20 @@ import (
 	"github.com/javalangruntimeexception/taramanji/backend/internal/cloud/domain/service"
 )
 
+// fakeCluster は共有の namespace（""）と、関数ごとの namespace をまねる
 type fakeCluster struct {
 	configMaps []gateway.LabeledObject
-	secrets    map[string]gateway.LabeledObject
-	data       map[string]map[string]string
-	annotated  int
+	namespaces map[string]map[string]string
+	// objects は「namespace/リソース/名前」→ 中身
+	objects   map[string]map[string]any
+	secrets   map[string]gateway.LabeledObject
+	data      map[string]map[string]string
+	annotated int
+}
+
+func newCluster(cms ...gateway.LabeledObject) *fakeCluster {
+	return &fakeCluster{configMaps: cms, namespaces: map[string]map[string]string{}, objects: map[string]map[string]any{},
+		secrets: map[string]gateway.LabeledObject{}, data: map[string]map[string]string{}}
 }
 
 func (f *fakeCluster) ConfigMaps(_ context.Context, key string) ([]gateway.LabeledObject, error) {
@@ -37,23 +46,66 @@ func (f *fakeCluster) AnnotateConfigMap(_ context.Context, name, key, value stri
 	return nil
 }
 
-func (f *fakeCluster) Secrets(context.Context, string) ([]gateway.LabeledObject, error) {
+func (f *fakeCluster) Namespaces(_ context.Context, selector string) ([]gateway.LabeledObject, error) {
 	out := []gateway.LabeledObject{}
-	for _, s := range f.secrets {
-		out = append(out, s)
+	for name, labels := range f.namespaces {
+		match := true
+		for _, kv := range strings.Split(selector, ",") {
+			k, v, _ := strings.Cut(kv, "=")
+			if labels[k] != v {
+				match = false
+			}
+		}
+		if match {
+			out = append(out, gateway.LabeledObject{Name: name, Labels: labels})
+		}
 	}
 	return out, nil
 }
 
-func (f *fakeCluster) PutSecret(_ context.Context, name string, labels, data map[string]string) error {
-	f.secrets[name] = gateway.LabeledObject{Name: name, Labels: labels}
-	f.data[name] = data
+func (f *fakeCluster) PutNamespace(_ context.Context, name string, labels map[string]string) error {
+	f.namespaces[name] = labels
 	return nil
 }
 
-func (f *fakeCluster) DeleteSecret(_ context.Context, name string) error {
-	delete(f.secrets, name)
-	delete(f.data, name)
+func (f *fakeCluster) DeleteNamespace(_ context.Context, name string) error {
+	delete(f.namespaces, name)
+	for k := range f.secrets {
+		if strings.HasPrefix(k, name+"/") {
+			delete(f.secrets, k)
+			delete(f.data, k)
+		}
+	}
+	return nil
+}
+
+func (f *fakeCluster) Put(_ context.Context, ns, resource, name string, _ map[string]string, obj map[string]any) error {
+	if _, ok := f.namespaces[ns]; !ok {
+		return errors.New("namespace not found")
+	}
+	f.objects[ns+"/"+resource+"/"+name] = obj
+	return nil
+}
+
+func (f *fakeCluster) Secrets(_ context.Context, ns, _ string) ([]gateway.LabeledObject, error) {
+	out := []gateway.LabeledObject{}
+	for k, s := range f.secrets {
+		if strings.HasPrefix(k, ns+"/") {
+			out = append(out, s)
+		}
+	}
+	return out, nil
+}
+
+func (f *fakeCluster) PutSecret(_ context.Context, ns, name string, labels, data map[string]string) error {
+	f.secrets[ns+"/"+name] = gateway.LabeledObject{Name: name, Labels: labels}
+	f.data[ns+"/"+name] = data
+	return nil
+}
+
+func (f *fakeCluster) DeleteSecret(_ context.Context, ns, name string) error {
+	delete(f.secrets, ns+"/"+name)
+	delete(f.data, ns+"/"+name)
 	return nil
 }
 
@@ -76,42 +128,52 @@ func (f *fakeEngine) Disable(_ context.Context, name string) error {
 	return nil
 }
 
-func cm(name string, labels map[string]string) gateway.LabeledObject {
-	return gateway.LabeledObject{Name: name, Labels: labels}
+func cm(name string, labels map[string]string, data ...map[string]string) gateway.LabeledObject {
+	o := gateway.LabeledObject{Name: name, Labels: labels}
+	if len(data) > 0 {
+		o.Data = data[0]
+	}
+	return o
 }
 
-func TestReconcile(t *testing.T) {
-	cluster := &fakeCluster{secrets: map[string]gateway.LabeledObject{}, data: map[string]map[string]string{}, configMaps: []gateway.LabeledObject{
+func registration(name, dbs, buckets string) gateway.LabeledObject {
+	return cm("function-"+name, map[string]string{service.LabelFunction: name},
+		map[string]string{"cpuMillis": "250", "memoryMiB": "256", "databases": dbs, "buckets": buckets})
+}
+
+var key = []byte("0123456789abcdef0123456789abcdef")
+
+func newController(cluster *fakeCluster, pg, rd *fakeEngine) *Controller {
+	return New(Config{Cluster: cluster, MasterKey: key, Env: "prod", Registry: "cloud-apps", ConsoleNamespace: "cloud",
+		Engines:    map[string]gateway.DatabaseEngine{"postgres": pg, "redis": rd},
+		Endpoints:  map[string]Endpoint{"postgres": {Host: "cloud-postgres.cloud.svc.cluster.local", Port: 5432}, "redis": {Host: "cloud-redis.cloud.svc.cluster.local", Port: 6379}},
+		StorageURL: "http://cloud-storage.cloud.svc.cluster.local:8080"})
+}
+
+func TestDatabasesAndBuckets(t *testing.T) {
+	cluster := newCluster(
 		cm("db-main", map[string]string{service.LabelDatabase: "main", service.LabelEngine: "postgres"}),
 		cm("db-cache-1", map[string]string{service.LabelDatabase: "cache-1", service.LabelEngine: "redis"}),
 		cm("db-old", map[string]string{service.LabelDatabase: "old", service.LabelEngine: "mysql"}),
 		cm("wrong-name", map[string]string{service.LabelDatabase: "main", service.LabelEngine: "postgres"}),
 		cm("bucket-site", map[string]string{service.LabelBucket: "site"}),
-	}}
+	)
 	pg, rd := &fakeEngine{users: map[string]string{}}, &fakeEngine{users: map[string]string{}}
-	key := []byte("0123456789abcdef0123456789abcdef")
-	ctl := New(Config{Cluster: cluster, MasterKey: key, Engines: map[string]gateway.DatabaseEngine{"postgres": pg, "redis": rd},
-		Endpoints:  map[string]Endpoint{"postgres": {Host: "cloud-postgres.cloud.svc.cluster.local", Port: 5432}, "redis": {Host: "cloud-redis.cloud.svc.cluster.local", Port: 6379}},
-		StorageURL: "http://cloud-storage.cloud.svc.cluster.local:8080"})
+	ctl := newController(cluster, pg, rd)
 	ctx := context.Background()
 	if err := ctl.Reconcile(ctx); err != nil {
 		t.Fatal(err)
 	}
-	main := cluster.data["db-main"]
+	main := cluster.data["/db-main"]
 	pw := service.DatabasePassword(key, "postgres", "main")
-	if pg.users["main"] != pw || main["URL"] != "postgres://main:"+pw+"@cloud-postgres.cloud.svc.cluster.local:5432/main?sslmode=disable" || main["NAME"] != "main" {
+	if pg.users["main"] != pw || main["URL"] != "postgres://main:"+pw+"@cloud-postgres.cloud.svc.cluster.local:5432/main?sslmode=disable" {
 		t.Fatalf("postgres: %v", main)
 	}
-	cache := cluster.data["db-cache-1"]
-	if cache["PREFIX"] != "cache-1:" || !strings.HasPrefix(cache["URL"], "redis://cache-1:") || rd.users["cache-1"] == pw {
+	if cache := cluster.data["/db-cache-1"]; cache["PREFIX"] != "cache-1:" || !strings.HasPrefix(cache["URL"], "redis://cache-1:") {
 		t.Fatalf("redis: %v", cache)
 	}
-	if b := cluster.data["bucket-site"]; b["URL"] != "http://cloud-storage.cloud.svc.cluster.local:8080/b/site" || len(b["TOKEN"]) != 64 {
+	if b := cluster.data["/bucket-site"]; b["URL"] != "http://cloud-storage.cloud.svc.cluster.local:8080/b/site" || len(b["TOKEN"]) != 64 {
 		t.Fatalf("bucket: %v", b)
-	}
-	// 使えないエンジンは Secret を作らず、理由を状態に書く。名前の合わない ConfigMap は見ない
-	if _, ok := cluster.data["db-old"]; ok || len(cluster.secrets) != 3 {
-		t.Fatalf("secrets: %v", cluster.secrets)
 	}
 	status := map[string]string{}
 	for _, c := range cluster.configMaps {
@@ -125,7 +187,6 @@ func TestReconcile(t *testing.T) {
 	if err := ctl.Reconcile(ctx); err != nil || cluster.annotated != n {
 		t.Fatalf("2 回目: %v %d→%d", err, n, cluster.annotated)
 	}
-
 	// 定義が消えたら Secret を消し、ログインを止める（中身は消さない）
 	cluster.configMaps = cluster.configMaps[1:2]
 	if err := ctl.Reconcile(ctx); err != nil {
@@ -134,10 +195,91 @@ func TestReconcile(t *testing.T) {
 	if len(cluster.secrets) != 1 || len(pg.disabled) != 1 || pg.disabled[0] != "main" || len(rd.disabled) != 0 {
 		t.Fatalf("消したあと: %v %v", cluster.secrets, pg.disabled)
 	}
-	// エンジンが落ちているあいだは、理由を状態に書く
 	rd.err = errors.New("connection refused")
 	_ = ctl.Reconcile(ctx)
 	if s := cluster.configMaps[0].Annotations[service.AnnotationStatus]; !strings.Contains(s, "connection refused") {
 		t.Fatalf("status: %s", s)
+	}
+}
+
+func TestFunctionNamespaces(t *testing.T) {
+	cluster := newCluster(
+		cm("db-main", map[string]string{service.LabelDatabase: "main", service.LabelEngine: "postgres"}),
+		cm("bucket-site", map[string]string{service.LabelBucket: "site"}),
+		registration("blog", "main", "site"),
+		registration("api", "", ""),
+		registration("waits", "none", ""),
+	)
+	ctl := newController(cluster, &fakeEngine{users: map[string]string{}}, &fakeEngine{users: map[string]string{}})
+	ctx := context.Background()
+	if err := ctl.Reconcile(ctx); err != nil {
+		t.Fatal(err)
+	}
+
+	// 関数ごとに namespace と囲いができる
+	ns := cluster.namespaces["cloud-fn-blog"]
+	if ns["pod-security.kubernetes.io/enforce"] != "baseline" || ns["cloud.taramanji.com/registry"] != "cloud-apps" || ns[service.LabelFunction] != "blog" {
+		t.Fatalf("namespace labels: %v", ns)
+	}
+	for _, o := range []string{"resourcequotas/function", "resourcequotas/require-cloud-priority", "limitranges/function",
+		"networkpolicies/default-deny", "networkpolicies/function", "serviceaccounts/default", "rolebindings/cloud-gw", "rolebindings/cloud-api"} {
+		if _, ok := cluster.objects["cloud-fn-blog/"+o]; !ok {
+			t.Errorf("%s がない", o)
+		}
+	}
+	hard := cluster.objects["cloud-fn-blog/resourcequotas/function"]["spec"].(map[string]any)["hard"].(map[string]string)
+	if hard["limits.memory"] != "512Mi" || hard["pods"] != "2" {
+		t.Fatalf("quota: %v", hard)
+	}
+
+	// 接続先は、つないだ関数の namespace にだけ置く
+	if cluster.data["cloud-fn-blog/db-main"]["URL"] == "" || cluster.data["cloud-fn-blog/bucket-site"]["TOKEN"] == "" {
+		t.Fatal("つないだものの Secret がない")
+	}
+	if _, ok := cluster.secrets["cloud-fn-api/db-main"]; ok {
+		t.Fatal("つないでいない関数に Secret を置いてはいけない")
+	}
+	status := map[string]string{}
+	for _, c := range cluster.configMaps {
+		status[c.Name] = c.Annotations[service.AnnotationStatus]
+	}
+	if status["function-blog"] != "ready" || status["function-api"] != "ready" || !strings.Contains(status["function-waits"], "データベース none") {
+		t.Fatalf("status: %v", status)
+	}
+
+	// つなぐものを外すと、その Secret も消える
+	cluster.configMaps[2] = registration("blog", "", "site")
+	if err := ctl.Reconcile(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := cluster.secrets["cloud-fn-blog/db-main"]; ok {
+		t.Fatal("外したデータベースの Secret が残っている")
+	}
+
+	// 登録が消えたら namespace ごと消す。手で作った・ほかの環境の namespace には触れない
+	cluster.namespaces["cloud-stg-fn-x"] = map[string]string{labelManaged: managedValue, labelRegistry: "cloud-stg-apps", service.LabelFunction: "x"}
+	cluster.namespaces["cloud-fn-hand"] = map[string]string{service.LabelFunction: "hand"}
+	cluster.configMaps = cluster.configMaps[:3]
+	if err := ctl.Reconcile(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := cluster.namespaces["cloud-fn-api"]; ok {
+		t.Fatal("登録が消えた関数の namespace が残っている")
+	}
+	for _, keep := range []string{"cloud-fn-blog", "cloud-stg-fn-x", "cloud-fn-hand"} {
+		if _, ok := cluster.namespaces[keep]; !ok {
+			t.Errorf("%s を消してはいけない", keep)
+		}
+	}
+}
+
+func TestRegistrationValidation(t *testing.T) {
+	cluster := newCluster(cm("function-bad", map[string]string{service.LabelFunction: "bad"}, map[string]string{"cpuMillis": "99999", "memoryMiB": "256"}))
+	ctl := newController(cluster, &fakeEngine{users: map[string]string{}}, &fakeEngine{users: map[string]string{}})
+	if err := ctl.Reconcile(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if len(cluster.namespaces) != 0 || !strings.Contains(cluster.configMaps[0].Annotations[service.AnnotationStatus], "読めません") {
+		t.Fatalf("上限を超える登録では namespace を作らない: %v", cluster.namespaces)
 	}
 }

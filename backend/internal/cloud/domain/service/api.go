@@ -197,7 +197,7 @@ func ParseAPIYAML(name, src string, t APITarget) (*ParsedAPI, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := checkObjects(name, docs, apiKinds, "HTTPRoute"); err != nil {
+	if err := checkObjects(name, docs, apiKinds, "HTTPRoute", noNamespace); err != nil {
 		return nil, err
 	}
 	var r k8sHTTPRoute
@@ -250,3 +250,6 @@ func ParseAPIYAML(name, src string, t APITarget) (*ParsedAPI, error) {
 	}
 	return &ParsedAPI{Spec: spec, FormEditable: editable}, nil
 }
+
+// noNamespace は、namespace を書かない（環境の共有の namespace に入る）リソースの決まり
+func noNamespace(string, string) string { return "" }

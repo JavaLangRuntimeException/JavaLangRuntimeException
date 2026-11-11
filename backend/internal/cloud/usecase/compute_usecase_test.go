@@ -167,7 +167,7 @@ func TestFunctionLifecycle(t *testing.T) {
 	}
 
 	// YAML をそのまま渡す。手で足した ConfigMap があるので、フォームでは編集できない
-	y := updated.Function.Source.Yaml + "---\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: blog-config\n"
+	y := updated.Function.Source.Yaml + "---\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: blog-config\n  namespace: cloud-fn-blog\n"
 	byYAML, err := uc.ApplyFunction(ctx, ApplyFunctionInput{Spec: &FunctionSpec{Name: "blog"}, Yaml: y, Revision: updated.Function.Source.Revision})
 	if err != nil || byYAML.Function.Source.FormEditable || byYAML.Function.Source.Yaml != y {
 		t.Fatalf("yaml: %+v %v", byYAML, err)

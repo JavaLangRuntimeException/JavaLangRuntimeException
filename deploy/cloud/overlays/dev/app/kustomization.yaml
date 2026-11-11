@@ -42,6 +42,7 @@ patches:
             containers:
               - name: app
                 env:
+                  - { name: CLOUD_ENV, value: dev }
                   - { name: APP_ENV, value: dev }
                   - { name: APPS_NAMESPACE, value: cloud-dev-apps }
   - patch: |-
@@ -71,12 +72,12 @@ patches:
   - target: { kind: NetworkPolicy, name: to-cloud-storage }
     patch: |-
       - op: replace
-        path: /spec/ingress/2/from/0/namespaceSelector/matchLabels/kubernetes.io~1metadata.name
+        path: /spec/ingress/2/from/0/namespaceSelector/matchLabels/cloud.taramanji.com~1registry
         value: cloud-dev-apps
   - target: { kind: NetworkPolicy, name: to-cloud-data }
     patch: |-
       - op: replace
-        path: /spec/ingress/0/from/1/namespaceSelector/matchLabels/kubernetes.io~1metadata.name
+        path: /spec/ingress/0/from/1/namespaceSelector/matchLabels/cloud.taramanji.com~1registry
         value: cloud-dev-apps
   - target: { kind: ReferenceGrant, name: apis-to-cloud-gw }
     patch: |-

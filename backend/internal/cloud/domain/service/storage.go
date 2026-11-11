@@ -25,7 +25,8 @@ const (
 
 type k8sConfigMap struct {
 	typeMeta `yaml:",inline"`
-	Metadata objectMeta `yaml:"metadata"`
+	Metadata objectMeta        `yaml:"metadata"`
+	Data     map[string]string `yaml:"data,omitempty"`
 }
 
 // BucketObjectName はバケットの ConfigMap の名前（関数の名前とぶつからないように接頭辞を付ける）
@@ -137,7 +138,7 @@ func ParseDistributionYAML(name, src string, t APITarget) (*ParsedDistribution, 
 	if err != nil {
 		return nil, err
 	}
-	if err := checkObjects(name, docs, apiKinds, "HTTPRoute"); err != nil {
+	if err := checkObjects(name, docs, apiKinds, "HTTPRoute", noNamespace); err != nil {
 		return nil, err
 	}
 	var r k8sHTTPRoute

@@ -66,11 +66,11 @@ Lambda と API Gateway にあたるもの。リソースの正は、**アプリ�
 
 | リソース | YAML の場所 | 中身 |
 |---|---|---|
-| 関数 | `<環境>/functions/<名前>.yaml` | Deployment・Service。コンテナイメージを、リクエストが来たときだけ動かす |
+| 関数 | `<環境>/functions/<名前>.yaml` | 登録の ConfigMap と、関数ごとの namespace に入る Deployment・Service。コンテナイメージを、リクエストが来たときだけ動かす |
 | API | `<環境>/apis/<名前>.yaml` | HTTPRoute 1 つ。`<名前>-cloud.taramanji.com`（stg・dev は `-cloud-stg`・`-cloud-dev`）のパスごとに、渡し先の関数を決める |
 
 - コンソール（関数・API Gateway）のフォームか YAML で作る・変える・消すと、cloud-api がそのファイルをコミットする。クラスターには書かない
-- Argo CD の `cloud-apps-<環境>`（プロジェクト `cloud-apps`）が、そのディレクトリをアプリ用 namespace に入れる。YAML を手で書いて push しても同じ
+- Argo CD の `cloud-apps-<環境>`（プロジェクト `cloud-apps`）が、そのディレクトリを入れる（関数は関数ごとの namespace、ほかは環境の共有の namespace）。YAML を手で書いて push しても同じ
 - 手で書き足した YAML は、フォームでは編集できない（保存すると消えるため）
 - API の名前（＝ホスト名）は、同じ環境の中で重複できない（ファイル名が同じになるので、2 つ目は作れない）
 
@@ -83,7 +83,7 @@ API Gateway（`cloud-gw`。cloud-api と同じイメージを `CLOUD_MODE=gatewa
 - 関数の同時実行は 1 台まで（負荷に合わせて台数を増やすことは、まだしない）
 
 リポジトリを分けているのは、コンソールのトークンが漏れても taramanji.com のマニフェスト（このリポジトリ）を書き換えられないようにするため。
-プロジェクト `cloud-apps` は、入れ先をアプリ用 namespace に、種類を Deployment・Service・ConfigMap・PersistentVolumeClaim・HTTPRoute に限る。
+プロジェクト `cloud-apps` は、入れ先を環境の共有の namespace と関数ごとの namespace（`cloud-fn-*` など）に、種類を Deployment・Service・ConfigMap・PersistentVolumeClaim・HTTPRoute に限る。
 
 **インスタンスタイプ**（EC2 と同じ「ファミリー + 世代 . サイズ」。`backend/internal/cloud/domain/service/instancetype.go`）:
 
@@ -138,6 +138,23 @@ S3 と CloudFront にあたるもの。
   扱うのは `-cloud.taramanji.com`（stg・dev は `-cloud-stg`・`-cloud-dev`）で終わるホスト名だけ。消すのは自分が作った印（コメント）のあるレコードだけ。
   トークンがなければ登録せず、コンソールに手で実行するコマンドを出す
 
+## 関数ごとの namespace（囲い）
+
+関数は 1 つずつ別の namespace で動く（本番 `cloud-fn-<名前>`、stg・dev は `cloud-stg-fn-<名前>`・`cloud-dev-fn-<名前>`）。
+
+- 関数の YAML は、**登録**の ConfigMap `function-<名前>`（環境の共有の namespace。CPU・メモリ・つなぐもの）と、関数の namespace に入る Deployment・Service
+- コントローラー（cloud-ctl）が登録を見て、namespace と囲いを作る。**アプリ用のリポジトリからは作れない**（AppProject `cloud-apps` は Namespace を作れない）
+  - Pod Security: baseline（特権コンテナ・hostPath 不可）
+  - ResourceQuota: 登録した CPU・メモリの 2 台分（入れ替えのあいだだけ 2 台）、NodePort・LoadBalancer は 0。優先度 `cloud-workload` のない Pod は作れない
+  - LimitRange: コンテナ 1 つは登録した量まで
+  - NetworkPolicy: 受けるのは API Gateway（cloud-gw）からだけ。出られるのは DNS・この環境の PostgreSQL / Redis / ストレージ・インターネット（LAN 不可）
+  - default の ServiceAccount はトークンを持たない。cloud-gw は台数だけ、cloud-api は読むだけ（RoleBinding を namespace ごとに作る）
+  - つないだデータベース・バケットの接続先の Secret は、その関数の namespace にだけ置く
+- 登録が消えたら、namespace ごと消す（自分が作った、この環境の、名前の決まりに合うものだけ）
+- 環境の関数のメモリの合計（本番 2.5 GiB、stg・dev 512 MiB）は、API Gateway が関数を起こすときに確かめる（`FUNCTION_MEMORY_CAP_MIB`）。
+  超えるなら起こさず 503。コンソールの「容量」も同じ枠で数える
+- 環境の共有の namespace（`cloud-apps` など）には、API・CDN の HTTPRoute と、登録・バケット・データベースの定義（ConfigMap）だけを置く。Pod は 0 個
+
 ## データベースと、関数へのつなぎ込み
 
 サーバーレスのデータベースにあたるもの。環境ごとに共有の PostgreSQL と Redis を 1 台ずつ動かし、そこからデータベースを切り出す（サイズは選ばない）。
@@ -149,7 +166,7 @@ S3 と CloudFront にあたるもの。
 - **コントローラー**（`cloud-ctl`。cloud のイメージを `CLOUD_MODE=controller` で動かす）が 20 秒ごとに定義を見て、
   - PostgreSQL: ロールとデータベースを作る（ほかのデータベースのユーザーからはつなげない）
   - Redis: ACL のユーザーを作る。触れるのは `<名前>:` で始まるキーだけで、`KEYS`・`FLUSHALL`・`CONFIG` などは使えない
-  - 接続先の Secret（`db-<名前>`、バケットは `bucket-<名前>`）をアプリ用 namespace に作る
+  - 接続先の Secret（`db-<名前>`、バケットは `bucket-<名前>`）を、それをつないだ関数の namespace にだけ作る
   - 状態（`ready` か、エラーの理由）を ConfigMap の注釈 `cloud.taramanji.com/status` に書く。コンソールはこれを読む
 - **パスワードとトークン**は、マスターキー（`cloud-storage-key`）から導く。git にも、コンソールにも出ない。cloud-api は Secret を読めない
 - **つなぎ方**: 関数の「つなぐ」で選ぶ（YAML では `envFrom` の `secretRef`）。接頭辞の付いた環境変数になる
@@ -159,7 +176,7 @@ S3 と CloudFront にあたるもの。
 - **消すとき**: どの関数にもつながれていないものだけ消せる。定義を消すと、Secret を消してログインを止める。**中身は消さない**
   （同じ名前で作り直すと、また使える。本当に消すには、管理者で `DROP DATABASE` する）
 - **メモリ**: PostgreSQL は上限 256 MiB、Redis は上限 128 MiB（`maxmemory` 96 MB。満杯になると書き込みがエラーになる）。
-  アプリ用 namespace の枠（ResourceQuota）とは別に、コンソールの namespace で使う。3 環境で 6 台動く
+  関数の合計の枠とは別に、コンソールの namespace で使う。3 環境で 6 台動く
 - バックアップは、まだない
 
 

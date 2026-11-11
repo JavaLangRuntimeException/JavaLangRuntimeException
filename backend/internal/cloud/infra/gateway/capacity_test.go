@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/javalangruntimeexception/taramanji/backend/internal/cloud/domain/gateway"
 )
 
 func TestParseQuantity(t *testing.T) {
@@ -59,14 +61,17 @@ func testKube(t *testing.T, routes map[string]string) *Kube {
 
 func TestKubeCapacity(t *testing.T) {
 	k := testKube(t, map[string]string{
-		"/api/v1/namespaces/cloud-apps/resourcequotas/apps": `{"status":{
-			"hard":{"limits.memory":"2560Mi","limits.cpu":"4","pods":"30","requests.storage":"50Gi","requests.memory":"2560Mi"},
-			"used":{"limits.memory":"256Mi","limits.cpu":"250m","pods":"1","requests.storage":"0"}}}`,
-		"/api/v1/namespaces/cloud-apps/pods": `{"items":[
+		// 関数ごとの namespace（コントローラーが作ったもの）。名前の決まりに合わないものは見ない
+		"/api/v1/namespaces": `{"items":[
+			{"metadata":{"name":"cloud-fn-web","labels":{"cloud.taramanji.com/function":"web"}}},
+			{"metadata":{"name":"hand-made","labels":{"cloud.taramanji.com/function":"x"}}}]}`,
+		"/api/v1/namespaces/cloud-fn-web/pods": `{"items":[
 			{"metadata":{"name":"web-1"},"spec":{"containers":[{"resources":{"limits":{"memory":"256Mi","cpu":"250m"}}}]},"status":{"phase":"Running"}},
 			{"metadata":{"name":"job-1"},"spec":{"containers":[{"resources":{"limits":{"memory":"128Mi"}}}]},"status":{"phase":"Succeeded"}}]}`,
-		"/apis/metrics.k8s.io/v1beta1/namespaces/cloud-apps/pods": `{"items":[
+		"/apis/metrics.k8s.io/v1beta1/namespaces/cloud-fn-web/pods": `{"items":[
 			{"metadata":{"name":"web-1"},"containers":[{"usage":{"memory":"100Mi","cpu":"12345678n"}}]}]}`,
+		"/apis/apps/v1/namespaces/cloud-fn-web/deployments":     `{"items":[{"metadata":{"name":"web"},"spec":{"replicas":1},"status":{"readyReplicas":1}}]}`,
+		"/apis/apps/v1/namespaces/cloud-fn-web/deployments/web": `{"metadata":{"name":"web"},"spec":{"replicas":1,"template":{"spec":{"containers":[{"resources":{"limits":{"memory":"256Mi"}}}]}}},"status":{"readyReplicas":1}}`,
 		"/api/v1/nodes": `{"items":[
 			{"metadata":{"name":"n1"},"status":{"capacity":{"memory":"12304172Ki","cpu":"10"}}},
 			{"metadata":{"name":"n2"},"status":{"capacity":{"memory":"12304172Ki","cpu":"10"}}}]}`,
@@ -74,24 +79,27 @@ func TestKubeCapacity(t *testing.T) {
 			{"metadata":{"name":"n1"},"usage":{"memory":"1Gi","cpu":"120m"}},
 			{"metadata":{"name":"n2"},"usage":{"memory":"2Gi","cpu":"240m"}}]}`,
 	})
+	k.WithFunctions("prod", gateway.Resources{MemoryBytes: 2560 << 20, CPUMillis: 4000, Pods: 30})
 	ctx := context.Background()
 	q, err := k.AppQuota(ctx)
 	if err != nil || !q.Found || q.Hard.MemoryBytes != 2560<<20 || q.Hard.CPUMillis != 4000 || q.Hard.Pods != 30 ||
-		q.Hard.StorageBytes != 50<<30 || q.Used.MemoryBytes != 256<<20 || q.Used.CPUMillis != 250 || q.Used.Pods != 1 {
+		q.Used.MemoryBytes != 256<<20 || q.Used.CPUMillis != 250 || q.Used.Pods != 1 {
 		t.Fatalf("quota %+v %v", q, err)
 	}
 	pods, err := k.AppPods(ctx)
-	if err != nil || len(pods) != 1 || pods[0].Name != "web-1" || pods[0].MemoryUsed != 100<<20 || pods[0].MemoryLimit != 256<<20 || pods[0].CPUUsed != 12 {
+	if err != nil || len(pods) != 1 || pods[0].Name != "web/web-1" || pods[0].MemoryUsed != 100<<20 || pods[0].MemoryLimit != 256<<20 || pods[0].CPUUsed != 12 {
 		t.Fatalf("pods %+v %v", pods, err)
+	}
+	ws, err := k.AppWorkloads(ctx)
+	if err != nil || len(ws) != 1 || ws[0].Name != "web" {
+		t.Fatalf("workloads %+v %v", ws, err)
+	}
+	running, err := k.Running(ctx)
+	if err != nil || len(running) != 1 || running[0].Name != "web" || running[0].MemoryBytes != 256<<20 {
+		t.Fatalf("running %+v %v", running, err)
 	}
 	nodes, err := k.Nodes(ctx)
 	if err != nil || len(nodes) != 2 || nodes[1].MemoryCapacity != 12304172*1024 || nodes[1].CPUCapacity != 10000 || nodes[1].MemoryUsed != 2<<30 || nodes[1].CPUUsed != 240 {
 		t.Fatalf("nodes %+v %v", nodes, err)
-	}
-
-	// 枠がない（ResourceQuota が見つからない）ときはエラーではなく Found=false
-	k.appsNamespace = "nowhere"
-	if q, err := k.AppQuota(ctx); err != nil || q.Found {
-		t.Fatalf("missing quota: %+v %v", q, err)
 	}
 }

@@ -23,3 +23,98 @@ subjects:
   - { kind: ServiceAccount, name: cloud-api, namespace: cloud }
   - { kind: ServiceAccount, name: cloud-api, namespace: cloud-stg }
   - { kind: ServiceAccount, name: cloud-api, namespace: cloud-dev }
+---
+# 関数ごとの namespace（cloud-fn-<名前> など）を見つけるために、namespace の一覧を読む（cloud-api・cloud-gw）。
+# 中のものに触れる権限は、コントローラーが namespace ごとに RoleBinding で渡す
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cloud-namespace-reader
+rules:
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cloud-namespace-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cloud-namespace-reader
+subjects:
+  - { kind: ServiceAccount, name: cloud-api, namespace: cloud }
+  - { kind: ServiceAccount, name: cloud-api, namespace: cloud-stg }
+  - { kind: ServiceAccount, name: cloud-api, namespace: cloud-dev }
+  - { kind: ServiceAccount, name: cloud-gw, namespace: cloud }
+  - { kind: ServiceAccount, name: cloud-gw, namespace: cloud-stg }
+  - { kind: ServiceAccount, name: cloud-gw, namespace: cloud-dev }
+---
+# 関数の namespace の中で、API Gateway（cloud-gw）が関数を起こす・寝かせる（台数と、最後のリクエストの時刻の注釈だけ）。
+# ClusterRole だが、使うのはコントローラーが関数の namespace ごとに作る RoleBinding から（クラスター全体には渡さない）
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cloud-function-scaler
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "patch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments/scale"]
+    verbs: ["get", "patch"]
+---
+# 関数の namespace の中を、コンソールの API（cloud-api）が読む（状態・容量）。Secret は読めない
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cloud-function-reader
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["pods", "resourcequotas"]
+    verbs: ["get", "list"]
+  - apiGroups: ["metrics.k8s.io"]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+---
+# コントローラー（cloud-ctl）: 関数ごとの namespace と、その囲い・接続先の Secret を作る・消す。
+# 触るのは自分が作った（ラベル managed-by=cloud-ctl の）、名前の決まり（cloud-fn-<名前> など）に合うものだけ（コードで確かめる）。
+# RoleBinding で渡せるのは、上の 2 つの ClusterRole だけ（bind の resourceNames）
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cloud-ctl
+rules:
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list", "create", "update", "delete"]
+  - apiGroups: [""]
+    resources: ["resourcequotas", "limitranges", "serviceaccounts", "secrets"]
+    verbs: ["get", "list", "create", "update", "delete"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["networkpolicies"]
+    verbs: ["get", "list", "create", "update", "delete"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["rolebindings"]
+    verbs: ["get", "list", "create", "update", "delete"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["clusterroles"]
+    verbs: ["bind"]
+    resourceNames: ["cloud-function-scaler", "cloud-function-reader"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cloud-ctl
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cloud-ctl
+subjects:
+  - { kind: ServiceAccount, name: cloud-ctl, namespace: cloud }
+  - { kind: ServiceAccount, name: cloud-ctl, namespace: cloud-stg }
+  - { kind: ServiceAccount, name: cloud-ctl, namespace: cloud-dev }

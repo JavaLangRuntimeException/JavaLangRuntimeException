@@ -1,7 +1,4 @@
-# アプリ用 namespace の通信。受けるのは、この環境の API Gateway（cloud-gw）と同じ namespace のアプリだけ。
-# 関数は API（HTTPRoute）→ cloud-gw を通ってだけ呼ばれる（Envoy から直接は届かない）。
-# 出られるのは DNS・同じ namespace・つないだデータベースとストレージ・クラスターの外（インターネット）だけで、taramanji・data（Redis）・Kubernetes API・
-# Mac mini の LAN には届かない
+# 共有の namespace には Pod を置かない（ResourceQuota で 0）。念のため、通信も全部止めておく
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
@@ -9,40 +6,3 @@ metadata:
 spec:
   podSelector: {}
   policyTypes: [Ingress, Egress]
----
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: apps
-spec:
-  podSelector: {}
-  policyTypes: [Ingress, Egress]
-  ingress:
-    - from:
-        # overlays が、この環境のコンソールの namespace（cloud / cloud-stg / cloud-dev）に書き換える
-        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: cloud } }
-          podSelector: { matchLabels: { app.kubernetes.io/name: cloud-gw } }
-        - podSelector: {}
-  egress:
-    - to:
-        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: kube-system } }
-          podSelector: { matchLabels: { k8s-app: kube-dns } }
-      ports:
-        - { port: 53, protocol: UDP }
-        - { port: 53, protocol: TCP }
-    - to:
-        - podSelector: {}
-    # つないだデータベース（PostgreSQL・Redis）とバケット（ストレージ）。overlays が、この環境のコンソールの namespace に書き換える
-    - to:
-        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: cloud } }
-          podSelector:
-            matchExpressions:
-              - { key: app.kubernetes.io/name, operator: In, values: [cloud-postgres, cloud-redis, cloud-storage] }
-      ports:
-        - { port: 5432 }
-        - { port: 6379 }
-        - { port: 8080 }
-    - to:
-        - ipBlock:
-            cidr: 0.0.0.0/0
-            except: [10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 100.64.0.0/10, 169.254.0.0/16]

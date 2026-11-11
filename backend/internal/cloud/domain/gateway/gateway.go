@@ -137,12 +137,14 @@ type FunctionState struct {
 	Ready    int32
 	// LastRequest は最後にリクエストを受けた時刻（どの API Gateway の Pod が受けたものでも）。まだなければゼロ値
 	LastRequest time.Time
+	// MemoryBytes は 1 台あたりのメモリの上限（環境の合計の枠を確かめるのに使う）
+	MemoryBytes int64
 }
 
 // ErrFunctionNotFound は関数（Deployment）がない
 var ErrFunctionNotFound = errors.New("function not found")
 
-// FunctionScaler は API Gateway が関数を起こす・寝かせるための Kubernetes API。
+// FunctionScaler は API Gateway が関数を起こす・寝かせるための Kubernetes API（関数ごとの namespace の Deployment）。
 // 触れるのは台数（scale）と、最後のリクエストの時刻の注釈だけ
 type FunctionScaler interface {
 	Function(ctx context.Context, name string) (FunctionState, error)
@@ -185,25 +187,34 @@ type DNS interface {
 	Remove(ctx context.Context, host string) error
 }
 
-// LabeledObject はアプリ用 namespace の ConfigMap / Secret の、名前・ラベル・注釈
+// LabeledObject は ConfigMap / Secret / Namespace の、名前・ラベル・注釈（ConfigMap は data も）
 type LabeledObject struct {
 	Name        string
 	Labels      map[string]string
 	Annotations map[string]string
+	Data        map[string]string
 }
 
 // ResourceState はコンソールが、データベースの状態（コントローラーが ConfigMap の注釈に書く）を読む
 type ResourceState interface {
+	// ConfigMaps は環境の共有の namespace の、ラベル labelKey が付いた ConfigMap
 	ConfigMaps(ctx context.Context, labelKey string) ([]LabeledObject, error)
 }
 
-// ResourceCluster はコントローラーが使う Kubernetes API: 定義（ConfigMap）を読み、状態を書き、接続先の Secret を作る・消す
+// ResourceCluster はコントローラーが使う Kubernetes API:
+// 定義（共有の namespace の ConfigMap）を読んで状態を書き、関数ごとの namespace と囲い・接続先の Secret を作る・消す。
+// ns が空なら、環境の共有の namespace
 type ResourceCluster interface {
 	ResourceState
 	AnnotateConfigMap(ctx context.Context, name, key, value string) error
-	Secrets(ctx context.Context, labelSelector string) ([]LabeledObject, error)
-	PutSecret(ctx context.Context, name string, labels, data map[string]string) error
-	DeleteSecret(ctx context.Context, name string) error
+	Namespaces(ctx context.Context, labelSelector string) ([]LabeledObject, error)
+	PutNamespace(ctx context.Context, name string, labels map[string]string) error
+	DeleteNamespace(ctx context.Context, name string) error
+	// Put は囲いのオブジェクト（resourcequotas・limitranges・networkpolicies・serviceaccounts・rolebindings）を置く
+	Put(ctx context.Context, ns, resource, name string, labels map[string]string, obj map[string]any) error
+	Secrets(ctx context.Context, ns, labelSelector string) ([]LabeledObject, error)
+	PutSecret(ctx context.Context, ns, name string, labels, data map[string]string) error
+	DeleteSecret(ctx context.Context, ns, name string) error
 }
 
 // DatabaseEngine は共有の PostgreSQL / Redis から、データベース（とユーザー）を切り出す。何度呼んでも同じ結果になる

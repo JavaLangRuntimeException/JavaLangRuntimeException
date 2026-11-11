@@ -9,10 +9,8 @@ import (
 	"strconv"
 
 	"github.com/javalangruntimeexception/taramanji/backend/internal/cloud/domain/gateway"
+	"github.com/javalangruntimeexception/taramanji/backend/internal/cloud/domain/service"
 )
-
-// appsQuotaName はアプリ用 namespace の枠（deploy/cloud/workloads/quota.yaml）
-const appsQuotaName = "apps"
 
 type quantities map[string]string
 
@@ -23,26 +21,70 @@ type resourceQuota struct {
 	} `json:"status"`
 }
 
-func (k *Kube) AppsNamespace() string { return k.appsNamespace }
+func (k *Kube) AppsNamespace() string { return service.FunctionNamespace(k.env, "*") }
 
+// AppQuota は関数の合計の枠（環境ごと）と、動いている関数の Pod が予約している量の合計。
+// 関数は namespace ごとに分かれているので、合計の枠は API Gateway が関数を起こすときに確かめる
 func (k *Kube) AppQuota(ctx context.Context) (gateway.QuotaStatus, error) {
-	var q resourceQuota
-	err := k.get(ctx, "/api/v1/namespaces/"+url.PathEscape(k.appsNamespace)+"/resourcequotas/"+appsQuotaName, &q)
-	if isNotFound(err) {
-		return gateway.QuotaStatus{}, nil
-	}
+	pods, err := k.functionPods(ctx)
 	if err != nil {
 		return gateway.QuotaStatus{}, err
 	}
-	hard, err := resourcesOf(q.Status.Hard)
-	if err != nil {
-		return gateway.QuotaStatus{}, err
+	q := gateway.QuotaStatus{Found: k.caps.MemoryBytes > 0, Hard: k.caps}
+	for _, p := range pods {
+		if p.Status.Phase == "Succeeded" || p.Status.Phase == "Failed" {
+			continue
+		}
+		q.Used.Pods++
+		for _, c := range p.Spec.Containers {
+			mem, err := parseQuantity(c.Resources.Limits["memory"], 1)
+			if err != nil {
+				return q, err
+			}
+			cpu, err := parseQuantity(c.Resources.Limits["cpu"], 1000)
+			if err != nil {
+				return q, err
+			}
+			q.Used.MemoryBytes += mem
+			q.Used.CPUMillis += cpu
+		}
 	}
-	used, err := resourcesOf(q.Status.Used)
+	return q, nil
+}
+
+type podItem struct {
+	Metadata struct {
+		Name string `json:"name"`
+	} `json:"metadata"`
+	Spec struct {
+		Containers []struct {
+			Resources struct {
+				Limits quantities `json:"limits"`
+			} `json:"resources"`
+		} `json:"containers"`
+	} `json:"spec"`
+	Status struct {
+		Phase string `json:"phase"`
+	} `json:"status"`
+}
+
+// functionPods は全部の関数の namespace の Pod
+func (k *Kube) functionPods(ctx context.Context) ([]podItem, error) {
+	fns, err := k.functionNamespaces(ctx)
 	if err != nil {
-		return gateway.QuotaStatus{}, err
+		return nil, err
 	}
-	return gateway.QuotaStatus{Found: true, Hard: hard, Used: used}, nil
+	out := []podItem{}
+	for _, f := range fns {
+		var list struct {
+			Items []podItem `json:"items"`
+		}
+		if err := k.get(ctx, "/api/v1/namespaces/"+url.PathEscape(f.namespace)+"/pods", &list); err != nil {
+			return nil, err
+		}
+		out = append(out, list.Items...)
+	}
+	return out, nil
 }
 
 // resourcesOf は ResourceQuota の値を読む。メモリと CPU は limits を見る（アプリ用 namespace は requests = limits にそろえてある）
@@ -64,24 +106,6 @@ func resourcesOf(q quantities) (gateway.Resources, error) {
 	return r, nil
 }
 
-type podList struct {
-	Items []struct {
-		Metadata struct {
-			Name string `json:"name"`
-		} `json:"metadata"`
-		Spec struct {
-			Containers []struct {
-				Resources struct {
-					Limits quantities `json:"limits"`
-				} `json:"resources"`
-			} `json:"containers"`
-		} `json:"spec"`
-		Status struct {
-			Phase string `json:"phase"`
-		} `json:"status"`
-	} `json:"items"`
-}
-
 type podMetricsList struct {
 	Items []struct {
 		Metadata struct {
@@ -94,48 +118,56 @@ type podMetricsList struct {
 }
 
 func (k *Kube) AppPods(ctx context.Context) ([]gateway.PodUsage, error) {
-	ns := url.PathEscape(k.appsNamespace)
-	var pods podList
-	if err := k.get(ctx, "/api/v1/namespaces/"+ns+"/pods", &pods); err != nil {
+	fns, err := k.functionNamespaces(ctx)
+	if err != nil {
 		return nil, err
-	}
-	var metrics podMetricsList
-	if err := k.get(ctx, "/apis/metrics.k8s.io/v1beta1/namespaces/"+ns+"/pods", &metrics); err != nil {
-		return nil, err
-	}
-	usage := map[string]gateway.PodUsage{}
-	for _, m := range metrics.Items {
-		var u gateway.PodUsage
-		for _, c := range m.Containers {
-			mem, err := parseQuantity(c.Usage["memory"], 1)
-			if err != nil {
-				return nil, err
-			}
-			cpu, err := parseQuantity(c.Usage["cpu"], 1000)
-			if err != nil {
-				return nil, err
-			}
-			u.MemoryUsed += mem
-			u.CPUUsed += cpu
-		}
-		usage[m.Metadata.Name] = u
 	}
 	out := []gateway.PodUsage{}
-	for _, p := range pods.Items {
-		// 終わった Pod（Job の完了など）は枠を使っていない
-		if p.Status.Phase == "Succeeded" || p.Status.Phase == "Failed" {
-			continue
+	for _, f := range fns {
+		ns := url.PathEscape(f.namespace)
+		var pods struct {
+			Items []podItem `json:"items"`
 		}
-		u := usage[p.Metadata.Name]
-		u.Name = p.Metadata.Name
-		for _, c := range p.Spec.Containers {
-			lim, err := parseQuantity(c.Resources.Limits["memory"], 1)
-			if err != nil {
-				return nil, err
+		if err := k.get(ctx, "/api/v1/namespaces/"+ns+"/pods", &pods); err != nil {
+			return nil, err
+		}
+		var metrics podMetricsList
+		if err := k.get(ctx, "/apis/metrics.k8s.io/v1beta1/namespaces/"+ns+"/pods", &metrics); err != nil {
+			return nil, err
+		}
+		usage := map[string]gateway.PodUsage{}
+		for _, m := range metrics.Items {
+			var u gateway.PodUsage
+			for _, c := range m.Containers {
+				mem, err := parseQuantity(c.Usage["memory"], 1)
+				if err != nil {
+					return nil, err
+				}
+				cpu, err := parseQuantity(c.Usage["cpu"], 1000)
+				if err != nil {
+					return nil, err
+				}
+				u.MemoryUsed += mem
+				u.CPUUsed += cpu
 			}
-			u.MemoryLimit += lim
+			usage[m.Metadata.Name] = u
 		}
-		out = append(out, u)
+		for _, p := range pods.Items {
+			// 終わった Pod は枠を使っていない
+			if p.Status.Phase == "Succeeded" || p.Status.Phase == "Failed" {
+				continue
+			}
+			u := usage[p.Metadata.Name]
+			u.Name = f.function + "/" + p.Metadata.Name
+			for _, c := range p.Spec.Containers {
+				lim, err := parseQuantity(c.Resources.Limits["memory"], 1)
+				if err != nil {
+					return nil, err
+				}
+				u.MemoryLimit += lim
+			}
+			out = append(out, u)
+		}
 	}
 	return out, nil
 }

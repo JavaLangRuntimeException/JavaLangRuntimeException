@@ -13,6 +13,8 @@ func validSpec() FunctionSpec {
 		Env: []EnvVar{{Name: "MODE", Value: "prod: \"yes\""}}, Alerts: []string{"restarts", "cpu-high"}, Notify: []string{"discord", "mail"}}.Normalize()
 }
 
+const testNS = "cloud-fn-blog"
+
 func TestNormalizeAndValidate(t *testing.T) {
 	s := validSpec()
 	if s.CPUMillis != 100 || s.MemoryBytes != 128*mib || s.Custom() {
@@ -48,7 +50,7 @@ func TestNormalizeAndValidate(t *testing.T) {
 func TestFunctionYAMLRoundTrip(t *testing.T) {
 	s := validSpec()
 	s.CPUMillis, s.MemoryBytes = 300, 200*mib // 型を選んだあとに個別に変えた
-	y, err := RenderFunctionYAML(s)
+	y, err := RenderFunctionYAML(s, testNS)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,12 +62,17 @@ func TestFunctionYAMLRoundTrip(t *testing.T) {
 		}
 	}
 	// 台数は API Gateway が決める。外への公開は API（HTTPRoute）の YAML に書く
-	for _, not := range []string{"replicas", "HTTPRoute", "namespace:"} {
+	for _, want := range []string{"name: function-blog", "cloud.taramanji.com/function: blog", "cpuMillis: \"300\"", "memoryMiB: \"200\"", "namespace: cloud-fn-blog"} {
+		if !strings.Contains(y, want) {
+			t.Errorf("YAML に %q がない:\n%s", want, y)
+		}
+	}
+	for _, not := range []string{"replicas", "HTTPRoute"} {
 		if strings.Contains(y, not) {
 			t.Errorf("YAML に %q を書かない:\n%s", not, y)
 		}
 	}
-	p, err := ParseFunctionYAML("blog", y)
+	p, err := ParseFunctionYAML("blog", y, testNS)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,35 +82,39 @@ func TestFunctionYAMLRoundTrip(t *testing.T) {
 }
 
 func TestParseHandWrittenFunctionYAML(t *testing.T) {
-	y, _ := RenderFunctionYAML(validSpec())
+	y, _ := RenderFunctionYAML(validSpec(), testNS)
 	// 手で書き足した YAML は通すが、フォームでは編集できない
-	p, err := ParseFunctionYAML("blog", y+"---\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: blog-config\ndata:\n  a: b\n")
+	p, err := ParseFunctionYAML("blog", y+"---\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: blog-config\n  namespace: cloud-fn-blog\ndata:\n  a: b\n", testNS)
 	if err != nil || p.FormEditable {
 		t.Fatalf("ConfigMap を足した YAML: %+v %v", p, err)
 	}
 	// ラベルのない YAML は、収まる一番小さい型にする
-	p, err = ParseFunctionYAML("blog", strings.Replace(y, "    cloud.taramanji.com/instance-type: t1.small\n", "", 1))
+	p, err = ParseFunctionYAML("blog", strings.Replace(y, "    cloud.taramanji.com/instance-type: t1.small\n", "", 1), testNS)
 	if err != nil || p.Spec.InstanceType != "t1.small" {
 		t.Fatalf("型のラベルなし: %+v %v", p, err)
 	}
 
 	rejected := map[string]string{
-		"別の namespace":      strings.Replace(y, "metadata:\n  name: blog\n", "metadata:\n  name: blog\n  namespace: taramanji\n", 1),
-		"許可していない種類":         y + "---\napiVersion: v1\nkind: Secret\nmetadata:\n  name: blog\n",
-		"HTTPRoute は API に": y + "---\napiVersion: gateway.networking.k8s.io/v1\nkind: HTTPRoute\nmetadata:\n  name: blog\n",
-		"優先度なし":             strings.Replace(y, "priorityClassName: cloud-workload", "priorityClassName: other", 1),
-		"台数の指定":             strings.Replace(y, "spec:\n  selector:", "spec:\n  replicas: 2\n  selector:", 1),
-		"ほかのリソースの名前":        strings.Replace(y, "kind: Service\nmetadata:\n  name: blog\n", "kind: Service\nmetadata:\n  name: other\n", 1),
-		"Deployment が 2 つ":  y + "---\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: blog-2\n",
-		"知らない監視":            strings.Replace(y, "alerts: cpu-high,restarts", "alerts: nope", 1),
-		"YAML でない":          "a: [",
+		"別の namespace":       strings.Replace(y, "namespace: cloud-fn-blog", "namespace: taramanji", 1),
+		"namespace なし":       strings.Replace(y, "  namespace: cloud-fn-blog\n", "", 1),
+		"登録とずれている":           strings.Replace(y, "memoryMiB: \"128\"", "memoryMiB: \"64\"", 1),
+		"登録なし":               y[strings.Index(y, "---\n")+4:],
+		"登録を関数の namespace に": strings.Replace(y, "  name: function-blog\n", "  name: function-blog\n  namespace: cloud-fn-blog\n", 1),
+		"許可していない種類":          y + "---\napiVersion: v1\nkind: Secret\nmetadata:\n  name: blog\n",
+		"HTTPRoute は API に":  y + "---\napiVersion: gateway.networking.k8s.io/v1\nkind: HTTPRoute\nmetadata:\n  name: blog\n",
+		"優先度なし":              strings.Replace(y, "priorityClassName: cloud-workload", "priorityClassName: other", 1),
+		"台数の指定":              strings.Replace(y, "spec:\n  selector:", "spec:\n  replicas: 2\n  selector:", 1),
+		"ほかのリソースの名前":         strings.Replace(y, "kind: Service\nmetadata:\n  name: blog\n", "kind: Service\nmetadata:\n  name: other\n", 1),
+		"Deployment が 2 つ":   y + "---\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: blog-2\n",
+		"知らない監視":             strings.Replace(y, "alerts: cpu-high,restarts", "alerts: nope", 1),
+		"YAML でない":           "a: [",
 	}
 	for name, src := range rejected {
 		if src == y {
 			t.Fatalf("%s: テストの置き換えが効いていない", name)
 		}
 		var fe *FieldError
-		if _, err := ParseFunctionYAML("blog", src); !errors.As(err, &fe) {
+		if _, err := ParseFunctionYAML("blog", src, testNS); !errors.As(err, &fe) {
 			t.Errorf("%s は通さない: %v", name, err)
 		}
 	}
@@ -188,7 +199,7 @@ func TestMonitors(t *testing.T) {
 		t.Fatalf("監視 3 つ分のモニター: %d", len(desired))
 	}
 	m := desired[0]
-	if !strings.Contains(m.Query, "kube_namespace:cloud-apps,kube_deployment:blog") ||
+	if !strings.Contains(m.Query, "kube_namespace:cloud-fn-blog,kube_deployment:blog") ||
 		!strings.Contains(m.Message, "@webhook-taramanji-cloud-mail @webhook-taramanji-cloud-discord") ||
 		!strings.Contains(strings.Join(m.Tags, " "), "cloud-app:blog cloud-alert:cpu-high") {
 		t.Fatalf("モニター: %+v", m)
@@ -298,7 +309,7 @@ func TestDatabaseYAMLAndConnections(t *testing.T) {
 	s := validSpec()
 	s.Databases, s.Buckets = []string{"main-db", "cache", "cache"}, []string{"site"}
 	s = s.Normalize()
-	fy, err := RenderFunctionYAML(s)
+	fy, err := RenderFunctionYAML(s, testNS)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -307,12 +318,12 @@ func TestDatabaseYAMLAndConnections(t *testing.T) {
 			t.Errorf("YAML に %q がない:\n%s", want, fy)
 		}
 	}
-	p, err := ParseFunctionYAML("blog", fy)
+	p, err := ParseFunctionYAML("blog", fy, testNS)
 	if err != nil || !p.FormEditable || strings.Join(p.Spec.Databases, ",") != "cache,main-db" || strings.Join(p.Spec.Buckets, ",") != "site" {
 		t.Fatalf("読み戻し: %+v %v", p, err)
 	}
 	// ほかの Secret は envFrom で読ませない
-	if _, err := ParseFunctionYAML("blog", strings.Replace(fy, "name: bucket-site", "name: other-secret", 1)); err == nil {
+	if _, err := ParseFunctionYAML("blog", strings.Replace(fy, "name: bucket-site", "name: other-secret", 1), testNS); err == nil {
 		t.Fatal("ほかの Secret は通さない")
 	}
 }

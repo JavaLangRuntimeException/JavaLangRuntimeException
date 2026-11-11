@@ -63,7 +63,10 @@ export const articles: Article[] = [
             API Gateway（<C>cloud-gw</C>）が、その名前の API か CDN の設定を見て、渡し先の関数かバケットを決めます。
           </li>
           <li>関数が 0 台なら、ここで 1 台に起こしてから渡します。しばらくリクエストが来なければ、また 0 台に戻します。</li>
-          <li>関数は、つないだデータベースとバケットだけを使えます。taramanji.com のサービスや、家の LAN には届きません。</li>
+          <li>
+            関数は 1 つずつ別の namespace で動き、つないだデータベースとバケットだけを使えます。ほかの関数の中身、taramanji.com のサービス、家の LAN
+            には届きません。
+          </li>
         </UL>
         <Note title="使えるのは自分だけです">
           コンソールも、公開した {host} も、Cloudflare Access の後ろにあります。開くと Google のログインが出て、管理者のアカウントだけが通ります（stg・dev
@@ -426,12 +429,30 @@ const { objects } = await (await fetch(\`\${base}?prefix=uploads/\`, { headers: 
         />
 
         <H2 id="function">関数の YAML</H2>
-        <P>フォームで作ると、次のような YAML になります。監視・つなぐものは、注釈と envFrom に入ります。</P>
+        <P>
+          フォームで作ると、次のような YAML になります。1 つ目の ConfigMap は「登録」で、環境の共有の namespace に入ります。コントローラーはこれを見て、
+          関数ごとの namespace（<C>cloud-fn-&lt;名前&gt;</C>）と、その囲いを作ります。Deployment と Service は、その namespace に入ります。
+          監視・つなぐものは、注釈と envFrom に入ります。
+        </P>
         <Code lang="prod/functions/hello.yaml">{`
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: function-hello
+  labels:
+    cloud.taramanji.com/function: hello
+    cloud.taramanji.com/kind: function
+data:
+  buckets: ""
+  cpuMillis: "100"
+  databases: main
+  memoryMiB: "128"
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: hello
+  namespace: cloud-fn-hello
   labels:
     app.kubernetes.io/name: hello
     cloud.taramanji.com/app: hello
@@ -480,6 +501,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: hello
+  namespace: cloud-fn-hello
   labels:
     app.kubernetes.io/name: hello
     cloud.taramanji.com/app: hello
@@ -496,8 +518,10 @@ spec:
         <H2 id="rules">手で書くときの決まり</H2>
         <UL>
           <li>
-            <C>metadata.namespace</C> は書きません（環境のアプリ用 namespace に入ります）。
+            関数の YAML の Deployment・Service・ConfigMap などは <C>metadata.namespace: cloud-fn-&lt;名前&gt;</C>（stg は <C>cloud-stg-fn-</C>、dev は
+            <C>cloud-dev-fn-</C>）に入れます。登録の ConfigMap（<C>function-&lt;名前&gt;</C>）と、API・CDN・バケット・データベースの YAML には namespace を書きません。
           </li>
+          <li>登録の data（CPU・メモリ・つなぐもの）は、Deployment と同じ値にします。ずれていると「YAML に問題」になります。</li>
           <li>
             置けるのは Deployment・Service・ConfigMap・PersistentVolumeClaim（関数）と HTTPRoute（API・CDN）だけです。Secret は置けません。
           </li>
@@ -554,6 +578,7 @@ spec:
         <H2 id="quota">置ける量</H2>
         <P>
           関数が使えるメモリの合計は、本番 2.5 GiB、stg・dev 各 512 MiB です。動いている関数だけが数に入るので、0 台の関数は場所を取りません。
+          関数を起こすと合計が枠を超えるときは、起こさずに 503 を返します（ほかの関数が 0 台に戻ると、また起こせます）。
           あとどれだけ置けるかは <To to="/capacity">容量</To> で見られます。
         </P>
         <P>
@@ -574,6 +599,11 @@ spec:
         <H2 id="isolation">囲い</H2>
         <UL>
           <li>公開したもの（{host}）も Cloudflare Access の後ろにあり、使えるのは管理者のアカウントだけです。</li>
+          <li>
+            関数は 1 つずつ別の namespace（<C>cloud-fn-&lt;名前&gt;</C>）で動きます。namespace と囲い（量の上限・通信の制限・Pod Security・権限）は
+            コントローラーが作り、YAML のリポジトリからは作れません。
+          </li>
+          <li>データベースとバケットの接続先（パスワード・トークン）は、それをつないだ関数の namespace にだけ置かれます。ほかの関数からは読めません。</li>
           <li>関数は、API Gateway からのリクエストだけを受けます。ほかの関数から直接は呼べません。</li>
           <li>関数から出られるのは、つないだデータベースとバケット、インターネットだけです。taramanji.com のサービス・Kubernetes の API・家の LAN には届きません。</li>
           <li>特権コンテナ・hostPath・NodePort は使えません。</li>

@@ -66,6 +66,9 @@ spec:
             - name: GOMEMLIMIT
               valueFrom: { resourceFieldRef: { resource: limits.memory } }
             - { name: APPS_NAMESPACE, value: cloud-apps }
+            - { name: CLOUD_ENV, value: prod }
+            # 環境の関数のメモリの合計の枠。起こすと超えるなら起こさない（関数は namespace ごとに分かれているので、ここで縛る）
+            - { name: FUNCTION_MEMORY_CAP_MIB, value: "512" }
             # リクエストが来なくなってから関数を 0 台に戻すまで（cloud-api にも同じ値を渡して画面に出す）
             - { name: FUNCTION_IDLE_TIMEOUT, value: 5m }
           startupProbe:

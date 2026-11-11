@@ -32,9 +32,18 @@ type Kube struct {
 	http      *http.Client
 	base      string
 	namespace string
-	// appsNamespace はこの環境のアプリを置く namespace（ResourceQuota で枠を決めてある）
+	// appsNamespace はこの環境の共有の namespace（API・CDN の HTTPRoute と、関数・バケット・データベースの定義を置く）
 	appsNamespace string
 	tokenPath     string
+	// env は環境（関数ごとの namespace の名前に使う）、caps は環境ごとの関数の合計の枠
+	env  string
+	caps gateway.Resources
+}
+
+// WithFunctions は関数ごとの namespace を扱うための、環境と合計の枠を決める
+func (k *Kube) WithFunctions(env string, caps gateway.Resources) *Kube {
+	k.env, k.caps = env, caps
+	return k
 }
 
 var (
@@ -189,13 +198,21 @@ func (l workloadList) workloads() []gateway.Workload {
 	return out
 }
 
-// AppWorkloads はアプリ用 namespace の Deployment（Argo CD がアプリのリポジトリから入れたもの）
+// AppWorkloads は関数の Deployment（関数ごとの namespace。Argo CD がアプリ用のリポジトリから入れたもの）
 func (k *Kube) AppWorkloads(ctx context.Context) ([]gateway.Workload, error) {
-	var list workloadList
-	if err := k.get(ctx, "/apis/apps/v1/namespaces/"+url.PathEscape(k.appsNamespace)+"/deployments", &list); err != nil {
+	fns, err := k.functionNamespaces(ctx)
+	if err != nil {
 		return nil, err
 	}
-	return list.workloads(), nil
+	out := []gateway.Workload{}
+	for _, f := range fns {
+		var list workloadList
+		if err := k.get(ctx, "/apis/apps/v1/namespaces/"+url.PathEscape(f.namespace)+"/deployments", &list); err != nil {
+			return nil, err
+		}
+		out = append(out, list.workloads()...)
+	}
+	return out, nil
 }
 
 // LabeledConfigMaps はアプリ用 namespace の、ラベル key が付いた ConfigMap の、そのラベルの値（バケット名など）
