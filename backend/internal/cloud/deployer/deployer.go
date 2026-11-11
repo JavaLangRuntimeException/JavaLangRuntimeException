@@ -20,6 +20,7 @@ import (
 
 	"go.yaml.in/yaml/v3"
 
+	"github.com/javalangruntimeexception/taramanji/backend/internal/cloud/argoview"
 	"github.com/javalangruntimeexception/taramanji/backend/internal/cloud/domain/gateway"
 	"github.com/javalangruntimeexception/taramanji/backend/internal/cloud/domain/service"
 )
@@ -281,6 +282,18 @@ func (d *Deployer) objects(kind string, f gateway.ResourceFile) ([]object, error
 		labels["cloud.taramanji.com/deploy-env"] = d.c.Env
 		labels["cloud.taramanji.com/source"] = source
 		meta["labels"] = labels
+		// 関数は Argo CD の画面で Pod を見られるように、関数ごとの Application（見るだけ）の印を付ける
+		if kind == gateway.KindFunctions {
+			annotations, _ := meta["annotations"].(map[string]any)
+			if annotations == nil {
+				annotations = map[string]any{}
+			}
+			apiVersion, _ := doc["apiVersion"].(string)
+			objKind, _ := doc["kind"].(string)
+			name, _ := meta["name"].(string)
+			annotations[argoview.TrackingAnnotation] = argoview.TrackingID(argoview.AppName(ns), apiVersion, objKind, target, name)
+			meta["annotations"] = annotations
+		}
 		out = append(out, object{source: source, ns: target, body: doc})
 	}
 	ids := make([]string, 0, len(out))

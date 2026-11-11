@@ -50,7 +50,7 @@
 | GitOps | Argo CD 3.5（main を見て同期）・Argo Rollouts 1.10（本番のカナリア）・Sealed Secrets |
 | 入口 | Cloudflare Tunnel → Envoy Gateway 1.9（Gateway API）。ルーターのポートは開けていない |
 | 監視 | Datadog（メトリクス・APM・ログ）・Cloudflare Workers（外から 1 分ごとに見る） |
-| 版 | v0.2.12 |
+| 版 | v0.2.14 |
 
 | namespace | 中身 |
 |---|---|
@@ -76,6 +76,7 @@
 <img alt="CI / CD" src="docs/images/cicd.png" width="100%" />
 
 - PR → dev01〜03（cloud は taramanji-cloud-dev）、main にマージ → stg、タグ（`v*`）→ 本番
+- dev は PR を出したときだけ動き、その PR を閉じると 0 台に戻る（kind のメモリを空けておく）
 - 本番はカナリア（Argo Rollouts）
   - taramanji.com: 10%（Promote 待ち）→ 25% → 50% → 100%。Datadog で 5xx 率と p95 を見て、悪ければ自動で元に戻す
   - taramanji cloud の基盤（cloud-api・cloud-gw・console）: 1 台（50%）で Promote 待ち。cloud-api は 5xx 率で自動で戻す
@@ -120,11 +121,13 @@ AWS のコンソールのように使える、自分専用の小さなクラウ�
 
 <img alt="taramanji cloud のしくみ" src="docs/images/cloud.png" width="100%" />
 
-- **切り離し**: トンネル・Gateway・Cloudflare Access のアプリを taramanji.com と分けている。関数などはコントローラーが YAML から入れる（Argo CD は使わない）。taramanji の Secret・セッション・Redis は使わない
+- **切り離し**: トンネル・Gateway・Cloudflare Access のアプリを taramanji.com と分けている。関数などはデプロイヤー（cloud-ctl）が YAML から入れる（Argo CD は入れない。Argo CD の画面では関数ごとに Pod が動いているかだけ見られる）。taramanji の Secret・セッション・Redis は使わない
 - **関数ごとの namespace**: 関数は 1 つずつ `taramanji-cloud-fn-<名前>` で動く。namespace と囲い（Quota・NetworkPolicy・Pod Security・権限）はコントローラーが作り、YAML のリポジトリからは作れない
 - **接続先**: データベースとバケットのパスワード・トークンは、つないだ関数の namespace にだけ置く。git にもコンソールにも出ない
 - **使えるのは自分だけ**: コンソールも、公開した関数・CDN も Cloudflare Access の後ろ
 - **メモリ**: 関数の合計は本番 2.5 GiB まで（taramanji.com・gws の伸びしろを残す）。足りなくなったら taramanji より先に止まる
+- **環境**: アプリ（関数など）は本番だけ。stg・dev には基盤だけを置き、taramanji と同じく stg はいつも、dev は PR のときだけ動く
+- **デプロイの様子**: YAML を push すると 15 秒ほどで入り、コンソールの各画面に「デプロイ」の状態と履歴が出る
 
 詳しくは [deploy/cloud/README.md](deploy/cloud/README.md)。
 

@@ -14,6 +14,7 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/javalangruntimeexception/taramanji/backend/internal/cloud/argoview"
 	"github.com/javalangruntimeexception/taramanji/backend/internal/cloud/controller"
 	"github.com/javalangruntimeexception/taramanji/backend/internal/cloud/deployer"
 	"github.com/javalangruntimeexception/taramanji/backend/internal/cloud/di"
@@ -327,7 +328,26 @@ func runController() {
 	} else {
 		go ctl.Run(ctx, 20*time.Second)
 	}
-	if err := server.Run(controllerServiceName, func(*http.ServeMux) {}); err != nil {
+	// Argo CD の画面で関数の Pod を見るため、ApplicationSet の plugin ジェネレーターに関数の名前を返す（トークンがあるときだけ。本番だけ）
+	pluginToken := secretEnv("ARGOCD_PLUGIN_TOKEN", false)
+	if err := server.Run(controllerServiceName, func(mux *http.ServeMux) {
+		if pluginToken == "" {
+			return
+		}
+		mux.Handle(argoview.Path, argoview.Handler(pluginToken, func(ctx context.Context) ([]string, error) {
+			cms, err := kube.ConfigMaps(ctx, service.LabelFunction)
+			if err != nil {
+				return nil, err
+			}
+			names := make([]string, 0, len(cms))
+			for _, cm := range cms {
+				if n := cm.Labels[service.LabelFunction]; service.ValidName(n) && cm.Name == service.FunctionRegistrationName(n) {
+					names = append(names, n)
+				}
+			}
+			return names, nil
+		}))
+	}); err != nil {
 		log.Fatal(err)
 	}
 }

@@ -45,6 +45,16 @@ if [ "$ENV" = prod ] && [ -f "$SRC/cloudflare.env" ] && [ -f "$SRC/tunnel-cloud.
   args+=(--from-literal=CF_DNS_API_TOKEN="$(get CF_DNS_API_TOKEN "$SRC/cloudflare.env")" --from-literal=CF_ZONE_ID="$(get CF_ZONE_ID "$SRC/cloudflare.env")" \
     --from-literal=CF_TUNNEL_ID="$(python3 -c "import json,sys;print(json.load(open(sys.argv[1]))['TunnelID'])" "$SRC/tunnel-cloud.json")")
 fi
+# Argo CD の画面で関数の Pod を見るための、ApplicationSet（plugin ジェネレーター）とコントローラーのあいだのトークン（本番だけ）。
+# 1 回だけ作る。Argo CD 側の Secret（argocd namespace）も同じ値で作る
+if [ "$ENV" = prod ]; then
+  [ -f "$SRC/argocd-plugin-token" ] || (umask 077 && openssl rand -hex 32 > "$SRC/argocd-plugin-token")
+  args+=(--from-file=ARGOCD_PLUGIN_TOKEN="$SRC/argocd-plugin-token")
+  kubectl create secret generic taramanji-cloud-functions-plugin -n argocd --from-file=token="$SRC/argocd-plugin-token" --dry-run=client -o json \
+    | kubectl label --local -f - app.kubernetes.io/part-of=argocd -o json \
+    | kubeseal --context "$CTX" --controller-namespace kube-system --format yaml > ../gitops/sealed/taramanji-cloud-functions-plugin-token.yaml
+  echo "  ../gitops/sealed/taramanji-cloud-functions-plugin-token.yaml"
+fi
 seal cloud-api-env "$NS" "${args[@]}"
 
 # オブジェクトストレージのマスターキー（バケットのトークンを導く）。環境ごとに 1 回だけ作り、変えない（変えるとトークンが全部変わる）

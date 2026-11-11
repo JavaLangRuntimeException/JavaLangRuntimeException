@@ -1,0 +1,80 @@
+# taramanji cloud の関数を、Argo CD の画面で見るためのもの（見るだけ）。
+#   - 関数ごとに Application（taramanji-cloud-fn-<名前>）が 1 つでき、Deployment → ReplicaSet → Pod の状態（動いているか）が見える
+#   - 入れるのはデプロイヤー（cloud-ctl）のまま。Argo CD は同期しない（自動同期なし・手での同期も sync window で止める）
+#   - カナリア・監視はなし。関数の一覧は、ApplicationSet の plugin ジェネレーターがコントローラー（cloud-ctl）に聞く
+#     （deploy/cloud/overlays/prod/app/argoview.yaml。アプリは本番だけなので本番だけ）
+#   - デプロイヤーは関数の YAML のものに argocd.argoproj.io/tracking-id を付ける（Argo CD がどの Application のものか判断する印）
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: taramanji-cloud-functions
+  namespace: argocd
+spec:
+  description: taramanji cloud の関数（見るだけ。入れるのはデプロイヤー）
+  sourceRepos:
+    - git@github.com:JavaLangRuntimeException/taramanji-cloud-apps.git
+  destinations:
+    - { server: https://kubernetes.default.svc, namespace: taramanji-cloud-apps }
+    - { server: https://kubernetes.default.svc, namespace: "taramanji-cloud-fn-*" }
+  clusterResourceWhitelist: []
+  namespaceResourceWhitelist:
+    - { group: apps, kind: Deployment }
+    - { group: "", kind: Service }
+    - { group: "", kind: ConfigMap }
+    - { group: "", kind: PersistentVolumeClaim }
+  # 同期はいつも止める（Sync を押しても動かない）。関数を入れ替えるのはデプロイヤーだけ
+  syncWindows:
+    - kind: deny
+      schedule: "* * * * *"
+      duration: 24h
+      applications: ["*"]
+      manualSync: false
+---
+# plugin ジェネレーターの問い合わせ先。token は Secret taramanji-cloud-functions-plugin の token（deploy/gitops/sealed/。seal.sh prod が作り、bootstrap.sh が入れる）
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: taramanji-cloud-functions-plugin
+  namespace: argocd
+data:
+  token: "$taramanji-cloud-functions-plugin:token"
+  baseUrl: "http://cloud-ctl.taramanji-cloud.svc.cluster.local:8080"
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: taramanji-cloud-functions
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - plugin:
+        configMapRef: { name: taramanji-cloud-functions-plugin }
+        requeueAfterSeconds: 30
+  # 関数を消したとき、Application だけ消す（中身はデプロイヤーが消す）
+  syncPolicy:
+    preserveResourcesOnDeletion: true
+  template:
+    metadata:
+      name: "taramanji-cloud-fn-{{.name}}"
+      labels:
+        cloud.taramanji.com/function: "{{.name}}"
+    spec:
+      project: taramanji-cloud-functions
+      source:
+        repoURL: git@github.com:JavaLangRuntimeException/taramanji-cloud-apps.git
+        targetRevision: main
+        path: prod/functions
+        directory:
+          include: "{{.name}}.yaml"
+      # 登録の ConfigMap（namespace なし）は taramanji-cloud-apps、Deployment・Service は YAML に書いた taramanji-cloud-fn-<名前>
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: taramanji-cloud-apps
+      # syncPolicy なし（自動同期しない）
+      # 関数の台数は API Gateway（cloud-gw）が 0 と 1 を行き来させるので、比べない
+      ignoreDifferences:
+        - group: apps
+          kind: Deployment
+          jsonPointers: [/spec/replicas]
