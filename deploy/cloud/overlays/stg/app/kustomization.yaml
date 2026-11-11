@@ -67,6 +67,7 @@ patches:
             containers:
               - name: app
                 env:
+                  - { name: CLOUD_ENV, value: stg }
                   - { name: APP_ENV, value: staging }
                   - { name: APPS_NAMESPACE, value: cloud-stg-apps }
   - target: { kind: NetworkPolicy, name: to-cloud-storage }

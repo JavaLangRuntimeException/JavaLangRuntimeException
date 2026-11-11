@@ -67,6 +67,7 @@ patches:
             containers:
               - name: app
                 env:
+                  - { name: CLOUD_ENV, value: dev }
                   - { name: APP_ENV, value: dev }
                   - { name: APPS_NAMESPACE, value: cloud-dev-apps }
   - target: { kind: NetworkPolicy, name: to-cloud-storage }
