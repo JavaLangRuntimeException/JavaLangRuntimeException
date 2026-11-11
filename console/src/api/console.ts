@@ -38,7 +38,7 @@ export function useCapacity() {
   });
 }
 
-/** ホスティングで選べるもの（インスタンスタイプ・用意した監視・通知先）。ほぼ変わらないので長く持つ */
+/** 関数と API で選べるもの（インスタンスタイプ・用意した監視・通知先）。ほぼ変わらないので長く持つ */
 export function useHostingOptions() {
   return useQuery({
     queryKey: ["console", "hosting", "options"],
@@ -47,29 +47,43 @@ export function useHostingOptions() {
   });
 }
 
-const appsKey = ["console", "hosting", "apps"] as const;
+const functionsKey = ["console", "functions"] as const;
+const apisKey = ["console", "apis"] as const;
 
-/** アプリの一覧（リポジトリの YAML + クラスターでの状態）。反映待ちが稼働中に変わるのを見るので短めに読み直す */
-export function useApps(enabled: boolean) {
+/** 関数の一覧（リポジトリの YAML + クラスターでの状態）。反映待ち・起動中が変わるのを見るので短めに読み直す */
+export function useFunctions(enabled: boolean) {
   return useQuery({
-    queryKey: appsKey,
-    queryFn: ({ signal }) => consoleApi.listApps({}, { signal }),
+    queryKey: functionsKey,
+    queryFn: ({ signal }) => consoleApi.listFunctions({}, { signal }),
     enabled,
     staleTime: 10_000,
     refetchInterval: 20_000,
   });
 }
 
-/** 保存・削除・監視の同期。終わったら一覧と容量を読み直す */
-export function useHostingMutations() {
+/** API の一覧（ホスト名とルート） */
+export function useApis(enabled: boolean) {
+  return useQuery({
+    queryKey: apisKey,
+    queryFn: ({ signal }) => consoleApi.listApis({}, { signal }),
+    enabled,
+    staleTime: 30_000,
+  });
+}
+
+/** 保存・削除・監視の同期。終わったら一覧と容量を読み直す（API を変えると、関数の「渡している API」も変わる） */
+export function useComputeMutations() {
   const qc = useQueryClient();
   const refresh = () => {
-    void qc.invalidateQueries({ queryKey: appsKey });
+    void qc.invalidateQueries({ queryKey: functionsKey });
+    void qc.invalidateQueries({ queryKey: apisKey });
     void qc.invalidateQueries({ queryKey: ["console", "capacity"] });
   };
   return {
-    apply: useMutation({ mutationFn: (req: Parameters<typeof consoleApi.applyApp>[0]) => consoleApi.applyApp(req), onSuccess: refresh }),
-    remove: useMutation({ mutationFn: (req: Parameters<typeof consoleApi.deleteApp>[0]) => consoleApi.deleteApp(req), onSuccess: refresh }),
+    applyFunction: useMutation({ mutationFn: (req: Parameters<typeof consoleApi.applyFunction>[0]) => consoleApi.applyFunction(req), onSuccess: refresh }),
+    deleteFunction: useMutation({ mutationFn: (req: Parameters<typeof consoleApi.deleteFunction>[0]) => consoleApi.deleteFunction(req), onSuccess: refresh }),
+    applyApi: useMutation({ mutationFn: (req: Parameters<typeof consoleApi.applyApi>[0]) => consoleApi.applyApi(req), onSuccess: refresh }),
+    deleteApi: useMutation({ mutationFn: (req: Parameters<typeof consoleApi.deleteApi>[0]) => consoleApi.deleteApi(req), onSuccess: refresh }),
     syncAlerts: useMutation({ mutationFn: () => consoleApi.syncAlerts({}) }),
   };
 }

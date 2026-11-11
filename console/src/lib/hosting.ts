@@ -1,20 +1,19 @@
-// ホスティング（コンテナ）のフォームの計算。API の int64 は bigint で来るので、ここで number にそろえる
+// 関数と API のフォームの計算。API の int64 は bigint で来るので、ここで number にそろえる
 import { num } from "./capacity";
 
 const MIB = 1024 ** 2;
 
 export type TypeOption = { name: string; cpuMillis: number; memoryMib: number };
 
-export type Limits = { minCpu: number; maxCpu: number; minMemoryMib: number; maxMemoryMib: number; maxReplicas: number };
+export type Limits = { minCpu: number; maxCpu: number; minMemoryMib: number; maxMemoryMib: number };
 
 export type EnvRow = { name: string; value: string };
 
 /** フォームの状態。数は入力の途中（空・範囲外）を持てるよう文字列で持つ */
-export type AppForm = {
+export type FunctionForm = {
   name: string;
   image: string;
   port: string;
-  replicas: string;
   instanceType: string;
   cpuMillis: string;
   memoryMib: string;
@@ -30,13 +29,12 @@ export function typeOptions(types: readonly ApiType[]): TypeOption[] {
 }
 
 /** 新しく作るときの初期値。いちばん小さい型から始める（足りなければ上げる） */
-export function emptyForm(types: readonly TypeOption[]): AppForm {
+export function emptyForm(types: readonly TypeOption[]): FunctionForm {
   const t = types[0];
   return {
     name: "",
     image: "",
     port: "8080",
-    replicas: "1",
     instanceType: t?.name ?? "",
     cpuMillis: t ? String(t.cpuMillis) : "",
     memoryMib: t ? String(t.memoryMib) : "",
@@ -47,12 +45,12 @@ export function emptyForm(types: readonly TypeOption[]): AppForm {
 }
 
 /** 型を選び直すと、CPU とメモリもその型の値に戻す（個別に変えるのはそのあと） */
-export function withInstanceType(form: AppForm, type: TypeOption): AppForm {
+export function withInstanceType(form: FunctionForm, type: TypeOption): FunctionForm {
   return { ...form, instanceType: type.name, cpuMillis: String(type.cpuMillis), memoryMib: String(type.memoryMib) };
 }
 
 /** 型の値から CPU・メモリを変えているか */
-export function isCustom(form: Pick<AppForm, "instanceType" | "cpuMillis" | "memoryMib">, types: readonly TypeOption[]): boolean {
+export function isCustom(form: Pick<FunctionForm, "instanceType" | "cpuMillis" | "memoryMib">, types: readonly TypeOption[]): boolean {
   const t = types.find((x) => x.name === form.instanceType);
   return !!t && (Number(form.cpuMillis) !== t.cpuMillis || Number(form.memoryMib) !== t.memoryMib);
 }
@@ -61,7 +59,6 @@ type ApiSpec = {
   name: string;
   image: string;
   port: number;
-  replicas: number;
   instanceType: string;
   cpuMillis: bigint | number;
   memory: bigint | number;
@@ -70,12 +67,11 @@ type ApiSpec = {
   notify: readonly string[];
 };
 
-export function formOf(spec: ApiSpec): AppForm {
+export function formOf(spec: ApiSpec): FunctionForm {
   return {
     name: spec.name,
     image: spec.image,
     port: String(spec.port),
-    replicas: String(spec.replicas),
     instanceType: spec.instanceType,
     cpuMillis: String(num(spec.cpuMillis)),
     memoryMib: String(num(spec.memory) / MIB),
@@ -86,12 +82,11 @@ export function formOf(spec: ApiSpec): AppForm {
 }
 
 /** API に送る形。名前が空の環境変数の行（足しただけの行）は送らない */
-export function specOf(form: AppForm) {
+export function specOf(form: FunctionForm) {
   return {
     name: form.name.trim(),
     image: form.image.trim(),
     port: Number(form.port) || 0,
-    replicas: Number(form.replicas) || 0,
     instanceType: form.instanceType,
     cpuMillis: BigInt(Math.round(Number(form.cpuMillis) || 0)),
     memory: BigInt(Math.round(Number(form.memoryMib) || 0) * MIB),
@@ -107,14 +102,12 @@ const ENV_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
 const isInt = (s: string) => /^\d+$/.test(s.trim());
 
 /** 送る前にわかる間違い（項目 → 一文）。API も同じことを確かめるので、ここは早く気づくためだけ */
-export function formErrors(form: AppForm, limits: Limits): Partial<Record<keyof AppForm, string>> {
-  const e: Partial<Record<keyof AppForm, string>> = {};
+export function formErrors(form: FunctionForm, limits: Limits): Partial<Record<keyof FunctionForm, string>> {
+  const e: Partial<Record<keyof FunctionForm, string>> = {};
   if (!NAME_RE.test(form.name.trim())) e.name = "英小文字で始め、英小文字・数字・ハイフンで 40 文字まで";
   if (form.image.trim() === "" || /\s/.test(form.image.trim())) e.image = "ghcr.io/owner/name:tag の形で指定してください";
   const port = Number(form.port);
   if (!isInt(form.port) || port < 1 || port > 65535) e.port = "1〜65535";
-  const replicas = Number(form.replicas);
-  if (!isInt(form.replicas) || replicas > limits.maxReplicas) e.replicas = `0〜${limits.maxReplicas}`;
   const cpu = Number(form.cpuMillis);
   if (!isInt(form.cpuMillis) || cpu < limits.minCpu || cpu > limits.maxCpu) e.cpuMillis = `${limits.minCpu}〜${limits.maxCpu} ミリコア`;
   const mem = Number(form.memoryMib);
@@ -129,17 +122,54 @@ export function toggle(list: readonly string[], value: string): string[] {
   return list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
 }
 
-/** アプリの状態の一文。deployed = false は、YAML は保存済みで Argo CD がまだ入れていない */
-export function statusOf(app: { deployed: boolean; ready: number; desired: number; problem: string }): { label: string; level: "ok" | "warn" | "bad" | "off" } {
-  if (app.problem) return { label: "YAML に問題", level: "bad" };
-  if (!app.deployed) return { label: "反映待ち", level: "warn" };
-  if (app.desired === 0) return { label: "停止中", level: "off" };
-  if (app.ready >= app.desired) return { label: `稼働中 ${app.ready}/${app.desired}`, level: "ok" };
-  return { label: `起動中 ${app.ready}/${app.desired}`, level: app.ready === 0 ? "bad" : "warn" };
+/** 関数の状態の一文。0 台は「寝ている」（次のリクエストで起きる）で、異常ではない */
+export function statusOf(fn: { deployed: boolean; ready: number; desired: number; problem: string }): { label: string; level: "ok" | "warn" | "bad" | "off" } {
+  if (fn.problem) return { label: "YAML に問題", level: "bad" };
+  if (!fn.deployed) return { label: "反映待ち", level: "warn" };
+  if (fn.desired === 0) return { label: "待機中（0 台）", level: "off" };
+  if (fn.ready >= fn.desired) return { label: "実行中", level: "ok" };
+  return { label: "起動中", level: "warn" };
 }
 
 const notifyLabels: Record<string, string> = { mail: "メール（SES）", discord: "Discord" };
 
 export function notifyLabel(channel: string): string {
   return notifyLabels[channel] ?? channel;
+}
+
+// ---- API ----
+
+export type RouteRow = { path: string; function: string };
+
+export type ApiForm = { name: string; routes: RouteRow[] };
+
+/** 新しく作るときは、全部のパス（/）を 1 つの関数に渡すところから始める */
+export function emptyApiForm(functions: readonly string[]): ApiForm {
+  return { name: "", routes: [{ path: "/", function: functions[0] ?? "" }] };
+}
+
+export function apiFormOf(spec: { name: string; routes: readonly { path: string; function: string }[] }): ApiForm {
+  return { name: spec.name, routes: spec.routes.map((r) => ({ path: r.path, function: r.function })) };
+}
+
+export function apiSpecOf(form: ApiForm) {
+  return { name: form.name.trim(), routes: form.routes.map((r) => ({ path: r.path.trim(), function: r.function })) };
+}
+
+const PATH_RE = /^\/[A-Za-z0-9._~/-]*$/;
+
+export function apiFormErrors(form: ApiForm): Partial<Record<keyof ApiForm, string>> {
+  const e: Partial<Record<keyof ApiForm, string>> = {};
+  if (!NAME_RE.test(form.name.trim())) e.name = "英小文字で始め、英小文字・数字・ハイフンで 40 文字まで";
+  const paths = form.routes.map((r) => (r.path.trim().length > 1 ? r.path.trim().replace(/\/+$/, "") : r.path.trim()));
+  if (form.routes.length === 0) e.routes = "ルートを 1 つ以上足してください";
+  else if (paths.some((p) => !PATH_RE.test(p) || p.includes("//") || p.includes(".."))) e.routes = "パスは / で始め、英数字と . _ ~ - / にしてください";
+  else if (new Set(paths).size !== paths.length) e.routes = "同じパスが 2 つあります";
+  else if (form.routes.some((r) => r.function === "")) e.routes = "渡し先の関数を選んでください";
+  return e;
+}
+
+/** 「5 分」「90 秒」 */
+export function formatIdle(seconds: number): string {
+  return seconds % 60 === 0 ? `${seconds / 60} 分` : `${seconds} 秒`;
 }

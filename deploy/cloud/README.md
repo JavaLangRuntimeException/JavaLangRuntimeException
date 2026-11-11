@@ -9,8 +9,7 @@ taramanji.com・gws.taramanji.com と同じクラスター（kind）で動くが
 | stg | https://cloud-stg.taramanji.com | `cloud-stg` | なし |
 | dev | https://cloud-dev.taramanji.com | `cloud-dev` | なし |
 
-バケット・アプリの URL（③・④で作る）は 1 階層のサブドメイン（Universal SSL がそのまま使える）:
-`<バケット>-storage.taramanji.com`・`<アプリ>-hosting.taramanji.com`（stg・dev は `-storage-stg`・`-hosting-dev` など）。
+公開する URL は 1 階層のサブドメイン（Universal SSL がそのまま使える）: `<名前>-cloud.taramanji.com`（stg・dev は `-cloud-stg`・`-cloud-dev`）。
 
 ## taramanji.com から切り離しているところ
 
@@ -26,7 +25,7 @@ taramanji.com・gws.taramanji.com と同じクラスター（kind）で動くが
 
 ## アプリの容量（taramanji.com・gws に影響させない）
 
-アプリ（④）は環境ごとのアプリ用名前空間（`cloud-apps`・`cloud-stg-apps`・`cloud-dev-apps`）に置き、`workloads/` で次の 3 つを縛る。
+関数は環境ごとのアプリ用名前空間（`cloud-apps`・`cloud-stg-apps`・`cloud-dev-apps`）に置き、`workloads/` で次の 3 つを縛る。
 
 | | 縛り方 |
 |---|---|
@@ -48,14 +47,27 @@ VM のメモリを増やしたら `overlays/prod/workloads` の枠を広げる�
 コンソールの「容量」は、この枠の残りと Mac mini 全体の実際の空き（予約分を除く）の、先に尽きる方で「S / M / L / XL のアプリがあと何個置けるか」を出す。
 ストレージ（バケット）の容量は ③ で足す。
 
-## ホスティング（コンテナ）
+## 関数と API Gateway
 
-アプリの正は、**アプリ専用のリポジトリ**（`JavaLangRuntimeException/taramanji-cloud-apps`）にある Kubernetes の YAML。
-`<環境>/<名前>.yaml`（`prod/blog.yaml` など）に Deployment・Service・HTTPRoute を書く。
+Lambda と API Gateway にあたるもの。リソースの正は、**アプリ専用のリポジトリ**（`JavaLangRuntimeException/taramanji-cloud-apps`）にある Kubernetes の YAML。
 
-- コンソール（ホスティング → コンテナ）のフォームで作る・変える・消すと、cloud-api がそのファイルをコミットする。クラスターには書かない
-- Argo CD の `cloud-apps-<環境>`（プロジェクト `cloud-apps`）が、そのディレクトリをアプリ用 namespace に入れる
-- YAML を手で書いて push しても同じ。コンソールの「YAML」タブで直接編集もできる。手で書き足した YAML は、フォームでは編集できない（保存すると消えるため）
+| リソース | YAML の場所 | 中身 |
+|---|---|---|
+| 関数 | `<環境>/functions/<名前>.yaml` | Deployment・Service。コンテナイメージを、リクエストが来たときだけ動かす |
+| API | `<環境>/apis/<名前>.yaml` | HTTPRoute 1 つ。`<名前>-cloud.taramanji.com`（stg・dev は `-cloud-stg`・`-cloud-dev`）のパスごとに、渡し先の関数を決める |
+
+- コンソール（関数・API Gateway）のフォームか YAML で作る・変える・消すと、cloud-api がそのファイルをコミットする。クラスターには書かない
+- Argo CD の `cloud-apps-<環境>`（プロジェクト `cloud-apps`）が、そのディレクトリをアプリ用 namespace に入れる。YAML を手で書いて push しても同じ
+- 手で書き足した YAML は、フォームでは編集できない（保存すると消えるため）
+- API の名前（＝ホスト名）は、同じ環境の中で重複できない（ファイル名が同じになるので、2 つ目は作れない）
+
+**呼び出しの流れ**: Cloudflare → トンネル → cloud の Envoy → API（HTTPRoute）が `X-Cloud-Function: <関数名>` を付ける →
+API Gateway（`cloud-gw`。cloud-api と同じイメージを `CLOUD_MODE=gateway` で動かす）→ 関数。
+
+- 関数が 0 台なら、cloud-gw が 1 台にして、応答できるようになるまでリクエストを待たせる（最長 60 秒）
+- 5 分（`FUNCTION_IDLE_TIMEOUT`）リクエストが来なければ、cloud-gw が 0 台に戻す。台数は YAML に書かない（Argo CD は台数を戻さない）
+- 関数は cloud-gw からしか受けない（NetworkPolicy）。`X-Cloud-Function` は HTTPRoute が上書きするので、利用者は渡し先を偽れない
+- 関数の同時実行は 1 台まで（負荷に合わせて台数を増やすことは、まだしない）
 
 リポジトリを分けているのは、コンソールのトークンが漏れても taramanji.com のマニフェスト（このリポジトリ）を書き換えられないようにするため。
 プロジェクト `cloud-apps` は、入れ先をアプリ用 namespace に、種類を Deployment・Service・ConfigMap・PersistentVolumeClaim・HTTPRoute に限る。
@@ -72,12 +84,12 @@ VM のメモリを増やしたら `overlays/prod/workloads` の枠を広げる�
 型を選ぶと CPU・メモリが入り、そのあと個別に変えられる（CPU 10〜1000 ミリコア、メモリ 16〜1024 MiB。上限は LimitRange の max）。
 YAML ではラベル `cloud.taramanji.com/instance-type` が型、`resources` が実際の値（requests = limits）。
 
-**監視**: Deployment の注釈で、用意した監視と通知先を選ぶ。
+**監視**: 関数の Deployment の注釈で、用意した監視と通知先を選ぶ。
 
 ```yaml
 metadata:
   annotations:
-    cloud.taramanji.com/alerts: cpu-high,memory-high,restarts,unavailable,http-5xx
+    cloud.taramanji.com/alerts: cpu-high,memory-high,restarts,errors
     cloud.taramanji.com/notify: mail,discord
 ```
 
@@ -86,8 +98,9 @@ metadata:
 Cloudflare Worker `taramanji-uptime`）。コンソールで保存・削除したときにそろえる。YAML を手で push したときは、コンソールの「監視を同期」を押す。
 stg・dev は Datadog で監視していないので、注釈は残るが通知は飛ばない。
 
-まだないもの: アプリの URL（`<名前>-hosting.taramanji.com`）の DNS は自動では作らない。アプリごとに
-`cloudflared tunnel route dns taramanji-cloud <名前>-hosting.taramanji.com` を実行する。秘密の環境変数・非公開イメージもまだ扱えない。
+まだないもの: API のホスト名の DNS は自動では作らない。API ごとに
+`cloudflared tunnel route dns taramanji-cloud <名前>-cloud.taramanji.com` を実行する（DNS の自動登録は、ストレージ・CDN の PR で入れる）。
+秘密の環境変数・非公開イメージもまだ扱えない。
 
 ## 構成
 
@@ -95,7 +108,7 @@ stg・dev は Datadog で監視していないので、注釈は残るが通知�
 deploy/cloud/
   platform/        全環境で 1 つ（prod の Application が持つ）: 名前空間・Gateway（cloud）・トンネル（cloudflared）
   cluster/         クラスター全体のもの（PriorityClass・ノードを読む ClusterRole）。cloud-cluster アプリ（default プロジェクト）が持つ
-  base/            1 環境ぶん: cloud-api（Go、backend/cmd/cloud）・console（console/ の画面）・HTTPRoute・NetworkPolicy
+  base/            1 環境ぶん: cloud-api・cloud-gw（Go、backend/cmd/cloud）・console（console/ の画面）・HTTPRoute・NetworkPolicy
   workloads/       1 環境ぶんのアプリ用名前空間の枠と囲い（ResourceQuota・LimitRange・NetworkPolicy）
   overlays/
     prod/          platform + app（base）+ workloads + sealed
@@ -135,8 +148,8 @@ deploy/cloud/
    deploy/cloud/scripts/seal.sh dev
    ```
 
-5. **アプリ用のリポジトリ**（ホスティングを使うとき。なくてもコンソールのほかの画面は動く）
-   - GitHub に private の `JavaLangRuntimeException/taramanji-cloud-apps` を作り、`prod/`・`stg/`・`dev/` に空のファイル（`.gitkeep`）を置く
+5. **アプリ用のリポジトリ**（関数と API を使うとき。なくてもコンソールのほかの画面は動く）
+   - GitHub に private の `JavaLangRuntimeException/taramanji-cloud-apps` を作り、`prod/`・`stg/`・`dev/` に空のファイル（`.gitkeep`）を置く（Argo CD は空のディレクトリを読めない）
    - Argo CD が読む鍵: `deploy/cloud/scripts/seal-apps-repo.sh` の先頭の手順（Deploy key を読み取りだけで登録 → SealedSecret を apply）
    - コンソールが書くトークン: そのリポジトリだけ・Contents の Read and write だけの fine-grained PAT を `deploy/cloud/secrets/apps-repo-token` に置き、4 の `seal.sh` を実行し直す
    - 監視を使うなら、Datadog のアプリケーションキーのスコープに `monitors_read`・`monitors_write` を足し、

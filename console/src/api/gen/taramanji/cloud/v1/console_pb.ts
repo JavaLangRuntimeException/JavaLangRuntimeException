@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file taramanji/cloud/v1/console.proto.
  */
 export const file_taramanji_cloud_v1_console: GenFile = /*@__PURE__*/
-  fileDesc("CiB0YXJhbWFuamkvY2xvdWQvdjEvY29uc29sZS5wcm90bxISdGFyYW1hbmppLmNsb3VkLnYxIkoKCUNvbXBvbmVudBIMCgRuYW1lGAEgASgJEg0KBXJlYWR5GAIgASgFEg8KB2Rlc2lyZWQYAyABKAUSDwoHdmVyc2lvbhgEIAEoCSIUChJHZXRPdmVydmlld1JlcXVlc3QivwEKE0dldE92ZXJ2aWV3UmVzcG9uc2USEwoLZW52aXJvbm1lbnQYASABKAkSDQoFZW1haWwYAiABKAkSFwoPbWV0cmljc19lbmFibGVkGAMgASgIEjEKCmNvbXBvbmVudHMYBCADKAsyHS50YXJhbWFuamkuY2xvdWQudjEuQ29tcG9uZW50EhsKE3N0b3JhZ2VfaG9zdF9zdWZmaXgYBSABKAkSGwoTaG9zdGluZ19ob3N0X3N1ZmZpeBgGIAEoCSJcCgZTZXJpZXMSDgoGbWV0cmljGAEgASgJEg0KBWdyb3VwGAIgASgJEgwKBHVuaXQYAyABKAkSFQoNdGltZXN0YW1wc19tcxgEIAMoAxIOCgZ2YWx1ZXMYBSADKAEiIgoRR2V0TWV0cmljc1JlcXVlc3QSDQoFcmFuZ2UYASABKAkiQAoSR2V0TWV0cmljc1Jlc3BvbnNlEioKBnNlcmllcxgBIAMoCzIaLnRhcmFtYW5qaS5jbG91ZC52MS5TZXJpZXMiFAoSR2V0Q2FwYWNpdHlSZXF1ZXN0IiUKBkFtb3VudBIMCgR1c2VkGAEgASgDEg0KBWxpbWl0GAIgASgDIs0BCgVRdW90YRIRCgluYW1lc3BhY2UYASABKAkSKgoGbWVtb3J5GAIgASgLMhoudGFyYW1hbmppLmNsb3VkLnYxLkFtb3VudBInCgNjcHUYAyABKAsyGi50YXJhbWFuamkuY2xvdWQudjEuQW1vdW50EigKBHBvZHMYBCABKAsyGi50YXJhbWFuamkuY2xvdWQudjEuQW1vdW50EjIKDnZvbHVtZV9zdG9yYWdlGAUgASgLMhoudGFyYW1hbmppLmNsb3VkLnYxLkFtb3VudCKAAQoHTWFjaGluZRIUCgxtZW1vcnlfdG90YWwYASABKAMSEwoLbWVtb3J5X3VzZWQYAiABKAMSFwoPbWVtb3J5X3Jlc2VydmVkGAMgASgDEhgKEGNwdV90b3RhbF9taWxsaXMYBCABKAMSFwoPY3B1X3VzZWRfbWlsbGlzGAUgASgDIl4KB1NpemVGaXQSDAoEbmFtZRgBIAEoCRIOCgZtZW1vcnkYAiABKAMSEgoKY3B1X21pbGxpcxgDIAEoAxINCgVjb3VudBgEIAEoBRISCgpsaW1pdGVkX2J5GAUgASgJIlwKCFBvZFVzYWdlEgwKBG5hbWUYASABKAkSEwoLbWVtb3J5X3VzZWQYAiABKAMSFAoMbWVtb3J5X2xpbWl0GAMgASgDEhcKD2NwdV91c2VkX21pbGxpcxgEIAEoAyLEAQoTR2V0Q2FwYWNpdHlSZXNwb25zZRIoCgVxdW90YRgBIAEoCzIZLnRhcmFtYW5qaS5jbG91ZC52MS5RdW90YRIsCgdtYWNoaW5lGAIgASgLMhsudGFyYW1hbmppLmNsb3VkLnYxLk1hY2hpbmUSKQoEZml0cxgDIAMoCzIbLnRhcmFtYW5qaS5jbG91ZC52MS5TaXplRml0EioKBHBvZHMYBCADKAsyHC50YXJhbWFuamkuY2xvdWQudjEuUG9kVXNhZ2UiUAoMSW5zdGFuY2VUeXBlEgwKBG5hbWUYASABKAkSDgoGZmFtaWx5GAIgASgJEg4KBm1lbW9yeRgDIAEoAxISCgpjcHVfbWlsbGlzGAQgASgDIj0KC0FsZXJ0UHJlc2V0EgoKAmlkGAEgASgJEg0KBWxhYmVsGAIgASgJEhMKC2Rlc2NyaXB0aW9uGAMgASgJIhoKGEdldEhvc3RpbmdPcHRpb25zUmVxdWVzdCLqAgoZR2V0SG9zdGluZ09wdGlvbnNSZXNwb25zZRI4Cg5pbnN0YW5jZV90eXBlcxgBIAMoCzIgLnRhcmFtYW5qaS5jbG91ZC52MS5JbnN0YW5jZVR5cGUSNgoNYWxlcnRfcHJlc2V0cxgCIAMoCzIfLnRhcmFtYW5qaS5jbG91ZC52MS5BbGVydFByZXNldBIXCg9ub3RpZnlfY2hhbm5lbHMYAyADKAkSFgoObWluX2NwdV9taWxsaXMYBCABKAMSFgoObWF4X2NwdV9taWxsaXMYBSABKAMSEgoKbWluX21lbW9yeRgGIAEoAxISCgptYXhfbWVtb3J5GAcgASgDEhQKDG1heF9yZXBsaWNhcxgIIAEoBRIVCg1zdG9yZV9lbmFibGVkGAkgASgIEhYKDmFsZXJ0c19lbmFibGVkGAogASgIEhIKCnJlcG9zaXRvcnkYCyABKAkSEQoJZGlyZWN0b3J5GAwgASgJIiUKBkVudlZhchIMCgRuYW1lGAEgASgJEg0KBXZhbHVlGAIgASgJIsoBCgdBcHBTcGVjEgwKBG5hbWUYASABKAkSDQoFaW1hZ2UYAiABKAkSDAoEcG9ydBgDIAEoBRIQCghyZXBsaWNhcxgEIAEoBRIVCg1pbnN0YW5jZV90eXBlGAUgASgJEhIKCmNwdV9taWxsaXMYBiABKAMSDgoGbWVtb3J5GAcgASgDEicKA2VudhgIIAMoCzIaLnRhcmFtYW5qaS5jbG91ZC52MS5FbnZWYXISDgoGYWxlcnRzGAkgAygJEg4KBm5vdGlmeRgKIAMoCSLmAQoDQXBwEikKBHNwZWMYASABKAsyGy50YXJhbWFuamkuY2xvdWQudjEuQXBwU3BlYxIMCgR5YW1sGAIgASgJEhAKCHJldmlzaW9uGAMgASgJEhUKDWZvcm1fZWRpdGFibGUYBCABKAgSGAoQY3VzdG9tX3Jlc291cmNlcxgFIAEoCBIMCgRob3N0GAYgASgJEhIKCnNvdXJjZV91cmwYByABKAkSEAoIZGVwbG95ZWQYCCABKAgSDQoFcmVhZHkYCSABKAUSDwoHZGVzaXJlZBgKIAEoBRIPCgdwcm9ibGVtGAsgASgJIhEKD0xpc3RBcHBzUmVxdWVzdCI5ChBMaXN0QXBwc1Jlc3BvbnNlEiUKBGFwcHMYASADKAsyFy50YXJhbWFuamkuY2xvdWQudjEuQXBwIh0KDUdldEFwcFJlcXVlc3QSDAoEbmFtZRgBIAEoCSI2Cg5HZXRBcHBSZXNwb25zZRIkCgNhcHAYASABKAsyFy50YXJhbWFuamkuY2xvdWQudjEuQXBwIj4KEVByZXZpZXdBcHBSZXF1ZXN0EikKBHNwZWMYASABKAsyGy50YXJhbWFuamkuY2xvdWQudjEuQXBwU3BlYyIiChJQcmV2aWV3QXBwUmVzcG9uc2USDAoEeWFtbBgBIAEoCSJcCg9BcHBseUFwcFJlcXVlc3QSKQoEc3BlYxgBIAEoCzIbLnRhcmFtYW5qaS5jbG91ZC52MS5BcHBTcGVjEgwKBHlhbWwYAiABKAkSEAoIcmV2aXNpb24YAyABKAkiUAoQQXBwbHlBcHBSZXNwb25zZRIkCgNhcHAYASABKAsyFy50YXJhbWFuamkuY2xvdWQudjEuQXBwEhYKDmFsZXJ0c19wcm9ibGVtGAIgASgJIjIKEERlbGV0ZUFwcFJlcXVlc3QSDAoEbmFtZRgBIAEoCRIQCghyZXZpc2lvbhgCIAEoCSIrChFEZWxldGVBcHBSZXNwb25zZRIWCg5hbGVydHNfcHJvYmxlbRgBIAEoCSITChFTeW5jQWxlcnRzUmVxdWVzdCJHChJTeW5jQWxlcnRzUmVzcG9uc2USDwoHY3JlYXRlZBgBIAEoBRIPCgd1cGRhdGVkGAIgASgFEg8KB2RlbGV0ZWQYAyABKAUyxgcKDkNvbnNvbGVTZXJ2aWNlEmAKC0dldE92ZXJ2aWV3EiYudGFyYW1hbmppLmNsb3VkLnYxLkdldE92ZXJ2aWV3UmVxdWVzdBonLnRhcmFtYW5qaS5jbG91ZC52MS5HZXRPdmVydmlld1Jlc3BvbnNlIgASXQoKR2V0TWV0cmljcxIlLnRhcmFtYW5qaS5jbG91ZC52MS5HZXRNZXRyaWNzUmVxdWVzdBomLnRhcmFtYW5qaS5jbG91ZC52MS5HZXRNZXRyaWNzUmVzcG9uc2UiABJgCgtHZXRDYXBhY2l0eRImLnRhcmFtYW5qaS5jbG91ZC52MS5HZXRDYXBhY2l0eVJlcXVlc3QaJy50YXJhbWFuamkuY2xvdWQudjEuR2V0Q2FwYWNpdHlSZXNwb25zZSIAEnIKEUdldEhvc3RpbmdPcHRpb25zEiwudGFyYW1hbmppLmNsb3VkLnYxLkdldEhvc3RpbmdPcHRpb25zUmVxdWVzdBotLnRhcmFtYW5qaS5jbG91ZC52MS5HZXRIb3N0aW5nT3B0aW9uc1Jlc3BvbnNlIgASVwoITGlzdEFwcHMSIy50YXJhbWFuamkuY2xvdWQudjEuTGlzdEFwcHNSZXF1ZXN0GiQudGFyYW1hbmppLmNsb3VkLnYxLkxpc3RBcHBzUmVzcG9uc2UiABJRCgZHZXRBcHASIS50YXJhbWFuamkuY2xvdWQudjEuR2V0QXBwUmVxdWVzdBoiLnRhcmFtYW5qaS5jbG91ZC52MS5HZXRBcHBSZXNwb25zZSIAEl0KClByZXZpZXdBcHASJS50YXJhbWFuamkuY2xvdWQudjEuUHJldmlld0FwcFJlcXVlc3QaJi50YXJhbWFuamkuY2xvdWQudjEuUHJldmlld0FwcFJlc3BvbnNlIgASVwoIQXBwbHlBcHASIy50YXJhbWFuamkuY2xvdWQudjEuQXBwbHlBcHBSZXF1ZXN0GiQudGFyYW1hbmppLmNsb3VkLnYxLkFwcGx5QXBwUmVzcG9uc2UiABJaCglEZWxldGVBcHASJC50YXJhbWFuamkuY2xvdWQudjEuRGVsZXRlQXBwUmVxdWVzdBolLnRhcmFtYW5qaS5jbG91ZC52MS5EZWxldGVBcHBSZXNwb25zZSIAEl0KClN5bmNBbGVydHMSJS50YXJhbWFuamkuY2xvdWQudjEuU3luY0FsZXJ0c1JlcXVlc3QaJi50YXJhbWFuamkuY2xvdWQudjEuU3luY0FsZXJ0c1Jlc3BvbnNlIgBiBnByb3RvMw");
+  fileDesc("CiB0YXJhbWFuamkvY2xvdWQvdjEvY29uc29sZS5wcm90bxISdGFyYW1hbmppLmNsb3VkLnYxIkoKCUNvbXBvbmVudBIMCgRuYW1lGAEgASgJEg0KBXJlYWR5GAIgASgFEg8KB2Rlc2lyZWQYAyABKAUSDwoHdmVyc2lvbhgEIAEoCSIUChJHZXRPdmVydmlld1JlcXVlc3QivwEKE0dldE92ZXJ2aWV3UmVzcG9uc2USEwoLZW52aXJvbm1lbnQYASABKAkSDQoFZW1haWwYAiABKAkSFwoPbWV0cmljc19lbmFibGVkGAMgASgIEjEKCmNvbXBvbmVudHMYBCADKAsyHS50YXJhbWFuamkuY2xvdWQudjEuQ29tcG9uZW50EhsKE3N0b3JhZ2VfaG9zdF9zdWZmaXgYBSABKAkSGwoTaG9zdGluZ19ob3N0X3N1ZmZpeBgGIAEoCSJcCgZTZXJpZXMSDgoGbWV0cmljGAEgASgJEg0KBWdyb3VwGAIgASgJEgwKBHVuaXQYAyABKAkSFQoNdGltZXN0YW1wc19tcxgEIAMoAxIOCgZ2YWx1ZXMYBSADKAEiIgoRR2V0TWV0cmljc1JlcXVlc3QSDQoFcmFuZ2UYASABKAkiQAoSR2V0TWV0cmljc1Jlc3BvbnNlEioKBnNlcmllcxgBIAMoCzIaLnRhcmFtYW5qaS5jbG91ZC52MS5TZXJpZXMiFAoSR2V0Q2FwYWNpdHlSZXF1ZXN0IiUKBkFtb3VudBIMCgR1c2VkGAEgASgDEg0KBWxpbWl0GAIgASgDIs0BCgVRdW90YRIRCgluYW1lc3BhY2UYASABKAkSKgoGbWVtb3J5GAIgASgLMhoudGFyYW1hbmppLmNsb3VkLnYxLkFtb3VudBInCgNjcHUYAyABKAsyGi50YXJhbWFuamkuY2xvdWQudjEuQW1vdW50EigKBHBvZHMYBCABKAsyGi50YXJhbWFuamkuY2xvdWQudjEuQW1vdW50EjIKDnZvbHVtZV9zdG9yYWdlGAUgASgLMhoudGFyYW1hbmppLmNsb3VkLnYxLkFtb3VudCKAAQoHTWFjaGluZRIUCgxtZW1vcnlfdG90YWwYASABKAMSEwoLbWVtb3J5X3VzZWQYAiABKAMSFwoPbWVtb3J5X3Jlc2VydmVkGAMgASgDEhgKEGNwdV90b3RhbF9taWxsaXMYBCABKAMSFwoPY3B1X3VzZWRfbWlsbGlzGAUgASgDIl4KB1NpemVGaXQSDAoEbmFtZRgBIAEoCRIOCgZtZW1vcnkYAiABKAMSEgoKY3B1X21pbGxpcxgDIAEoAxINCgVjb3VudBgEIAEoBRISCgpsaW1pdGVkX2J5GAUgASgJIlwKCFBvZFVzYWdlEgwKBG5hbWUYASABKAkSEwoLbWVtb3J5X3VzZWQYAiABKAMSFAoMbWVtb3J5X2xpbWl0GAMgASgDEhcKD2NwdV91c2VkX21pbGxpcxgEIAEoAyLEAQoTR2V0Q2FwYWNpdHlSZXNwb25zZRIoCgVxdW90YRgBIAEoCzIZLnRhcmFtYW5qaS5jbG91ZC52MS5RdW90YRIsCgdtYWNoaW5lGAIgASgLMhsudGFyYW1hbmppLmNsb3VkLnYxLk1hY2hpbmUSKQoEZml0cxgDIAMoCzIbLnRhcmFtYW5qaS5jbG91ZC52MS5TaXplRml0EioKBHBvZHMYBCADKAsyHC50YXJhbWFuamkuY2xvdWQudjEuUG9kVXNhZ2UiUAoMSW5zdGFuY2VUeXBlEgwKBG5hbWUYASABKAkSDgoGZmFtaWx5GAIgASgJEg4KBm1lbW9yeRgDIAEoAxISCgpjcHVfbWlsbGlzGAQgASgDIj0KC0FsZXJ0UHJlc2V0EgoKAmlkGAEgASgJEg0KBWxhYmVsGAIgASgJEhMKC2Rlc2NyaXB0aW9uGAMgASgJIhoKGEdldEhvc3RpbmdPcHRpb25zUmVxdWVzdCKNAwoZR2V0SG9zdGluZ09wdGlvbnNSZXNwb25zZRI4Cg5pbnN0YW5jZV90eXBlcxgBIAMoCzIgLnRhcmFtYW5qaS5jbG91ZC52MS5JbnN0YW5jZVR5cGUSNgoNYWxlcnRfcHJlc2V0cxgCIAMoCzIfLnRhcmFtYW5qaS5jbG91ZC52MS5BbGVydFByZXNldBIXCg9ub3RpZnlfY2hhbm5lbHMYAyADKAkSFgoObWluX2NwdV9taWxsaXMYBCABKAMSFgoObWF4X2NwdV9taWxsaXMYBSABKAMSEgoKbWluX21lbW9yeRgGIAEoAxISCgptYXhfbWVtb3J5GAcgASgDEhUKDXN0b3JlX2VuYWJsZWQYCSABKAgSFgoOYWxlcnRzX2VuYWJsZWQYCiABKAgSEgoKcmVwb3NpdG9yeRgLIAEoCRIRCglkaXJlY3RvcnkYDCABKAkSHAoUaWRsZV90aW1lb3V0X3NlY29uZHMYDSABKAUSEwoLaG9zdF9zdWZmaXgYDiABKAlKBAgIEAkiJQoGRW52VmFyEgwKBG5hbWUYASABKAkSDQoFdmFsdWUYAiABKAkiXQoGU291cmNlEgwKBHlhbWwYASABKAkSEAoIcmV2aXNpb24YAiABKAkSFQoNZm9ybV9lZGl0YWJsZRgDIAEoCBILCgN1cmwYBCABKAkSDwoHcHJvYmxlbRgFIAEoCSK9AQoMRnVuY3Rpb25TcGVjEgwKBG5hbWUYASABKAkSDQoFaW1hZ2UYAiABKAkSDAoEcG9ydBgDIAEoBRIVCg1pbnN0YW5jZV90eXBlGAQgASgJEhIKCmNwdV9taWxsaXMYBSABKAMSDgoGbWVtb3J5GAYgASgDEicKA2VudhgHIAMoCzIaLnRhcmFtYW5qaS5jbG91ZC52MS5FbnZWYXISDgoGYWxlcnRzGAggAygJEg4KBm5vdGlmeRgJIAMoCSLAAQoIRnVuY3Rpb24SLgoEc3BlYxgBIAEoCzIgLnRhcmFtYW5qaS5jbG91ZC52MS5GdW5jdGlvblNwZWMSKgoGc291cmNlGAIgASgLMhoudGFyYW1hbmppLmNsb3VkLnYxLlNvdXJjZRIYChBjdXN0b21fcmVzb3VyY2VzGAMgASgIEhAKCGRlcGxveWVkGAQgASgIEg0KBXJlYWR5GAUgASgFEg8KB2Rlc2lyZWQYBiABKAUSDAoEYXBpcxgHIAMoCSIWChRMaXN0RnVuY3Rpb25zUmVxdWVzdCJIChVMaXN0RnVuY3Rpb25zUmVzcG9uc2USLwoJZnVuY3Rpb25zGAEgAygLMhwudGFyYW1hbmppLmNsb3VkLnYxLkZ1bmN0aW9uIkgKFlByZXZpZXdGdW5jdGlvblJlcXVlc3QSLgoEc3BlYxgBIAEoCzIgLnRhcmFtYW5qaS5jbG91ZC52MS5GdW5jdGlvblNwZWMiJwoXUHJldmlld0Z1bmN0aW9uUmVzcG9uc2USDAoEeWFtbBgBIAEoCSJmChRBcHBseUZ1bmN0aW9uUmVxdWVzdBIuCgRzcGVjGAEgASgLMiAudGFyYW1hbmppLmNsb3VkLnYxLkZ1bmN0aW9uU3BlYxIMCgR5YW1sGAIgASgJEhAKCHJldmlzaW9uGAMgASgJIl8KFUFwcGx5RnVuY3Rpb25SZXNwb25zZRIuCghmdW5jdGlvbhgBIAEoCzIcLnRhcmFtYW5qaS5jbG91ZC52MS5GdW5jdGlvbhIWCg5hbGVydHNfcHJvYmxlbRgCIAEoCSI3ChVEZWxldGVGdW5jdGlvblJlcXVlc3QSDAoEbmFtZRgBIAEoCRIQCghyZXZpc2lvbhgCIAEoCSIwChZEZWxldGVGdW5jdGlvblJlc3BvbnNlEhYKDmFsZXJ0c19wcm9ibGVtGAEgASgJIioKCEFwaVJvdXRlEgwKBHBhdGgYASABKAkSEAoIZnVuY3Rpb24YAiABKAkiRQoHQXBpU3BlYxIMCgRuYW1lGAEgASgJEiwKBnJvdXRlcxgCIAMoCzIcLnRhcmFtYW5qaS5jbG91ZC52MS5BcGlSb3V0ZSJqCgNBcGkSKQoEc3BlYxgBIAEoCzIbLnRhcmFtYW5qaS5jbG91ZC52MS5BcGlTcGVjEioKBnNvdXJjZRgCIAEoCzIaLnRhcmFtYW5qaS5jbG91ZC52MS5Tb3VyY2USDAoEaG9zdBgDIAEoCSIRCg9MaXN0QXBpc1JlcXVlc3QiOQoQTGlzdEFwaXNSZXNwb25zZRIlCgRhcGlzGAEgAygLMhcudGFyYW1hbmppLmNsb3VkLnYxLkFwaSI+ChFQcmV2aWV3QXBpUmVxdWVzdBIpCgRzcGVjGAEgASgLMhsudGFyYW1hbmppLmNsb3VkLnYxLkFwaVNwZWMiIgoSUHJldmlld0FwaVJlc3BvbnNlEgwKBHlhbWwYASABKAkiXAoPQXBwbHlBcGlSZXF1ZXN0EikKBHNwZWMYASABKAsyGy50YXJhbWFuamkuY2xvdWQudjEuQXBpU3BlYxIMCgR5YW1sGAIgASgJEhAKCHJldmlzaW9uGAMgASgJIjgKEEFwcGx5QXBpUmVzcG9uc2USJAoDYXBpGAEgASgLMhcudGFyYW1hbmppLmNsb3VkLnYxLkFwaSIyChBEZWxldGVBcGlSZXF1ZXN0EgwKBG5hbWUYASABKAkSEAoIcmV2aXNpb24YAiABKAkiEwoRRGVsZXRlQXBpUmVzcG9uc2UiEwoRU3luY0FsZXJ0c1JlcXVlc3QiRwoSU3luY0FsZXJ0c1Jlc3BvbnNlEg8KB2NyZWF0ZWQYASABKAUSDwoHdXBkYXRlZBgCIAEoBRIPCgdkZWxldGVkGAMgASgFMpwKCg5Db25zb2xlU2VydmljZRJgCgtHZXRPdmVydmlldxImLnRhcmFtYW5qaS5jbG91ZC52MS5HZXRPdmVydmlld1JlcXVlc3QaJy50YXJhbWFuamkuY2xvdWQudjEuR2V0T3ZlcnZpZXdSZXNwb25zZSIAEl0KCkdldE1ldHJpY3MSJS50YXJhbWFuamkuY2xvdWQudjEuR2V0TWV0cmljc1JlcXVlc3QaJi50YXJhbWFuamkuY2xvdWQudjEuR2V0TWV0cmljc1Jlc3BvbnNlIgASYAoLR2V0Q2FwYWNpdHkSJi50YXJhbWFuamkuY2xvdWQudjEuR2V0Q2FwYWNpdHlSZXF1ZXN0GicudGFyYW1hbmppLmNsb3VkLnYxLkdldENhcGFjaXR5UmVzcG9uc2UiABJyChFHZXRIb3N0aW5nT3B0aW9ucxIsLnRhcmFtYW5qaS5jbG91ZC52MS5HZXRIb3N0aW5nT3B0aW9uc1JlcXVlc3QaLS50YXJhbWFuamkuY2xvdWQudjEuR2V0SG9zdGluZ09wdGlvbnNSZXNwb25zZSIAEmYKDUxpc3RGdW5jdGlvbnMSKC50YXJhbWFuamkuY2xvdWQudjEuTGlzdEZ1bmN0aW9uc1JlcXVlc3QaKS50YXJhbWFuamkuY2xvdWQudjEuTGlzdEZ1bmN0aW9uc1Jlc3BvbnNlIgASbAoPUHJldmlld0Z1bmN0aW9uEioudGFyYW1hbmppLmNsb3VkLnYxLlByZXZpZXdGdW5jdGlvblJlcXVlc3QaKy50YXJhbWFuamkuY2xvdWQudjEuUHJldmlld0Z1bmN0aW9uUmVzcG9uc2UiABJmCg1BcHBseUZ1bmN0aW9uEigudGFyYW1hbmppLmNsb3VkLnYxLkFwcGx5RnVuY3Rpb25SZXF1ZXN0GikudGFyYW1hbmppLmNsb3VkLnYxLkFwcGx5RnVuY3Rpb25SZXNwb25zZSIAEmkKDkRlbGV0ZUZ1bmN0aW9uEikudGFyYW1hbmppLmNsb3VkLnYxLkRlbGV0ZUZ1bmN0aW9uUmVxdWVzdBoqLnRhcmFtYW5qaS5jbG91ZC52MS5EZWxldGVGdW5jdGlvblJlc3BvbnNlIgASVwoITGlzdEFwaXMSIy50YXJhbWFuamkuY2xvdWQudjEuTGlzdEFwaXNSZXF1ZXN0GiQudGFyYW1hbmppLmNsb3VkLnYxLkxpc3RBcGlzUmVzcG9uc2UiABJdCgpQcmV2aWV3QXBpEiUudGFyYW1hbmppLmNsb3VkLnYxLlByZXZpZXdBcGlSZXF1ZXN0GiYudGFyYW1hbmppLmNsb3VkLnYxLlByZXZpZXdBcGlSZXNwb25zZSIAElcKCEFwcGx5QXBpEiMudGFyYW1hbmppLmNsb3VkLnYxLkFwcGx5QXBpUmVxdWVzdBokLnRhcmFtYW5qaS5jbG91ZC52MS5BcHBseUFwaVJlc3BvbnNlIgASWgoJRGVsZXRlQXBpEiQudGFyYW1hbmppLmNsb3VkLnYxLkRlbGV0ZUFwaVJlcXVlc3QaJS50YXJhbWFuamkuY2xvdWQudjEuRGVsZXRlQXBpUmVzcG9uc2UiABJdCgpTeW5jQWxlcnRzEiUudGFyYW1hbmppLmNsb3VkLnYxLlN5bmNBbGVydHNSZXF1ZXN0GiYudGFyYW1hbmppLmNsb3VkLnYxLlN5bmNBbGVydHNSZXNwb25zZSIAYgZwcm90bzM");
 
 /**
  * コンソール自身を動かしている部品（API・画面・Redis）の状態
@@ -548,12 +548,7 @@ export type GetHostingOptionsResponse = Message<"taramanji.cloud.v1.GetHostingOp
   maxMemory: bigint;
 
   /**
-   * @generated from field: int32 max_replicas = 8;
-   */
-  maxReplicas: number;
-
-  /**
-   * アプリ用のリポジトリがつながっているか（false なら一覧も作成もできない）
+   * リソースの YAML を置くリポジトリがつながっているか（false なら一覧も作成もできない）
    *
    * @generated from field: bool store_enabled = 9;
    */
@@ -567,7 +562,7 @@ export type GetHostingOptionsResponse = Message<"taramanji.cloud.v1.GetHostingOp
   alertsEnabled: boolean;
 
   /**
-   * アプリの YAML を置いているリポジトリ（owner/name）とディレクトリ
+   * YAML を置いているリポジトリ（owner/name）とディレクトリ
    *
    * @generated from field: string repository = 11;
    */
@@ -577,6 +572,20 @@ export type GetHostingOptionsResponse = Message<"taramanji.cloud.v1.GetHostingOp
    * @generated from field: string directory = 12;
    */
   directory: string;
+
+  /**
+   * リクエストが来なくなってから関数を 0 台に戻すまでの秒数
+   *
+   * @generated from field: int32 idle_timeout_seconds = 13;
+   */
+  idleTimeoutSeconds: number;
+
+  /**
+   * 公開 URL のホスト名の接尾辞（<名前> + これ）。例: -cloud.taramanji.com
+   *
+   * @generated from field: string host_suffix = 14;
+   */
+  hostSuffix: string;
 };
 
 /**
@@ -611,11 +620,58 @@ export const EnvVarSchema: GenMessage<EnvVar> = /*@__PURE__*/
   messageDesc(file_taramanji_cloud_v1_console, 17);
 
 /**
- * フォームで決められる範囲のアプリの定義
+ * リポジトリにある YAML と、その版。どのリソースにも付く
  *
- * @generated from message taramanji.cloud.v1.AppSpec
+ * @generated from message taramanji.cloud.v1.Source
  */
-export type AppSpec = Message<"taramanji.cloud.v1.AppSpec"> & {
+export type Source = Message<"taramanji.cloud.v1.Source"> & {
+  /**
+   * @generated from field: string yaml = 1;
+   */
+  yaml: string;
+
+  /**
+   * YAML の版。更新・削除のときに渡す（読んだあとに変わっていたら already_exists / app_conflict）
+   *
+   * @generated from field: string revision = 2;
+   */
+  revision: string;
+
+  /**
+   * フォームで編集できるか。false なら手で書き足した部分があるので YAML で編集する
+   *
+   * @generated from field: bool form_editable = 3;
+   */
+  formEditable: boolean;
+
+  /**
+   * YAML を GitHub で見る URL
+   *
+   * @generated from field: string url = 4;
+   */
+  url: string;
+
+  /**
+   * YAML を読めなかった理由（手で push した YAML が壊れているとき。空なら問題なし）
+   *
+   * @generated from field: string problem = 5;
+   */
+  problem: string;
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.Source.
+ * Use `create(SourceSchema)` to create a new message.
+ */
+export const SourceSchema: GenMessage<Source> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 18);
+
+/**
+ * フォームで決められる範囲の関数の定義
+ *
+ * @generated from message taramanji.cloud.v1.FunctionSpec
+ */
+export type FunctionSpec = Message<"taramanji.cloud.v1.FunctionSpec"> & {
   /**
    * @generated from field: string name = 1;
    */
@@ -627,227 +683,162 @@ export type AppSpec = Message<"taramanji.cloud.v1.AppSpec"> & {
   image: string;
 
   /**
+   * コンテナが HTTP を受けるポート
+   *
    * @generated from field: int32 port = 3;
    */
   port: number;
 
   /**
-   * @generated from field: int32 replicas = 4;
-   */
-  replicas: number;
-
-  /**
-   * @generated from field: string instance_type = 5;
+   * @generated from field: string instance_type = 4;
    */
   instanceType: string;
 
   /**
    * 0 ならインスタンスタイプの値
    *
-   * @generated from field: int64 cpu_millis = 6;
+   * @generated from field: int64 cpu_millis = 5;
    */
   cpuMillis: bigint;
 
   /**
-   * @generated from field: int64 memory = 7;
+   * @generated from field: int64 memory = 6;
    */
   memory: bigint;
 
   /**
-   * @generated from field: repeated taramanji.cloud.v1.EnvVar env = 8;
+   * @generated from field: repeated taramanji.cloud.v1.EnvVar env = 7;
    */
   env: EnvVar[];
 
   /**
    * AlertPreset の id
    *
-   * @generated from field: repeated string alerts = 9;
+   * @generated from field: repeated string alerts = 8;
    */
   alerts: string[];
 
   /**
    * mail / discord
    *
-   * @generated from field: repeated string notify = 10;
+   * @generated from field: repeated string notify = 9;
    */
   notify: string[];
 };
 
 /**
- * Describes the message taramanji.cloud.v1.AppSpec.
- * Use `create(AppSpecSchema)` to create a new message.
+ * Describes the message taramanji.cloud.v1.FunctionSpec.
+ * Use `create(FunctionSpecSchema)` to create a new message.
  */
-export const AppSpecSchema: GenMessage<AppSpec> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 18);
+export const FunctionSpecSchema: GenMessage<FunctionSpec> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 19);
 
 /**
- * @generated from message taramanji.cloud.v1.App
+ * @generated from message taramanji.cloud.v1.Function
  */
-export type App = Message<"taramanji.cloud.v1.App"> & {
+export type Function = Message<"taramanji.cloud.v1.Function"> & {
   /**
-   * @generated from field: taramanji.cloud.v1.AppSpec spec = 1;
+   * @generated from field: taramanji.cloud.v1.FunctionSpec spec = 1;
    */
-  spec?: AppSpec | undefined;
+  spec?: FunctionSpec | undefined;
 
   /**
-   * リポジトリにある YAML（Deployment・Service・HTTPRoute）
-   *
-   * @generated from field: string yaml = 2;
+   * @generated from field: taramanji.cloud.v1.Source source = 2;
    */
-  yaml: string;
-
-  /**
-   * YAML の版。更新・削除のときに渡す（読んだあとに変わっていたら aborted）
-   *
-   * @generated from field: string revision = 3;
-   */
-  revision: string;
-
-  /**
-   * フォームで編集できるか。false なら手で書き足した部分があるので YAML で編集する
-   *
-   * @generated from field: bool form_editable = 4;
-   */
-  formEditable: boolean;
+  source?: Source | undefined;
 
   /**
    * インスタンスタイプの値から CPU・メモリを変えているか
    *
-   * @generated from field: bool custom_resources = 5;
+   * @generated from field: bool custom_resources = 3;
    */
   customResources: boolean;
 
   /**
-   * 公開 URL のホスト名
-   *
-   * @generated from field: string host = 6;
-   */
-  host: string;
-
-  /**
-   * YAML を GitHub で見る URL
-   *
-   * @generated from field: string source_url = 7;
-   */
-  sourceUrl: string;
-
-  /**
    * クラスターでの状態。deployed = false ならまだ Argo CD が入れていない
    *
-   * @generated from field: bool deployed = 8;
+   * @generated from field: bool deployed = 4;
    */
   deployed: boolean;
 
   /**
-   * @generated from field: int32 ready = 9;
+   * 動いている台数（0 なら寝ている。次のリクエストで起きる）
+   *
+   * @generated from field: int32 ready = 5;
    */
   ready: number;
 
   /**
-   * @generated from field: int32 desired = 10;
+   * @generated from field: int32 desired = 6;
    */
   desired: number;
 
   /**
-   * YAML を読めなかった理由（手で push した YAML が壊れているとき。空なら問題なし）
+   * この関数に渡している API の名前
    *
-   * @generated from field: string problem = 11;
+   * @generated from field: repeated string apis = 7;
    */
-  problem: string;
+  apis: string[];
 };
 
 /**
- * Describes the message taramanji.cloud.v1.App.
- * Use `create(AppSchema)` to create a new message.
+ * Describes the message taramanji.cloud.v1.Function.
+ * Use `create(FunctionSchema)` to create a new message.
  */
-export const AppSchema: GenMessage<App> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 19);
-
-/**
- * @generated from message taramanji.cloud.v1.ListAppsRequest
- */
-export type ListAppsRequest = Message<"taramanji.cloud.v1.ListAppsRequest"> & {
-};
-
-/**
- * Describes the message taramanji.cloud.v1.ListAppsRequest.
- * Use `create(ListAppsRequestSchema)` to create a new message.
- */
-export const ListAppsRequestSchema: GenMessage<ListAppsRequest> = /*@__PURE__*/
+export const FunctionSchema: GenMessage<Function> = /*@__PURE__*/
   messageDesc(file_taramanji_cloud_v1_console, 20);
 
 /**
- * @generated from message taramanji.cloud.v1.ListAppsResponse
+ * @generated from message taramanji.cloud.v1.ListFunctionsRequest
  */
-export type ListAppsResponse = Message<"taramanji.cloud.v1.ListAppsResponse"> & {
-  /**
-   * @generated from field: repeated taramanji.cloud.v1.App apps = 1;
-   */
-  apps: App[];
+export type ListFunctionsRequest = Message<"taramanji.cloud.v1.ListFunctionsRequest"> & {
 };
 
 /**
- * Describes the message taramanji.cloud.v1.ListAppsResponse.
- * Use `create(ListAppsResponseSchema)` to create a new message.
+ * Describes the message taramanji.cloud.v1.ListFunctionsRequest.
+ * Use `create(ListFunctionsRequestSchema)` to create a new message.
  */
-export const ListAppsResponseSchema: GenMessage<ListAppsResponse> = /*@__PURE__*/
+export const ListFunctionsRequestSchema: GenMessage<ListFunctionsRequest> = /*@__PURE__*/
   messageDesc(file_taramanji_cloud_v1_console, 21);
 
 /**
- * @generated from message taramanji.cloud.v1.GetAppRequest
+ * @generated from message taramanji.cloud.v1.ListFunctionsResponse
  */
-export type GetAppRequest = Message<"taramanji.cloud.v1.GetAppRequest"> & {
+export type ListFunctionsResponse = Message<"taramanji.cloud.v1.ListFunctionsResponse"> & {
   /**
-   * @generated from field: string name = 1;
+   * @generated from field: repeated taramanji.cloud.v1.Function functions = 1;
    */
-  name: string;
+  functions: Function[];
 };
 
 /**
- * Describes the message taramanji.cloud.v1.GetAppRequest.
- * Use `create(GetAppRequestSchema)` to create a new message.
+ * Describes the message taramanji.cloud.v1.ListFunctionsResponse.
+ * Use `create(ListFunctionsResponseSchema)` to create a new message.
  */
-export const GetAppRequestSchema: GenMessage<GetAppRequest> = /*@__PURE__*/
+export const ListFunctionsResponseSchema: GenMessage<ListFunctionsResponse> = /*@__PURE__*/
   messageDesc(file_taramanji_cloud_v1_console, 22);
 
 /**
- * @generated from message taramanji.cloud.v1.GetAppResponse
+ * @generated from message taramanji.cloud.v1.PreviewFunctionRequest
  */
-export type GetAppResponse = Message<"taramanji.cloud.v1.GetAppResponse"> & {
+export type PreviewFunctionRequest = Message<"taramanji.cloud.v1.PreviewFunctionRequest"> & {
   /**
-   * @generated from field: taramanji.cloud.v1.App app = 1;
+   * @generated from field: taramanji.cloud.v1.FunctionSpec spec = 1;
    */
-  app?: App | undefined;
+  spec?: FunctionSpec | undefined;
 };
 
 /**
- * Describes the message taramanji.cloud.v1.GetAppResponse.
- * Use `create(GetAppResponseSchema)` to create a new message.
+ * Describes the message taramanji.cloud.v1.PreviewFunctionRequest.
+ * Use `create(PreviewFunctionRequestSchema)` to create a new message.
  */
-export const GetAppResponseSchema: GenMessage<GetAppResponse> = /*@__PURE__*/
+export const PreviewFunctionRequestSchema: GenMessage<PreviewFunctionRequest> = /*@__PURE__*/
   messageDesc(file_taramanji_cloud_v1_console, 23);
 
 /**
- * @generated from message taramanji.cloud.v1.PreviewAppRequest
+ * @generated from message taramanji.cloud.v1.PreviewFunctionResponse
  */
-export type PreviewAppRequest = Message<"taramanji.cloud.v1.PreviewAppRequest"> & {
-  /**
-   * @generated from field: taramanji.cloud.v1.AppSpec spec = 1;
-   */
-  spec?: AppSpec | undefined;
-};
-
-/**
- * Describes the message taramanji.cloud.v1.PreviewAppRequest.
- * Use `create(PreviewAppRequestSchema)` to create a new message.
- */
-export const PreviewAppRequestSchema: GenMessage<PreviewAppRequest> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 24);
-
-/**
- * @generated from message taramanji.cloud.v1.PreviewAppResponse
- */
-export type PreviewAppResponse = Message<"taramanji.cloud.v1.PreviewAppResponse"> & {
+export type PreviewFunctionResponse = Message<"taramanji.cloud.v1.PreviewFunctionResponse"> & {
   /**
    * @generated from field: string yaml = 1;
    */
@@ -855,22 +846,22 @@ export type PreviewAppResponse = Message<"taramanji.cloud.v1.PreviewAppResponse"
 };
 
 /**
- * Describes the message taramanji.cloud.v1.PreviewAppResponse.
- * Use `create(PreviewAppResponseSchema)` to create a new message.
+ * Describes the message taramanji.cloud.v1.PreviewFunctionResponse.
+ * Use `create(PreviewFunctionResponseSchema)` to create a new message.
  */
-export const PreviewAppResponseSchema: GenMessage<PreviewAppResponse> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 25);
+export const PreviewFunctionResponseSchema: GenMessage<PreviewFunctionResponse> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 24);
 
 /**
- * @generated from message taramanji.cloud.v1.ApplyAppRequest
+ * @generated from message taramanji.cloud.v1.ApplyFunctionRequest
  */
-export type ApplyAppRequest = Message<"taramanji.cloud.v1.ApplyAppRequest"> & {
+export type ApplyFunctionRequest = Message<"taramanji.cloud.v1.ApplyFunctionRequest"> & {
   /**
-   * yaml が空なら spec から YAML を作る。yaml があればそれを確かめてそのまま置く（name は spec.name）
+   * yaml が空なら spec から YAML を作る。yaml があればそれを確かめてそのまま置く（名前は spec.name）
    *
-   * @generated from field: taramanji.cloud.v1.AppSpec spec = 1;
+   * @generated from field: taramanji.cloud.v1.FunctionSpec spec = 1;
    */
-  spec?: AppSpec | undefined;
+  spec?: FunctionSpec | undefined;
 
   /**
    * @generated from field: string yaml = 2;
@@ -886,20 +877,20 @@ export type ApplyAppRequest = Message<"taramanji.cloud.v1.ApplyAppRequest"> & {
 };
 
 /**
- * Describes the message taramanji.cloud.v1.ApplyAppRequest.
- * Use `create(ApplyAppRequestSchema)` to create a new message.
+ * Describes the message taramanji.cloud.v1.ApplyFunctionRequest.
+ * Use `create(ApplyFunctionRequestSchema)` to create a new message.
  */
-export const ApplyAppRequestSchema: GenMessage<ApplyAppRequest> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 26);
+export const ApplyFunctionRequestSchema: GenMessage<ApplyFunctionRequest> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 25);
 
 /**
- * @generated from message taramanji.cloud.v1.ApplyAppResponse
+ * @generated from message taramanji.cloud.v1.ApplyFunctionResponse
  */
-export type ApplyAppResponse = Message<"taramanji.cloud.v1.ApplyAppResponse"> & {
+export type ApplyFunctionResponse = Message<"taramanji.cloud.v1.ApplyFunctionResponse"> & {
   /**
-   * @generated from field: taramanji.cloud.v1.App app = 1;
+   * @generated from field: taramanji.cloud.v1.Function function = 1;
    */
-  app?: App | undefined;
+  function?: Function | undefined;
 
   /**
    * 監視を Datadog に反映できなかった理由（YAML は保存済み。空なら問題なし）
@@ -910,16 +901,16 @@ export type ApplyAppResponse = Message<"taramanji.cloud.v1.ApplyAppResponse"> & 
 };
 
 /**
- * Describes the message taramanji.cloud.v1.ApplyAppResponse.
- * Use `create(ApplyAppResponseSchema)` to create a new message.
+ * Describes the message taramanji.cloud.v1.ApplyFunctionResponse.
+ * Use `create(ApplyFunctionResponseSchema)` to create a new message.
  */
-export const ApplyAppResponseSchema: GenMessage<ApplyAppResponse> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 27);
+export const ApplyFunctionResponseSchema: GenMessage<ApplyFunctionResponse> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 26);
 
 /**
- * @generated from message taramanji.cloud.v1.DeleteAppRequest
+ * @generated from message taramanji.cloud.v1.DeleteFunctionRequest
  */
-export type DeleteAppRequest = Message<"taramanji.cloud.v1.DeleteAppRequest"> & {
+export type DeleteFunctionRequest = Message<"taramanji.cloud.v1.DeleteFunctionRequest"> & {
   /**
    * @generated from field: string name = 1;
    */
@@ -932,16 +923,16 @@ export type DeleteAppRequest = Message<"taramanji.cloud.v1.DeleteAppRequest"> & 
 };
 
 /**
- * Describes the message taramanji.cloud.v1.DeleteAppRequest.
- * Use `create(DeleteAppRequestSchema)` to create a new message.
+ * Describes the message taramanji.cloud.v1.DeleteFunctionRequest.
+ * Use `create(DeleteFunctionRequestSchema)` to create a new message.
  */
-export const DeleteAppRequestSchema: GenMessage<DeleteAppRequest> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 28);
+export const DeleteFunctionRequestSchema: GenMessage<DeleteFunctionRequest> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 27);
 
 /**
- * @generated from message taramanji.cloud.v1.DeleteAppResponse
+ * @generated from message taramanji.cloud.v1.DeleteFunctionResponse
  */
-export type DeleteAppResponse = Message<"taramanji.cloud.v1.DeleteAppResponse"> & {
+export type DeleteFunctionResponse = Message<"taramanji.cloud.v1.DeleteFunctionResponse"> & {
   /**
    * @generated from field: string alerts_problem = 1;
    */
@@ -949,11 +940,233 @@ export type DeleteAppResponse = Message<"taramanji.cloud.v1.DeleteAppResponse"> 
 };
 
 /**
- * Describes the message taramanji.cloud.v1.DeleteAppResponse.
- * Use `create(DeleteAppResponseSchema)` to create a new message.
+ * Describes the message taramanji.cloud.v1.DeleteFunctionResponse.
+ * Use `create(DeleteFunctionResponseSchema)` to create a new message.
  */
-export const DeleteAppResponseSchema: GenMessage<DeleteAppResponse> = /*@__PURE__*/
+export const DeleteFunctionResponseSchema: GenMessage<DeleteFunctionResponse> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 28);
+
+/**
+ * パスの前方一致で、渡し先の関数を決める（長いパスが先に当たる）
+ *
+ * @generated from message taramanji.cloud.v1.ApiRoute
+ */
+export type ApiRoute = Message<"taramanji.cloud.v1.ApiRoute"> & {
+  /**
+   * 例: / ・ /api
+   *
+   * @generated from field: string path = 1;
+   */
+  path: string;
+
+  /**
+   * @generated from field: string function = 2;
+   */
+  function: string;
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.ApiRoute.
+ * Use `create(ApiRouteSchema)` to create a new message.
+ */
+export const ApiRouteSchema: GenMessage<ApiRoute> = /*@__PURE__*/
   messageDesc(file_taramanji_cloud_v1_console, 29);
+
+/**
+ * @generated from message taramanji.cloud.v1.ApiSpec
+ */
+export type ApiSpec = Message<"taramanji.cloud.v1.ApiSpec"> & {
+  /**
+   * ホスト名の先頭（<名前>-cloud.taramanji.com）。環境の中で重複できない
+   *
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: repeated taramanji.cloud.v1.ApiRoute routes = 2;
+   */
+  routes: ApiRoute[];
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.ApiSpec.
+ * Use `create(ApiSpecSchema)` to create a new message.
+ */
+export const ApiSpecSchema: GenMessage<ApiSpec> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 30);
+
+/**
+ * @generated from message taramanji.cloud.v1.Api
+ */
+export type Api = Message<"taramanji.cloud.v1.Api"> & {
+  /**
+   * @generated from field: taramanji.cloud.v1.ApiSpec spec = 1;
+   */
+  spec?: ApiSpec | undefined;
+
+  /**
+   * @generated from field: taramanji.cloud.v1.Source source = 2;
+   */
+  source?: Source | undefined;
+
+  /**
+   * 公開 URL のホスト名
+   *
+   * @generated from field: string host = 3;
+   */
+  host: string;
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.Api.
+ * Use `create(ApiSchema)` to create a new message.
+ */
+export const ApiSchema: GenMessage<Api> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 31);
+
+/**
+ * @generated from message taramanji.cloud.v1.ListApisRequest
+ */
+export type ListApisRequest = Message<"taramanji.cloud.v1.ListApisRequest"> & {
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.ListApisRequest.
+ * Use `create(ListApisRequestSchema)` to create a new message.
+ */
+export const ListApisRequestSchema: GenMessage<ListApisRequest> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 32);
+
+/**
+ * @generated from message taramanji.cloud.v1.ListApisResponse
+ */
+export type ListApisResponse = Message<"taramanji.cloud.v1.ListApisResponse"> & {
+  /**
+   * @generated from field: repeated taramanji.cloud.v1.Api apis = 1;
+   */
+  apis: Api[];
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.ListApisResponse.
+ * Use `create(ListApisResponseSchema)` to create a new message.
+ */
+export const ListApisResponseSchema: GenMessage<ListApisResponse> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 33);
+
+/**
+ * @generated from message taramanji.cloud.v1.PreviewApiRequest
+ */
+export type PreviewApiRequest = Message<"taramanji.cloud.v1.PreviewApiRequest"> & {
+  /**
+   * @generated from field: taramanji.cloud.v1.ApiSpec spec = 1;
+   */
+  spec?: ApiSpec | undefined;
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.PreviewApiRequest.
+ * Use `create(PreviewApiRequestSchema)` to create a new message.
+ */
+export const PreviewApiRequestSchema: GenMessage<PreviewApiRequest> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 34);
+
+/**
+ * @generated from message taramanji.cloud.v1.PreviewApiResponse
+ */
+export type PreviewApiResponse = Message<"taramanji.cloud.v1.PreviewApiResponse"> & {
+  /**
+   * @generated from field: string yaml = 1;
+   */
+  yaml: string;
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.PreviewApiResponse.
+ * Use `create(PreviewApiResponseSchema)` to create a new message.
+ */
+export const PreviewApiResponseSchema: GenMessage<PreviewApiResponse> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 35);
+
+/**
+ * @generated from message taramanji.cloud.v1.ApplyApiRequest
+ */
+export type ApplyApiRequest = Message<"taramanji.cloud.v1.ApplyApiRequest"> & {
+  /**
+   * @generated from field: taramanji.cloud.v1.ApiSpec spec = 1;
+   */
+  spec?: ApiSpec | undefined;
+
+  /**
+   * @generated from field: string yaml = 2;
+   */
+  yaml: string;
+
+  /**
+   * @generated from field: string revision = 3;
+   */
+  revision: string;
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.ApplyApiRequest.
+ * Use `create(ApplyApiRequestSchema)` to create a new message.
+ */
+export const ApplyApiRequestSchema: GenMessage<ApplyApiRequest> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 36);
+
+/**
+ * @generated from message taramanji.cloud.v1.ApplyApiResponse
+ */
+export type ApplyApiResponse = Message<"taramanji.cloud.v1.ApplyApiResponse"> & {
+  /**
+   * @generated from field: taramanji.cloud.v1.Api api = 1;
+   */
+  api?: Api | undefined;
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.ApplyApiResponse.
+ * Use `create(ApplyApiResponseSchema)` to create a new message.
+ */
+export const ApplyApiResponseSchema: GenMessage<ApplyApiResponse> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 37);
+
+/**
+ * @generated from message taramanji.cloud.v1.DeleteApiRequest
+ */
+export type DeleteApiRequest = Message<"taramanji.cloud.v1.DeleteApiRequest"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string revision = 2;
+   */
+  revision: string;
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.DeleteApiRequest.
+ * Use `create(DeleteApiRequestSchema)` to create a new message.
+ */
+export const DeleteApiRequestSchema: GenMessage<DeleteApiRequest> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 38);
+
+/**
+ * @generated from message taramanji.cloud.v1.DeleteApiResponse
+ */
+export type DeleteApiResponse = Message<"taramanji.cloud.v1.DeleteApiResponse"> & {
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.DeleteApiResponse.
+ * Use `create(DeleteApiResponseSchema)` to create a new message.
+ */
+export const DeleteApiResponseSchema: GenMessage<DeleteApiResponse> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 39);
 
 /**
  * @generated from message taramanji.cloud.v1.SyncAlertsRequest
@@ -966,7 +1179,7 @@ export type SyncAlertsRequest = Message<"taramanji.cloud.v1.SyncAlertsRequest"> 
  * Use `create(SyncAlertsRequestSchema)` to create a new message.
  */
 export const SyncAlertsRequestSchema: GenMessage<SyncAlertsRequest> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 30);
+  messageDesc(file_taramanji_cloud_v1_console, 40);
 
 /**
  * @generated from message taramanji.cloud.v1.SyncAlertsResponse
@@ -993,7 +1206,7 @@ export type SyncAlertsResponse = Message<"taramanji.cloud.v1.SyncAlertsResponse"
  * Use `create(SyncAlertsResponseSchema)` to create a new message.
  */
 export const SyncAlertsResponseSchema: GenMessage<SyncAlertsResponse> = /*@__PURE__*/
-  messageDesc(file_taramanji_cloud_v1_console, 31);
+  messageDesc(file_taramanji_cloud_v1_console, 41);
 
 /**
  * taramanji cloud のマネジメントコンソール（cloud.taramanji.com）。
@@ -1041,48 +1254,76 @@ export const ConsoleService: GenService<{
     output: typeof GetHostingOptionsResponseSchema;
   },
   /**
-   * @generated from rpc taramanji.cloud.v1.ConsoleService.ListApps
+   * 関数: コンテナイメージを、リクエストが来たときだけ動かす（来なければ 0 台）。外からは API を通してだけ呼べる
+   *
+   * @generated from rpc taramanji.cloud.v1.ConsoleService.ListFunctions
    */
-  listApps: {
+  listFunctions: {
     methodKind: "unary";
-    input: typeof ListAppsRequestSchema;
-    output: typeof ListAppsResponseSchema;
-  },
-  /**
-   * @generated from rpc taramanji.cloud.v1.ConsoleService.GetApp
-   */
-  getApp: {
-    methodKind: "unary";
-    input: typeof GetAppRequestSchema;
-    output: typeof GetAppResponseSchema;
+    input: typeof ListFunctionsRequestSchema;
+    output: typeof ListFunctionsResponseSchema;
   },
   /**
    * フォームの定義を YAML にして返す（保存はしない。確かめるだけ）
    *
-   * @generated from rpc taramanji.cloud.v1.ConsoleService.PreviewApp
+   * @generated from rpc taramanji.cloud.v1.ConsoleService.PreviewFunction
    */
-  previewApp: {
+  previewFunction: {
     methodKind: "unary";
-    input: typeof PreviewAppRequestSchema;
-    output: typeof PreviewAppResponseSchema;
+    input: typeof PreviewFunctionRequestSchema;
+    output: typeof PreviewFunctionResponseSchema;
   },
   /**
    * 作る・更新する。フォームの定義（spec）か、YAML そのもの（yaml）のどちらかを渡す
    *
-   * @generated from rpc taramanji.cloud.v1.ConsoleService.ApplyApp
+   * @generated from rpc taramanji.cloud.v1.ConsoleService.ApplyFunction
    */
-  applyApp: {
+  applyFunction: {
     methodKind: "unary";
-    input: typeof ApplyAppRequestSchema;
-    output: typeof ApplyAppResponseSchema;
+    input: typeof ApplyFunctionRequestSchema;
+    output: typeof ApplyFunctionResponseSchema;
   },
   /**
-   * @generated from rpc taramanji.cloud.v1.ConsoleService.DeleteApp
+   * @generated from rpc taramanji.cloud.v1.ConsoleService.DeleteFunction
    */
-  deleteApp: {
+  deleteFunction: {
     methodKind: "unary";
-    input: typeof DeleteAppRequestSchema;
-    output: typeof DeleteAppResponseSchema;
+    input: typeof DeleteFunctionRequestSchema;
+    output: typeof DeleteFunctionResponseSchema;
+  },
+  /**
+   * API: 公開するホスト名（<名前>-cloud.taramanji.com）と、パスごとの渡し先の関数
+   *
+   * @generated from rpc taramanji.cloud.v1.ConsoleService.ListApis
+   */
+  listApis: {
+    methodKind: "unary";
+    input: typeof ListApisRequestSchema;
+    output: typeof ListApisResponseSchema;
+  },
+  /**
+   * @generated from rpc taramanji.cloud.v1.ConsoleService.PreviewApi
+   */
+  previewApi: {
+    methodKind: "unary";
+    input: typeof PreviewApiRequestSchema;
+    output: typeof PreviewApiResponseSchema;
+  },
+  /**
+   * @generated from rpc taramanji.cloud.v1.ConsoleService.ApplyApi
+   */
+  applyApi: {
+    methodKind: "unary";
+    input: typeof ApplyApiRequestSchema;
+    output: typeof ApplyApiResponseSchema;
+  },
+  /**
+   * @generated from rpc taramanji.cloud.v1.ConsoleService.DeleteApi
+   */
+  deleteApi: {
+    methodKind: "unary";
+    input: typeof DeleteApiRequestSchema;
+    output: typeof DeleteApiResponseSchema;
   },
   /**
    * リポジトリの YAML に合わせて、Datadog のモニターを作り直す（git に直接 push したあとに呼ぶ）
