@@ -8,6 +8,10 @@ rules:
   - apiGroups: [""]
     resources: ["resourcequotas", "pods"]
     verbs: ["get", "list"]
+  # アプリ（Argo CD がアプリ用のリポジトリから入れた Deployment）が動いているかを見る。書き込みはしない
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list"]
   - apiGroups: ["metrics.k8s.io"]
     resources: ["pods"]
     verbs: ["get", "list"]

@@ -1,0 +1,18 @@
+# taramanji cloud の dev に置くアプリ。アプリ専用のリポジトリの dev/ にある YAML を、そのまま cloud-dev-apps に入れる。
+# コンソールで作る・変える・消すと dev/<名前>.yaml がコミットされ、ここが同期する（手で push しても同じ）
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cloud-apps-dev
+  namespace: argocd
+spec:
+  project: cloud-apps
+  source:
+    repoURL: git@github.com:JavaLangRuntimeException/taramanji-cloud-apps.git
+    targetRevision: main
+    path: dev
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cloud-dev-apps
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }

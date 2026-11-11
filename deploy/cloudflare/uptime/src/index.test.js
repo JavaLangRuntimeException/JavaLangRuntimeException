@@ -55,6 +55,19 @@ test("Discord の Webhook がなければメールだけ、あれば両方に送
   assert.deepEqual(sent.sort(), ["discord", "mail"]);
 });
 
+test("送り先を 1 つに絞れる（taramanji cloud のアプリごとの通知先）", async () => {
+  const sent = [];
+  const senders = { mail: async () => sent.push("mail"), discord: async () => sent.push("discord") };
+  const env = { DISCORD_WEBHOOK_ALERT_URL: "https://discord.com/api/webhooks/1/x" };
+  await notify(env, "件名", "本文", senders, "discord");
+  assert.deepEqual(sent, ["discord"]);
+  sent.length = 0;
+  await notify(env, "件名", "本文", senders, "mail");
+  assert.deepEqual(sent, ["mail"]);
+  // Discord の Webhook がないのに Discord だけを指定されたら、黙って捨てずにエラーにする
+  await assert.rejects(notify({}, "件名", "本文", senders, "discord"), /discord の送り先/);
+});
+
 test("片方に届けば成功、両方失敗したときだけエラー（状態を進めず次の分に送り直す）", async () => {
   const env = { DISCORD_WEBHOOK_ALERT_URL: "https://discord.com/api/webhooks/1/x" };
   const ng = async () => { throw new Error("ng"); }, ok = async () => {};
