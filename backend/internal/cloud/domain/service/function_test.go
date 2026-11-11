@@ -138,7 +138,7 @@ func TestAPIYAMLRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"kind: HTTPRoute", "shop-apigw-cloud.taramanji.com", "name: X-Cloud-Function", "value: api", "name: cloud-gw", "namespace: taramanji-cloud\n", "cloud.taramanji.com/kind: api"} {
+	for _, want := range []string{"kind: HTTPRoute", "shop-apigw-cloud.taramanji.com", "name: X-Cloud-Function", "value: api", "name: cloud-gw", "namespace: taramanji-cloud\n", "cloud.taramanji.com/kind: api", "- X-Cloud-Auth", "- X-Cloud-Cors"} {
 		if !strings.Contains(y, want) {
 			t.Errorf("YAML に %q がない:\n%s", want, y)
 		}
@@ -242,7 +242,7 @@ func TestBucketAndDistributionYAML(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"kind: HTTPRoute", "name: bucket.site", "site-storage-cloud.taramanji.com", "name: X-Cloud-Bucket", "value: \"300\"", "- X-Cloud-Function", "name: cloud-gw"} {
+	for _, want := range []string{"kind: HTTPRoute", "name: bucket.site", "site-storage-cloud.taramanji.com", "name: X-Cloud-Bucket", "value: \"300\"", "- X-Cloud-Function", "- X-Cloud-Auth", "- X-Cloud-Api-Keys", "- X-Cloud-Cors", "name: cloud-gw"} {
 		if !strings.Contains(pub, want) {
 			t.Errorf("公開の YAML に %q がない:\n%s", want, pub)
 		}
@@ -265,7 +265,7 @@ func TestBucketAndDistributionYAML(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"www-cdn-cloud.taramanji.com", "name: X-Cloud-Bucket", "value: site", "value: \"300\"", "name: X-Cloud-Spa", "- X-Cloud-Function", "cloud.taramanji.com/kind: cdn"} {
+	for _, want := range []string{"www-cdn-cloud.taramanji.com", "name: X-Cloud-Bucket", "value: site", "value: \"300\"", "name: X-Cloud-Spa", "- X-Cloud-Function", "cloud.taramanji.com/kind: cdn", "- X-Cloud-Api-Keys"} {
 		if !strings.Contains(d, want) {
 			t.Errorf("YAML に %q がない:\n%s", want, d)
 		}

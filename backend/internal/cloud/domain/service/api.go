@@ -7,6 +7,9 @@ import (
 	"strings"
 )
 
+// apiOnlyHeaders は API の設定（認証・CORS）を API Gateway に伝えるヘッダー。設定していないルートでは必ず消す
+var apiOnlyHeaders = []string{HeaderAuth, HeaderAPIKeys, HeaderCORS}
+
 // cloud の Gateway（deploy/cloud/platform/gateway.yaml）と、関数を呼び出す API Gateway（cloud-gw）の Service
 const (
 	gatewayName      = "cloud"
@@ -192,8 +195,9 @@ func RenderAPIYAML(s APISpec, t APITarget) (string, error) {
 		// set は利用者が付けてきた同じ名前のヘッダーを上書きするので、渡し先は偽れない
 		f := routeFilter{Type: "RequestHeaderModifier"}
 		f.RequestHeaderModifier.Set = []headerValue{{Name: HeaderFunction, Value: route.Function}}
-		// CDN 用のヘッダーを利用者が付けてきても、API ではバケットを読ませない・キャッシュの長さを決めさせない
-		f.RequestHeaderModifier.Remove = []string{HeaderBucket, HeaderCacheTTL, HeaderSPA}
+		// CDN 用のヘッダーを利用者が付けてきても、API ではバケットを読ませない・キャッシュの長さを決めさせない。
+		// 認証・CORS のヘッダーも、設定していなければ消す（利用者が付けてきた値を使わせない）
+		f.RequestHeaderModifier.Remove = append([]string{HeaderBucket, HeaderCacheTTL, HeaderSPA}, apiOnlyHeaders...)
 		rule.Filters = []routeFilter{f}
 		rule.BackendRefs = []backendRef{{Name: InvokerService, Namespace: t.InvokerNamespace, Port: InvokerPort}}
 		r.Spec.Rules = append(r.Spec.Rules, rule)

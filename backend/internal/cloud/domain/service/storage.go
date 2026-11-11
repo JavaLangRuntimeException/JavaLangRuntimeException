@@ -17,6 +17,10 @@ const (
 	HeaderBucket   = "X-Cloud-Bucket"
 	HeaderCacheTTL = "X-Cloud-Cache-Ttl"
 	HeaderSPA      = "X-Cloud-Spa"
+	// API Gateway の認証（API キー）と CORS。API の HTTPRoute だけが付け、ほかの HTTPRoute は消す（利用者が付けてきても効かせない）
+	HeaderAuth    = "X-Cloud-Auth"
+	HeaderAPIKeys = "X-Cloud-Api-Keys"
+	HeaderCORS    = "X-Cloud-Cors"
 
 	OriginBucket   = "bucket"
 	OriginFunction = "function"
@@ -67,7 +71,7 @@ func RenderBucketYAML(name string, public bool, t APITarget) (string, error) {
 		{Name: HeaderCacheTTL, Value: strconv.Itoa(PublicBucketCacheSeconds)},
 		{Name: HeaderSPA, Value: "false"}}
 	// 関数を直接呼ばせない
-	f.RequestHeaderModifier.Remove = []string{HeaderFunction}
+	f.RequestHeaderModifier.Remove = append([]string{HeaderFunction}, apiOnlyHeaders...)
 	rule.Filters = []routeFilter{f}
 	rule.BackendRefs = []backendRef{{Name: InvokerService, Namespace: t.InvokerNamespace, Port: InvokerPort}}
 	r.Spec.Rules = []routeRule{rule}
@@ -257,7 +261,7 @@ func RenderDistributionYAML(s DistributionSpec, t APITarget) (string, error) {
 		if o.OriginType == OriginBucket {
 			other = HeaderFunction
 		}
-		f.RequestHeaderModifier.Remove = []string{other}
+		f.RequestHeaderModifier.Remove = append([]string{other}, apiOnlyHeaders...)
 		rule.Filters = []routeFilter{f}
 		rule.BackendRefs = []backendRef{{Name: InvokerService, Namespace: t.InvokerNamespace, Port: InvokerPort}}
 		r.Spec.Rules = append(r.Spec.Rules, rule)
