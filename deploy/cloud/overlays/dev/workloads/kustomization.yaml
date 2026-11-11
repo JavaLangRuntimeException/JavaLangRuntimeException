@@ -20,3 +20,8 @@ patches:
       - op: replace
         path: /spec/ingress/0/from/0/namespaceSelector/matchLabels/kubernetes.io~1metadata.name
         value: cloud-dev
+  - target: { kind: RoleBinding, name: cloud-storage }
+    patch: |-
+      - op: replace
+        path: /subjects/0/namespace
+        value: cloud-dev

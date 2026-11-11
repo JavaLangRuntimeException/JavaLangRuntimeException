@@ -12,7 +12,7 @@ images:
   - { name: taramanji/console, newName: ghcr.io/javalangruntimeexception/taramanji-console, newTag: unreleased }
 
 patches:
-  - target: { kind: Deployment }
+  - target: { kind: Deployment|StatefulSet }
     patch: |-
       - op: replace
         path: /spec/template/metadata/labels/tags.datadoghq.com~1env
@@ -44,6 +44,18 @@ patches:
                 env:
                   - { name: APP_ENV, value: dev }
                   - { name: APPS_NAMESPACE, value: cloud-dev-apps }
+  - patch: |-
+      apiVersion: apps/v1
+      kind: StatefulSet
+      metadata: { name: cloud-storage }
+      spec:
+        template:
+          spec:
+            containers:
+              - name: app
+                env:
+                  - { name: APP_ENV, value: dev }
+                  - { name: APPS_NAMESPACE, value: cloud-dev-apps }
   - target: { kind: ReferenceGrant, name: apis-to-cloud-gw }
     patch: |-
       - op: replace
@@ -64,6 +76,11 @@ replacements:
   - source: { kind: Deployment, name: cloud-gw, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
     targets:
       - select: { kind: Deployment, name: cloud-gw }
+        fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
+        options: { create: true }
+  - source: { kind: StatefulSet, name: cloud-storage, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
+    targets:
+      - select: { kind: StatefulSet, name: cloud-storage }
         fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
         options: { create: true }
   - source: { kind: Deployment, name: console, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }

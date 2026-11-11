@@ -1,0 +1,111 @@
+# オブジェクトストレージ（cloud-storage）: cloud-api と同じイメージを CLOUD_MODE=storage で動かす。
+# バケットは PVC の上のディレクトリ。アプリ用 namespace の ConfigMap（ラベル cloud.taramanji.com/bucket）に合わせて作る。
+#   8080: 読み書き（Bearer のトークンが要る）。cloud-api から
+#   8081: 読むだけ（トークンなし）。CDN（cloud-gw）から
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cloud-storage
+automountServiceAccountToken: false
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: cloud-storage
+  labels:
+    app.kubernetes.io/name: cloud-storage
+    app.kubernetes.io/part-of: taramanji-cloud
+spec:
+  # PVC（ReadWriteOnce）を 1 つの Pod が持つ。増やせない
+  replicas: 1
+  serviceName: cloud-storage
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cloud-storage
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cloud-storage
+        app.kubernetes.io/part-of: taramanji-cloud
+        tags.datadoghq.com/env: prod
+        tags.datadoghq.com/service: cloud-storage
+      annotations:
+        ad.datadoghq.com/app.logs: '[{"source":"go","service":"cloud-storage"}]'
+    spec:
+      serviceAccountName: cloud-storage
+      automountServiceAccountToken: true
+      enableServiceLinks: false
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        fsGroup: 65532
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: app
+          image: taramanji/cloud
+          ports:
+            - { name: http, containerPort: 8080 }
+            - { name: public, containerPort: 8081 }
+          env:
+            - { name: CLOUD_MODE, value: storage }
+            - { name: APP_ENV, value: prod }
+            - { name: PORT, value: ":8080" }
+            - name: POD_NAMESPACE
+              valueFrom: { fieldRef: { fieldPath: metadata.namespace } }
+            - name: DD_AGENT_HOST
+              valueFrom: { fieldRef: { fieldPath: status.hostIP } }
+            - name: DD_ENV
+              valueFrom: { fieldRef: { fieldPath: "metadata.labels['tags.datadoghq.com/env']" } }
+            - name: DD_SERVICE
+              valueFrom: { fieldRef: { fieldPath: "metadata.labels['tags.datadoghq.com/service']" } }
+            - name: DD_VERSION
+              valueFrom: { fieldRef: { fieldPath: "metadata.labels['tags.datadoghq.com/version']" } }
+            - { name: DD_LOGS_INJECTION, value: "true" }
+            - { name: DD_TRACE_SPAN_ATTRIBUTE_SCHEMA, value: v1 }
+            - name: GOMEMLIMIT
+              valueFrom: { resourceFieldRef: { resource: limits.memory } }
+            - { name: APPS_NAMESPACE, value: cloud-apps }
+            - name: STORAGE_MASTER_KEY
+              valueFrom: { secretKeyRef: { name: cloud-storage-key, key: STORAGE_MASTER_KEY } }
+          volumeMounts:
+            - { name: data, mountPath: /data }
+          startupProbe:
+            httpGet: { path: /readyz, port: http }
+            periodSeconds: 2
+            failureThreshold: 30
+          readinessProbe:
+            httpGet: { path: /readyz, port: http }
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+            periodSeconds: 10
+            failureThreshold: 3
+          resources:
+            requests: { cpu: 10m, memory: 24Mi }
+            limits: { memory: 128Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources:
+          requests: { storage: 2Gi }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloud-storage
+  labels:
+    app.kubernetes.io/name: cloud-storage
+spec:
+  selector:
+    app.kubernetes.io/name: cloud-storage
+  ports:
+    - { name: http, port: 8080, targetPort: http }
+    - { name: public, port: 8081, targetPort: public }

@@ -91,6 +91,10 @@ spec:
             # 公開するホスト名は <名前> + これ（1 階層にして、Cloudflare の無料の証明書の範囲に収める）
             - { name: HOST_SUFFIX, value: "-cloud.taramanji.com" }
             - { name: FUNCTION_IDLE_TIMEOUT, value: 5m }
+            # オブジェクトストレージの管理用のトークンを導くキー。なければバケットの中身は扱えない
+            - name: STORAGE_MASTER_KEY
+              valueFrom: { secretKeyRef: { name: cloud-storage-key, key: STORAGE_MASTER_KEY, optional: true } }
+            # 公開ホスト名の DNS の自動登録（CF_DNS_API_TOKEN・CF_ZONE_ID・CF_TUNNEL_ID は cloud-api-env。なければ手で登録する）
             # アプリの YAML を置く専用リポジトリ（<環境>/<名前>.yaml）。書き込むトークン（APPS_REPO_TOKEN）は cloud-api-env に入れる。
             # トークンがなければホスティングは使えないだけで、ほかは動く
             - { name: APPS_REPO, value: "JavaLangRuntimeException/taramanji-cloud-apps" }

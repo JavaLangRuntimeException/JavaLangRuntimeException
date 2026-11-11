@@ -4,6 +4,7 @@ kind: Kustomization
 resources:
   - api.yaml
   - gw.yaml
+  - storage.yaml
   - console.yaml
   - route.yaml
   - networkpolicy.yaml

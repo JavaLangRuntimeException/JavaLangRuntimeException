@@ -14,8 +14,10 @@ kind: NetworkPolicy
 metadata:
   name: from-cloud-gateway
 spec:
+  # ストレージ（cloud-storage）は Envoy から直接は受けない（下の to-cloud-storage だけ）
   podSelector:
-    matchLabels: { app.kubernetes.io/part-of: taramanji-cloud }
+    matchExpressions:
+      - { key: app.kubernetes.io/name, operator: In, values: [cloud-api, cloud-gw, console] }
   policyTypes: [Ingress]
   ingress:
     - from:
@@ -26,3 +28,22 @@ spec:
               gateway.envoyproxy.io/owning-gateway-namespace: cloud-gateway
       ports:
         - { port: 8080 }
+---
+# オブジェクトストレージ: 読み書き（8080）は cloud-api から、読むだけ（8081）は CDN（cloud-gw）からだけ
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: to-cloud-storage
+spec:
+  podSelector:
+    matchLabels: { app.kubernetes.io/name: cloud-storage }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: { matchLabels: { app.kubernetes.io/name: cloud-api } }
+      ports:
+        - { port: 8080 }
+    - from:
+        - podSelector: { matchLabels: { app.kubernetes.io/name: cloud-gw } }
+      ports:
+        - { port: 8081 }
