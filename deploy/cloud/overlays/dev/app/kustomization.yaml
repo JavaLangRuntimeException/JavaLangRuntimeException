@@ -8,8 +8,8 @@ resources:
 
 # set-version.sh が書き換える（CI の deploy-dev ジョブ）
 images:
-  - { name: taramanji/cloud, newName: ghcr.io/javalangruntimeexception/taramanji-cloud, newTag: unreleased }
-  - { name: taramanji/console, newName: ghcr.io/javalangruntimeexception/taramanji-console, newTag: unreleased }
+  - { name: taramanji/cloud, newName: ghcr.io/javalangruntimeexception/taramanji-cloud, newTag: sha-7c299d4 }
+  - { name: taramanji/console, newName: ghcr.io/javalangruntimeexception/taramanji-console, newTag: sha-7c299d4 }
 
 patches:
   - target: { kind: Deployment|StatefulSet }
