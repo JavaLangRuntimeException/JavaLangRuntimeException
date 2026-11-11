@@ -200,9 +200,22 @@ func runGateway() {
 		}
 		return "unrouted"
 	}
-	if err := server.RunNamed(gatewayServiceName, name, func(mux *http.ServeMux) { mux.Handle("/", inv) }); err != nil {
+	// ログインなしの入口（*-apigw-cloud・*-storage-cloud）を大量に叩かれても、関数と Mac mini を守る。利用者（IP）ごとに、
+	// 1 秒に GATEWAY_RATE_PER_SEC 回（既定 20）・続けて GATEWAY_RATE_BURST 回（既定 60）まで。Pod ごとに数える（2 台なら最大で 2 倍）
+	perSec, burst := envInt("GATEWAY_RATE_PER_SEC", 20), envInt("GATEWAY_RATE_BURST", 60)
+	handler := invoker.Limit(invoker.RateLimit{PerSecond: perSec, Burst: burst}, inv)
+	if err := server.RunNamed(gatewayServiceName, name, func(mux *http.ServeMux) { mux.Handle("/", handler) }); err != nil {
 		log.Fatal(err)
 	}
+}
+
+// envInt は正の整数の環境変数（なければ def）
+func envInt(name string, def int) int {
+	v, err := strconv.Atoi(env.Optional(name, strconv.Itoa(def)))
+	if err != nil || v <= 0 {
+		log.Fatalf("%s must be a positive integer", name)
+	}
+	return v
 }
 
 // idleTimeout はリクエストが来なくなってから関数を 0 台に戻すまでの時間（コンソールの表示と API Gateway で同じ値を使う）
