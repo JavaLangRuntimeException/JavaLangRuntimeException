@@ -47,6 +47,19 @@ VM のメモリを増やしたら `overlays/prod/workloads` の枠を広げる�
 コンソールの「容量」は、この枠の残りと Mac mini 全体の実際の空き（予約分を除く）の、先に尽きる方で「S / M / L / XL のアプリがあと何個置けるか」を出す。
 ストレージ（バケット）の容量は ③ で足す。
 
+## ログイン（Cloudflare Access）
+
+使うのは本人だけなので、コンソールも、公開する関数・CDN も、すべて Cloudflare Access の後ろに置く（stg・dev と同じ。`deploy/cloudflare/access.py`）。
+
+| Access のアプリ | ホスト名 |
+|---|---|
+| `taramanji-cloud` | `cloud`・`cloud-stg`・`cloud-dev`.taramanji.com（コンソール。API は JWT の aud も確かめる） |
+| `taramanji-cloud-apps` | `*-cloud`・`*-cloud-stg`・`*-cloud-dev`.taramanji.com（API・CDN で公開するもの） |
+
+- ブラウザで開くと Google のログインが出て、`ADMIN_EMAIL` のアカウントだけが通る。セッションは 24 時間
+- ブラウザ以外（curl・スクリプト）から呼ぶときは `cloudflared access curl https://<名前>-cloud.taramanji.com/`（最初にブラウザでログインする）
+- 外部のサービスから Webhook を受ける関数は、このままでは呼べない（Access のサービストークンか、Access から外すホスト名が要る）
+
 ## 関数と API Gateway
 
 Lambda と API Gateway にあたるもの。リソースの正は、**アプリ専用のリポジトリ**（`JavaLangRuntimeException/taramanji-cloud-apps`）にある Kubernetes の YAML。
