@@ -9,7 +9,7 @@ resources:
 # set-version.sh が書き換える（CI の deploy-dev ジョブ）
 images:
   - { name: taramanji/cloud, newName: ghcr.io/javalangruntimeexception/taramanji-cloud, newTag: sha-38bce2b }
-  - { name: taramanji/console, newName: ghcr.io/javalangruntimeexception/taramanji-console, newTag: sha-5c47366 }
+  - { name: taramanji/console, newName: ghcr.io/javalangruntimeexception/taramanji-console, newTag: sha-038e8e3 }
 
 patches:
   - target: { kind: Deployment|StatefulSet, labelSelector: "app.kubernetes.io/name notin (cloud-postgres,cloud-redis)" }
