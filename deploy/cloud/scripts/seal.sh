@@ -39,7 +39,18 @@ fi
 if [ -f "$SRC/apps-repo-token" ]; then
   args+=(--from-file=APPS_REPO_TOKEN="$SRC/apps-repo-token")
 fi
+# 公開ホスト名の DNS の自動登録（Cloudflare）。cloudflare.env に CF_DNS_API_TOKEN（ゾーンの DNS の編集だけ）と CF_ZONE_ID を書く。
+# 向き先のトンネルは tunnel-cloud.json から取る。なければ DNS は手で登録する
+if [ -f "$SRC/cloudflare.env" ] && [ -f "$SRC/tunnel-cloud.json" ]; then
+  args+=(--from-literal=CF_DNS_API_TOKEN="$(get CF_DNS_API_TOKEN "$SRC/cloudflare.env")" --from-literal=CF_ZONE_ID="$(get CF_ZONE_ID "$SRC/cloudflare.env")" \
+    --from-literal=CF_TUNNEL_ID="$(python3 -c "import json,sys;print(json.load(open(sys.argv[1]))['TunnelID'])" "$SRC/tunnel-cloud.json")")
+fi
 seal cloud-api-env "$NS" "${args[@]}"
+
+# オブジェクトストレージのマスターキー（バケットのトークンを導く）。環境ごとに 1 回だけ作り、変えない（変えるとトークンが全部変わる）
+KEY="$SRC/storage-master-key-$ENV"
+[ -f "$KEY" ] || (umask 077 && openssl rand -hex 32 > "$KEY")
+seal cloud-storage-key "$NS" --from-file=STORAGE_MASTER_KEY="$KEY"
 
 if [ "$ENV" = prod ]; then
   [ -f "$SRC/tunnel-cloud.json" ] || { echo "$SRC/tunnel-cloud.json がない（cloudflared tunnel create taramanji-cloud）" >&2; exit 1; }

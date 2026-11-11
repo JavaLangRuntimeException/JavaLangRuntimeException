@@ -14,6 +14,11 @@ spec:
         - { path: { type: PathPrefix, value: /taramanji.cloud.v1. } }
       backendRefs:
         - { name: cloud-api, port: 8080 }
+    # オブジェクトのアップロード・ダウンロード（Connect ではない HTTP）。画面の /storage とぶつからない名前にしてある
+    - matches:
+        - { path: { type: PathPrefix, value: /_objects/ } }
+      backendRefs:
+        - { name: cloud-api, port: 8080 }
     - matches:
         - { path: { type: PathPrefix, value: / } }
       backendRefs:

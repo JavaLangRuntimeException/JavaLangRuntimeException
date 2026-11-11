@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"errors"
+	"net/http"
 	"strconv"
 	"strings"
 	"testing"
@@ -198,10 +199,10 @@ func TestFunctionLifecycle(t *testing.T) {
 	if _, err := uc.DeleteFunction(ctx, DeleteFunctionInput{Name: "blog", Revision: rev}); code(err) != "function_in_use" {
 		t.Fatalf("function_in_use: %v", err)
 	}
-	if err := uc.DeleteApi(ctx, DeleteApiInput{Name: "shop", Revision: "old"}); code(err) != "conflict" {
+	if _, err := uc.DeleteApi(ctx, DeleteApiInput{Name: "shop", Revision: "old"}); code(err) != "conflict" {
 		t.Fatalf("古い版では消せない: %v", err)
 	}
-	if err := uc.DeleteApi(ctx, DeleteApiInput{Name: "shop", Revision: madeAPI.API.Source.Revision}); err != nil {
+	if _, err := uc.DeleteApi(ctx, DeleteApiInput{Name: "shop", Revision: madeAPI.API.Source.Revision}); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := uc.DeleteFunction(ctx, DeleteFunctionInput{Name: "blog", Revision: rev}); err != nil || len(store.files) != 0 || len(mon.items) != 0 {
@@ -250,5 +251,139 @@ func TestPreview(t *testing.T) {
 	}
 	if _, err := uc.PreviewApi(ctx, PreviewApiInput{Spec: &ApiSpec{Name: "shop"}}); code(err) != "invalid" {
 		t.Fatalf("invalid: %v", err)
+	}
+}
+
+type fakeObjects struct {
+	objects map[string][]gateway.StoredObject
+}
+
+func (f *fakeObjects) Buckets(context.Context) ([]gateway.BucketUsage, error) {
+	out := []gateway.BucketUsage{}
+	for name, objs := range f.objects {
+		out = append(out, gateway.BucketUsage{Name: name, Objects: int64(len(objs))})
+	}
+	return out, nil
+}
+
+func (f *fakeObjects) List(_ context.Context, bucket, _ string) ([]gateway.StoredObject, bool, error) {
+	objs, ok := f.objects[bucket]
+	if !ok {
+		return nil, false, gateway.ErrObjectNotFound
+	}
+	return objs, false, nil
+}
+
+func (f *fakeObjects) Delete(_ context.Context, bucket, key string) error {
+	for i, o := range f.objects[bucket] {
+		if o.Key == key {
+			f.objects[bucket] = append(f.objects[bucket][:i], f.objects[bucket][i+1:]...)
+			return nil
+		}
+	}
+	return gateway.ErrObjectNotFound
+}
+
+func (f *fakeObjects) Proxy(http.ResponseWriter, *http.Request, string, string) {}
+
+type fakeDNS struct {
+	hosts map[string]bool
+	err   error
+}
+
+func (f *fakeDNS) Ensure(_ context.Context, host string) error {
+	if f.err == nil {
+		f.hosts[host] = true
+	}
+	return f.err
+}
+
+func (f *fakeDNS) Remove(_ context.Context, host string) error {
+	delete(f.hosts, host)
+	return nil
+}
+
+func TestBucketsAndCDN(t *testing.T) {
+	uc, store, _ := newComputeUC()
+	objs := &fakeObjects{objects: map[string][]gateway.StoredObject{}}
+	dns := &fakeDNS{hosts: map[string]bool{}}
+	uc.d.Objects, uc.d.DNS = objs, dns
+	ctx := context.Background()
+
+	made, err := uc.CreateBucket(ctx, CreateBucketInput{Name: "site"})
+	if err != nil || made.Bucket.Ready || !strings.Contains(made.Bucket.Source.Yaml, "cloud.taramanji.com/bucket: site") {
+		t.Fatalf("create: %+v %v", made, err)
+	}
+	if _, err := uc.CreateBucket(ctx, CreateBucketInput{Name: "site"}); code(err) != "conflict" {
+		t.Fatalf("同じ名前: %v", err)
+	}
+	if _, err := uc.CreateBucket(ctx, CreateBucketInput{Name: "Bad"}); code(err) != "invalid" {
+		t.Fatalf("invalid: %v", err)
+	}
+	// ストレージがバケットを作ると、使用量が出る
+	objs.objects["site"] = []gateway.StoredObject{{Key: "index.html", Size: 4}}
+	list, err := uc.ListBuckets(ctx, ListBucketsInput{})
+	if err != nil || len(list.Buckets) != 1 || !list.Buckets[0].Ready || list.Buckets[0].Objects != 1 {
+		t.Fatalf("list: %+v %v", list, err)
+	}
+
+	// CDN: ない元には向けられない。作るとホスト名の DNS が登録される
+	spec := &DistributionSpec{Name: "www", OriginType: "bucket", Origin: "none", CacheSeconds: 300, Spa: true}
+	if _, err := uc.ApplyDistribution(ctx, ApplyDistributionInput{Spec: spec}); code(err) != "invalid" {
+		t.Fatalf("ない元: %v", err)
+	}
+	spec.Origin = "site"
+	dist, err := uc.ApplyDistribution(ctx, ApplyDistributionInput{Spec: spec})
+	if err != nil || dist.Distribution.Host != "www-cloud.taramanji.com" || dist.DnsProblem != "" || !dns.hosts["www-cloud.taramanji.com"] ||
+		!dist.Distribution.Spec.Spa || dist.Distribution.Spec.CacheSeconds != 300 {
+		t.Fatalf("cdn: %+v %v", dist, err)
+	}
+	// API と CDN は同じホスト名を使えない（どちらが先でも）
+	if _, err := uc.ApplyFunction(ctx, ApplyFunctionInput{Spec: blogSpec()}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := uc.ApplyApi(ctx, ApplyApiInput{Spec: &ApiSpec{Name: "www", Routes: []*ApiRoute{{Path: "/", Function: "blog"}}}}); code(err) != "host_taken" {
+		t.Fatalf("host_taken: %v", err)
+	}
+	api, err := uc.ApplyApi(ctx, ApplyApiInput{Spec: &ApiSpec{Name: "shop", Routes: []*ApiRoute{{Path: "/", Function: "blog"}}}})
+	if err != nil || !dns.hosts["shop-cloud.taramanji.com"] {
+		t.Fatalf("api の DNS: %v", err)
+	}
+	if _, err := uc.ApplyDistribution(ctx, ApplyDistributionInput{Spec: &DistributionSpec{Name: "shop", OriginType: "function", Origin: "blog"}}); code(err) != "host_taken" {
+		t.Fatalf("host_taken: %v", err)
+	}
+	// DNS に失敗しても YAML は保存し、理由を返す
+	dns.err = errors.New("cloudflare down")
+	fnDist, err := uc.ApplyDistribution(ctx, ApplyDistributionInput{Spec: &DistributionSpec{Name: "fast", OriginType: "function", Origin: "blog", CacheSeconds: 60}})
+	if err != nil || fnDist.DnsProblem == "" || store.files["cdn/fast"].YAML == "" {
+		t.Fatalf("dns_problem: %+v %v", fnDist, err)
+	}
+	dns.err = nil
+
+	// 使われている元は消せない。中身のあるバケットも消せない
+	if _, err := uc.DeleteFunction(ctx, DeleteFunctionInput{Name: "blog", Revision: store.files["functions/blog"].Revision}); code(err) != "function_in_use" {
+		t.Fatalf("function_in_use: %v", err)
+	}
+	rev := store.files["buckets/site"].Revision
+	if err := uc.DeleteBucket(ctx, DeleteBucketInput{Name: "site", Revision: rev}); code(err) != "bucket_in_use" {
+		t.Fatalf("bucket_in_use: %v", err)
+	}
+	if out, err := uc.DeleteDistribution(ctx, DeleteDistributionInput{Name: "www", Revision: dist.Distribution.Source.Revision}); err != nil || out.DnsProblem != "" || dns.hosts["www-cloud.taramanji.com"] {
+		t.Fatalf("delete cdn: %v", err)
+	}
+	if err := uc.DeleteBucket(ctx, DeleteBucketInput{Name: "site", Revision: rev}); code(err) != "bucket_not_empty" {
+		t.Fatalf("bucket_not_empty: %v", err)
+	}
+	if err := uc.DeleteObject(ctx, DeleteObjectInput{Bucket: "site", Key: "index.html"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := uc.DeleteObject(ctx, DeleteObjectInput{Bucket: "site", Key: "index.html"}); code(err) != "not_found" {
+		t.Fatalf("not_found: %v", err)
+	}
+	if err := uc.DeleteBucket(ctx, DeleteBucketInput{Name: "site", Revision: rev}); err != nil {
+		t.Fatal(err)
+	}
+	if out, err := uc.DeleteApi(ctx, DeleteApiInput{Name: "shop", Revision: api.API.Source.Revision}); err != nil || out.DnsProblem != "" || dns.hosts["shop-cloud.taramanji.com"] {
+		t.Fatalf("api の DNS を消す: %v", err)
 	}
 }

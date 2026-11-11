@@ -213,3 +213,61 @@ func TestMonitors(t *testing.T) {
 		t.Fatalf("何もなければ全部作る: %+v", plan)
 	}
 }
+
+func TestBucketAndDistributionYAML(t *testing.T) {
+	y, err := RenderBucketYAML("site")
+	if err != nil || !strings.Contains(y, "name: bucket-site") || !strings.Contains(y, "cloud.taramanji.com/bucket: site") {
+		t.Fatalf("bucket: %v\n%s", err, y)
+	}
+	if err := ParseBucketYAML("site", y); err != nil {
+		t.Fatal(err)
+	}
+	if err := ParseBucketYAML("site", strings.Replace(y, "bucket: site", "bucket: other", 1)); err == nil {
+		t.Fatal("ほかのバケット名のラベルは通さない")
+	}
+
+	s := DistributionSpec{Name: "www", OriginType: OriginBucket, Origin: "site", CacheSeconds: 300, SPA: true}
+	d, err := RenderDistributionYAML(s, target)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"www-cloud.taramanji.com", "name: X-Cloud-Bucket", "value: site", "value: \"300\"", "name: X-Cloud-Spa", "- X-Cloud-Function", "cloud.taramanji.com/kind: cdn"} {
+		if !strings.Contains(d, want) {
+			t.Errorf("YAML に %q がない:\n%s", want, d)
+		}
+	}
+	p, err := ParseDistributionYAML("www", d, target)
+	if err != nil || p.Spec != s {
+		t.Fatalf("読み戻し: %+v %v", p, err)
+	}
+	// 関数が元のときは、バケットのヘッダーを消す
+	fn, _ := RenderDistributionYAML(DistributionSpec{Name: "fast", OriginType: OriginFunction, Origin: "blog", CacheSeconds: 60}, target)
+	if !strings.Contains(fn, "- X-Cloud-Bucket") || !strings.Contains(fn, "name: X-Cloud-Function") {
+		t.Fatalf("function origin:\n%s", fn)
+	}
+	// 形を変えた YAML（よそのホスト名・ほかの送り先・ヘッダーを消さない）は通さない
+	for name, src := range map[string]string{
+		"よそのホスト名":   strings.Replace(d, "www-cloud.taramanji.com", "cloud.taramanji.com", 1),
+		"ほかの送り先":    strings.Replace(d, "name: cloud-gw", "name: cloud-api", 1),
+		"ヘッダーを消さない": strings.Replace(d, "- X-Cloud-Function", "- X-Other", 1),
+	} {
+		if _, err := ParseDistributionYAML("www", src, target); src == d || err == nil {
+			t.Errorf("%s は通さない", name)
+		}
+	}
+	for name, bad := range map[string]DistributionSpec{
+		"元の種類":      {Name: "www", OriginType: "s3", Origin: "site"},
+		"元なし":       {Name: "www", OriginType: OriginBucket},
+		"長すぎるキャッシュ": {Name: "www", OriginType: OriginBucket, Origin: "site", CacheSeconds: MaxCacheSeconds + 1},
+		"関数に SPA":   {Name: "www", OriginType: OriginFunction, Origin: "blog", SPA: true},
+	} {
+		if bad.Validate() == nil {
+			t.Errorf("%s は通さない", name)
+		}
+	}
+	// API の YAML は、CDN 用のヘッダーを消す
+	api, _ := RenderAPIYAML(APISpec{Name: "shop", Routes: []APIRoute{{Path: "/", Function: "web"}}}, target)
+	if !strings.Contains(api, "- X-Cloud-Bucket") || !strings.Contains(api, "- X-Cloud-Cache-Ttl") {
+		t.Fatalf("api:\n%s", api)
+	}
+}

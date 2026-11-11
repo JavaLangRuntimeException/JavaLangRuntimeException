@@ -164,3 +164,62 @@ func TestSweepScalesIdleFunctionsToZero(t *testing.T) {
 		t.Fatalf("初めて見た関数はすぐ寝かせない: %v", err)
 	}
 }
+
+func TestServeBucket(t *testing.T) {
+	files := map[string]string{"/site/index.html": "home", "/site/docs/index.html": "docs", "/site/app.js": "js"}
+	storage := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		body, ok := files[r.URL.Path]
+		if !ok {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("ETag", `"v1"`)
+		_, _ = io.WriteString(w, body)
+	}))
+	defer storage.Close()
+	inv, _, _ := setup(t)
+	inv.c.StorageURL, _ = url.Parse(storage.URL)
+	get := func(method, p string, h map[string]string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(method, "https://site-cloud.taramanji.com"+p, nil)
+		for k, v := range h {
+			req.Header.Set(k, v)
+		}
+		rec := httptest.NewRecorder()
+		inv.ServeHTTP(rec, req)
+		return rec
+	}
+	cdn := map[string]string{"X-Cloud-Bucket": "site", "X-Cloud-Cache-Ttl": "300", "X-Cloud-Spa": "false"}
+	for p, want := range map[string]string{"/": "home", "/app.js": "js", "/docs": "docs", "/docs/": "docs", "/docs/../app.js": "js"} {
+		rec := get("GET", p, cdn)
+		if rec.Code != 200 || rec.Body.String() != want || rec.Header().Get("Cache-Control") != "public, max-age=300" || rec.Header().Get("ETag") == "" {
+			t.Errorf("%s: %d %q %v", p, rec.Code, rec.Body.String(), rec.Header())
+		}
+	}
+	if rec := get("GET", "/none", cdn); rec.Code != 404 || rec.Header().Get("Cache-Control") != "no-store" {
+		t.Fatalf("ないパス: %d %v", rec.Code, rec.Header())
+	}
+	if rec := get("POST", "/", cdn); rec.Code != http.StatusMethodNotAllowed {
+		t.Fatalf("読むだけ: %d", rec.Code)
+	}
+	// SPA: ファイルがないパスに index.html を返す。キャッシュ 0 は no-cache
+	spa := map[string]string{"X-Cloud-Bucket": "site", "X-Cloud-Cache-Ttl": "0", "X-Cloud-Spa": "true"}
+	if rec := get("GET", "/users/1", spa); rec.Code != 200 || rec.Body.String() != "home" || rec.Header().Get("Cache-Control") != "no-cache" {
+		t.Fatalf("spa: %d %q %v", rec.Code, rec.Body.String(), rec.Header())
+	}
+}
+
+func TestFunctionThroughCDNGetsCacheControl(t *testing.T) {
+	inv, _, _ := setup(t)
+	req := httptest.NewRequest(http.MethodGet, "https://blog-cloud.taramanji.com/hello", nil)
+	req.Header.Set("X-Cloud-Function", "blog")
+	req.Header.Set("X-Cloud-Cache-Ttl", "60")
+	rec := httptest.NewRecorder()
+	inv.ServeHTTP(rec, req)
+	if rec.Code != 200 || rec.Header().Get("Cache-Control") != "public, max-age=60" {
+		t.Fatalf("%d %v", rec.Code, rec.Header())
+	}
+	// API を通したとき（長さなし）は付けない
+	if rec := call(inv, "blog"); rec.Header().Get("Cache-Control") != "" {
+		t.Fatal("API ではキャッシュさせない")
+	}
+}

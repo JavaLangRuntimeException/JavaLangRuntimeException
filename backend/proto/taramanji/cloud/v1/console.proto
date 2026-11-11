@@ -32,6 +32,23 @@ service ConsoleService {
   rpc ApplyApi(ApplyApiRequest) returns (ApplyApiResponse) {}
   rpc DeleteApi(DeleteApiRequest) returns (DeleteApiResponse) {}
 
+  // ---- オブジェクトストレージと CDN ----
+
+  // バケット: ファイルの置き場（<環境>/buckets/<名前>.yaml の ConfigMap）。外には CDN を通してだけ出せる
+  rpc ListBuckets(ListBucketsRequest) returns (ListBucketsResponse) {}
+  rpc CreateBucket(CreateBucketRequest) returns (CreateBucketResponse) {}
+  // 空で、どの CDN からも使われていないバケットだけ消せる
+  rpc DeleteBucket(DeleteBucketRequest) returns (DeleteBucketResponse) {}
+  rpc ListObjects(ListObjectsRequest) returns (ListObjectsResponse) {}
+  rpc DeleteObject(DeleteObjectRequest) returns (DeleteObjectResponse) {}
+  // オブジェクトを置く・取り出すのは Connect ではなく HTTP: PUT / GET /_objects/<バケット>/<キー>
+
+  // CDN: 公開するホスト名（<名前>-cloud.taramanji.com）と、その元（バケットか関数）、キャッシュの長さ
+  rpc ListDistributions(ListDistributionsRequest) returns (ListDistributionsResponse) {}
+  rpc PreviewDistribution(PreviewDistributionRequest) returns (PreviewDistributionResponse) {}
+  rpc ApplyDistribution(ApplyDistributionRequest) returns (ApplyDistributionResponse) {}
+  rpc DeleteDistribution(DeleteDistributionRequest) returns (DeleteDistributionResponse) {}
+
   // リポジトリの YAML に合わせて、Datadog のモニターを作り直す（git に直接 push したあとに呼ぶ）
   rpc SyncAlerts(SyncAlertsRequest) returns (SyncAlertsResponse) {}
 }
@@ -178,6 +195,10 @@ message GetHostingOptionsResponse {
   int32 idle_timeout_seconds = 13;
   // 公開 URL のホスト名の接尾辞（<名前> + これ）。例: -cloud.taramanji.com
   string host_suffix = 14;
+  // オブジェクトストレージが動いているか
+  bool storage_enabled = 15;
+  // ホスト名の DNS を自動で登録できるか（false なら手で登録する）
+  bool dns_enabled = 16;
 }
 
 message EnvVar {
@@ -309,6 +330,8 @@ message ApplyApiRequest {
 
 message ApplyApiResponse {
   Api api = 1;
+  // DNS を登録できなかった理由（YAML は保存済み。空なら問題なし）
+  string dns_problem = 2;
 }
 
 message DeleteApiRequest {
@@ -316,7 +339,10 @@ message DeleteApiRequest {
   string revision = 2;
 }
 
-message DeleteApiResponse {}
+message DeleteApiResponse {
+  // DNS を消せなかった理由（YAML は消した。空なら問題なし）
+  string dns_problem = 1;
+}
 
 message SyncAlertsRequest {}
 
@@ -324,4 +350,113 @@ message SyncAlertsResponse {
   int32 created = 1;
   int32 updated = 2;
   int32 deleted = 3;
+}
+
+message Bucket {
+  string name = 1;
+  Source source = 2;
+  // ストレージに作られたか（false ならまだ反映待ち）
+  bool ready = 3;
+  int64 objects = 4;
+  int64 bytes = 5;
+  // このバケットを元にしている CDN の名前
+  repeated string distributions = 6;
+}
+
+message ListBucketsRequest {}
+
+message ListBucketsResponse {
+  repeated Bucket buckets = 1;
+}
+
+message CreateBucketRequest {
+  string name = 1;
+}
+
+message CreateBucketResponse {
+  Bucket bucket = 1;
+}
+
+message DeleteBucketRequest {
+  string name = 1;
+  string revision = 2;
+}
+
+message DeleteBucketResponse {}
+
+message StorageObject {
+  string key = 1;
+  int64 size = 2;
+  int64 modified_ms = 3;
+}
+
+message ListObjectsRequest {
+  string bucket = 1;
+  // この文字列で始まるキーだけ
+  string prefix = 2;
+}
+
+message ListObjectsResponse {
+  repeated StorageObject objects = 1;
+  // 1,000 件を超えていて、続きがある（prefix で絞る）
+  bool truncated = 2;
+}
+
+message DeleteObjectRequest {
+  string bucket = 1;
+  string key = 2;
+}
+
+message DeleteObjectResponse {}
+
+message DistributionSpec {
+  // ホスト名の先頭（<名前>-cloud.taramanji.com）。API と合わせて、環境の中で重複できない
+  string name = 1;
+  // bucket / function
+  string origin_type = 2;
+  string origin = 3;
+  // キャッシュさせる秒数（Cache-Control: public, max-age）。0 ならキャッシュさせない
+  int32 cache_seconds = 4;
+  // バケットが元のとき: ファイルがないパスに index.html を返す（SPA）
+  bool spa = 5;
+}
+
+message Distribution {
+  DistributionSpec spec = 1;
+  Source source = 2;
+  string host = 3;
+}
+
+message ListDistributionsRequest {}
+
+message ListDistributionsResponse {
+  repeated Distribution distributions = 1;
+}
+
+message PreviewDistributionRequest {
+  DistributionSpec spec = 1;
+}
+
+message PreviewDistributionResponse {
+  string yaml = 1;
+}
+
+message ApplyDistributionRequest {
+  DistributionSpec spec = 1;
+  string yaml = 2;
+  string revision = 3;
+}
+
+message ApplyDistributionResponse {
+  Distribution distribution = 1;
+  string dns_problem = 2;
+}
+
+message DeleteDistributionRequest {
+  string name = 1;
+  string revision = 2;
+}
+
+message DeleteDistributionResponse {
+  string dns_problem = 1;
 }

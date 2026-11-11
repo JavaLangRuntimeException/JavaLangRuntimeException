@@ -98,9 +98,34 @@ metadata:
 Cloudflare Worker `taramanji-uptime`）。コンソールで保存・削除したときにそろえる。YAML を手で push したときは、コンソールの「監視を同期」を押す。
 stg・dev は Datadog で監視していないので、注釈は残るが通知は飛ばない。
 
-まだないもの: API のホスト名の DNS は自動では作らない。API ごとに
-`cloudflared tunnel route dns taramanji-cloud <名前>-cloud.taramanji.com` を実行する（DNS の自動登録は、ストレージ・CDN の PR で入れる）。
-秘密の環境変数・非公開イメージもまだ扱えない。
+まだないもの: 秘密の環境変数・非公開イメージは扱えない。
+
+## オブジェクトストレージと CDN
+
+S3 と CloudFront にあたるもの。
+
+| リソース | YAML の場所 | 中身 |
+|---|---|---|
+| バケット | `<環境>/buckets/<名前>.yaml` | ConfigMap `bucket-<名前>`（ラベル `cloud.taramanji.com/bucket`）。あることがバケットの定義 |
+| CDN | `<環境>/cdn/<名前>.yaml` | HTTPRoute 1 つ。`<名前>-cloud.taramanji.com` を、バケットか関数に向ける |
+
+- **ストレージ**（`cloud-storage`。cloud のイメージを `CLOUD_MODE=storage` で動かす StatefulSet）: バケットは PVC の上のディレクトリ。
+  ラベル付きの ConfigMap を 15 秒ごとに見て、バケットを作る。ConfigMap が消えても、中身のあるバケットは消さない
+  - 8080（読み書き）: Bearer のトークンが要る。トークンはマスターキー（`cloud-storage-key`）から導く。届くのは cloud-api だけ
+  - 8081（読むだけ）: トークンなし。届くのは CDN（cloud-gw）だけ
+- **ファイルの出し入れ**: コンソールのストレージの画面から。`PUT / GET /_objects/<バケット>/<キー>` を cloud-api がストレージに渡す（Access の JWT を確かめる）。
+  ダウンロードは必ずファイルとして保存させる（置いた HTML がコンソールのオリジンで動かないように）。1 つ 1 GiB まで
+- **CDN**: HTTPRoute が、元（`X-Cloud-Bucket` か `X-Cloud-Function`）・キャッシュの秒数・SPA をヘッダーに付けて cloud-gw に送る
+  - バケットが元: パスをキーにして返す（GET・HEAD だけ）。`/` で終わるパスは `index.html`。SPA にすると、ファイルがないパスに `/index.html` を返す
+  - 関数が元: 関数が `Cache-Control` を付けていない GET の 200 に、キャッシュの長さを付ける
+  - キャッシュするのは Cloudflare のエッジ。応答に `Cache-Control: public, max-age=<秒>` を付ける。Cloudflare の既定では、
+    画像・CSS・JS などの拡張子だけがキャッシュされる（HTML もキャッシュするなら Cloudflare の Cache Rule が要る）。キャッシュの消去（パージ）はまだない
+- **ホスト名**: API と CDN は同じ名前（＝同じホスト名）を使えない
+- **DNS**: API・CDN を作ると、cloud-api が Cloudflare に CNAME（`<ホスト名>` → `<トンネル ID>.cfargotunnel.com`、プロキシあり）を登録し、消すと削除する。
+  扱うのは `-cloud.taramanji.com`（stg・dev は `-cloud-stg`・`-cloud-dev`）で終わるホスト名だけ。消すのは自分が作った印（コメント）のあるレコードだけ。
+  トークンがなければ登録せず、コンソールに手で実行するコマンドを出す
+
+関数からバケットを読み書きする方法は、まだない（データベースの PR で、つなぐ仕組みと一緒に入れる）。
 
 ## 構成
 
@@ -148,7 +173,13 @@ deploy/cloud/
    deploy/cloud/scripts/seal.sh dev
    ```
 
-5. **アプリ用のリポジトリ**（関数と API を使うとき。なくてもコンソールのほかの画面は動く）
+5. **DNS の自動登録とストレージ**
+   - Cloudflare で API トークンを作る（権限は「ゾーン → DNS → 編集」、対象は taramanji.com だけ）。`deploy/cloud/secrets/cloudflare.env` に書く:
+     `CF_DNS_API_TOKEN=...` と `CF_ZONE_ID=...`（ゾーン ID はダッシュボードの概要にある）
+   - ストレージのマスターキーは `seal.sh` が環境ごとに 1 回だけ作る（`secrets/storage-master-key-<環境>`。なくすとトークンが変わるので消さない）
+   - どちらも 4 の `seal.sh` で SealedSecret になる。`cloud-storage-key` がないと cloud-storage の Pod は起動しない
+
+6. **アプリ用のリポジトリ**（関数と API を使うとき。なくてもコンソールのほかの画面は動く）
    - GitHub に private の `JavaLangRuntimeException/taramanji-cloud-apps` を作り、`prod/`・`stg/`・`dev/` に空のファイル（`.gitkeep`）を置く（Argo CD は空のディレクトリを読めない）
    - Argo CD が読む鍵（済み。クラスターを作り直したときだけ）: Deploy key を作って読み取りだけで登録し、SealedSecret にする
      ```sh
@@ -164,7 +195,7 @@ deploy/cloud/
    - 監視を使うなら、Datadog のアプリケーションキーのスコープに `monitors_read`・`monitors_write` を足し、
      `python3 deploy/cloudflare/uptime/datadog-webhook.py <Worker の URL> <トークンのファイル>` で Webhook を作り、Worker を `npx wrangler deploy` し直す
 
-6. **リリース**: main にマージすると build が `taramanji-cloud`・`taramanji-console` を作り、cd が stg に出す。
+7. **リリース**: main にマージすると build が `taramanji-cloud`・`taramanji-console` を作り、cd が stg に出す。
    本番は今までどおり `v*` のタグで出る（それまで prod のイメージは `unreleased` で、Pod は起動しない）。
 
 ## CI / CD

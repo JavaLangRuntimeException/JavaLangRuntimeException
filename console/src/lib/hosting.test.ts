@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { cachePresets, crumbsOf, distributionFormErrors, distributionFormOf, distributionSpecOf, emptyDistributionForm, entriesOf, formatCache } from "./hosting";
 import { apiFormErrors, apiFormOf, apiSpecOf, emptyApiForm, emptyForm, formatIdle, formErrors, formOf, isCustom, specOf, statusOf, toggle, typeOptions, withInstanceType } from "./hosting";
 
 const MIB = 1024 ** 2;
@@ -78,5 +79,45 @@ describe("API のフォーム", () => {
   it("待機までの時間", () => {
     expect(formatIdle(300)).toBe("5 分");
     expect(formatIdle(90)).toBe("90 秒");
+  });
+});
+
+describe("CDN のフォーム", () => {
+  it("最初のバケットを元にして、5 分のキャッシュから始める", () => {
+    expect(emptyDistributionForm(["site"])).toMatchObject({ originType: "bucket", origin: "site", cacheSeconds: "300", spa: false });
+  });
+  it("API の形にして、読み戻せる。関数が元なら SPA は付けない", () => {
+    const form = { name: " www ", originType: "function" as const, origin: "blog", cacheSeconds: "60", spa: true };
+    const spec = distributionSpecOf(form);
+    expect(spec).toEqual({ name: "www", originType: "function", origin: "blog", cacheSeconds: 60, spa: false });
+    expect(distributionFormOf(spec)).toEqual({ name: "www", originType: "function", origin: "blog", cacheSeconds: "60", spa: false });
+  });
+  it("間違いを返す", () => {
+    const ok = { ...emptyDistributionForm(["site"]), name: "www" };
+    expect(distributionFormErrors(ok)).toEqual({});
+    expect(Object.keys(distributionFormErrors({ ...ok, name: "WWW", origin: "", cacheSeconds: "x" })).sort()).toEqual(["cacheSeconds", "name", "origin"]);
+  });
+  it("キャッシュの長さを読みやすくする", () => {
+    expect(cachePresets.map((p) => formatCache(p.seconds))).toEqual(["キャッシュしない", "5 分", "1 時間", "1 日", "365 日"]);
+    expect(formatCache(90)).toBe("90 秒");
+  });
+});
+
+describe("オブジェクトの一覧", () => {
+  const objects = [
+    { key: "index.html", size: 10n, modifiedMs: 1n },
+    { key: "assets/app.js", size: 20n, modifiedMs: 3n },
+    { key: "assets/img/logo.svg", size: 5n, modifiedMs: 2n },
+  ];
+  it("直下をフォルダーとファイルに分ける", () => {
+    expect(entriesOf(objects, "")).toEqual([
+      { name: "assets", key: "assets/", folder: true, size: 25, modifiedMs: 3, count: 2 },
+      { name: "index.html", key: "index.html", folder: false, size: 10, modifiedMs: 1, count: 1 },
+    ]);
+    expect(entriesOf(objects, "assets/").map((e) => e.name)).toEqual(["img", "app.js"]);
+  });
+  it("パンくず", () => {
+    expect(crumbsOf("")).toEqual([]);
+    expect(crumbsOf("assets/img/")).toEqual([{ name: "assets", prefix: "assets/" }, { name: "img", prefix: "assets/img/" }]);
   });
 });

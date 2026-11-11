@@ -50,6 +50,44 @@ type DeleteApiInput struct {
 	Revision string
 }
 
+type ListBucketsInput struct{}
+
+type CreateBucketInput struct {
+	Name string
+}
+
+type DeleteBucketInput struct {
+	Name     string
+	Revision string
+}
+
+type ListObjectsInput struct {
+	Bucket string
+	Prefix string
+}
+
+type DeleteObjectInput struct {
+	Bucket string
+	Key    string
+}
+
+type ListDistributionsInput struct{}
+
+type PreviewDistributionInput struct {
+	Spec *DistributionSpec
+}
+
+type ApplyDistributionInput struct {
+	Spec     *DistributionSpec
+	Yaml     string
+	Revision string
+}
+
+type DeleteDistributionInput struct {
+	Name     string
+	Revision string
+}
+
 type SyncAlertsInput struct{}
 
 type GetOverviewOutput struct {
@@ -86,6 +124,8 @@ type GetHostingOptionsOutput struct {
 	Directory          string          `json:"directory"`
 	IdleTimeoutSeconds int32           `json:"idle_timeout_seconds"`
 	HostSuffix         string          `json:"host_suffix"`
+	StorageEnabled     bool            `json:"storage_enabled"`
+	DnsEnabled         bool            `json:"dns_enabled"`
 }
 
 type ListFunctionsOutput struct {
@@ -114,7 +154,42 @@ type PreviewApiOutput struct {
 }
 
 type ApplyApiOutput struct {
-	API *Api `json:"api"`
+	API        *Api   `json:"api"`
+	DnsProblem string `json:"dns_problem"`
+}
+
+type DeleteApiOutput struct {
+	DnsProblem string `json:"dns_problem"`
+}
+
+type ListBucketsOutput struct {
+	Buckets []*Bucket `json:"buckets"`
+}
+
+type CreateBucketOutput struct {
+	Bucket *Bucket `json:"bucket"`
+}
+
+type ListObjectsOutput struct {
+	Objects   []*StorageObject `json:"objects"`
+	Truncated bool             `json:"truncated"`
+}
+
+type ListDistributionsOutput struct {
+	Distributions []*Distribution `json:"distributions"`
+}
+
+type PreviewDistributionOutput struct {
+	Yaml string `json:"yaml"`
+}
+
+type ApplyDistributionOutput struct {
+	Distribution *Distribution `json:"distribution"`
+	DnsProblem   string        `json:"dns_problem"`
+}
+
+type DeleteDistributionOutput struct {
+	DnsProblem string `json:"dns_problem"`
 }
 
 type SyncAlertsOutput struct {
@@ -150,11 +225,34 @@ type ApiSpec struct {
 	Routes []*ApiRoute `json:"routes"`
 }
 
+type Bucket struct {
+	Name          string   `json:"name"`
+	Source        *Source  `json:"source"`
+	Ready         bool     `json:"ready"`
+	Objects       int64    `json:"objects"`
+	Bytes         int64    `json:"bytes"`
+	Distributions []string `json:"distributions"`
+}
+
 type Component struct {
 	Name    string `json:"name"`
 	Ready   int32  `json:"ready"`
 	Desired int32  `json:"desired"`
 	Version string `json:"version"`
+}
+
+type Distribution struct {
+	Spec   *DistributionSpec `json:"spec"`
+	Source *Source           `json:"source"`
+	Host   string            `json:"host"`
+}
+
+type DistributionSpec struct {
+	Name         string `json:"name"`
+	OriginType   string `json:"origin_type"`
+	Origin       string `json:"origin"`
+	CacheSeconds int32  `json:"cache_seconds"`
+	Spa          bool   `json:"spa"`
 }
 
 type EnvVar struct {
@@ -238,6 +336,12 @@ type Source struct {
 	Problem      string `json:"problem"`
 }
 
+type StorageObject struct {
+	Key        string `json:"key"`
+	Size       int64  `json:"size"`
+	ModifiedMs int64  `json:"modified_ms"`
+}
+
 // ConsoleUsecase は ConsoleService の rpc 1 本につき 1 メソッドを持つ interface。
 // 実装クラス（<Name>UsecaseImpl）はこの interface を実装する手書き層。
 // 戻り値はすべて pkg/dto の DTO 型 / Output 型でクライアント JSON シリアライズ表現を一元管理する。
@@ -253,6 +357,15 @@ type ConsoleUsecase interface {
 	ListApis(ctx context.Context, input ListApisInput) (*ListApisOutput, error)
 	PreviewApi(ctx context.Context, input PreviewApiInput) (*PreviewApiOutput, error)
 	ApplyApi(ctx context.Context, input ApplyApiInput) (*ApplyApiOutput, error)
-	DeleteApi(ctx context.Context, input DeleteApiInput) error
+	DeleteApi(ctx context.Context, input DeleteApiInput) (*DeleteApiOutput, error)
+	ListBuckets(ctx context.Context, input ListBucketsInput) (*ListBucketsOutput, error)
+	CreateBucket(ctx context.Context, input CreateBucketInput) (*CreateBucketOutput, error)
+	DeleteBucket(ctx context.Context, input DeleteBucketInput) error
+	ListObjects(ctx context.Context, input ListObjectsInput) (*ListObjectsOutput, error)
+	DeleteObject(ctx context.Context, input DeleteObjectInput) error
+	ListDistributions(ctx context.Context, input ListDistributionsInput) (*ListDistributionsOutput, error)
+	PreviewDistribution(ctx context.Context, input PreviewDistributionInput) (*PreviewDistributionOutput, error)
+	ApplyDistribution(ctx context.Context, input ApplyDistributionInput) (*ApplyDistributionOutput, error)
+	DeleteDistribution(ctx context.Context, input DeleteDistributionInput) (*DeleteDistributionOutput, error)
 	SyncAlerts(ctx context.Context, input SyncAlertsInput) (*SyncAlertsOutput, error)
 }

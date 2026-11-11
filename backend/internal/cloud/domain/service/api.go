@@ -108,7 +108,8 @@ type headerValue struct {
 type routeFilter struct {
 	Type                  string `yaml:"type"`
 	RequestHeaderModifier struct {
-		Set []headerValue `yaml:"set"`
+		Set    []headerValue `yaml:"set"`
+		Remove []string      `yaml:"remove,omitempty"`
 	} `yaml:"requestHeaderModifier"`
 }
 
@@ -172,6 +173,8 @@ func RenderAPIYAML(s APISpec, t APITarget) (string, error) {
 		// set は利用者が付けてきた同じ名前のヘッダーを上書きするので、渡し先は偽れない
 		f := routeFilter{Type: "RequestHeaderModifier"}
 		f.RequestHeaderModifier.Set = []headerValue{{Name: HeaderFunction, Value: route.Function}}
+		// CDN 用のヘッダーを利用者が付けてきても、API ではバケットを読ませない・キャッシュの長さを決めさせない
+		f.RequestHeaderModifier.Remove = []string{HeaderBucket, HeaderCacheTTL, HeaderSPA}
 		rule.Filters = []routeFilter{f}
 		rule.BackendRefs = []backendRef{{Name: InvokerService, Namespace: t.InvokerNamespace, Port: InvokerPort}}
 		r.Spec.Rules = append(r.Spec.Rules, rule)

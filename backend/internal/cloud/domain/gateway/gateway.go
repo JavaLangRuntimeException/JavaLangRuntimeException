@@ -4,6 +4,7 @@ package gateway
 import (
 	"context"
 	"errors"
+	"net/http"
 	"time"
 )
 
@@ -79,6 +80,8 @@ type Capacity interface {
 const (
 	KindFunctions = "functions"
 	KindAPIs      = "apis"
+	KindBuckets   = "buckets"
+	KindCDN       = "cdn"
 )
 
 // ResourceFile はアプリ用のリポジトリにある、リソース（関数・API）1 つの YAML
@@ -146,4 +149,37 @@ type FunctionScaler interface {
 	Running(ctx context.Context) ([]FunctionState, error)
 	Scale(ctx context.Context, name string, replicas int32) error
 	Touch(ctx context.Context, name string, at time.Time) error
+}
+
+// BucketUsage はストレージにあるバケットと、その使用量
+type BucketUsage struct {
+	Name    string
+	Objects int64
+	Bytes   int64
+}
+
+// StoredObject はオブジェクトの一覧の 1 件
+type StoredObject struct {
+	Key      string
+	Size     int64
+	Modified time.Time
+}
+
+// ErrObjectNotFound はバケットかオブジェクトがない
+var ErrObjectNotFound = errors.New("object not found")
+
+// ObjectStore はオブジェクトストレージ（cloud-storage）の読み書き。管理用のトークンで全バケットを扱う
+type ObjectStore interface {
+	Buckets(ctx context.Context) ([]BucketUsage, error)
+	List(ctx context.Context, bucket, prefix string) (objects []StoredObject, truncated bool, err error)
+	Delete(ctx context.Context, bucket, key string) error
+	// Proxy は PUT / GET / HEAD をそのままストレージに渡す（アップロード・ダウンロード）
+	Proxy(w http.ResponseWriter, r *http.Request, bucket, key string)
+}
+
+// DNS は公開ホスト名の DNS（Cloudflare）。自分が作ったレコードだけを消す
+type DNS interface {
+	// Ensure はホスト名をトンネルに向ける。既に別の向き先のレコードがあればエラー
+	Ensure(ctx context.Context, host string) error
+	Remove(ctx context.Context, host string) error
 }

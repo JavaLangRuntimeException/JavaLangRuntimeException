@@ -1,0 +1,256 @@
+import { useState } from "react";
+import { consoleApi, useBuckets, useDistributions, useFunctions, useHostingOptions, useStorageMutations } from "@/api/console";
+import type { Distribution, GetHostingOptionsResponse } from "@/api/gen/taramanji/cloud/v1/console_pb";
+import { btnPrimary, Field, input, Status } from "@/components/Form";
+import { EmptyState, Mono, PageHeader, Panel, Skeleton } from "@/components/Page";
+import { QueryError } from "@/components/QueryError";
+import { ResourceEditor } from "@/components/ResourceEditor";
+import { cachePresets, distributionFormErrors, distributionFormOf, distributionSpecOf, emptyDistributionForm, formatCache, type DistributionForm } from "@/lib/hosting";
+import { StoreDisabled } from "@/pages/FunctionsPage";
+
+/** DNS を自動で登録できない・できなかったときの案内 */
+export function dnsNote(dnsEnabled: boolean, problem: string | undefined, host: string): string | undefined {
+  if (problem) return `保存しましたが、DNS を変えられませんでした: ${problem}`;
+  if (!dnsEnabled) return `保存しました。DNS は自動で登録されないので、cloudflared tunnel route dns taramanji-cloud ${host} を実行してください。`;
+  return undefined;
+}
+
+export function CdnPage() {
+  const options = useHostingOptions();
+  const enabled = options.data?.storeEnabled === true;
+  const dists = useDistributions(enabled);
+  const buckets = useBuckets(enabled);
+  const functions = useFunctions(enabled);
+  // undefined = 一覧、null = 新しく作る
+  const [editing, setEditing] = useState<Distribution | null | undefined>(undefined);
+  const opt = options.data;
+  const bucketNames = buckets.data?.buckets.map((b) => b.name) ?? [];
+  const functionNames = functions.data?.functions.map((f) => f.spec?.name ?? "").filter((n) => n !== "") ?? [];
+
+  return (
+    <>
+      <PageHeader
+        title="CDN"
+        description={
+          opt ? (
+            <>
+              バケットか関数を <Mono>https://&lt;名前&gt;{opt.hostSuffix}</Mono> で公開し、Cloudflare のエッジにキャッシュさせます。
+            </>
+          ) : (
+            "バケットか関数にホスト名を付けて公開し、キャッシュさせます。"
+          )
+        }
+        actions={
+          enabled &&
+          editing === undefined && (
+            <button type="button" className={btnPrimary} onClick={() => setEditing(null)}>
+              CDN を作る
+            </button>
+          )
+        }
+      />
+      {options.isPending ? (
+        <Skeleton className="h-40" />
+      ) : options.isError ? (
+        <QueryError error={options.error} onRetry={() => void options.refetch()} />
+      ) : !options.data.storeEnabled ? (
+        <StoreDisabled repository={options.data.repository} />
+      ) : editing !== undefined ? (
+        <Editor key={editing?.spec?.name ?? ""} dist={editing} opt={options.data} buckets={bucketNames} functions={functionNames} onClose={() => setEditing(undefined)} />
+      ) : (
+        <Panel title="ディストリビューション">
+          {dists.isPending ? (
+            <div className="p-4">
+              <Skeleton className="h-24" />
+            </div>
+          ) : dists.isError ? (
+            <div className="p-4">
+              <QueryError error={dists.error} onRetry={() => void dists.refetch()} />
+            </div>
+          ) : dists.data.distributions.length === 0 ? (
+            <EmptyState title="まだ CDN がありません">
+              バケットに置いたサイトや、関数の応答を、名前の付いた URL で公開できます。名前は API と合わせて、この環境の中で重複できません。
+            </EmptyState>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[640px] text-left">
+                <thead className="border-b border-line text-xs text-muted">
+                  <tr>
+                    <th className="px-4 py-2 font-medium">名前</th>
+                    <th className="px-4 py-2 font-medium">URL</th>
+                    <th className="px-4 py-2 font-medium">元</th>
+                    <th className="px-4 py-2 font-medium">キャッシュ</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-line">
+                  {dists.data.distributions.map((d) => (
+                    <tr key={d.spec?.name}>
+                      <td className="px-4 py-2.5">
+                        <button type="button" className="font-medium text-accent hover:underline" onClick={() => setEditing(d)}>
+                          {d.spec?.name}
+                        </button>
+                      </td>
+                      <td className="px-4 py-2.5">
+                        <a href={`https://${d.host}`} target="_blank" rel="noreferrer" className="font-mono text-[13px] text-accent hover:underline">
+                          {d.host}
+                        </a>
+                      </td>
+                      {d.source?.problem ? (
+                        <td className="px-4 py-2.5" colSpan={2}>
+                          <Status level="bad" label="YAML に問題" />
+                        </td>
+                      ) : (
+                        <>
+                          <td className="px-4 py-2.5 text-ink-2">
+                            {d.spec?.originType === "function" ? "関数" : "バケット"} <Mono>{d.spec?.origin}</Mono>
+                            {d.spec?.spa && <span className="ml-1.5 rounded bg-accent-soft px-1.5 py-0.5 text-xs text-accent">SPA</span>}
+                          </td>
+                          <td className="px-4 py-2.5 text-ink-2">{formatCache(d.spec?.cacheSeconds ?? 0)}</td>
+                        </>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Panel>
+      )}
+    </>
+  );
+}
+
+function Editor({
+  dist,
+  opt,
+  buckets,
+  functions,
+  onClose,
+}: {
+  dist: Distribution | null;
+  opt: GetHostingOptionsResponse;
+  buckets: string[];
+  functions: string[];
+  onClose: () => void;
+}) {
+  const isNew = dist === null;
+  const [form, setForm] = useState<DistributionForm>(() =>
+    dist?.spec && !dist.source?.problem ? distributionFormOf(dist.spec) : { ...emptyDistributionForm(buckets), name: dist?.spec?.name ?? "" },
+  );
+  const [showErrors, setShowErrors] = useState(false);
+  const { applyDistribution, deleteDistribution } = useStorageMutations();
+  const errors = distributionFormErrors(form);
+  const set = (patch: Partial<DistributionForm>) => setForm((f) => ({ ...f, ...patch }));
+  const err = (k: keyof DistributionForm) => (showErrors ? errors[k] : undefined);
+  const host = `${form.name.trim() || "<名前>"}${opt.hostSuffix}`;
+  const origins = form.originType === "bucket" ? buckets : functions;
+  // 一覧にない元（消された）も、選択肢に残して見えるようにする
+  const choices = form.origin && !origins.includes(form.origin) ? [...origins, form.origin] : origins;
+  const done = applyDistribution.data ?? deleteDistribution.data;
+  const warning = done ? dnsNote(opt.dnsEnabled, done.dnsProblem, host) : undefined;
+
+  return (
+    <ResourceEditor
+      title={isNew ? "CDN を作る" : (dist.spec?.name ?? "")}
+      source={dist?.source ?? null}
+      yamlLabel="Kubernetes の YAML（HTTPRoute）"
+      yamlHint="形は決まっています。変えられるのは、元の名前・キャッシュの秒数・SPA の値だけです。"
+      formValid={() => {
+        setShowErrors(true);
+        return Object.keys(errors).length === 0;
+      }}
+      preview={async () => (await consoleApi.previewDistribution({ spec: distributionSpecOf(form) })).yaml}
+      onSave={(yaml) =>
+        applyDistribution.mutate(
+          { spec: yaml === null ? distributionSpecOf(form) : { name: form.name.trim() }, yaml: yaml ?? "", revision: dist?.source?.revision ?? "" },
+          { onSuccess: (res) => !dnsNote(opt.dnsEnabled, res.dnsProblem, host) && onClose() },
+        )
+      }
+      onDelete={() => {
+        if (!dist?.spec || !window.confirm(`${dist.spec.name} を消します。https://${dist.host} は使えなくなります（元のバケット・関数は残ります）。`)) return;
+        deleteDistribution.mutate({ name: dist.spec.name, revision: dist.source?.revision ?? "" }, { onSuccess: (res) => !res.dnsProblem && onClose() });
+      }}
+      onClose={onClose}
+      saving={applyDistribution.isPending || deleteDistribution.isPending}
+      error={applyDistribution.error ?? deleteDistribution.error}
+      warning={warning}
+    >
+      <Field
+        label="名前"
+        error={err("name")}
+        hint={
+          <>
+            <Mono>https://{host}</Mono> で公開されます。API と合わせてこの環境の中で重複できず、あとから変えられません
+          </>
+        }
+      >
+        <input className={`${input} max-w-sm`} value={form.name} disabled={!isNew} onChange={(e) => set({ name: e.target.value })} placeholder="www" autoComplete="off" spellCheck={false} />
+      </Field>
+
+      <fieldset>
+        <legend className="mb-2 text-xs font-medium text-ink-2">元（オリジン）</legend>
+        <div className="flex flex-wrap gap-2">
+          {(["bucket", "function"] as const).map((t) => (
+            <label key={t} className={`cursor-pointer rounded border px-3 py-2 ${form.originType === t ? "border-accent bg-accent-soft" : "border-line-strong hover:bg-surface-2"}`}>
+              <input
+                type="radio"
+                name="origin-type"
+                className="sr-only"
+                checked={form.originType === t}
+                onChange={() => set({ originType: t, origin: (t === "bucket" ? buckets : functions)[0] ?? "", spa: false })}
+              />
+              <span className="block font-medium text-ink">{t === "bucket" ? "バケット" : "関数"}</span>
+              <span className="block text-xs text-muted">{t === "bucket" ? "置いたファイルをそのまま配る" : "関数の応答をキャッシュする"}</span>
+            </label>
+          ))}
+        </div>
+        <div className="mt-3 max-w-sm">
+          <Field label={form.originType === "bucket" ? "バケット" : "関数"} error={err("origin")}>
+            <select className={input} value={form.origin} onChange={(e) => set({ origin: e.target.value })}>
+              <option value="">選ぶ</option>
+              {choices.map((n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </div>
+        {form.originType === "bucket" && (
+          <label className="mt-3 flex cursor-pointer items-start gap-2">
+            <input type="checkbox" className="mt-1" checked={form.spa} onChange={(e) => set({ spa: e.target.checked })} />
+            <span>
+              <span className="block text-ink">ファイルがないパスに index.html を返す（SPA）</span>
+              <span className="block text-xs text-muted">画面側でルーティングするサイト向け。付けないときは 404 を返します。</span>
+            </span>
+          </label>
+        )}
+      </fieldset>
+
+      <fieldset>
+        <legend className="mb-2 text-xs font-medium text-ink-2">キャッシュの長さ</legend>
+        <div className="flex flex-wrap items-center gap-2">
+          {cachePresets.map((p) => (
+            <button
+              key={p.seconds}
+              type="button"
+              aria-pressed={Number(form.cacheSeconds) === p.seconds}
+              onClick={() => set({ cacheSeconds: String(p.seconds) })}
+              className={`rounded border px-3 py-1.5 ${Number(form.cacheSeconds) === p.seconds ? "border-accent bg-accent-soft font-medium text-ink" : "border-line-strong text-ink-2 hover:bg-surface-2"}`}
+            >
+              {p.label}
+            </button>
+          ))}
+          <label className="flex items-center gap-2">
+            <input className={`${input} w-28`} inputMode="numeric" aria-label="キャッシュの秒数" value={form.cacheSeconds} onChange={(e) => set({ cacheSeconds: e.target.value })} />
+            <span className="text-ink-2">秒</span>
+          </label>
+        </div>
+        <p className={`mt-1 text-xs ${err("cacheSeconds") ? "text-bad" : "text-muted"}`}>
+          {err("cacheSeconds") ??
+            "応答に Cache-Control: public, max-age を付けます。Cloudflare は画像・CSS・JS などをこの長さでキャッシュします（HTML は Cloudflare の既定ではキャッシュされません）。"}
+        </p>
+      </fieldset>
+    </ResourceEditor>
+  );
+}

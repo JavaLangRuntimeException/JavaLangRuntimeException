@@ -21,6 +21,7 @@ func (u *ConsoleUsecaseImpl) GetHostingOptions(_ context.Context, _ GetHostingOp
 		StoreEnabled: u.d.Apps != nil, AlertsEnabled: u.d.Monitors != nil,
 		Repository: u.d.AppsRepository, Directory: u.d.Environment,
 		IdleTimeoutSeconds: int32(u.d.IdleTimeout.Seconds()), HostSuffix: u.d.APITarget.HostSuffix,
+		StorageEnabled: u.d.Objects != nil, DnsEnabled: u.d.DNS != nil,
 	}
 	for _, t := range service.InstanceTypes {
 		out.InstanceTypes = append(out.InstanceTypes, &InstanceType{Name: t.Name, Family: service.InstanceFamily(t.Name), Memory: t.MemoryBytes, CpuMillis: t.CPUMillis})
@@ -240,6 +241,13 @@ func (u *ConsoleUsecaseImpl) DeleteFunction(ctx context.Context, in DeleteFuncti
 	if used := apisOf(apis)[in.Name]; len(used) > 0 {
 		return nil, errs.New(errs.ErrorTypeBadRequest, fmt.Sprintf("API %v がこの関数に渡しています。先に API のルートを変えるか、API を消してください", used)).WithCode("function_in_use")
 	}
+	dists, err := u.distributionSpecs(ctx)
+	if err != nil {
+		return nil, storeErr(err)
+	}
+	if used := originsOf(dists, service.OriginFunction)[in.Name]; len(used) > 0 {
+		return nil, errs.New(errs.ErrorTypeBadRequest, fmt.Sprintf("CDN %v がこの関数を元にしています。先に CDN を消してください", used)).WithCode("function_in_use")
+	}
 	if err := store.Delete(ctx, gateway.KindFunctions, in.Name, in.Revision, u.commitMessage(ctx, "delete", "function", in.Name)); err != nil {
 		return nil, storeErr(err)
 	}
@@ -344,25 +352,67 @@ func (u *ConsoleUsecaseImpl) ApplyApi(ctx context.Context, in ApplyApiInput) (*A
 			return nil, errs.NewValidationError("routes", fmt.Sprintf("関数 %q がありません", fn)).WithCode("invalid")
 		}
 	}
+	if err := u.hostFree(ctx, gateway.KindCDN, name, in.Revision); err != nil {
+		return nil, err
+	}
 	rev, err := store.Put(ctx, gateway.KindAPIs, name, y, in.Revision, u.commitMessage(ctx, verbOf(in.Revision), "api", name))
 	if err != nil {
 		return nil, storeErr(err)
 	}
-	return &ApplyApiOutput{API: u.apiOf(gateway.ResourceFile{Name: name, YAML: y, Revision: rev})}, nil
+	return &ApplyApiOutput{API: u.apiOf(gateway.ResourceFile{Name: name, YAML: y, Revision: rev}), DnsProblem: u.ensureDNS(ctx, name)}, nil
 }
 
-func (u *ConsoleUsecaseImpl) DeleteApi(ctx context.Context, in DeleteApiInput) error {
+func (u *ConsoleUsecaseImpl) DeleteApi(ctx context.Context, in DeleteApiInput) (*DeleteApiOutput, error) {
 	store, err := u.store()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if !service.ValidName(in.Name) {
-		return storeErr(gateway.ErrResourceNotFound)
+		return nil, storeErr(gateway.ErrResourceNotFound)
 	}
 	if err := store.Delete(ctx, gateway.KindAPIs, in.Name, in.Revision, u.commitMessage(ctx, "delete", "api", in.Name)); err != nil {
+		return nil, storeErr(err)
+	}
+	return &DeleteApiOutput{DnsProblem: u.removeDNS(ctx, in.Name)}, nil
+}
+
+// ---- ホスト名（API と CDN で共通。<名前> + 接尾辞）----
+
+// hostFree は新しく作るとき、もう一方の種類（API なら CDN、CDN なら API）が同じ名前＝同じホスト名を使っていないか確かめる。
+// 同じ種類どうしはファイル名が同じになるので、置き場が弾く
+func (u *ConsoleUsecaseImpl) hostFree(ctx context.Context, otherKind, name, revision string) error {
+	if revision != "" {
+		return nil
+	}
+	_, err := u.d.Apps.Get(ctx, otherKind, name)
+	if errors.Is(err, gateway.ErrResourceNotFound) {
+		return nil
+	}
+	if err != nil {
 		return storeErr(err)
 	}
-	return nil
+	return errs.New(errs.ErrorTypeDuplicate, fmt.Sprintf("%s は既に使われています", service.HostOf(name, u.d.APITarget.HostSuffix))).WithCode("host_taken")
+}
+
+// ensureDNS はホスト名の DNS を登録する。失敗しても YAML の保存は戻さず、理由を返す（空なら問題なし）
+func (u *ConsoleUsecaseImpl) ensureDNS(ctx context.Context, name string) string {
+	if u.d.DNS == nil {
+		return ""
+	}
+	if err := u.d.DNS.Ensure(ctx, service.HostOf(name, u.d.APITarget.HostSuffix)); err != nil {
+		return err.Error()
+	}
+	return ""
+}
+
+func (u *ConsoleUsecaseImpl) removeDNS(ctx context.Context, name string) string {
+	if u.d.DNS == nil {
+		return ""
+	}
+	if err := u.d.DNS.Remove(ctx, service.HostOf(name, u.d.APITarget.HostSuffix)); err != nil {
+		return err.Error()
+	}
+	return ""
 }
 
 // ---- 監視 ----

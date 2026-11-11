@@ -32,6 +32,13 @@ patches:
                   # アプリの監視を Datadog のモニターにする（アプリケーションキーに monitors_read・monitors_write が要る）
                   - { name: ALERTS_ENABLED, value: "true" }
 
+  # 本番のバケットの置き場（VM のディスクから取る。アプリ用 namespace の枠とは別）
+  - target: { kind: StatefulSet, name: cloud-storage }
+    patch: |-
+      - op: replace
+        path: /spec/volumeClaimTemplates/0/spec/resources/requests/storage
+        value: 20Gi
+
 replacements:
   - source: { kind: Deployment, name: cloud-api, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
     targets:
@@ -41,6 +48,11 @@ replacements:
   - source: { kind: Deployment, name: cloud-gw, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
     targets:
       - select: { kind: Deployment, name: cloud-gw }
+        fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
+        options: { create: true }
+  - source: { kind: StatefulSet, name: cloud-storage, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
+    targets:
+      - select: { kind: StatefulSet, name: cloud-storage }
         fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
         options: { create: true }
   - source: { kind: Deployment, name: console, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }

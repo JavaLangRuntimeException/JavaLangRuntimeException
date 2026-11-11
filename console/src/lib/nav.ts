@@ -9,4 +9,5 @@ export const navItems: NavItem[] = [
   { to: "/functions", label: "関数" },
   { to: "/apis", label: "API Gateway" },
   { to: "/storage", label: "ストレージ" },
+  { to: "/cdn", label: "CDN" },
 ];

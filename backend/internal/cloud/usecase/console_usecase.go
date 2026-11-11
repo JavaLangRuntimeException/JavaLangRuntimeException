@@ -28,6 +28,10 @@ type Deps struct {
 	Apps gateway.ResourceStore
 	// APITarget は公開ホスト名の接尾辞と、API Gateway のいる namespace
 	APITarget service.APITarget
+	// Objects はオブジェクトストレージ。nil ならバケットは使えない
+	Objects gateway.ObjectStore
+	// DNS は公開ホスト名の DNS の自動登録。nil なら手で登録する
+	DNS gateway.DNS
 	// IdleTimeout は関数を 0 台に戻すまでの時間（画面に出すだけ。実際に戻すのは API Gateway）
 	IdleTimeout time.Duration
 	// AppsRepository は画面に出すリポジトリ名（owner/name）

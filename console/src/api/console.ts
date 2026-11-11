@@ -71,6 +71,74 @@ export function useApis(enabled: boolean) {
   });
 }
 
+const bucketsKey = ["console", "buckets"] as const;
+const cdnKey = ["console", "cdn"] as const;
+const objectsKey = (bucket: string, prefix: string) => ["console", "objects", bucket, prefix] as const;
+
+/** バケットの一覧（リポジトリの YAML + ストレージでの使用量）。反映待ちが変わるのを見るので短めに読み直す */
+export function useBuckets(enabled: boolean) {
+  return useQuery({
+    queryKey: bucketsKey,
+    queryFn: ({ signal }) => consoleApi.listBuckets({}, { signal }),
+    enabled,
+    staleTime: 10_000,
+    refetchInterval: 20_000,
+  });
+}
+
+export function useObjects(bucket: string, prefix: string) {
+  return useQuery({
+    queryKey: objectsKey(bucket, prefix),
+    queryFn: ({ signal }) => consoleApi.listObjects({ bucket, prefix }, { signal }),
+    placeholderData: (prev) => prev,
+  });
+}
+
+/** CDN の一覧（ホスト名と元） */
+export function useDistributions(enabled: boolean) {
+  return useQuery({
+    queryKey: cdnKey,
+    queryFn: ({ signal }) => consoleApi.listDistributions({}, { signal }),
+    enabled,
+    staleTime: 30_000,
+  });
+}
+
+/** オブジェクトを置く。Connect ではなく HTTP の PUT（同じオリジンなので Access の Cookie が付く） */
+export async function uploadObject(bucket: string, key: string, file: File): Promise<void> {
+  const res = await fetch(objectUrl(bucket, key), { method: "PUT", body: file, headers: { "Content-Type": "application/octet-stream" } });
+  if (!res.ok) throw new Error(res.status === 413 ? "ファイルが大きすぎます" : res.status === 400 ? "この名前では置けません" : `アップロードできませんでした（HTTP ${res.status}）`);
+}
+
+/** オブジェクトを取り出す URL（ファイルとして保存される） */
+export function objectUrl(bucket: string, key: string): string {
+  return `/_objects/${encodeURIComponent(bucket)}/${key.split("/").map(encodeURIComponent).join("/")}`;
+}
+
+/** バケット・オブジェクト・CDN の変更。終わったら一覧を読み直す */
+export function useStorageMutations() {
+  const qc = useQueryClient();
+  const refresh = () => {
+    void qc.invalidateQueries({ queryKey: bucketsKey });
+    void qc.invalidateQueries({ queryKey: cdnKey });
+    void qc.invalidateQueries({ queryKey: ["console", "objects"] });
+  };
+  return {
+    createBucket: useMutation({ mutationFn: (name: string) => consoleApi.createBucket({ name }), onSuccess: refresh }),
+    deleteBucket: useMutation({ mutationFn: (req: Parameters<typeof consoleApi.deleteBucket>[0]) => consoleApi.deleteBucket(req), onSuccess: refresh }),
+    deleteObject: useMutation({ mutationFn: (req: Parameters<typeof consoleApi.deleteObject>[0]) => consoleApi.deleteObject(req), onSuccess: refresh }),
+    upload: useMutation({
+      mutationFn: async ({ bucket, prefix, files }: { bucket: string; prefix: string; files: File[] }) => {
+        // 1 つずつ置く（並べて送ると、大きいファイルがあるときに全部が遅くなる）
+        for (const f of files) await uploadObject(bucket, prefix + (f.webkitRelativePath || f.name), f);
+      },
+      onSettled: refresh,
+    }),
+    applyDistribution: useMutation({ mutationFn: (req: Parameters<typeof consoleApi.applyDistribution>[0]) => consoleApi.applyDistribution(req), onSuccess: refresh }),
+    deleteDistribution: useMutation({ mutationFn: (req: Parameters<typeof consoleApi.deleteDistribution>[0]) => consoleApi.deleteDistribution(req), onSuccess: refresh }),
+  };
+}
+
 /** 保存・削除・監視の同期。終わったら一覧と容量を読み直す（API を変えると、関数の「渡している API」も変わる） */
 export function useComputeMutations() {
   const qc = useQueryClient();

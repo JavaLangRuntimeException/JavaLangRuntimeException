@@ -7,6 +7,7 @@ import { EmptyState, Mono, PageHeader, Panel, Skeleton } from "@/components/Page
 import { QueryError } from "@/components/QueryError";
 import { ResourceEditor } from "@/components/ResourceEditor";
 import { apiFormErrors, apiFormOf, apiSpecOf, emptyApiForm, type ApiForm } from "@/lib/hosting";
+import { dnsNote } from "@/pages/CdnPage";
 import { StoreDisabled } from "@/pages/FunctionsPage";
 
 export function ApisPage() {
@@ -135,6 +136,8 @@ function Editor({ api, opt, functions, onClose }: { api: Api | null; opt: GetHos
   const errors = apiFormErrors(form);
   const setRoute = (i: number, patch: Partial<{ path: string; function: string }>) =>
     setForm((f) => ({ ...f, routes: f.routes.map((r, j) => (j === i ? { ...r, ...patch } : r)) }));
+  const host = `${form.name.trim() || "<名前>"}${opt.hostSuffix}`;
+  const done = applyApi.data ?? deleteApi.data;
   // 一覧にない関数（消された・読めない）に渡しているルートも、選択肢に残して見えるようにする
   const choices = [...new Set([...functions, ...form.routes.map((r) => r.function).filter((n) => n !== "")])];
 
@@ -152,16 +155,17 @@ function Editor({ api, opt, functions, onClose }: { api: Api | null; opt: GetHos
       onSave={(yaml) =>
         applyApi.mutate(
           { spec: yaml === null ? apiSpecOf(form) : { name: form.name.trim() }, yaml: yaml ?? "", revision: api?.source?.revision ?? "" },
-          { onSuccess: onClose },
+          { onSuccess: (res) => !dnsNote(opt.dnsEnabled, res.dnsProblem, host) && onClose() },
         )
       }
       onDelete={() => {
         if (!api?.spec || !window.confirm(`${api.spec.name} を消します。https://${api.host} は使えなくなります（関数は残ります）。`)) return;
-        deleteApi.mutate({ name: api.spec.name, revision: api.source?.revision ?? "" }, { onSuccess: onClose });
+        deleteApi.mutate({ name: api.spec.name, revision: api.source?.revision ?? "" }, { onSuccess: (res) => !res.dnsProblem && onClose() });
       }}
       onClose={onClose}
       saving={applyApi.isPending || deleteApi.isPending}
       error={applyApi.error ?? deleteApi.error}
+      warning={done ? dnsNote(opt.dnsEnabled, done.dnsProblem, host) : undefined}
     >
       <Field
         label="名前"

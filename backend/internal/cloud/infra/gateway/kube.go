@@ -185,3 +185,23 @@ func (k *Kube) AppWorkloads(ctx context.Context) ([]gateway.Workload, error) {
 	}
 	return list.workloads(), nil
 }
+
+// LabeledConfigMaps はアプリ用 namespace の、ラベル key が付いた ConfigMap の、そのラベルの値（バケット名など）
+func (k *Kube) LabeledConfigMaps(ctx context.Context, key string) ([]string, error) {
+	var list struct {
+		Items []struct {
+			Metadata struct {
+				Labels map[string]string `json:"labels"`
+			} `json:"metadata"`
+		} `json:"items"`
+	}
+	path := "/api/v1/namespaces/" + url.PathEscape(k.appsNamespace) + "/configmaps?labelSelector=" + url.QueryEscape(key)
+	if err := k.get(ctx, path, &list); err != nil {
+		return nil, err
+	}
+	out := []string{}
+	for _, it := range list.Items {
+		out = append(out, it.Metadata.Labels[key])
+	}
+	return out, nil
+}

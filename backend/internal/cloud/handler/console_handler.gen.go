@@ -110,7 +110,7 @@ func (h *ConsoleHandler) GetHostingOptions(ctx context.Context, req *connect.Req
 			out = append(out, consoleAlertPresetToPb(v))
 		}
 		return out
-	}(out.AlertPresets), NotifyChannels: out.NotifyChannels, MinCpuMillis: out.MinCpuMillis, MaxCpuMillis: out.MaxCpuMillis, MinMemory: out.MinMemory, MaxMemory: out.MaxMemory, StoreEnabled: out.StoreEnabled, AlertsEnabled: out.AlertsEnabled, Repository: out.Repository, Directory: out.Directory, IdleTimeoutSeconds: out.IdleTimeoutSeconds, HostSuffix: out.HostSuffix}), nil
+	}(out.AlertPresets), NotifyChannels: out.NotifyChannels, MinCpuMillis: out.MinCpuMillis, MaxCpuMillis: out.MaxCpuMillis, MinMemory: out.MinMemory, MaxMemory: out.MaxMemory, StoreEnabled: out.StoreEnabled, AlertsEnabled: out.AlertsEnabled, Repository: out.Repository, Directory: out.Directory, IdleTimeoutSeconds: out.IdleTimeoutSeconds, HostSuffix: out.HostSuffix, StorageEnabled: out.StorageEnabled, DnsEnabled: out.DnsEnabled}), nil
 }
 
 func (h *ConsoleHandler) ListFunctions(ctx context.Context, req *connect.Request[cloudv1.ListFunctionsRequest]) (*connect.Response[cloudv1.ListFunctionsResponse], error) {
@@ -199,17 +199,135 @@ func (h *ConsoleHandler) ApplyApi(ctx context.Context, req *connect.Request[clou
 	if err != nil {
 		return nil, errs.ToConnect(ctx, err)
 	}
-	return connect.NewResponse(&cloudv1.ApplyApiResponse{Api: consoleApiToPb(out.API)}), nil
+	return connect.NewResponse(&cloudv1.ApplyApiResponse{Api: consoleApiToPb(out.API), DnsProblem: out.DnsProblem}), nil
 }
 
 func (h *ConsoleHandler) DeleteApi(ctx context.Context, req *connect.Request[cloudv1.DeleteApiRequest]) (*connect.Response[cloudv1.DeleteApiResponse], error) {
-	if err := h.usecase.DeleteApi(ctx, usecase.DeleteApiInput{
+	out, err := h.usecase.DeleteApi(ctx, usecase.DeleteApiInput{
+		Name:     req.Msg.GetName(),
+		Revision: req.Msg.GetRevision(),
+	})
+	if err != nil {
+		return nil, errs.ToConnect(ctx, err)
+	}
+	return connect.NewResponse(&cloudv1.DeleteApiResponse{DnsProblem: out.DnsProblem}), nil
+}
+
+func (h *ConsoleHandler) ListBuckets(ctx context.Context, req *connect.Request[cloudv1.ListBucketsRequest]) (*connect.Response[cloudv1.ListBucketsResponse], error) {
+	out, err := h.usecase.ListBuckets(ctx, usecase.ListBucketsInput{})
+	if err != nil {
+		return nil, errs.ToConnect(ctx, err)
+	}
+	return connect.NewResponse(&cloudv1.ListBucketsResponse{Buckets: func(l []*usecase.Bucket) []*cloudv1.Bucket {
+		if l == nil {
+			return nil
+		}
+		out := make([]*cloudv1.Bucket, 0, len(l))
+		for _, v := range l {
+			out = append(out, consoleBucketToPb(v))
+		}
+		return out
+	}(out.Buckets)}), nil
+}
+
+func (h *ConsoleHandler) CreateBucket(ctx context.Context, req *connect.Request[cloudv1.CreateBucketRequest]) (*connect.Response[cloudv1.CreateBucketResponse], error) {
+	out, err := h.usecase.CreateBucket(ctx, usecase.CreateBucketInput{
+		Name: req.Msg.GetName(),
+	})
+	if err != nil {
+		return nil, errs.ToConnect(ctx, err)
+	}
+	return connect.NewResponse(&cloudv1.CreateBucketResponse{Bucket: consoleBucketToPb(out.Bucket)}), nil
+}
+
+func (h *ConsoleHandler) DeleteBucket(ctx context.Context, req *connect.Request[cloudv1.DeleteBucketRequest]) (*connect.Response[cloudv1.DeleteBucketResponse], error) {
+	if err := h.usecase.DeleteBucket(ctx, usecase.DeleteBucketInput{
 		Name:     req.Msg.GetName(),
 		Revision: req.Msg.GetRevision(),
 	}); err != nil {
 		return nil, errs.ToConnect(ctx, err)
 	}
-	return connect.NewResponse(&cloudv1.DeleteApiResponse{}), nil
+	return connect.NewResponse(&cloudv1.DeleteBucketResponse{}), nil
+}
+
+func (h *ConsoleHandler) ListObjects(ctx context.Context, req *connect.Request[cloudv1.ListObjectsRequest]) (*connect.Response[cloudv1.ListObjectsResponse], error) {
+	out, err := h.usecase.ListObjects(ctx, usecase.ListObjectsInput{
+		Bucket: req.Msg.GetBucket(),
+		Prefix: req.Msg.GetPrefix(),
+	})
+	if err != nil {
+		return nil, errs.ToConnect(ctx, err)
+	}
+	return connect.NewResponse(&cloudv1.ListObjectsResponse{Objects: func(l []*usecase.StorageObject) []*cloudv1.StorageObject {
+		if l == nil {
+			return nil
+		}
+		out := make([]*cloudv1.StorageObject, 0, len(l))
+		for _, v := range l {
+			out = append(out, consoleStorageObjectToPb(v))
+		}
+		return out
+	}(out.Objects), Truncated: out.Truncated}), nil
+}
+
+func (h *ConsoleHandler) DeleteObject(ctx context.Context, req *connect.Request[cloudv1.DeleteObjectRequest]) (*connect.Response[cloudv1.DeleteObjectResponse], error) {
+	if err := h.usecase.DeleteObject(ctx, usecase.DeleteObjectInput{
+		Bucket: req.Msg.GetBucket(),
+		Key:    req.Msg.GetKey(),
+	}); err != nil {
+		return nil, errs.ToConnect(ctx, err)
+	}
+	return connect.NewResponse(&cloudv1.DeleteObjectResponse{}), nil
+}
+
+func (h *ConsoleHandler) ListDistributions(ctx context.Context, req *connect.Request[cloudv1.ListDistributionsRequest]) (*connect.Response[cloudv1.ListDistributionsResponse], error) {
+	out, err := h.usecase.ListDistributions(ctx, usecase.ListDistributionsInput{})
+	if err != nil {
+		return nil, errs.ToConnect(ctx, err)
+	}
+	return connect.NewResponse(&cloudv1.ListDistributionsResponse{Distributions: func(l []*usecase.Distribution) []*cloudv1.Distribution {
+		if l == nil {
+			return nil
+		}
+		out := make([]*cloudv1.Distribution, 0, len(l))
+		for _, v := range l {
+			out = append(out, consoleDistributionToPb(v))
+		}
+		return out
+	}(out.Distributions)}), nil
+}
+
+func (h *ConsoleHandler) PreviewDistribution(ctx context.Context, req *connect.Request[cloudv1.PreviewDistributionRequest]) (*connect.Response[cloudv1.PreviewDistributionResponse], error) {
+	out, err := h.usecase.PreviewDistribution(ctx, usecase.PreviewDistributionInput{
+		Spec: consolePbToDistributionSpec(req.Msg.GetSpec()),
+	})
+	if err != nil {
+		return nil, errs.ToConnect(ctx, err)
+	}
+	return connect.NewResponse(&cloudv1.PreviewDistributionResponse{Yaml: out.Yaml}), nil
+}
+
+func (h *ConsoleHandler) ApplyDistribution(ctx context.Context, req *connect.Request[cloudv1.ApplyDistributionRequest]) (*connect.Response[cloudv1.ApplyDistributionResponse], error) {
+	out, err := h.usecase.ApplyDistribution(ctx, usecase.ApplyDistributionInput{
+		Spec:     consolePbToDistributionSpec(req.Msg.GetSpec()),
+		Yaml:     req.Msg.GetYaml(),
+		Revision: req.Msg.GetRevision(),
+	})
+	if err != nil {
+		return nil, errs.ToConnect(ctx, err)
+	}
+	return connect.NewResponse(&cloudv1.ApplyDistributionResponse{Distribution: consoleDistributionToPb(out.Distribution), DnsProblem: out.DnsProblem}), nil
+}
+
+func (h *ConsoleHandler) DeleteDistribution(ctx context.Context, req *connect.Request[cloudv1.DeleteDistributionRequest]) (*connect.Response[cloudv1.DeleteDistributionResponse], error) {
+	out, err := h.usecase.DeleteDistribution(ctx, usecase.DeleteDistributionInput{
+		Name:     req.Msg.GetName(),
+		Revision: req.Msg.GetRevision(),
+	})
+	if err != nil {
+		return nil, errs.ToConnect(ctx, err)
+	}
+	return connect.NewResponse(&cloudv1.DeleteDistributionResponse{DnsProblem: out.DnsProblem}), nil
 }
 
 func (h *ConsoleHandler) SyncAlerts(ctx context.Context, req *connect.Request[cloudv1.SyncAlertsRequest]) (*connect.Response[cloudv1.SyncAlertsResponse], error) {
@@ -641,6 +759,104 @@ func consoleApiToPb(u *usecase.Api) *cloudv1.Api {
 	}
 	return &cloudv1.Api{
 		Spec:   consoleApiSpecToPb(u.Spec),
+		Source: consoleSourceToPb(u.Source),
+		Host:   u.Host,
+	}
+}
+
+func consolePbToBucket(p *cloudv1.Bucket) *usecase.Bucket {
+	if p == nil {
+		return nil
+	}
+	return &usecase.Bucket{
+		Name:          p.GetName(),
+		Source:        consolePbToSource(p.GetSource()),
+		Ready:         p.GetReady(),
+		Objects:       p.GetObjects(),
+		Bytes:         p.GetBytes(),
+		Distributions: p.GetDistributions(),
+	}
+}
+
+func consoleBucketToPb(u *usecase.Bucket) *cloudv1.Bucket {
+	if u == nil {
+		return nil
+	}
+	return &cloudv1.Bucket{
+		Name:          u.Name,
+		Source:        consoleSourceToPb(u.Source),
+		Ready:         u.Ready,
+		Objects:       u.Objects,
+		Bytes:         u.Bytes,
+		Distributions: u.Distributions,
+	}
+}
+
+func consolePbToStorageObject(p *cloudv1.StorageObject) *usecase.StorageObject {
+	if p == nil {
+		return nil
+	}
+	return &usecase.StorageObject{
+		Key:        p.GetKey(),
+		Size:       p.GetSize(),
+		ModifiedMs: p.GetModifiedMs(),
+	}
+}
+
+func consoleStorageObjectToPb(u *usecase.StorageObject) *cloudv1.StorageObject {
+	if u == nil {
+		return nil
+	}
+	return &cloudv1.StorageObject{
+		Key:        u.Key,
+		Size:       u.Size,
+		ModifiedMs: u.ModifiedMs,
+	}
+}
+
+func consolePbToDistributionSpec(p *cloudv1.DistributionSpec) *usecase.DistributionSpec {
+	if p == nil {
+		return nil
+	}
+	return &usecase.DistributionSpec{
+		Name:         p.GetName(),
+		OriginType:   p.GetOriginType(),
+		Origin:       p.GetOrigin(),
+		CacheSeconds: p.GetCacheSeconds(),
+		Spa:          p.GetSpa(),
+	}
+}
+
+func consoleDistributionSpecToPb(u *usecase.DistributionSpec) *cloudv1.DistributionSpec {
+	if u == nil {
+		return nil
+	}
+	return &cloudv1.DistributionSpec{
+		Name:         u.Name,
+		OriginType:   u.OriginType,
+		Origin:       u.Origin,
+		CacheSeconds: u.CacheSeconds,
+		Spa:          u.Spa,
+	}
+}
+
+func consolePbToDistribution(p *cloudv1.Distribution) *usecase.Distribution {
+	if p == nil {
+		return nil
+	}
+	return &usecase.Distribution{
+		Spec:   consolePbToDistributionSpec(p.GetSpec()),
+		Source: consolePbToSource(p.GetSource()),
+		Host:   p.GetHost(),
+	}
+}
+
+func consoleDistributionToPb(u *usecase.Distribution) *cloudv1.Distribution {
+	if u == nil {
+		return nil
+	}
+	return &cloudv1.Distribution{
+		Spec:   consoleDistributionSpecToPb(u.Spec),
 		Source: consoleSourceToPb(u.Source),
 		Host:   u.Host,
 	}

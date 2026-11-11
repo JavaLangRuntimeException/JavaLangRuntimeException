@@ -2,6 +2,7 @@ import { createBrowserRouter } from "react-router";
 import { AppShell } from "@/components/AppShell";
 import { CapacityPage } from "@/pages/CapacityPage";
 import { ApisPage } from "@/pages/ApisPage";
+import { CdnPage } from "@/pages/CdnPage";
 import { FunctionsPage } from "@/pages/FunctionsPage";
 import { MetricsPage } from "@/pages/MetricsPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
@@ -18,6 +19,7 @@ export const router = createBrowserRouter([
       { path: "storage", element: <StoragePage /> },
       { path: "functions", element: <FunctionsPage /> },
       { path: "apis", element: <ApisPage /> },
+      { path: "cdn", element: <CdnPage /> },
       { path: "*", element: <NotFoundPage /> },
     ],
   },
