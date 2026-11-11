@@ -48,6 +48,47 @@ VM のメモリを増やしたら `overlays/prod/workloads` の枠を広げる�
 コンソールの「容量」は、この枠の残りと Mac mini 全体の実際の空き（予約分を除く）の、先に尽きる方で「S / M / L / XL のアプリがあと何個置けるか」を出す。
 ストレージ（バケット）の容量は ③ で足す。
 
+## ホスティング（コンテナ）
+
+アプリの正は、**アプリ専用のリポジトリ**（`JavaLangRuntimeException/taramanji-cloud-apps`）にある Kubernetes の YAML。
+`<環境>/<名前>.yaml`（`prod/blog.yaml` など）に Deployment・Service・HTTPRoute を書く。
+
+- コンソール（ホスティング → コンテナ）のフォームで作る・変える・消すと、cloud-api がそのファイルをコミットする。クラスターには書かない
+- Argo CD の `cloud-apps-<環境>`（プロジェクト `cloud-apps`）が、そのディレクトリをアプリ用 namespace に入れる
+- YAML を手で書いて push しても同じ。コンソールの「YAML」タブで直接編集もできる。手で書き足した YAML は、フォームでは編集できない（保存すると消えるため）
+
+リポジトリを分けているのは、コンソールのトークンが漏れても taramanji.com のマニフェスト（このリポジトリ）を書き換えられないようにするため。
+プロジェクト `cloud-apps` は、入れ先をアプリ用 namespace に、種類を Deployment・Service・ConfigMap・PersistentVolumeClaim・HTTPRoute に限る。
+
+**インスタンスタイプ**（EC2 と同じ「ファミリー + 世代 . サイズ」。`backend/internal/cloud/domain/service/instancetype.go`）:
+
+| 名前 | CPU | メモリ |
+|---|---|---|
+| `t1.small` | 0.1 | 128 MiB |
+| `t1.medium` | 0.25 | 256 MiB |
+| `t1.large` | 0.5 | 512 MiB |
+| `t1.xlarge` | 1 | 1 GiB |
+
+型を選ぶと CPU・メモリが入り、そのあと個別に変えられる（CPU 10〜1000 ミリコア、メモリ 16〜1024 MiB。上限は LimitRange の max）。
+YAML ではラベル `cloud.taramanji.com/instance-type` が型、`resources` が実際の値（requests = limits）。
+
+**監視**: Deployment の注釈で、用意した監視と通知先を選ぶ。
+
+```yaml
+metadata:
+  annotations:
+    cloud.taramanji.com/alerts: cpu-high,memory-high,restarts,unavailable,http-5xx
+    cloud.taramanji.com/notify: mail,discord
+```
+
+本番では cloud-api がこれを Datadog のモニター（タグ `managed-by:taramanji-cloud`）にする。Datadog には必ず出て、
+`mail` は SES のメール、`discord` は Discord に飛ぶ（Datadog の Webhook `taramanji-cloud-mail`・`taramanji-cloud-discord` →
+Cloudflare Worker `taramanji-uptime`）。コンソールで保存・削除したときにそろえる。YAML を手で push したときは、コンソールの「監視を同期」を押す。
+stg・dev は Datadog で監視していないので、注釈は残るが通知は飛ばない。
+
+まだないもの: アプリの URL（`<名前>-hosting.taramanji.com`）の DNS は自動では作らない。アプリごとに
+`cloudflared tunnel route dns taramanji-cloud <名前>-hosting.taramanji.com` を実行する。秘密の環境変数・非公開イメージもまだ扱えない。
+
 ## 構成
 
 ```
@@ -94,7 +135,14 @@ deploy/cloud/
    deploy/cloud/scripts/seal.sh dev
    ```
 
-5. **リリース**: main にマージすると build が `taramanji-cloud`・`taramanji-console` を作り、cd が stg に出す。
+5. **アプリ用のリポジトリ**（ホスティングを使うとき。なくてもコンソールのほかの画面は動く）
+   - GitHub に private の `JavaLangRuntimeException/taramanji-cloud-apps` を作り、`prod/`・`stg/`・`dev/` に空のファイル（`.gitkeep`）を置く
+   - Argo CD が読む鍵: `deploy/cloud/scripts/seal-apps-repo.sh` の先頭の手順（Deploy key を読み取りだけで登録 → SealedSecret を apply）
+   - コンソールが書くトークン: そのリポジトリだけ・Contents の Read and write だけの fine-grained PAT を `deploy/cloud/secrets/apps-repo-token` に置き、4 の `seal.sh` を実行し直す
+   - 監視を使うなら、Datadog のアプリケーションキーのスコープに `monitors_read`・`monitors_write` を足し、
+     `python3 deploy/cloudflare/uptime/datadog-webhook.py <Worker の URL> <トークンのファイル>` で Webhook を作り、Worker を `npx wrangler deploy` し直す
+
+6. **リリース**: main にマージすると build が `taramanji-cloud`・`taramanji-console` を作り、cd が stg に出す。
    本番は今までどおり `v*` のタグで出る（それまで prod のイメージは `unreleased` で、Pod は起動しない）。
 
 ## CI / CD

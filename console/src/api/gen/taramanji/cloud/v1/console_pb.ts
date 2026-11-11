@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file taramanji/cloud/v1/console.proto.
  */
 export const file_taramanji_cloud_v1_console: GenFile = /*@__PURE__*/
-  fileDesc("CiB0YXJhbWFuamkvY2xvdWQvdjEvY29uc29sZS5wcm90bxISdGFyYW1hbmppLmNsb3VkLnYxIkoKCUNvbXBvbmVudBIMCgRuYW1lGAEgASgJEg0KBXJlYWR5GAIgASgFEg8KB2Rlc2lyZWQYAyABKAUSDwoHdmVyc2lvbhgEIAEoCSIUChJHZXRPdmVydmlld1JlcXVlc3QivwEKE0dldE92ZXJ2aWV3UmVzcG9uc2USEwoLZW52aXJvbm1lbnQYASABKAkSDQoFZW1haWwYAiABKAkSFwoPbWV0cmljc19lbmFibGVkGAMgASgIEjEKCmNvbXBvbmVudHMYBCADKAsyHS50YXJhbWFuamkuY2xvdWQudjEuQ29tcG9uZW50EhsKE3N0b3JhZ2VfaG9zdF9zdWZmaXgYBSABKAkSGwoTaG9zdGluZ19ob3N0X3N1ZmZpeBgGIAEoCSJcCgZTZXJpZXMSDgoGbWV0cmljGAEgASgJEg0KBWdyb3VwGAIgASgJEgwKBHVuaXQYAyABKAkSFQoNdGltZXN0YW1wc19tcxgEIAMoAxIOCgZ2YWx1ZXMYBSADKAEiIgoRR2V0TWV0cmljc1JlcXVlc3QSDQoFcmFuZ2UYASABKAkiQAoSR2V0TWV0cmljc1Jlc3BvbnNlEioKBnNlcmllcxgBIAMoCzIaLnRhcmFtYW5qaS5jbG91ZC52MS5TZXJpZXMiFAoSR2V0Q2FwYWNpdHlSZXF1ZXN0IiUKBkFtb3VudBIMCgR1c2VkGAEgASgDEg0KBWxpbWl0GAIgASgDIs0BCgVRdW90YRIRCgluYW1lc3BhY2UYASABKAkSKgoGbWVtb3J5GAIgASgLMhoudGFyYW1hbmppLmNsb3VkLnYxLkFtb3VudBInCgNjcHUYAyABKAsyGi50YXJhbWFuamkuY2xvdWQudjEuQW1vdW50EigKBHBvZHMYBCABKAsyGi50YXJhbWFuamkuY2xvdWQudjEuQW1vdW50EjIKDnZvbHVtZV9zdG9yYWdlGAUgASgLMhoudGFyYW1hbmppLmNsb3VkLnYxLkFtb3VudCKAAQoHTWFjaGluZRIUCgxtZW1vcnlfdG90YWwYASABKAMSEwoLbWVtb3J5X3VzZWQYAiABKAMSFwoPbWVtb3J5X3Jlc2VydmVkGAMgASgDEhgKEGNwdV90b3RhbF9taWxsaXMYBCABKAMSFwoPY3B1X3VzZWRfbWlsbGlzGAUgASgDIl4KB1NpemVGaXQSDAoEbmFtZRgBIAEoCRIOCgZtZW1vcnkYAiABKAMSEgoKY3B1X21pbGxpcxgDIAEoAxINCgVjb3VudBgEIAEoBRISCgpsaW1pdGVkX2J5GAUgASgJIlwKCFBvZFVzYWdlEgwKBG5hbWUYASABKAkSEwoLbWVtb3J5X3VzZWQYAiABKAMSFAoMbWVtb3J5X2xpbWl0GAMgASgDEhcKD2NwdV91c2VkX21pbGxpcxgEIAEoAyLEAQoTR2V0Q2FwYWNpdHlSZXNwb25zZRIoCgVxdW90YRgBIAEoCzIZLnRhcmFtYW5qaS5jbG91ZC52MS5RdW90YRIsCgdtYWNoaW5lGAIgASgLMhsudGFyYW1hbmppLmNsb3VkLnYxLk1hY2hpbmUSKQoEZml0cxgDIAMoCzIbLnRhcmFtYW5qaS5jbG91ZC52MS5TaXplRml0EioKBHBvZHMYBCADKAsyHC50YXJhbWFuamkuY2xvdWQudjEuUG9kVXNhZ2UyswIKDkNvbnNvbGVTZXJ2aWNlEmAKC0dldE92ZXJ2aWV3EiYudGFyYW1hbmppLmNsb3VkLnYxLkdldE92ZXJ2aWV3UmVxdWVzdBonLnRhcmFtYW5qaS5jbG91ZC52MS5HZXRPdmVydmlld1Jlc3BvbnNlIgASXQoKR2V0TWV0cmljcxIlLnRhcmFtYW5qaS5jbG91ZC52MS5HZXRNZXRyaWNzUmVxdWVzdBomLnRhcmFtYW5qaS5jbG91ZC52MS5HZXRNZXRyaWNzUmVzcG9uc2UiABJgCgtHZXRDYXBhY2l0eRImLnRhcmFtYW5qaS5jbG91ZC52MS5HZXRDYXBhY2l0eVJlcXVlc3QaJy50YXJhbWFuamkuY2xvdWQudjEuR2V0Q2FwYWNpdHlSZXNwb25zZSIAYgZwcm90bzM");
+  fileDesc("CiB0YXJhbWFuamkvY2xvdWQvdjEvY29uc29sZS5wcm90bxISdGFyYW1hbmppLmNsb3VkLnYxIkoKCUNvbXBvbmVudBIMCgRuYW1lGAEgASgJEg0KBXJlYWR5GAIgASgFEg8KB2Rlc2lyZWQYAyABKAUSDwoHdmVyc2lvbhgEIAEoCSIUChJHZXRPdmVydmlld1JlcXVlc3QivwEKE0dldE92ZXJ2aWV3UmVzcG9uc2USEwoLZW52aXJvbm1lbnQYASABKAkSDQoFZW1haWwYAiABKAkSFwoPbWV0cmljc19lbmFibGVkGAMgASgIEjEKCmNvbXBvbmVudHMYBCADKAsyHS50YXJhbWFuamkuY2xvdWQudjEuQ29tcG9uZW50EhsKE3N0b3JhZ2VfaG9zdF9zdWZmaXgYBSABKAkSGwoTaG9zdGluZ19ob3N0X3N1ZmZpeBgGIAEoCSJcCgZTZXJpZXMSDgoGbWV0cmljGAEgASgJEg0KBWdyb3VwGAIgASgJEgwKBHVuaXQYAyABKAkSFQoNdGltZXN0YW1wc19tcxgEIAMoAxIOCgZ2YWx1ZXMYBSADKAEiIgoRR2V0TWV0cmljc1JlcXVlc3QSDQoFcmFuZ2UYASABKAkiQAoSR2V0TWV0cmljc1Jlc3BvbnNlEioKBnNlcmllcxgBIAMoCzIaLnRhcmFtYW5qaS5jbG91ZC52MS5TZXJpZXMiFAoSR2V0Q2FwYWNpdHlSZXF1ZXN0IiUKBkFtb3VudBIMCgR1c2VkGAEgASgDEg0KBWxpbWl0GAIgASgDIs0BCgVRdW90YRIRCgluYW1lc3BhY2UYASABKAkSKgoGbWVtb3J5GAIgASgLMhoudGFyYW1hbmppLmNsb3VkLnYxLkFtb3VudBInCgNjcHUYAyABKAsyGi50YXJhbWFuamkuY2xvdWQudjEuQW1vdW50EigKBHBvZHMYBCABKAsyGi50YXJhbWFuamkuY2xvdWQudjEuQW1vdW50EjIKDnZvbHVtZV9zdG9yYWdlGAUgASgLMhoudGFyYW1hbmppLmNsb3VkLnYxLkFtb3VudCKAAQoHTWFjaGluZRIUCgxtZW1vcnlfdG90YWwYASABKAMSEwoLbWVtb3J5X3VzZWQYAiABKAMSFwoPbWVtb3J5X3Jlc2VydmVkGAMgASgDEhgKEGNwdV90b3RhbF9taWxsaXMYBCABKAMSFwoPY3B1X3VzZWRfbWlsbGlzGAUgASgDIl4KB1NpemVGaXQSDAoEbmFtZRgBIAEoCRIOCgZtZW1vcnkYAiABKAMSEgoKY3B1X21pbGxpcxgDIAEoAxINCgVjb3VudBgEIAEoBRISCgpsaW1pdGVkX2J5GAUgASgJIlwKCFBvZFVzYWdlEgwKBG5hbWUYASABKAkSEwoLbWVtb3J5X3VzZWQYAiABKAMSFAoMbWVtb3J5X2xpbWl0GAMgASgDEhcKD2NwdV91c2VkX21pbGxpcxgEIAEoAyLEAQoTR2V0Q2FwYWNpdHlSZXNwb25zZRIoCgVxdW90YRgBIAEoCzIZLnRhcmFtYW5qaS5jbG91ZC52MS5RdW90YRIsCgdtYWNoaW5lGAIgASgLMhsudGFyYW1hbmppLmNsb3VkLnYxLk1hY2hpbmUSKQoEZml0cxgDIAMoCzIbLnRhcmFtYW5qaS5jbG91ZC52MS5TaXplRml0EioKBHBvZHMYBCADKAsyHC50YXJhbWFuamkuY2xvdWQudjEuUG9kVXNhZ2UiUAoMSW5zdGFuY2VUeXBlEgwKBG5hbWUYASABKAkSDgoGZmFtaWx5GAIgASgJEg4KBm1lbW9yeRgDIAEoAxISCgpjcHVfbWlsbGlzGAQgASgDIj0KC0FsZXJ0UHJlc2V0EgoKAmlkGAEgASgJEg0KBWxhYmVsGAIgASgJEhMKC2Rlc2NyaXB0aW9uGAMgASgJIhoKGEdldEhvc3RpbmdPcHRpb25zUmVxdWVzdCLqAgoZR2V0SG9zdGluZ09wdGlvbnNSZXNwb25zZRI4Cg5pbnN0YW5jZV90eXBlcxgBIAMoCzIgLnRhcmFtYW5qaS5jbG91ZC52MS5JbnN0YW5jZVR5cGUSNgoNYWxlcnRfcHJlc2V0cxgCIAMoCzIfLnRhcmFtYW5qaS5jbG91ZC52MS5BbGVydFByZXNldBIXCg9ub3RpZnlfY2hhbm5lbHMYAyADKAkSFgoObWluX2NwdV9taWxsaXMYBCABKAMSFgoObWF4X2NwdV9taWxsaXMYBSABKAMSEgoKbWluX21lbW9yeRgGIAEoAxISCgptYXhfbWVtb3J5GAcgASgDEhQKDG1heF9yZXBsaWNhcxgIIAEoBRIVCg1zdG9yZV9lbmFibGVkGAkgASgIEhYKDmFsZXJ0c19lbmFibGVkGAogASgIEhIKCnJlcG9zaXRvcnkYCyABKAkSEQoJZGlyZWN0b3J5GAwgASgJIiUKBkVudlZhchIMCgRuYW1lGAEgASgJEg0KBXZhbHVlGAIgASgJIsoBCgdBcHBTcGVjEgwKBG5hbWUYASABKAkSDQoFaW1hZ2UYAiABKAkSDAoEcG9ydBgDIAEoBRIQCghyZXBsaWNhcxgEIAEoBRIVCg1pbnN0YW5jZV90eXBlGAUgASgJEhIKCmNwdV9taWxsaXMYBiABKAMSDgoGbWVtb3J5GAcgASgDEicKA2VudhgIIAMoCzIaLnRhcmFtYW5qaS5jbG91ZC52MS5FbnZWYXISDgoGYWxlcnRzGAkgAygJEg4KBm5vdGlmeRgKIAMoCSLmAQoDQXBwEikKBHNwZWMYASABKAsyGy50YXJhbWFuamkuY2xvdWQudjEuQXBwU3BlYxIMCgR5YW1sGAIgASgJEhAKCHJldmlzaW9uGAMgASgJEhUKDWZvcm1fZWRpdGFibGUYBCABKAgSGAoQY3VzdG9tX3Jlc291cmNlcxgFIAEoCBIMCgRob3N0GAYgASgJEhIKCnNvdXJjZV91cmwYByABKAkSEAoIZGVwbG95ZWQYCCABKAgSDQoFcmVhZHkYCSABKAUSDwoHZGVzaXJlZBgKIAEoBRIPCgdwcm9ibGVtGAsgASgJIhEKD0xpc3RBcHBzUmVxdWVzdCI5ChBMaXN0QXBwc1Jlc3BvbnNlEiUKBGFwcHMYASADKAsyFy50YXJhbWFuamkuY2xvdWQudjEuQXBwIh0KDUdldEFwcFJlcXVlc3QSDAoEbmFtZRgBIAEoCSI2Cg5HZXRBcHBSZXNwb25zZRIkCgNhcHAYASABKAsyFy50YXJhbWFuamkuY2xvdWQudjEuQXBwIj4KEVByZXZpZXdBcHBSZXF1ZXN0EikKBHNwZWMYASABKAsyGy50YXJhbWFuamkuY2xvdWQudjEuQXBwU3BlYyIiChJQcmV2aWV3QXBwUmVzcG9uc2USDAoEeWFtbBgBIAEoCSJcCg9BcHBseUFwcFJlcXVlc3QSKQoEc3BlYxgBIAEoCzIbLnRhcmFtYW5qaS5jbG91ZC52MS5BcHBTcGVjEgwKBHlhbWwYAiABKAkSEAoIcmV2aXNpb24YAyABKAkiUAoQQXBwbHlBcHBSZXNwb25zZRIkCgNhcHAYASABKAsyFy50YXJhbWFuamkuY2xvdWQudjEuQXBwEhYKDmFsZXJ0c19wcm9ibGVtGAIgASgJIjIKEERlbGV0ZUFwcFJlcXVlc3QSDAoEbmFtZRgBIAEoCRIQCghyZXZpc2lvbhgCIAEoCSIrChFEZWxldGVBcHBSZXNwb25zZRIWCg5hbGVydHNfcHJvYmxlbRgBIAEoCSITChFTeW5jQWxlcnRzUmVxdWVzdCJHChJTeW5jQWxlcnRzUmVzcG9uc2USDwoHY3JlYXRlZBgBIAEoBRIPCgd1cGRhdGVkGAIgASgFEg8KB2RlbGV0ZWQYAyABKAUyxgcKDkNvbnNvbGVTZXJ2aWNlEmAKC0dldE92ZXJ2aWV3EiYudGFyYW1hbmppLmNsb3VkLnYxLkdldE92ZXJ2aWV3UmVxdWVzdBonLnRhcmFtYW5qaS5jbG91ZC52MS5HZXRPdmVydmlld1Jlc3BvbnNlIgASXQoKR2V0TWV0cmljcxIlLnRhcmFtYW5qaS5jbG91ZC52MS5HZXRNZXRyaWNzUmVxdWVzdBomLnRhcmFtYW5qaS5jbG91ZC52MS5HZXRNZXRyaWNzUmVzcG9uc2UiABJgCgtHZXRDYXBhY2l0eRImLnRhcmFtYW5qaS5jbG91ZC52MS5HZXRDYXBhY2l0eVJlcXVlc3QaJy50YXJhbWFuamkuY2xvdWQudjEuR2V0Q2FwYWNpdHlSZXNwb25zZSIAEnIKEUdldEhvc3RpbmdPcHRpb25zEiwudGFyYW1hbmppLmNsb3VkLnYxLkdldEhvc3RpbmdPcHRpb25zUmVxdWVzdBotLnRhcmFtYW5qaS5jbG91ZC52MS5HZXRIb3N0aW5nT3B0aW9uc1Jlc3BvbnNlIgASVwoITGlzdEFwcHMSIy50YXJhbWFuamkuY2xvdWQudjEuTGlzdEFwcHNSZXF1ZXN0GiQudGFyYW1hbmppLmNsb3VkLnYxLkxpc3RBcHBzUmVzcG9uc2UiABJRCgZHZXRBcHASIS50YXJhbWFuamkuY2xvdWQudjEuR2V0QXBwUmVxdWVzdBoiLnRhcmFtYW5qaS5jbG91ZC52MS5HZXRBcHBSZXNwb25zZSIAEl0KClByZXZpZXdBcHASJS50YXJhbWFuamkuY2xvdWQudjEuUHJldmlld0FwcFJlcXVlc3QaJi50YXJhbWFuamkuY2xvdWQudjEuUHJldmlld0FwcFJlc3BvbnNlIgASVwoIQXBwbHlBcHASIy50YXJhbWFuamkuY2xvdWQudjEuQXBwbHlBcHBSZXF1ZXN0GiQudGFyYW1hbmppLmNsb3VkLnYxLkFwcGx5QXBwUmVzcG9uc2UiABJaCglEZWxldGVBcHASJC50YXJhbWFuamkuY2xvdWQudjEuRGVsZXRlQXBwUmVxdWVzdBolLnRhcmFtYW5qaS5jbG91ZC52MS5EZWxldGVBcHBSZXNwb25zZSIAEl0KClN5bmNBbGVydHMSJS50YXJhbWFuamkuY2xvdWQudjEuU3luY0FsZXJ0c1JlcXVlc3QaJi50YXJhbWFuamkuY2xvdWQudjEuU3luY0FsZXJ0c1Jlc3BvbnNlIgBiBnByb3RvMw");
 
 /**
  * コンソール自身を動かしている部品（API・画面・Redis）の状態
@@ -320,7 +320,7 @@ export const MachineSchema: GenMessage<Machine> = /*@__PURE__*/
  */
 export type SizeFit = Message<"taramanji.cloud.v1.SizeFit"> & {
   /**
-   * s / m / l / xl
+   * インスタンスタイプの名前（t1.small / t1.medium / t1.large / t1.xlarge）
    *
    * @generated from field: string name = 1;
    */
@@ -423,6 +423,579 @@ export const GetCapacityResponseSchema: GenMessage<GetCapacityResponse> = /*@__P
   messageDesc(file_taramanji_cloud_v1_console, 12);
 
 /**
+ * インスタンスタイプ（EC2 と同じ「ファミリー + 世代 . サイズ」の名前）。選ぶと CPU とメモリが決まる
+ *
+ * @generated from message taramanji.cloud.v1.InstanceType
+ */
+export type InstanceType = Message<"taramanji.cloud.v1.InstanceType"> & {
+  /**
+   * 例: t1.small
+   *
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * 例: t1
+   *
+   * @generated from field: string family = 2;
+   */
+  family: string;
+
+  /**
+   * @generated from field: int64 memory = 3;
+   */
+  memory: bigint;
+
+  /**
+   * @generated from field: int64 cpu_millis = 4;
+   */
+  cpuMillis: bigint;
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.InstanceType.
+ * Use `create(InstanceTypeSchema)` to create a new message.
+ */
+export const InstanceTypeSchema: GenMessage<InstanceType> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 13);
+
+/**
+ * 用意してある監視（選ぶと Datadog のモニターになる）
+ *
+ * @generated from message taramanji.cloud.v1.AlertPreset
+ */
+export type AlertPreset = Message<"taramanji.cloud.v1.AlertPreset"> & {
+  /**
+   * 例: cpu-high
+   *
+   * @generated from field: string id = 1;
+   */
+  id: string;
+
+  /**
+   * @generated from field: string label = 2;
+   */
+  label: string;
+
+  /**
+   * @generated from field: string description = 3;
+   */
+  description: string;
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.AlertPreset.
+ * Use `create(AlertPresetSchema)` to create a new message.
+ */
+export const AlertPresetSchema: GenMessage<AlertPreset> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 14);
+
+/**
+ * @generated from message taramanji.cloud.v1.GetHostingOptionsRequest
+ */
+export type GetHostingOptionsRequest = Message<"taramanji.cloud.v1.GetHostingOptionsRequest"> & {
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.GetHostingOptionsRequest.
+ * Use `create(GetHostingOptionsRequestSchema)` to create a new message.
+ */
+export const GetHostingOptionsRequestSchema: GenMessage<GetHostingOptionsRequest> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 15);
+
+/**
+ * @generated from message taramanji.cloud.v1.GetHostingOptionsResponse
+ */
+export type GetHostingOptionsResponse = Message<"taramanji.cloud.v1.GetHostingOptionsResponse"> & {
+  /**
+   * @generated from field: repeated taramanji.cloud.v1.InstanceType instance_types = 1;
+   */
+  instanceTypes: InstanceType[];
+
+  /**
+   * @generated from field: repeated taramanji.cloud.v1.AlertPreset alert_presets = 2;
+   */
+  alertPresets: AlertPreset[];
+
+  /**
+   * mail（SES）/ discord。Datadog のモニターは必ず作られる
+   *
+   * @generated from field: repeated string notify_channels = 3;
+   */
+  notifyChannels: string[];
+
+  /**
+   * 型を選んだあとに個別に決められる範囲
+   *
+   * @generated from field: int64 min_cpu_millis = 4;
+   */
+  minCpuMillis: bigint;
+
+  /**
+   * @generated from field: int64 max_cpu_millis = 5;
+   */
+  maxCpuMillis: bigint;
+
+  /**
+   * @generated from field: int64 min_memory = 6;
+   */
+  minMemory: bigint;
+
+  /**
+   * @generated from field: int64 max_memory = 7;
+   */
+  maxMemory: bigint;
+
+  /**
+   * @generated from field: int32 max_replicas = 8;
+   */
+  maxReplicas: number;
+
+  /**
+   * アプリ用のリポジトリがつながっているか（false なら一覧も作成もできない）
+   *
+   * @generated from field: bool store_enabled = 9;
+   */
+  storeEnabled: boolean;
+
+  /**
+   * 監視を Datadog に作れるか（本番だけ）。false でも YAML には残せる
+   *
+   * @generated from field: bool alerts_enabled = 10;
+   */
+  alertsEnabled: boolean;
+
+  /**
+   * アプリの YAML を置いているリポジトリ（owner/name）とディレクトリ
+   *
+   * @generated from field: string repository = 11;
+   */
+  repository: string;
+
+  /**
+   * @generated from field: string directory = 12;
+   */
+  directory: string;
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.GetHostingOptionsResponse.
+ * Use `create(GetHostingOptionsResponseSchema)` to create a new message.
+ */
+export const GetHostingOptionsResponseSchema: GenMessage<GetHostingOptionsResponse> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 16);
+
+/**
+ * @generated from message taramanji.cloud.v1.EnvVar
+ */
+export type EnvVar = Message<"taramanji.cloud.v1.EnvVar"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * 秘密は入れない（YAML は git に残る）
+   *
+   * @generated from field: string value = 2;
+   */
+  value: string;
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.EnvVar.
+ * Use `create(EnvVarSchema)` to create a new message.
+ */
+export const EnvVarSchema: GenMessage<EnvVar> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 17);
+
+/**
+ * フォームで決められる範囲のアプリの定義
+ *
+ * @generated from message taramanji.cloud.v1.AppSpec
+ */
+export type AppSpec = Message<"taramanji.cloud.v1.AppSpec"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string image = 2;
+   */
+  image: string;
+
+  /**
+   * @generated from field: int32 port = 3;
+   */
+  port: number;
+
+  /**
+   * @generated from field: int32 replicas = 4;
+   */
+  replicas: number;
+
+  /**
+   * @generated from field: string instance_type = 5;
+   */
+  instanceType: string;
+
+  /**
+   * 0 ならインスタンスタイプの値
+   *
+   * @generated from field: int64 cpu_millis = 6;
+   */
+  cpuMillis: bigint;
+
+  /**
+   * @generated from field: int64 memory = 7;
+   */
+  memory: bigint;
+
+  /**
+   * @generated from field: repeated taramanji.cloud.v1.EnvVar env = 8;
+   */
+  env: EnvVar[];
+
+  /**
+   * AlertPreset の id
+   *
+   * @generated from field: repeated string alerts = 9;
+   */
+  alerts: string[];
+
+  /**
+   * mail / discord
+   *
+   * @generated from field: repeated string notify = 10;
+   */
+  notify: string[];
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.AppSpec.
+ * Use `create(AppSpecSchema)` to create a new message.
+ */
+export const AppSpecSchema: GenMessage<AppSpec> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 18);
+
+/**
+ * @generated from message taramanji.cloud.v1.App
+ */
+export type App = Message<"taramanji.cloud.v1.App"> & {
+  /**
+   * @generated from field: taramanji.cloud.v1.AppSpec spec = 1;
+   */
+  spec?: AppSpec | undefined;
+
+  /**
+   * リポジトリにある YAML（Deployment・Service・HTTPRoute）
+   *
+   * @generated from field: string yaml = 2;
+   */
+  yaml: string;
+
+  /**
+   * YAML の版。更新・削除のときに渡す（読んだあとに変わっていたら aborted）
+   *
+   * @generated from field: string revision = 3;
+   */
+  revision: string;
+
+  /**
+   * フォームで編集できるか。false なら手で書き足した部分があるので YAML で編集する
+   *
+   * @generated from field: bool form_editable = 4;
+   */
+  formEditable: boolean;
+
+  /**
+   * インスタンスタイプの値から CPU・メモリを変えているか
+   *
+   * @generated from field: bool custom_resources = 5;
+   */
+  customResources: boolean;
+
+  /**
+   * 公開 URL のホスト名
+   *
+   * @generated from field: string host = 6;
+   */
+  host: string;
+
+  /**
+   * YAML を GitHub で見る URL
+   *
+   * @generated from field: string source_url = 7;
+   */
+  sourceUrl: string;
+
+  /**
+   * クラスターでの状態。deployed = false ならまだ Argo CD が入れていない
+   *
+   * @generated from field: bool deployed = 8;
+   */
+  deployed: boolean;
+
+  /**
+   * @generated from field: int32 ready = 9;
+   */
+  ready: number;
+
+  /**
+   * @generated from field: int32 desired = 10;
+   */
+  desired: number;
+
+  /**
+   * YAML を読めなかった理由（手で push した YAML が壊れているとき。空なら問題なし）
+   *
+   * @generated from field: string problem = 11;
+   */
+  problem: string;
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.App.
+ * Use `create(AppSchema)` to create a new message.
+ */
+export const AppSchema: GenMessage<App> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 19);
+
+/**
+ * @generated from message taramanji.cloud.v1.ListAppsRequest
+ */
+export type ListAppsRequest = Message<"taramanji.cloud.v1.ListAppsRequest"> & {
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.ListAppsRequest.
+ * Use `create(ListAppsRequestSchema)` to create a new message.
+ */
+export const ListAppsRequestSchema: GenMessage<ListAppsRequest> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 20);
+
+/**
+ * @generated from message taramanji.cloud.v1.ListAppsResponse
+ */
+export type ListAppsResponse = Message<"taramanji.cloud.v1.ListAppsResponse"> & {
+  /**
+   * @generated from field: repeated taramanji.cloud.v1.App apps = 1;
+   */
+  apps: App[];
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.ListAppsResponse.
+ * Use `create(ListAppsResponseSchema)` to create a new message.
+ */
+export const ListAppsResponseSchema: GenMessage<ListAppsResponse> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 21);
+
+/**
+ * @generated from message taramanji.cloud.v1.GetAppRequest
+ */
+export type GetAppRequest = Message<"taramanji.cloud.v1.GetAppRequest"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.GetAppRequest.
+ * Use `create(GetAppRequestSchema)` to create a new message.
+ */
+export const GetAppRequestSchema: GenMessage<GetAppRequest> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 22);
+
+/**
+ * @generated from message taramanji.cloud.v1.GetAppResponse
+ */
+export type GetAppResponse = Message<"taramanji.cloud.v1.GetAppResponse"> & {
+  /**
+   * @generated from field: taramanji.cloud.v1.App app = 1;
+   */
+  app?: App | undefined;
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.GetAppResponse.
+ * Use `create(GetAppResponseSchema)` to create a new message.
+ */
+export const GetAppResponseSchema: GenMessage<GetAppResponse> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 23);
+
+/**
+ * @generated from message taramanji.cloud.v1.PreviewAppRequest
+ */
+export type PreviewAppRequest = Message<"taramanji.cloud.v1.PreviewAppRequest"> & {
+  /**
+   * @generated from field: taramanji.cloud.v1.AppSpec spec = 1;
+   */
+  spec?: AppSpec | undefined;
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.PreviewAppRequest.
+ * Use `create(PreviewAppRequestSchema)` to create a new message.
+ */
+export const PreviewAppRequestSchema: GenMessage<PreviewAppRequest> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 24);
+
+/**
+ * @generated from message taramanji.cloud.v1.PreviewAppResponse
+ */
+export type PreviewAppResponse = Message<"taramanji.cloud.v1.PreviewAppResponse"> & {
+  /**
+   * @generated from field: string yaml = 1;
+   */
+  yaml: string;
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.PreviewAppResponse.
+ * Use `create(PreviewAppResponseSchema)` to create a new message.
+ */
+export const PreviewAppResponseSchema: GenMessage<PreviewAppResponse> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 25);
+
+/**
+ * @generated from message taramanji.cloud.v1.ApplyAppRequest
+ */
+export type ApplyAppRequest = Message<"taramanji.cloud.v1.ApplyAppRequest"> & {
+  /**
+   * yaml が空なら spec から YAML を作る。yaml があればそれを確かめてそのまま置く（name は spec.name）
+   *
+   * @generated from field: taramanji.cloud.v1.AppSpec spec = 1;
+   */
+  spec?: AppSpec | undefined;
+
+  /**
+   * @generated from field: string yaml = 2;
+   */
+  yaml: string;
+
+  /**
+   * 新しく作るときは空。更新のときは読んだ版
+   *
+   * @generated from field: string revision = 3;
+   */
+  revision: string;
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.ApplyAppRequest.
+ * Use `create(ApplyAppRequestSchema)` to create a new message.
+ */
+export const ApplyAppRequestSchema: GenMessage<ApplyAppRequest> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 26);
+
+/**
+ * @generated from message taramanji.cloud.v1.ApplyAppResponse
+ */
+export type ApplyAppResponse = Message<"taramanji.cloud.v1.ApplyAppResponse"> & {
+  /**
+   * @generated from field: taramanji.cloud.v1.App app = 1;
+   */
+  app?: App | undefined;
+
+  /**
+   * 監視を Datadog に反映できなかった理由（YAML は保存済み。空なら問題なし）
+   *
+   * @generated from field: string alerts_problem = 2;
+   */
+  alertsProblem: string;
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.ApplyAppResponse.
+ * Use `create(ApplyAppResponseSchema)` to create a new message.
+ */
+export const ApplyAppResponseSchema: GenMessage<ApplyAppResponse> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 27);
+
+/**
+ * @generated from message taramanji.cloud.v1.DeleteAppRequest
+ */
+export type DeleteAppRequest = Message<"taramanji.cloud.v1.DeleteAppRequest"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string revision = 2;
+   */
+  revision: string;
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.DeleteAppRequest.
+ * Use `create(DeleteAppRequestSchema)` to create a new message.
+ */
+export const DeleteAppRequestSchema: GenMessage<DeleteAppRequest> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 28);
+
+/**
+ * @generated from message taramanji.cloud.v1.DeleteAppResponse
+ */
+export type DeleteAppResponse = Message<"taramanji.cloud.v1.DeleteAppResponse"> & {
+  /**
+   * @generated from field: string alerts_problem = 1;
+   */
+  alertsProblem: string;
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.DeleteAppResponse.
+ * Use `create(DeleteAppResponseSchema)` to create a new message.
+ */
+export const DeleteAppResponseSchema: GenMessage<DeleteAppResponse> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 29);
+
+/**
+ * @generated from message taramanji.cloud.v1.SyncAlertsRequest
+ */
+export type SyncAlertsRequest = Message<"taramanji.cloud.v1.SyncAlertsRequest"> & {
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.SyncAlertsRequest.
+ * Use `create(SyncAlertsRequestSchema)` to create a new message.
+ */
+export const SyncAlertsRequestSchema: GenMessage<SyncAlertsRequest> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 30);
+
+/**
+ * @generated from message taramanji.cloud.v1.SyncAlertsResponse
+ */
+export type SyncAlertsResponse = Message<"taramanji.cloud.v1.SyncAlertsResponse"> & {
+  /**
+   * @generated from field: int32 created = 1;
+   */
+  created: number;
+
+  /**
+   * @generated from field: int32 updated = 2;
+   */
+  updated: number;
+
+  /**
+   * @generated from field: int32 deleted = 3;
+   */
+  deleted: number;
+};
+
+/**
+ * Describes the message taramanji.cloud.v1.SyncAlertsResponse.
+ * Use `create(SyncAlertsResponseSchema)` to create a new message.
+ */
+export const SyncAlertsResponseSchema: GenMessage<SyncAlertsResponse> = /*@__PURE__*/
+  messageDesc(file_taramanji_cloud_v1_console, 31);
+
+/**
  * taramanji cloud のマネジメントコンソール（cloud.taramanji.com）。
  * 全 RPC が Cloudflare Access の JWT（管理者 1 人）を要する。taramanji.com のセッションは使わない
  *
@@ -456,6 +1029,70 @@ export const ConsoleService: GenService<{
     methodKind: "unary";
     input: typeof GetCapacityRequestSchema;
     output: typeof GetCapacityResponseSchema;
+  },
+  /**
+   * 選べるもの（インスタンスタイプ・用意した監視・通知先）と、この環境で使える機能
+   *
+   * @generated from rpc taramanji.cloud.v1.ConsoleService.GetHostingOptions
+   */
+  getHostingOptions: {
+    methodKind: "unary";
+    input: typeof GetHostingOptionsRequestSchema;
+    output: typeof GetHostingOptionsResponseSchema;
+  },
+  /**
+   * @generated from rpc taramanji.cloud.v1.ConsoleService.ListApps
+   */
+  listApps: {
+    methodKind: "unary";
+    input: typeof ListAppsRequestSchema;
+    output: typeof ListAppsResponseSchema;
+  },
+  /**
+   * @generated from rpc taramanji.cloud.v1.ConsoleService.GetApp
+   */
+  getApp: {
+    methodKind: "unary";
+    input: typeof GetAppRequestSchema;
+    output: typeof GetAppResponseSchema;
+  },
+  /**
+   * フォームの定義を YAML にして返す（保存はしない。確かめるだけ）
+   *
+   * @generated from rpc taramanji.cloud.v1.ConsoleService.PreviewApp
+   */
+  previewApp: {
+    methodKind: "unary";
+    input: typeof PreviewAppRequestSchema;
+    output: typeof PreviewAppResponseSchema;
+  },
+  /**
+   * 作る・更新する。フォームの定義（spec）か、YAML そのもの（yaml）のどちらかを渡す
+   *
+   * @generated from rpc taramanji.cloud.v1.ConsoleService.ApplyApp
+   */
+  applyApp: {
+    methodKind: "unary";
+    input: typeof ApplyAppRequestSchema;
+    output: typeof ApplyAppResponseSchema;
+  },
+  /**
+   * @generated from rpc taramanji.cloud.v1.ConsoleService.DeleteApp
+   */
+  deleteApp: {
+    methodKind: "unary";
+    input: typeof DeleteAppRequestSchema;
+    output: typeof DeleteAppResponseSchema;
+  },
+  /**
+   * リポジトリの YAML に合わせて、Datadog のモニターを作り直す（git に直接 push したあとに呼ぶ）
+   *
+   * @generated from rpc taramanji.cloud.v1.ConsoleService.SyncAlerts
+   */
+  syncAlerts: {
+    methodKind: "unary";
+    input: typeof SyncAlertsRequestSchema;
+    output: typeof SyncAlertsResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_taramanji_cloud_v1_console, 0);

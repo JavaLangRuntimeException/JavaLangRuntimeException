@@ -5,7 +5,7 @@ import { Mono, PageHeader, Panel, Skeleton } from "@/components/Page";
 import { QueryError } from "@/components/QueryError";
 import { StatusDot, statusOf } from "@/components/StatusDot";
 import { UsageBar } from "@/components/UsageBar";
-import { formatPercent, levelOf, limitedByLabel, pickFit, sizeLabel, usage } from "@/lib/capacity";
+import { formatPercent, levelOf, limitedByLabel, pickFit, usage } from "@/lib/capacity";
 import { toEnv } from "@/lib/env";
 import { formatBytes } from "@/lib/format";
 
@@ -136,7 +136,7 @@ export function OverviewPage() {
   );
 }
 
-/** 容量の要約。デプロイの前に「まだ置けるか」だけ見られるように、M サイズの残りとこの環境のメモリ枠を出す */
+/** 容量の要約。デプロイの前に「まだ置けるか」だけ見られるように、t1.medium の残りとこの環境のメモリ枠を出す */
 function CapacityCard() {
   const capacity = useCapacity();
   const data = capacity.data;
@@ -158,14 +158,14 @@ function CapacityCard() {
             {fit ? (
               <>
                 <p className={`flex items-baseline gap-1 ${fit.count <= 0 ? "text-warn" : "text-ink"}`}>
-                  <span className="text-ink-2">あと {sizeLabel(fit.name)} サイズで</span>
+                  <span className="text-ink-2">あと {fit.name} で</span>
                   <span className="text-2xl leading-none font-semibold tabular-nums">{fit.count}</span>
                   <span className="text-ink-2">個</span>
                 </p>
                 <p className="mt-1 text-xs text-muted">上限: {limitedByLabel(fit.limitedBy)}</p>
               </>
             ) : (
-              <p className="text-ink-2">大きさの一覧を取れませんでした。</p>
+              <p className="text-ink-2">インスタンスタイプの一覧を取れませんでした。</p>
             )}
             <div className="mt-3 mb-1 flex flex-wrap items-baseline justify-between gap-x-3 text-[13px]">
               <span className="text-ink-2">この環境のメモリ枠</span>

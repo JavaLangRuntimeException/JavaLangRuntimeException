@@ -10,7 +10,6 @@ import {
   limitedByLabel,
   machineMemory,
   num,
-  sizeLabel,
   usage,
   type Usage,
 } from "@/lib/capacity";
@@ -70,9 +69,9 @@ function Fits({ fits }: { fits: SizeFit[] }) {
   return (
     <Panel title="あと置けるアプリ" aside="1 つあたりのメモリ / CPU">
       {fits.length === 0 ? (
-        <EmptyState title="大きさの一覧を取れませんでした">少し待ってから読み直してください。</EmptyState>
+        <EmptyState title="インスタンスタイプの一覧を取れませんでした">少し待ってから読み直してください。</EmptyState>
       ) : (
-        // スマホでは 2 列、広いと 4 列。大きさの順は API の並び（s → xl）のまま
+        // スマホでは 2 列、広いと 4 列。インスタンスタイプの順は API の並び（t1.small → t1.xlarge）のまま
         <ul className="grid grid-cols-2 gap-px bg-line lg:grid-cols-4">
           {fits.map((f) => (
             <FitItem key={f.name} fit={f} />
@@ -88,7 +87,7 @@ function FitItem({ fit }: { fit: SizeFit }) {
   return (
     <li className="min-w-0 bg-surface px-4 py-3">
       <p className="flex flex-wrap items-baseline gap-x-2">
-        <span className="font-semibold text-ink">{sizeLabel(fit.name)}</span>
+        <span className="font-semibold text-ink">{fit.name}</span>
         <span className="text-[13px] text-muted">
           {formatBytes(num(fit.memory))} / {formatCpu(num(fit.cpuMillis))}
         </span>
