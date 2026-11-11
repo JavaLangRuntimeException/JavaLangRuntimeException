@@ -210,3 +210,19 @@ func (v *Verifier) Interceptor() connect.UnaryInterceptorFunc {
 		}
 	}
 }
+
+// Middleware は Connect ではない HTTP のハンドラ（ファイルのアップロード・ダウンロード）で、Origin と Access の JWT を確かめる
+func (v *Verifier) Middleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := v.CheckOrigin(r.Header); err != nil {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
+		email, err := v.Verify(r.Context(), r.Header.Get(Header))
+		if err != nil {
+			http.Error(w, "unauthenticated", http.StatusUnauthorized)
+			return
+		}
+		next.ServeHTTP(w, r.WithContext(WithEmail(r.Context(), email)))
+	})
+}

@@ -9,10 +9,14 @@ package invoker
 import (
 	"context"
 	"errors"
+	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"path"
+	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -30,6 +34,8 @@ type Config struct {
 	ColdStartTimeout time.Duration
 	Clock            func() time.Time
 	Log              *slog.Logger
+	// StorageURL はオブジェクトストレージの読むだけのポート（http://cloud-storage:8081）。nil ならバケットを元にした CDN は使えない
+	StorageURL *url.URL
 	// Transport はテストで差し替える
 	Transport http.RoundTripper
 }
@@ -84,6 +90,17 @@ func (i *Invoker) state(name string) *fnState {
 }
 
 func (i *Invoker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// キャッシュの長さは CDN の HTTPRoute が付ける（API の HTTPRoute は消す）
+	ttl, _ := strconv.Atoi(r.Header.Get(service.HeaderCacheTTL))
+	spa := r.Header.Get(service.HeaderSPA) == "true"
+	bucket := r.Header.Get(service.HeaderBucket)
+	for _, h := range []string{service.HeaderCacheTTL, service.HeaderSPA, service.HeaderBucket} {
+		r.Header.Del(h)
+	}
+	if bucket != "" {
+		i.serveBucket(w, r, bucket, ttl, spa)
+		return
+	}
 	name := r.Header.Get(service.HeaderFunction)
 	if !service.ValidName(name) {
 		// API（HTTPRoute）を通っていない
@@ -122,7 +139,7 @@ func (i *Invoker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	r.Header.Del(service.HeaderFunction)
-	i.proxy(name).ServeHTTP(w, r)
+	i.proxy(name, ttl).ServeHTTP(w, r)
 }
 
 func (i *Invoker) fail(w http.ResponseWriter, name string, err error) {
@@ -195,9 +212,16 @@ func (i *Invoker) doWake(name string, s *fnState) {
 	i.mu.Unlock()
 }
 
-func (i *Invoker) proxy(name string) *httputil.ReverseProxy {
+func (i *Invoker) proxy(name string, ttl int) *httputil.ReverseProxy {
 	target := i.c.Upstream(name)
 	return &httputil.ReverseProxy{
+		// CDN を通した関数: 関数が自分で決めていなければ、GET の 200 にキャッシュの長さを付ける
+		ModifyResponse: func(res *http.Response) error {
+			if ttl > 0 && res.Request.Method == http.MethodGet && res.StatusCode == http.StatusOK && res.Header.Get("Cache-Control") == "" {
+				res.Header.Set("Cache-Control", cacheControl(ttl))
+			}
+			return nil
+		},
 		Rewrite: func(pr *httputil.ProxyRequest) {
 			pr.SetURL(target)
 			// 関数には利用者が見ているホスト名（xxx-cloud.taramanji.com）をそのまま渡す
@@ -277,4 +301,80 @@ func (i *Invoker) Sweep(ctx context.Context) error {
 		}
 	}
 	return nil
+}
+
+func cacheControl(ttl int) string {
+	if ttl <= 0 {
+		return "no-cache"
+	}
+	return "public, max-age=" + strconv.Itoa(ttl)
+}
+
+// ストレージから利用者にそのまま渡すヘッダー
+var objectHeaders = []string{"Content-Type", "Content-Length", "Content-Range", "Accept-Ranges", "ETag", "Last-Modified", "X-Content-Type-Options"}
+
+// serveBucket は CDN の元がバケットのとき、パスをキーにしてオブジェクトを返す（GET と HEAD だけ）。
+//   - / で終わるパスと、拡張子のないパスにファイルがないときは、その下の index.html を返す
+//   - spa なら、ファイルがないパスに /index.html を 200 で返す（画面側のルーティングに任せる）
+func (i *Invoker) serveBucket(w http.ResponseWriter, r *http.Request, bucket string, ttl int, spa bool) {
+	if r.Method != http.MethodGet && r.Method != http.MethodHead {
+		w.Header().Set("Allow", "GET, HEAD")
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	if i.c.StorageURL == nil || !service.ValidName(bucket) {
+		http.Error(w, "not found", http.StatusNotFound)
+		return
+	}
+	key := strings.TrimPrefix(path.Clean("/"+r.URL.Path), "/")
+	candidates := []string{key}
+	switch {
+	case key == "" || strings.HasSuffix(r.URL.Path, "/"):
+		candidates = []string{path.Join(key, "index.html")}
+	case path.Ext(key) == "":
+		candidates = append(candidates, key+"/index.html")
+	}
+	if spa && candidates[len(candidates)-1] != "index.html" {
+		candidates = append(candidates, "index.html")
+	}
+	for _, k := range candidates {
+		res, err := i.fetchObject(r, bucket, k)
+		if err != nil {
+			i.c.Log.Warn("storage failed", "bucket", bucket, "error", err)
+			http.Error(w, "storage did not respond", http.StatusBadGateway)
+			return
+		}
+		if res.StatusCode == http.StatusNotFound {
+			res.Body.Close()
+			continue
+		}
+		defer res.Body.Close()
+		for _, h := range objectHeaders {
+			if v := res.Header.Get(h); v != "" {
+				w.Header().Set(h, v)
+			}
+		}
+		if res.StatusCode == http.StatusOK || res.StatusCode == http.StatusPartialContent || res.StatusCode == http.StatusNotModified {
+			w.Header().Set("Cache-Control", cacheControl(ttl))
+		}
+		w.WriteHeader(res.StatusCode)
+		_, _ = io.Copy(w, res.Body)
+		return
+	}
+	// ないものはキャッシュさせない（あとから置いたファイルがすぐ見えるように）
+	w.Header().Set("Cache-Control", "no-store")
+	http.Error(w, "not found", http.StatusNotFound)
+}
+
+func (i *Invoker) fetchObject(r *http.Request, bucket, key string) (*http.Response, error) {
+	req, err := http.NewRequestWithContext(r.Context(), r.Method, i.c.StorageURL.JoinPath(bucket, key).String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	for _, h := range []string{"Range", "If-None-Match", "If-Modified-Since", "If-Range"} {
+		if v := r.Header.Get(h); v != "" {
+			req.Header.Set(h, v)
+		}
+	}
+	return i.c.Transport.RoundTrip(req)
 }

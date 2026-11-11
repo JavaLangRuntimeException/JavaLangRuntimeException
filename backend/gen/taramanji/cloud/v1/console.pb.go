@@ -1036,7 +1036,11 @@ type GetHostingOptionsResponse struct {
 	// リクエストが来なくなってから関数を 0 台に戻すまでの秒数
 	IdleTimeoutSeconds int32 `protobuf:"varint,13,opt,name=idle_timeout_seconds,json=idleTimeoutSeconds,proto3" json:"idle_timeout_seconds,omitempty"`
 	// 公開 URL のホスト名の接尾辞（<名前> + これ）。例: -cloud.taramanji.com
-	HostSuffix    string `protobuf:"bytes,14,opt,name=host_suffix,json=hostSuffix,proto3" json:"host_suffix,omitempty"`
+	HostSuffix string `protobuf:"bytes,14,opt,name=host_suffix,json=hostSuffix,proto3" json:"host_suffix,omitempty"`
+	// オブジェクトストレージが動いているか
+	StorageEnabled bool `protobuf:"varint,15,opt,name=storage_enabled,json=storageEnabled,proto3" json:"storage_enabled,omitempty"`
+	// ホスト名の DNS を自動で登録できるか（false なら手で登録する）
+	DnsEnabled    bool `protobuf:"varint,16,opt,name=dns_enabled,json=dnsEnabled,proto3" json:"dns_enabled,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1160,6 +1164,20 @@ func (x *GetHostingOptionsResponse) GetHostSuffix() string {
 		return x.HostSuffix
 	}
 	return ""
+}
+
+func (x *GetHostingOptionsResponse) GetStorageEnabled() bool {
+	if x != nil {
+		return x.StorageEnabled
+	}
+	return false
+}
+
+func (x *GetHostingOptionsResponse) GetDnsEnabled() bool {
+	if x != nil {
+		return x.DnsEnabled
+	}
+	return false
 }
 
 type EnvVar struct {
@@ -2281,8 +2299,10 @@ func (x *ApplyApiRequest) GetRevision() string {
 }
 
 type ApplyApiResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Api           *Api                   `protobuf:"bytes,1,opt,name=api,proto3" json:"api,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Api   *Api                   `protobuf:"bytes,1,opt,name=api,proto3" json:"api,omitempty"`
+	// DNS を登録できなかった理由（YAML は保存済み。空なら問題なし）
+	DnsProblem    string `protobuf:"bytes,2,opt,name=dns_problem,json=dnsProblem,proto3" json:"dns_problem,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2322,6 +2342,13 @@ func (x *ApplyApiResponse) GetApi() *Api {
 		return x.Api
 	}
 	return nil
+}
+
+func (x *ApplyApiResponse) GetDnsProblem() string {
+	if x != nil {
+		return x.DnsProblem
+	}
+	return ""
 }
 
 type DeleteApiRequest struct {
@@ -2377,7 +2404,9 @@ func (x *DeleteApiRequest) GetRevision() string {
 }
 
 type DeleteApiResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// DNS を消せなかった理由（YAML は消した。空なら問題なし）
+	DnsProblem    string `protobuf:"bytes,1,opt,name=dns_problem,json=dnsProblem,proto3" json:"dns_problem,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -2410,6 +2439,13 @@ func (x *DeleteApiResponse) ProtoReflect() protoreflect.Message {
 // Deprecated: Use DeleteApiResponse.ProtoReflect.Descriptor instead.
 func (*DeleteApiResponse) Descriptor() ([]byte, []int) {
 	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{39}
+}
+
+func (x *DeleteApiResponse) GetDnsProblem() string {
+	if x != nil {
+		return x.DnsProblem
+	}
+	return ""
 }
 
 type SyncAlertsRequest struct {
@@ -2508,6 +2544,1118 @@ func (x *SyncAlertsResponse) GetDeleted() int32 {
 	return 0
 }
 
+type Bucket struct {
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Name   string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Source *Source                `protobuf:"bytes,2,opt,name=source,proto3" json:"source,omitempty"`
+	// ストレージに作られたか（false ならまだ反映待ち）
+	Ready   bool  `protobuf:"varint,3,opt,name=ready,proto3" json:"ready,omitempty"`
+	Objects int64 `protobuf:"varint,4,opt,name=objects,proto3" json:"objects,omitempty"`
+	Bytes   int64 `protobuf:"varint,5,opt,name=bytes,proto3" json:"bytes,omitempty"`
+	// このバケットを元にしている CDN の名前
+	Distributions []string `protobuf:"bytes,6,rep,name=distributions,proto3" json:"distributions,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Bucket) Reset() {
+	*x = Bucket{}
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[42]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Bucket) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Bucket) ProtoMessage() {}
+
+func (x *Bucket) ProtoReflect() protoreflect.Message {
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[42]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Bucket.ProtoReflect.Descriptor instead.
+func (*Bucket) Descriptor() ([]byte, []int) {
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{42}
+}
+
+func (x *Bucket) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *Bucket) GetSource() *Source {
+	if x != nil {
+		return x.Source
+	}
+	return nil
+}
+
+func (x *Bucket) GetReady() bool {
+	if x != nil {
+		return x.Ready
+	}
+	return false
+}
+
+func (x *Bucket) GetObjects() int64 {
+	if x != nil {
+		return x.Objects
+	}
+	return 0
+}
+
+func (x *Bucket) GetBytes() int64 {
+	if x != nil {
+		return x.Bytes
+	}
+	return 0
+}
+
+func (x *Bucket) GetDistributions() []string {
+	if x != nil {
+		return x.Distributions
+	}
+	return nil
+}
+
+type ListBucketsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListBucketsRequest) Reset() {
+	*x = ListBucketsRequest{}
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[43]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListBucketsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListBucketsRequest) ProtoMessage() {}
+
+func (x *ListBucketsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[43]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListBucketsRequest.ProtoReflect.Descriptor instead.
+func (*ListBucketsRequest) Descriptor() ([]byte, []int) {
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{43}
+}
+
+type ListBucketsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Buckets       []*Bucket              `protobuf:"bytes,1,rep,name=buckets,proto3" json:"buckets,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListBucketsResponse) Reset() {
+	*x = ListBucketsResponse{}
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[44]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListBucketsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListBucketsResponse) ProtoMessage() {}
+
+func (x *ListBucketsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[44]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListBucketsResponse.ProtoReflect.Descriptor instead.
+func (*ListBucketsResponse) Descriptor() ([]byte, []int) {
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{44}
+}
+
+func (x *ListBucketsResponse) GetBuckets() []*Bucket {
+	if x != nil {
+		return x.Buckets
+	}
+	return nil
+}
+
+type CreateBucketRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateBucketRequest) Reset() {
+	*x = CreateBucketRequest{}
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[45]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateBucketRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateBucketRequest) ProtoMessage() {}
+
+func (x *CreateBucketRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[45]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateBucketRequest.ProtoReflect.Descriptor instead.
+func (*CreateBucketRequest) Descriptor() ([]byte, []int) {
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{45}
+}
+
+func (x *CreateBucketRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+type CreateBucketResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Bucket        *Bucket                `protobuf:"bytes,1,opt,name=bucket,proto3" json:"bucket,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateBucketResponse) Reset() {
+	*x = CreateBucketResponse{}
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[46]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateBucketResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateBucketResponse) ProtoMessage() {}
+
+func (x *CreateBucketResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[46]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateBucketResponse.ProtoReflect.Descriptor instead.
+func (*CreateBucketResponse) Descriptor() ([]byte, []int) {
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{46}
+}
+
+func (x *CreateBucketResponse) GetBucket() *Bucket {
+	if x != nil {
+		return x.Bucket
+	}
+	return nil
+}
+
+type DeleteBucketRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Revision      string                 `protobuf:"bytes,2,opt,name=revision,proto3" json:"revision,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteBucketRequest) Reset() {
+	*x = DeleteBucketRequest{}
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[47]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteBucketRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteBucketRequest) ProtoMessage() {}
+
+func (x *DeleteBucketRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[47]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteBucketRequest.ProtoReflect.Descriptor instead.
+func (*DeleteBucketRequest) Descriptor() ([]byte, []int) {
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{47}
+}
+
+func (x *DeleteBucketRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *DeleteBucketRequest) GetRevision() string {
+	if x != nil {
+		return x.Revision
+	}
+	return ""
+}
+
+type DeleteBucketResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteBucketResponse) Reset() {
+	*x = DeleteBucketResponse{}
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[48]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteBucketResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteBucketResponse) ProtoMessage() {}
+
+func (x *DeleteBucketResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[48]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteBucketResponse.ProtoReflect.Descriptor instead.
+func (*DeleteBucketResponse) Descriptor() ([]byte, []int) {
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{48}
+}
+
+type StorageObject struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Size          int64                  `protobuf:"varint,2,opt,name=size,proto3" json:"size,omitempty"`
+	ModifiedMs    int64                  `protobuf:"varint,3,opt,name=modified_ms,json=modifiedMs,proto3" json:"modified_ms,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *StorageObject) Reset() {
+	*x = StorageObject{}
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[49]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StorageObject) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StorageObject) ProtoMessage() {}
+
+func (x *StorageObject) ProtoReflect() protoreflect.Message {
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[49]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StorageObject.ProtoReflect.Descriptor instead.
+func (*StorageObject) Descriptor() ([]byte, []int) {
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{49}
+}
+
+func (x *StorageObject) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+func (x *StorageObject) GetSize() int64 {
+	if x != nil {
+		return x.Size
+	}
+	return 0
+}
+
+func (x *StorageObject) GetModifiedMs() int64 {
+	if x != nil {
+		return x.ModifiedMs
+	}
+	return 0
+}
+
+type ListObjectsRequest struct {
+	state  protoimpl.MessageState `protogen:"open.v1"`
+	Bucket string                 `protobuf:"bytes,1,opt,name=bucket,proto3" json:"bucket,omitempty"`
+	// この文字列で始まるキーだけ
+	Prefix        string `protobuf:"bytes,2,opt,name=prefix,proto3" json:"prefix,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListObjectsRequest) Reset() {
+	*x = ListObjectsRequest{}
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[50]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListObjectsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListObjectsRequest) ProtoMessage() {}
+
+func (x *ListObjectsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[50]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListObjectsRequest.ProtoReflect.Descriptor instead.
+func (*ListObjectsRequest) Descriptor() ([]byte, []int) {
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{50}
+}
+
+func (x *ListObjectsRequest) GetBucket() string {
+	if x != nil {
+		return x.Bucket
+	}
+	return ""
+}
+
+func (x *ListObjectsRequest) GetPrefix() string {
+	if x != nil {
+		return x.Prefix
+	}
+	return ""
+}
+
+type ListObjectsResponse struct {
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Objects []*StorageObject       `protobuf:"bytes,1,rep,name=objects,proto3" json:"objects,omitempty"`
+	// 1,000 件を超えていて、続きがある（prefix で絞る）
+	Truncated     bool `protobuf:"varint,2,opt,name=truncated,proto3" json:"truncated,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListObjectsResponse) Reset() {
+	*x = ListObjectsResponse{}
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[51]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListObjectsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListObjectsResponse) ProtoMessage() {}
+
+func (x *ListObjectsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[51]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListObjectsResponse.ProtoReflect.Descriptor instead.
+func (*ListObjectsResponse) Descriptor() ([]byte, []int) {
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{51}
+}
+
+func (x *ListObjectsResponse) GetObjects() []*StorageObject {
+	if x != nil {
+		return x.Objects
+	}
+	return nil
+}
+
+func (x *ListObjectsResponse) GetTruncated() bool {
+	if x != nil {
+		return x.Truncated
+	}
+	return false
+}
+
+type DeleteObjectRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Bucket        string                 `protobuf:"bytes,1,opt,name=bucket,proto3" json:"bucket,omitempty"`
+	Key           string                 `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteObjectRequest) Reset() {
+	*x = DeleteObjectRequest{}
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[52]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteObjectRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteObjectRequest) ProtoMessage() {}
+
+func (x *DeleteObjectRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[52]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteObjectRequest.ProtoReflect.Descriptor instead.
+func (*DeleteObjectRequest) Descriptor() ([]byte, []int) {
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{52}
+}
+
+func (x *DeleteObjectRequest) GetBucket() string {
+	if x != nil {
+		return x.Bucket
+	}
+	return ""
+}
+
+func (x *DeleteObjectRequest) GetKey() string {
+	if x != nil {
+		return x.Key
+	}
+	return ""
+}
+
+type DeleteObjectResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteObjectResponse) Reset() {
+	*x = DeleteObjectResponse{}
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[53]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteObjectResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteObjectResponse) ProtoMessage() {}
+
+func (x *DeleteObjectResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[53]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteObjectResponse.ProtoReflect.Descriptor instead.
+func (*DeleteObjectResponse) Descriptor() ([]byte, []int) {
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{53}
+}
+
+type DistributionSpec struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// ホスト名の先頭（<名前>-cloud.taramanji.com）。API と合わせて、環境の中で重複できない
+	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	// bucket / function
+	OriginType string `protobuf:"bytes,2,opt,name=origin_type,json=originType,proto3" json:"origin_type,omitempty"`
+	Origin     string `protobuf:"bytes,3,opt,name=origin,proto3" json:"origin,omitempty"`
+	// キャッシュさせる秒数（Cache-Control: public, max-age）。0 ならキャッシュさせない
+	CacheSeconds int32 `protobuf:"varint,4,opt,name=cache_seconds,json=cacheSeconds,proto3" json:"cache_seconds,omitempty"`
+	// バケットが元のとき: ファイルがないパスに index.html を返す（SPA）
+	Spa           bool `protobuf:"varint,5,opt,name=spa,proto3" json:"spa,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DistributionSpec) Reset() {
+	*x = DistributionSpec{}
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[54]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DistributionSpec) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DistributionSpec) ProtoMessage() {}
+
+func (x *DistributionSpec) ProtoReflect() protoreflect.Message {
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[54]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DistributionSpec.ProtoReflect.Descriptor instead.
+func (*DistributionSpec) Descriptor() ([]byte, []int) {
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{54}
+}
+
+func (x *DistributionSpec) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *DistributionSpec) GetOriginType() string {
+	if x != nil {
+		return x.OriginType
+	}
+	return ""
+}
+
+func (x *DistributionSpec) GetOrigin() string {
+	if x != nil {
+		return x.Origin
+	}
+	return ""
+}
+
+func (x *DistributionSpec) GetCacheSeconds() int32 {
+	if x != nil {
+		return x.CacheSeconds
+	}
+	return 0
+}
+
+func (x *DistributionSpec) GetSpa() bool {
+	if x != nil {
+		return x.Spa
+	}
+	return false
+}
+
+type Distribution struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Spec          *DistributionSpec      `protobuf:"bytes,1,opt,name=spec,proto3" json:"spec,omitempty"`
+	Source        *Source                `protobuf:"bytes,2,opt,name=source,proto3" json:"source,omitempty"`
+	Host          string                 `protobuf:"bytes,3,opt,name=host,proto3" json:"host,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Distribution) Reset() {
+	*x = Distribution{}
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[55]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Distribution) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Distribution) ProtoMessage() {}
+
+func (x *Distribution) ProtoReflect() protoreflect.Message {
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[55]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Distribution.ProtoReflect.Descriptor instead.
+func (*Distribution) Descriptor() ([]byte, []int) {
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{55}
+}
+
+func (x *Distribution) GetSpec() *DistributionSpec {
+	if x != nil {
+		return x.Spec
+	}
+	return nil
+}
+
+func (x *Distribution) GetSource() *Source {
+	if x != nil {
+		return x.Source
+	}
+	return nil
+}
+
+func (x *Distribution) GetHost() string {
+	if x != nil {
+		return x.Host
+	}
+	return ""
+}
+
+type ListDistributionsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListDistributionsRequest) Reset() {
+	*x = ListDistributionsRequest{}
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[56]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListDistributionsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListDistributionsRequest) ProtoMessage() {}
+
+func (x *ListDistributionsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[56]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListDistributionsRequest.ProtoReflect.Descriptor instead.
+func (*ListDistributionsRequest) Descriptor() ([]byte, []int) {
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{56}
+}
+
+type ListDistributionsResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Distributions []*Distribution        `protobuf:"bytes,1,rep,name=distributions,proto3" json:"distributions,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListDistributionsResponse) Reset() {
+	*x = ListDistributionsResponse{}
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[57]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListDistributionsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListDistributionsResponse) ProtoMessage() {}
+
+func (x *ListDistributionsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[57]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListDistributionsResponse.ProtoReflect.Descriptor instead.
+func (*ListDistributionsResponse) Descriptor() ([]byte, []int) {
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{57}
+}
+
+func (x *ListDistributionsResponse) GetDistributions() []*Distribution {
+	if x != nil {
+		return x.Distributions
+	}
+	return nil
+}
+
+type PreviewDistributionRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Spec          *DistributionSpec      `protobuf:"bytes,1,opt,name=spec,proto3" json:"spec,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PreviewDistributionRequest) Reset() {
+	*x = PreviewDistributionRequest{}
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[58]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PreviewDistributionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PreviewDistributionRequest) ProtoMessage() {}
+
+func (x *PreviewDistributionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[58]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PreviewDistributionRequest.ProtoReflect.Descriptor instead.
+func (*PreviewDistributionRequest) Descriptor() ([]byte, []int) {
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{58}
+}
+
+func (x *PreviewDistributionRequest) GetSpec() *DistributionSpec {
+	if x != nil {
+		return x.Spec
+	}
+	return nil
+}
+
+type PreviewDistributionResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Yaml          string                 `protobuf:"bytes,1,opt,name=yaml,proto3" json:"yaml,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *PreviewDistributionResponse) Reset() {
+	*x = PreviewDistributionResponse{}
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[59]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *PreviewDistributionResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*PreviewDistributionResponse) ProtoMessage() {}
+
+func (x *PreviewDistributionResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[59]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use PreviewDistributionResponse.ProtoReflect.Descriptor instead.
+func (*PreviewDistributionResponse) Descriptor() ([]byte, []int) {
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{59}
+}
+
+func (x *PreviewDistributionResponse) GetYaml() string {
+	if x != nil {
+		return x.Yaml
+	}
+	return ""
+}
+
+type ApplyDistributionRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Spec          *DistributionSpec      `protobuf:"bytes,1,opt,name=spec,proto3" json:"spec,omitempty"`
+	Yaml          string                 `protobuf:"bytes,2,opt,name=yaml,proto3" json:"yaml,omitempty"`
+	Revision      string                 `protobuf:"bytes,3,opt,name=revision,proto3" json:"revision,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ApplyDistributionRequest) Reset() {
+	*x = ApplyDistributionRequest{}
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[60]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ApplyDistributionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ApplyDistributionRequest) ProtoMessage() {}
+
+func (x *ApplyDistributionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[60]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ApplyDistributionRequest.ProtoReflect.Descriptor instead.
+func (*ApplyDistributionRequest) Descriptor() ([]byte, []int) {
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{60}
+}
+
+func (x *ApplyDistributionRequest) GetSpec() *DistributionSpec {
+	if x != nil {
+		return x.Spec
+	}
+	return nil
+}
+
+func (x *ApplyDistributionRequest) GetYaml() string {
+	if x != nil {
+		return x.Yaml
+	}
+	return ""
+}
+
+func (x *ApplyDistributionRequest) GetRevision() string {
+	if x != nil {
+		return x.Revision
+	}
+	return ""
+}
+
+type ApplyDistributionResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Distribution  *Distribution          `protobuf:"bytes,1,opt,name=distribution,proto3" json:"distribution,omitempty"`
+	DnsProblem    string                 `protobuf:"bytes,2,opt,name=dns_problem,json=dnsProblem,proto3" json:"dns_problem,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ApplyDistributionResponse) Reset() {
+	*x = ApplyDistributionResponse{}
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[61]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ApplyDistributionResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ApplyDistributionResponse) ProtoMessage() {}
+
+func (x *ApplyDistributionResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[61]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ApplyDistributionResponse.ProtoReflect.Descriptor instead.
+func (*ApplyDistributionResponse) Descriptor() ([]byte, []int) {
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{61}
+}
+
+func (x *ApplyDistributionResponse) GetDistribution() *Distribution {
+	if x != nil {
+		return x.Distribution
+	}
+	return nil
+}
+
+func (x *ApplyDistributionResponse) GetDnsProblem() string {
+	if x != nil {
+		return x.DnsProblem
+	}
+	return ""
+}
+
+type DeleteDistributionRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
+	Revision      string                 `protobuf:"bytes,2,opt,name=revision,proto3" json:"revision,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteDistributionRequest) Reset() {
+	*x = DeleteDistributionRequest{}
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[62]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteDistributionRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteDistributionRequest) ProtoMessage() {}
+
+func (x *DeleteDistributionRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[62]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteDistributionRequest.ProtoReflect.Descriptor instead.
+func (*DeleteDistributionRequest) Descriptor() ([]byte, []int) {
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{62}
+}
+
+func (x *DeleteDistributionRequest) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *DeleteDistributionRequest) GetRevision() string {
+	if x != nil {
+		return x.Revision
+	}
+	return ""
+}
+
+type DeleteDistributionResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	DnsProblem    string                 `protobuf:"bytes,1,opt,name=dns_problem,json=dnsProblem,proto3" json:"dns_problem,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeleteDistributionResponse) Reset() {
+	*x = DeleteDistributionResponse{}
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[63]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeleteDistributionResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeleteDistributionResponse) ProtoMessage() {}
+
+func (x *DeleteDistributionResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[63]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeleteDistributionResponse.ProtoReflect.Descriptor instead.
+func (*DeleteDistributionResponse) Descriptor() ([]byte, []int) {
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{63}
+}
+
+func (x *DeleteDistributionResponse) GetDnsProblem() string {
+	if x != nil {
+		return x.DnsProblem
+	}
+	return ""
+}
+
 var File_taramanji_cloud_v1_console_proto protoreflect.FileDescriptor
 
 const file_taramanji_cloud_v1_console_proto_rawDesc = "" +
@@ -2584,7 +3732,7 @@ const file_taramanji_cloud_v1_console_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05label\x18\x02 \x01(\tR\x05label\x12 \n" +
 	"\vdescription\x18\x03 \x01(\tR\vdescription\"\x1a\n" +
-	"\x18GetHostingOptionsRequest\"\xc0\x04\n" +
+	"\x18GetHostingOptionsRequest\"\x8a\x05\n" +
 	"\x19GetHostingOptionsResponse\x12G\n" +
 	"\x0einstance_types\x18\x01 \x03(\v2 .taramanji.cloud.v1.InstanceTypeR\rinstanceTypes\x12D\n" +
 	"\ralert_presets\x18\x02 \x03(\v2\x1f.taramanji.cloud.v1.AlertPresetR\falertPresets\x12'\n" +
@@ -2604,7 +3752,10 @@ const file_taramanji_cloud_v1_console_proto_rawDesc = "" +
 	"\tdirectory\x18\f \x01(\tR\tdirectory\x120\n" +
 	"\x14idle_timeout_seconds\x18\r \x01(\x05R\x12idleTimeoutSeconds\x12\x1f\n" +
 	"\vhost_suffix\x18\x0e \x01(\tR\n" +
-	"hostSuffixJ\x04\b\b\x10\t\"2\n" +
+	"hostSuffix\x12'\n" +
+	"\x0fstorage_enabled\x18\x0f \x01(\bR\x0estorageEnabled\x12\x1f\n" +
+	"\vdns_enabled\x18\x10 \x01(\bR\n" +
+	"dnsEnabledJ\x04\b\b\x10\t\"2\n" +
 	"\x06EnvVar\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value\"\x89\x01\n" +
@@ -2672,19 +3823,87 @@ const file_taramanji_cloud_v1_console_proto_rawDesc = "" +
 	"\x0fApplyApiRequest\x12/\n" +
 	"\x04spec\x18\x01 \x01(\v2\x1b.taramanji.cloud.v1.ApiSpecR\x04spec\x12\x12\n" +
 	"\x04yaml\x18\x02 \x01(\tR\x04yaml\x12\x1a\n" +
-	"\brevision\x18\x03 \x01(\tR\brevision\"=\n" +
+	"\brevision\x18\x03 \x01(\tR\brevision\"^\n" +
 	"\x10ApplyApiResponse\x12)\n" +
-	"\x03api\x18\x01 \x01(\v2\x17.taramanji.cloud.v1.ApiR\x03api\"B\n" +
+	"\x03api\x18\x01 \x01(\v2\x17.taramanji.cloud.v1.ApiR\x03api\x12\x1f\n" +
+	"\vdns_problem\x18\x02 \x01(\tR\n" +
+	"dnsProblem\"B\n" +
 	"\x10DeleteApiRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1a\n" +
-	"\brevision\x18\x02 \x01(\tR\brevision\"\x13\n" +
-	"\x11DeleteApiResponse\"\x13\n" +
+	"\brevision\x18\x02 \x01(\tR\brevision\"4\n" +
+	"\x11DeleteApiResponse\x12\x1f\n" +
+	"\vdns_problem\x18\x01 \x01(\tR\n" +
+	"dnsProblem\"\x13\n" +
 	"\x11SyncAlertsRequest\"b\n" +
 	"\x12SyncAlertsResponse\x12\x18\n" +
 	"\acreated\x18\x01 \x01(\x05R\acreated\x12\x18\n" +
 	"\aupdated\x18\x02 \x01(\x05R\aupdated\x12\x18\n" +
-	"\adeleted\x18\x03 \x01(\x05R\adeleted2\x9c\n" +
-	"\n" +
+	"\adeleted\x18\x03 \x01(\x05R\adeleted\"\xbc\x01\n" +
+	"\x06Bucket\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x122\n" +
+	"\x06source\x18\x02 \x01(\v2\x1a.taramanji.cloud.v1.SourceR\x06source\x12\x14\n" +
+	"\x05ready\x18\x03 \x01(\bR\x05ready\x12\x18\n" +
+	"\aobjects\x18\x04 \x01(\x03R\aobjects\x12\x14\n" +
+	"\x05bytes\x18\x05 \x01(\x03R\x05bytes\x12$\n" +
+	"\rdistributions\x18\x06 \x03(\tR\rdistributions\"\x14\n" +
+	"\x12ListBucketsRequest\"K\n" +
+	"\x13ListBucketsResponse\x124\n" +
+	"\abuckets\x18\x01 \x03(\v2\x1a.taramanji.cloud.v1.BucketR\abuckets\")\n" +
+	"\x13CreateBucketRequest\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\"J\n" +
+	"\x14CreateBucketResponse\x122\n" +
+	"\x06bucket\x18\x01 \x01(\v2\x1a.taramanji.cloud.v1.BucketR\x06bucket\"E\n" +
+	"\x13DeleteBucketRequest\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1a\n" +
+	"\brevision\x18\x02 \x01(\tR\brevision\"\x16\n" +
+	"\x14DeleteBucketResponse\"V\n" +
+	"\rStorageObject\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x12\n" +
+	"\x04size\x18\x02 \x01(\x03R\x04size\x12\x1f\n" +
+	"\vmodified_ms\x18\x03 \x01(\x03R\n" +
+	"modifiedMs\"D\n" +
+	"\x12ListObjectsRequest\x12\x16\n" +
+	"\x06bucket\x18\x01 \x01(\tR\x06bucket\x12\x16\n" +
+	"\x06prefix\x18\x02 \x01(\tR\x06prefix\"p\n" +
+	"\x13ListObjectsResponse\x12;\n" +
+	"\aobjects\x18\x01 \x03(\v2!.taramanji.cloud.v1.StorageObjectR\aobjects\x12\x1c\n" +
+	"\ttruncated\x18\x02 \x01(\bR\ttruncated\"?\n" +
+	"\x13DeleteObjectRequest\x12\x16\n" +
+	"\x06bucket\x18\x01 \x01(\tR\x06bucket\x12\x10\n" +
+	"\x03key\x18\x02 \x01(\tR\x03key\"\x16\n" +
+	"\x14DeleteObjectResponse\"\x96\x01\n" +
+	"\x10DistributionSpec\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1f\n" +
+	"\vorigin_type\x18\x02 \x01(\tR\n" +
+	"originType\x12\x16\n" +
+	"\x06origin\x18\x03 \x01(\tR\x06origin\x12#\n" +
+	"\rcache_seconds\x18\x04 \x01(\x05R\fcacheSeconds\x12\x10\n" +
+	"\x03spa\x18\x05 \x01(\bR\x03spa\"\x90\x01\n" +
+	"\fDistribution\x128\n" +
+	"\x04spec\x18\x01 \x01(\v2$.taramanji.cloud.v1.DistributionSpecR\x04spec\x122\n" +
+	"\x06source\x18\x02 \x01(\v2\x1a.taramanji.cloud.v1.SourceR\x06source\x12\x12\n" +
+	"\x04host\x18\x03 \x01(\tR\x04host\"\x1a\n" +
+	"\x18ListDistributionsRequest\"c\n" +
+	"\x19ListDistributionsResponse\x12F\n" +
+	"\rdistributions\x18\x01 \x03(\v2 .taramanji.cloud.v1.DistributionR\rdistributions\"V\n" +
+	"\x1aPreviewDistributionRequest\x128\n" +
+	"\x04spec\x18\x01 \x01(\v2$.taramanji.cloud.v1.DistributionSpecR\x04spec\"1\n" +
+	"\x1bPreviewDistributionResponse\x12\x12\n" +
+	"\x04yaml\x18\x01 \x01(\tR\x04yaml\"\x84\x01\n" +
+	"\x18ApplyDistributionRequest\x128\n" +
+	"\x04spec\x18\x01 \x01(\v2$.taramanji.cloud.v1.DistributionSpecR\x04spec\x12\x12\n" +
+	"\x04yaml\x18\x02 \x01(\tR\x04yaml\x12\x1a\n" +
+	"\brevision\x18\x03 \x01(\tR\brevision\"\x82\x01\n" +
+	"\x19ApplyDistributionResponse\x12D\n" +
+	"\fdistribution\x18\x01 \x01(\v2 .taramanji.cloud.v1.DistributionR\fdistribution\x12\x1f\n" +
+	"\vdns_problem\x18\x02 \x01(\tR\n" +
+	"dnsProblem\"K\n" +
+	"\x19DeleteDistributionRequest\x12\x12\n" +
+	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1a\n" +
+	"\brevision\x18\x02 \x01(\tR\brevision\"=\n" +
+	"\x1aDeleteDistributionResponse\x12\x1f\n" +
+	"\vdns_problem\x18\x01 \x01(\tR\n" +
+	"dnsProblem2\xe8\x11\n" +
 	"\x0eConsoleService\x12`\n" +
 	"\vGetOverview\x12&.taramanji.cloud.v1.GetOverviewRequest\x1a'.taramanji.cloud.v1.GetOverviewResponse\"\x00\x12]\n" +
 	"\n" +
@@ -2699,7 +3918,16 @@ const file_taramanji_cloud_v1_console_proto_rawDesc = "" +
 	"\n" +
 	"PreviewApi\x12%.taramanji.cloud.v1.PreviewApiRequest\x1a&.taramanji.cloud.v1.PreviewApiResponse\"\x00\x12W\n" +
 	"\bApplyApi\x12#.taramanji.cloud.v1.ApplyApiRequest\x1a$.taramanji.cloud.v1.ApplyApiResponse\"\x00\x12Z\n" +
-	"\tDeleteApi\x12$.taramanji.cloud.v1.DeleteApiRequest\x1a%.taramanji.cloud.v1.DeleteApiResponse\"\x00\x12]\n" +
+	"\tDeleteApi\x12$.taramanji.cloud.v1.DeleteApiRequest\x1a%.taramanji.cloud.v1.DeleteApiResponse\"\x00\x12`\n" +
+	"\vListBuckets\x12&.taramanji.cloud.v1.ListBucketsRequest\x1a'.taramanji.cloud.v1.ListBucketsResponse\"\x00\x12c\n" +
+	"\fCreateBucket\x12'.taramanji.cloud.v1.CreateBucketRequest\x1a(.taramanji.cloud.v1.CreateBucketResponse\"\x00\x12c\n" +
+	"\fDeleteBucket\x12'.taramanji.cloud.v1.DeleteBucketRequest\x1a(.taramanji.cloud.v1.DeleteBucketResponse\"\x00\x12`\n" +
+	"\vListObjects\x12&.taramanji.cloud.v1.ListObjectsRequest\x1a'.taramanji.cloud.v1.ListObjectsResponse\"\x00\x12c\n" +
+	"\fDeleteObject\x12'.taramanji.cloud.v1.DeleteObjectRequest\x1a(.taramanji.cloud.v1.DeleteObjectResponse\"\x00\x12r\n" +
+	"\x11ListDistributions\x12,.taramanji.cloud.v1.ListDistributionsRequest\x1a-.taramanji.cloud.v1.ListDistributionsResponse\"\x00\x12x\n" +
+	"\x13PreviewDistribution\x12..taramanji.cloud.v1.PreviewDistributionRequest\x1a/.taramanji.cloud.v1.PreviewDistributionResponse\"\x00\x12r\n" +
+	"\x11ApplyDistribution\x12,.taramanji.cloud.v1.ApplyDistributionRequest\x1a-.taramanji.cloud.v1.ApplyDistributionResponse\"\x00\x12u\n" +
+	"\x12DeleteDistribution\x12-.taramanji.cloud.v1.DeleteDistributionRequest\x1a..taramanji.cloud.v1.DeleteDistributionResponse\"\x00\x12]\n" +
 	"\n" +
 	"SyncAlerts\x12%.taramanji.cloud.v1.SyncAlertsRequest\x1a&.taramanji.cloud.v1.SyncAlertsResponse\"\x00B\xe6\x01\n" +
 	"\x16com.taramanji.cloud.v1B\fConsoleProtoP\x01ZTgithub.com/javalangruntimeexception/taramanji/backend/gen/taramanji/cloud/v1;cloudv1\xa2\x02\x03TCX\xaa\x02\x12Taramanji.Cloud.V1\xca\x02\x12Taramanji\\Cloud\\V1\xe2\x02\x1eTaramanji\\Cloud\\V1\\GPBMetadata\xea\x02\x14Taramanji::Cloud::V1b\x06proto3"
@@ -2716,50 +3944,72 @@ func file_taramanji_cloud_v1_console_proto_rawDescGZIP() []byte {
 	return file_taramanji_cloud_v1_console_proto_rawDescData
 }
 
-var file_taramanji_cloud_v1_console_proto_msgTypes = make([]protoimpl.MessageInfo, 42)
+var file_taramanji_cloud_v1_console_proto_msgTypes = make([]protoimpl.MessageInfo, 64)
 var file_taramanji_cloud_v1_console_proto_goTypes = []any{
-	(*Component)(nil),                 // 0: taramanji.cloud.v1.Component
-	(*GetOverviewRequest)(nil),        // 1: taramanji.cloud.v1.GetOverviewRequest
-	(*GetOverviewResponse)(nil),       // 2: taramanji.cloud.v1.GetOverviewResponse
-	(*Series)(nil),                    // 3: taramanji.cloud.v1.Series
-	(*GetMetricsRequest)(nil),         // 4: taramanji.cloud.v1.GetMetricsRequest
-	(*GetMetricsResponse)(nil),        // 5: taramanji.cloud.v1.GetMetricsResponse
-	(*GetCapacityRequest)(nil),        // 6: taramanji.cloud.v1.GetCapacityRequest
-	(*Amount)(nil),                    // 7: taramanji.cloud.v1.Amount
-	(*Quota)(nil),                     // 8: taramanji.cloud.v1.Quota
-	(*Machine)(nil),                   // 9: taramanji.cloud.v1.Machine
-	(*SizeFit)(nil),                   // 10: taramanji.cloud.v1.SizeFit
-	(*PodUsage)(nil),                  // 11: taramanji.cloud.v1.PodUsage
-	(*GetCapacityResponse)(nil),       // 12: taramanji.cloud.v1.GetCapacityResponse
-	(*InstanceType)(nil),              // 13: taramanji.cloud.v1.InstanceType
-	(*AlertPreset)(nil),               // 14: taramanji.cloud.v1.AlertPreset
-	(*GetHostingOptionsRequest)(nil),  // 15: taramanji.cloud.v1.GetHostingOptionsRequest
-	(*GetHostingOptionsResponse)(nil), // 16: taramanji.cloud.v1.GetHostingOptionsResponse
-	(*EnvVar)(nil),                    // 17: taramanji.cloud.v1.EnvVar
-	(*Source)(nil),                    // 18: taramanji.cloud.v1.Source
-	(*FunctionSpec)(nil),              // 19: taramanji.cloud.v1.FunctionSpec
-	(*Function)(nil),                  // 20: taramanji.cloud.v1.Function
-	(*ListFunctionsRequest)(nil),      // 21: taramanji.cloud.v1.ListFunctionsRequest
-	(*ListFunctionsResponse)(nil),     // 22: taramanji.cloud.v1.ListFunctionsResponse
-	(*PreviewFunctionRequest)(nil),    // 23: taramanji.cloud.v1.PreviewFunctionRequest
-	(*PreviewFunctionResponse)(nil),   // 24: taramanji.cloud.v1.PreviewFunctionResponse
-	(*ApplyFunctionRequest)(nil),      // 25: taramanji.cloud.v1.ApplyFunctionRequest
-	(*ApplyFunctionResponse)(nil),     // 26: taramanji.cloud.v1.ApplyFunctionResponse
-	(*DeleteFunctionRequest)(nil),     // 27: taramanji.cloud.v1.DeleteFunctionRequest
-	(*DeleteFunctionResponse)(nil),    // 28: taramanji.cloud.v1.DeleteFunctionResponse
-	(*ApiRoute)(nil),                  // 29: taramanji.cloud.v1.ApiRoute
-	(*ApiSpec)(nil),                   // 30: taramanji.cloud.v1.ApiSpec
-	(*Api)(nil),                       // 31: taramanji.cloud.v1.Api
-	(*ListApisRequest)(nil),           // 32: taramanji.cloud.v1.ListApisRequest
-	(*ListApisResponse)(nil),          // 33: taramanji.cloud.v1.ListApisResponse
-	(*PreviewApiRequest)(nil),         // 34: taramanji.cloud.v1.PreviewApiRequest
-	(*PreviewApiResponse)(nil),        // 35: taramanji.cloud.v1.PreviewApiResponse
-	(*ApplyApiRequest)(nil),           // 36: taramanji.cloud.v1.ApplyApiRequest
-	(*ApplyApiResponse)(nil),          // 37: taramanji.cloud.v1.ApplyApiResponse
-	(*DeleteApiRequest)(nil),          // 38: taramanji.cloud.v1.DeleteApiRequest
-	(*DeleteApiResponse)(nil),         // 39: taramanji.cloud.v1.DeleteApiResponse
-	(*SyncAlertsRequest)(nil),         // 40: taramanji.cloud.v1.SyncAlertsRequest
-	(*SyncAlertsResponse)(nil),        // 41: taramanji.cloud.v1.SyncAlertsResponse
+	(*Component)(nil),                   // 0: taramanji.cloud.v1.Component
+	(*GetOverviewRequest)(nil),          // 1: taramanji.cloud.v1.GetOverviewRequest
+	(*GetOverviewResponse)(nil),         // 2: taramanji.cloud.v1.GetOverviewResponse
+	(*Series)(nil),                      // 3: taramanji.cloud.v1.Series
+	(*GetMetricsRequest)(nil),           // 4: taramanji.cloud.v1.GetMetricsRequest
+	(*GetMetricsResponse)(nil),          // 5: taramanji.cloud.v1.GetMetricsResponse
+	(*GetCapacityRequest)(nil),          // 6: taramanji.cloud.v1.GetCapacityRequest
+	(*Amount)(nil),                      // 7: taramanji.cloud.v1.Amount
+	(*Quota)(nil),                       // 8: taramanji.cloud.v1.Quota
+	(*Machine)(nil),                     // 9: taramanji.cloud.v1.Machine
+	(*SizeFit)(nil),                     // 10: taramanji.cloud.v1.SizeFit
+	(*PodUsage)(nil),                    // 11: taramanji.cloud.v1.PodUsage
+	(*GetCapacityResponse)(nil),         // 12: taramanji.cloud.v1.GetCapacityResponse
+	(*InstanceType)(nil),                // 13: taramanji.cloud.v1.InstanceType
+	(*AlertPreset)(nil),                 // 14: taramanji.cloud.v1.AlertPreset
+	(*GetHostingOptionsRequest)(nil),    // 15: taramanji.cloud.v1.GetHostingOptionsRequest
+	(*GetHostingOptionsResponse)(nil),   // 16: taramanji.cloud.v1.GetHostingOptionsResponse
+	(*EnvVar)(nil),                      // 17: taramanji.cloud.v1.EnvVar
+	(*Source)(nil),                      // 18: taramanji.cloud.v1.Source
+	(*FunctionSpec)(nil),                // 19: taramanji.cloud.v1.FunctionSpec
+	(*Function)(nil),                    // 20: taramanji.cloud.v1.Function
+	(*ListFunctionsRequest)(nil),        // 21: taramanji.cloud.v1.ListFunctionsRequest
+	(*ListFunctionsResponse)(nil),       // 22: taramanji.cloud.v1.ListFunctionsResponse
+	(*PreviewFunctionRequest)(nil),      // 23: taramanji.cloud.v1.PreviewFunctionRequest
+	(*PreviewFunctionResponse)(nil),     // 24: taramanji.cloud.v1.PreviewFunctionResponse
+	(*ApplyFunctionRequest)(nil),        // 25: taramanji.cloud.v1.ApplyFunctionRequest
+	(*ApplyFunctionResponse)(nil),       // 26: taramanji.cloud.v1.ApplyFunctionResponse
+	(*DeleteFunctionRequest)(nil),       // 27: taramanji.cloud.v1.DeleteFunctionRequest
+	(*DeleteFunctionResponse)(nil),      // 28: taramanji.cloud.v1.DeleteFunctionResponse
+	(*ApiRoute)(nil),                    // 29: taramanji.cloud.v1.ApiRoute
+	(*ApiSpec)(nil),                     // 30: taramanji.cloud.v1.ApiSpec
+	(*Api)(nil),                         // 31: taramanji.cloud.v1.Api
+	(*ListApisRequest)(nil),             // 32: taramanji.cloud.v1.ListApisRequest
+	(*ListApisResponse)(nil),            // 33: taramanji.cloud.v1.ListApisResponse
+	(*PreviewApiRequest)(nil),           // 34: taramanji.cloud.v1.PreviewApiRequest
+	(*PreviewApiResponse)(nil),          // 35: taramanji.cloud.v1.PreviewApiResponse
+	(*ApplyApiRequest)(nil),             // 36: taramanji.cloud.v1.ApplyApiRequest
+	(*ApplyApiResponse)(nil),            // 37: taramanji.cloud.v1.ApplyApiResponse
+	(*DeleteApiRequest)(nil),            // 38: taramanji.cloud.v1.DeleteApiRequest
+	(*DeleteApiResponse)(nil),           // 39: taramanji.cloud.v1.DeleteApiResponse
+	(*SyncAlertsRequest)(nil),           // 40: taramanji.cloud.v1.SyncAlertsRequest
+	(*SyncAlertsResponse)(nil),          // 41: taramanji.cloud.v1.SyncAlertsResponse
+	(*Bucket)(nil),                      // 42: taramanji.cloud.v1.Bucket
+	(*ListBucketsRequest)(nil),          // 43: taramanji.cloud.v1.ListBucketsRequest
+	(*ListBucketsResponse)(nil),         // 44: taramanji.cloud.v1.ListBucketsResponse
+	(*CreateBucketRequest)(nil),         // 45: taramanji.cloud.v1.CreateBucketRequest
+	(*CreateBucketResponse)(nil),        // 46: taramanji.cloud.v1.CreateBucketResponse
+	(*DeleteBucketRequest)(nil),         // 47: taramanji.cloud.v1.DeleteBucketRequest
+	(*DeleteBucketResponse)(nil),        // 48: taramanji.cloud.v1.DeleteBucketResponse
+	(*StorageObject)(nil),               // 49: taramanji.cloud.v1.StorageObject
+	(*ListObjectsRequest)(nil),          // 50: taramanji.cloud.v1.ListObjectsRequest
+	(*ListObjectsResponse)(nil),         // 51: taramanji.cloud.v1.ListObjectsResponse
+	(*DeleteObjectRequest)(nil),         // 52: taramanji.cloud.v1.DeleteObjectRequest
+	(*DeleteObjectResponse)(nil),        // 53: taramanji.cloud.v1.DeleteObjectResponse
+	(*DistributionSpec)(nil),            // 54: taramanji.cloud.v1.DistributionSpec
+	(*Distribution)(nil),                // 55: taramanji.cloud.v1.Distribution
+	(*ListDistributionsRequest)(nil),    // 56: taramanji.cloud.v1.ListDistributionsRequest
+	(*ListDistributionsResponse)(nil),   // 57: taramanji.cloud.v1.ListDistributionsResponse
+	(*PreviewDistributionRequest)(nil),  // 58: taramanji.cloud.v1.PreviewDistributionRequest
+	(*PreviewDistributionResponse)(nil), // 59: taramanji.cloud.v1.PreviewDistributionResponse
+	(*ApplyDistributionRequest)(nil),    // 60: taramanji.cloud.v1.ApplyDistributionRequest
+	(*ApplyDistributionResponse)(nil),   // 61: taramanji.cloud.v1.ApplyDistributionResponse
+	(*DeleteDistributionRequest)(nil),   // 62: taramanji.cloud.v1.DeleteDistributionRequest
+	(*DeleteDistributionResponse)(nil),  // 63: taramanji.cloud.v1.DeleteDistributionResponse
 }
 var file_taramanji_cloud_v1_console_proto_depIdxs = []int32{
 	0,  // 0: taramanji.cloud.v1.GetOverviewResponse.components:type_name -> taramanji.cloud.v1.Component
@@ -2788,37 +4038,65 @@ var file_taramanji_cloud_v1_console_proto_depIdxs = []int32{
 	30, // 23: taramanji.cloud.v1.PreviewApiRequest.spec:type_name -> taramanji.cloud.v1.ApiSpec
 	30, // 24: taramanji.cloud.v1.ApplyApiRequest.spec:type_name -> taramanji.cloud.v1.ApiSpec
 	31, // 25: taramanji.cloud.v1.ApplyApiResponse.api:type_name -> taramanji.cloud.v1.Api
-	1,  // 26: taramanji.cloud.v1.ConsoleService.GetOverview:input_type -> taramanji.cloud.v1.GetOverviewRequest
-	4,  // 27: taramanji.cloud.v1.ConsoleService.GetMetrics:input_type -> taramanji.cloud.v1.GetMetricsRequest
-	6,  // 28: taramanji.cloud.v1.ConsoleService.GetCapacity:input_type -> taramanji.cloud.v1.GetCapacityRequest
-	15, // 29: taramanji.cloud.v1.ConsoleService.GetHostingOptions:input_type -> taramanji.cloud.v1.GetHostingOptionsRequest
-	21, // 30: taramanji.cloud.v1.ConsoleService.ListFunctions:input_type -> taramanji.cloud.v1.ListFunctionsRequest
-	23, // 31: taramanji.cloud.v1.ConsoleService.PreviewFunction:input_type -> taramanji.cloud.v1.PreviewFunctionRequest
-	25, // 32: taramanji.cloud.v1.ConsoleService.ApplyFunction:input_type -> taramanji.cloud.v1.ApplyFunctionRequest
-	27, // 33: taramanji.cloud.v1.ConsoleService.DeleteFunction:input_type -> taramanji.cloud.v1.DeleteFunctionRequest
-	32, // 34: taramanji.cloud.v1.ConsoleService.ListApis:input_type -> taramanji.cloud.v1.ListApisRequest
-	34, // 35: taramanji.cloud.v1.ConsoleService.PreviewApi:input_type -> taramanji.cloud.v1.PreviewApiRequest
-	36, // 36: taramanji.cloud.v1.ConsoleService.ApplyApi:input_type -> taramanji.cloud.v1.ApplyApiRequest
-	38, // 37: taramanji.cloud.v1.ConsoleService.DeleteApi:input_type -> taramanji.cloud.v1.DeleteApiRequest
-	40, // 38: taramanji.cloud.v1.ConsoleService.SyncAlerts:input_type -> taramanji.cloud.v1.SyncAlertsRequest
-	2,  // 39: taramanji.cloud.v1.ConsoleService.GetOverview:output_type -> taramanji.cloud.v1.GetOverviewResponse
-	5,  // 40: taramanji.cloud.v1.ConsoleService.GetMetrics:output_type -> taramanji.cloud.v1.GetMetricsResponse
-	12, // 41: taramanji.cloud.v1.ConsoleService.GetCapacity:output_type -> taramanji.cloud.v1.GetCapacityResponse
-	16, // 42: taramanji.cloud.v1.ConsoleService.GetHostingOptions:output_type -> taramanji.cloud.v1.GetHostingOptionsResponse
-	22, // 43: taramanji.cloud.v1.ConsoleService.ListFunctions:output_type -> taramanji.cloud.v1.ListFunctionsResponse
-	24, // 44: taramanji.cloud.v1.ConsoleService.PreviewFunction:output_type -> taramanji.cloud.v1.PreviewFunctionResponse
-	26, // 45: taramanji.cloud.v1.ConsoleService.ApplyFunction:output_type -> taramanji.cloud.v1.ApplyFunctionResponse
-	28, // 46: taramanji.cloud.v1.ConsoleService.DeleteFunction:output_type -> taramanji.cloud.v1.DeleteFunctionResponse
-	33, // 47: taramanji.cloud.v1.ConsoleService.ListApis:output_type -> taramanji.cloud.v1.ListApisResponse
-	35, // 48: taramanji.cloud.v1.ConsoleService.PreviewApi:output_type -> taramanji.cloud.v1.PreviewApiResponse
-	37, // 49: taramanji.cloud.v1.ConsoleService.ApplyApi:output_type -> taramanji.cloud.v1.ApplyApiResponse
-	39, // 50: taramanji.cloud.v1.ConsoleService.DeleteApi:output_type -> taramanji.cloud.v1.DeleteApiResponse
-	41, // 51: taramanji.cloud.v1.ConsoleService.SyncAlerts:output_type -> taramanji.cloud.v1.SyncAlertsResponse
-	39, // [39:52] is the sub-list for method output_type
-	26, // [26:39] is the sub-list for method input_type
-	26, // [26:26] is the sub-list for extension type_name
-	26, // [26:26] is the sub-list for extension extendee
-	0,  // [0:26] is the sub-list for field type_name
+	18, // 26: taramanji.cloud.v1.Bucket.source:type_name -> taramanji.cloud.v1.Source
+	42, // 27: taramanji.cloud.v1.ListBucketsResponse.buckets:type_name -> taramanji.cloud.v1.Bucket
+	42, // 28: taramanji.cloud.v1.CreateBucketResponse.bucket:type_name -> taramanji.cloud.v1.Bucket
+	49, // 29: taramanji.cloud.v1.ListObjectsResponse.objects:type_name -> taramanji.cloud.v1.StorageObject
+	54, // 30: taramanji.cloud.v1.Distribution.spec:type_name -> taramanji.cloud.v1.DistributionSpec
+	18, // 31: taramanji.cloud.v1.Distribution.source:type_name -> taramanji.cloud.v1.Source
+	55, // 32: taramanji.cloud.v1.ListDistributionsResponse.distributions:type_name -> taramanji.cloud.v1.Distribution
+	54, // 33: taramanji.cloud.v1.PreviewDistributionRequest.spec:type_name -> taramanji.cloud.v1.DistributionSpec
+	54, // 34: taramanji.cloud.v1.ApplyDistributionRequest.spec:type_name -> taramanji.cloud.v1.DistributionSpec
+	55, // 35: taramanji.cloud.v1.ApplyDistributionResponse.distribution:type_name -> taramanji.cloud.v1.Distribution
+	1,  // 36: taramanji.cloud.v1.ConsoleService.GetOverview:input_type -> taramanji.cloud.v1.GetOverviewRequest
+	4,  // 37: taramanji.cloud.v1.ConsoleService.GetMetrics:input_type -> taramanji.cloud.v1.GetMetricsRequest
+	6,  // 38: taramanji.cloud.v1.ConsoleService.GetCapacity:input_type -> taramanji.cloud.v1.GetCapacityRequest
+	15, // 39: taramanji.cloud.v1.ConsoleService.GetHostingOptions:input_type -> taramanji.cloud.v1.GetHostingOptionsRequest
+	21, // 40: taramanji.cloud.v1.ConsoleService.ListFunctions:input_type -> taramanji.cloud.v1.ListFunctionsRequest
+	23, // 41: taramanji.cloud.v1.ConsoleService.PreviewFunction:input_type -> taramanji.cloud.v1.PreviewFunctionRequest
+	25, // 42: taramanji.cloud.v1.ConsoleService.ApplyFunction:input_type -> taramanji.cloud.v1.ApplyFunctionRequest
+	27, // 43: taramanji.cloud.v1.ConsoleService.DeleteFunction:input_type -> taramanji.cloud.v1.DeleteFunctionRequest
+	32, // 44: taramanji.cloud.v1.ConsoleService.ListApis:input_type -> taramanji.cloud.v1.ListApisRequest
+	34, // 45: taramanji.cloud.v1.ConsoleService.PreviewApi:input_type -> taramanji.cloud.v1.PreviewApiRequest
+	36, // 46: taramanji.cloud.v1.ConsoleService.ApplyApi:input_type -> taramanji.cloud.v1.ApplyApiRequest
+	38, // 47: taramanji.cloud.v1.ConsoleService.DeleteApi:input_type -> taramanji.cloud.v1.DeleteApiRequest
+	43, // 48: taramanji.cloud.v1.ConsoleService.ListBuckets:input_type -> taramanji.cloud.v1.ListBucketsRequest
+	45, // 49: taramanji.cloud.v1.ConsoleService.CreateBucket:input_type -> taramanji.cloud.v1.CreateBucketRequest
+	47, // 50: taramanji.cloud.v1.ConsoleService.DeleteBucket:input_type -> taramanji.cloud.v1.DeleteBucketRequest
+	50, // 51: taramanji.cloud.v1.ConsoleService.ListObjects:input_type -> taramanji.cloud.v1.ListObjectsRequest
+	52, // 52: taramanji.cloud.v1.ConsoleService.DeleteObject:input_type -> taramanji.cloud.v1.DeleteObjectRequest
+	56, // 53: taramanji.cloud.v1.ConsoleService.ListDistributions:input_type -> taramanji.cloud.v1.ListDistributionsRequest
+	58, // 54: taramanji.cloud.v1.ConsoleService.PreviewDistribution:input_type -> taramanji.cloud.v1.PreviewDistributionRequest
+	60, // 55: taramanji.cloud.v1.ConsoleService.ApplyDistribution:input_type -> taramanji.cloud.v1.ApplyDistributionRequest
+	62, // 56: taramanji.cloud.v1.ConsoleService.DeleteDistribution:input_type -> taramanji.cloud.v1.DeleteDistributionRequest
+	40, // 57: taramanji.cloud.v1.ConsoleService.SyncAlerts:input_type -> taramanji.cloud.v1.SyncAlertsRequest
+	2,  // 58: taramanji.cloud.v1.ConsoleService.GetOverview:output_type -> taramanji.cloud.v1.GetOverviewResponse
+	5,  // 59: taramanji.cloud.v1.ConsoleService.GetMetrics:output_type -> taramanji.cloud.v1.GetMetricsResponse
+	12, // 60: taramanji.cloud.v1.ConsoleService.GetCapacity:output_type -> taramanji.cloud.v1.GetCapacityResponse
+	16, // 61: taramanji.cloud.v1.ConsoleService.GetHostingOptions:output_type -> taramanji.cloud.v1.GetHostingOptionsResponse
+	22, // 62: taramanji.cloud.v1.ConsoleService.ListFunctions:output_type -> taramanji.cloud.v1.ListFunctionsResponse
+	24, // 63: taramanji.cloud.v1.ConsoleService.PreviewFunction:output_type -> taramanji.cloud.v1.PreviewFunctionResponse
+	26, // 64: taramanji.cloud.v1.ConsoleService.ApplyFunction:output_type -> taramanji.cloud.v1.ApplyFunctionResponse
+	28, // 65: taramanji.cloud.v1.ConsoleService.DeleteFunction:output_type -> taramanji.cloud.v1.DeleteFunctionResponse
+	33, // 66: taramanji.cloud.v1.ConsoleService.ListApis:output_type -> taramanji.cloud.v1.ListApisResponse
+	35, // 67: taramanji.cloud.v1.ConsoleService.PreviewApi:output_type -> taramanji.cloud.v1.PreviewApiResponse
+	37, // 68: taramanji.cloud.v1.ConsoleService.ApplyApi:output_type -> taramanji.cloud.v1.ApplyApiResponse
+	39, // 69: taramanji.cloud.v1.ConsoleService.DeleteApi:output_type -> taramanji.cloud.v1.DeleteApiResponse
+	44, // 70: taramanji.cloud.v1.ConsoleService.ListBuckets:output_type -> taramanji.cloud.v1.ListBucketsResponse
+	46, // 71: taramanji.cloud.v1.ConsoleService.CreateBucket:output_type -> taramanji.cloud.v1.CreateBucketResponse
+	48, // 72: taramanji.cloud.v1.ConsoleService.DeleteBucket:output_type -> taramanji.cloud.v1.DeleteBucketResponse
+	51, // 73: taramanji.cloud.v1.ConsoleService.ListObjects:output_type -> taramanji.cloud.v1.ListObjectsResponse
+	53, // 74: taramanji.cloud.v1.ConsoleService.DeleteObject:output_type -> taramanji.cloud.v1.DeleteObjectResponse
+	57, // 75: taramanji.cloud.v1.ConsoleService.ListDistributions:output_type -> taramanji.cloud.v1.ListDistributionsResponse
+	59, // 76: taramanji.cloud.v1.ConsoleService.PreviewDistribution:output_type -> taramanji.cloud.v1.PreviewDistributionResponse
+	61, // 77: taramanji.cloud.v1.ConsoleService.ApplyDistribution:output_type -> taramanji.cloud.v1.ApplyDistributionResponse
+	63, // 78: taramanji.cloud.v1.ConsoleService.DeleteDistribution:output_type -> taramanji.cloud.v1.DeleteDistributionResponse
+	41, // 79: taramanji.cloud.v1.ConsoleService.SyncAlerts:output_type -> taramanji.cloud.v1.SyncAlertsResponse
+	58, // [58:80] is the sub-list for method output_type
+	36, // [36:58] is the sub-list for method input_type
+	36, // [36:36] is the sub-list for extension type_name
+	36, // [36:36] is the sub-list for extension extendee
+	0,  // [0:36] is the sub-list for field type_name
 }
 
 func init() { file_taramanji_cloud_v1_console_proto_init() }
@@ -2832,7 +4110,7 @@ func file_taramanji_cloud_v1_console_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_taramanji_cloud_v1_console_proto_rawDesc), len(file_taramanji_cloud_v1_console_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   42,
+			NumMessages:   64,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

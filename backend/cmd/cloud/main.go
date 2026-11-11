@@ -18,6 +18,7 @@ import (
 	"github.com/javalangruntimeexception/taramanji/backend/internal/cloud/domain/service"
 	infragw "github.com/javalangruntimeexception/taramanji/backend/internal/cloud/infra/gateway"
 	"github.com/javalangruntimeexception/taramanji/backend/internal/cloud/invoker"
+	"github.com/javalangruntimeexception/taramanji/backend/internal/cloud/storage"
 	"github.com/javalangruntimeexception/taramanji/backend/internal/cloud/usecase"
 	"github.com/javalangruntimeexception/taramanji/backend/pkg/util/cfaccess"
 	"github.com/javalangruntimeexception/taramanji/backend/pkg/util/env"
@@ -33,9 +34,13 @@ func main() {
 	_, stop := observability.Init(serviceName)
 	defer stop()
 
-	// 同じイメージを 2 つの役割で動かす: コンソールの API（既定）と、関数を呼び出す API Gateway（CLOUD_MODE=gateway）
-	if env.Optional("CLOUD_MODE", "api") == "gateway" {
+	// 同じイメージを役割ごとに動かす: コンソールの API（既定）・関数と CDN のデータプレーン（gateway）・オブジェクトストレージ（storage）
+	switch env.Optional("CLOUD_MODE", "api") {
+	case "gateway":
 		runGateway()
+		return
+	case "storage":
+		runStorage()
 		return
 	}
 
@@ -78,6 +83,22 @@ func main() {
 		}
 	}
 	cluster := env.Optional("METRICS_CLUSTER", "taramanji-kind")
+	hostSuffix := env.Required("HOST_SUFFIX")
+	// オブジェクトストレージ（cloud-storage）。マスターキーがなければバケットの中身は扱えない
+	var objects gateway.ObjectStore
+	if key := env.Optional("STORAGE_MASTER_KEY", ""); key != "" {
+		if objects, err = infragw.NewObjectStore(env.Optional("STORAGE_URL", "http://cloud-storage:8080"), storage.Token([]byte(key), "*")); err != nil {
+			log.Fatal(err)
+		}
+	}
+	// 公開ホスト名の DNS の自動登録（Cloudflare）。トークンがなければ手で登録する
+	var dns gateway.DNS
+	if token := env.Optional("CF_DNS_API_TOKEN", ""); token != "" {
+		if dns, err = infragw.NewCloudflareDNS(infragw.CloudflareDNSConfig{Token: token, ZoneID: env.Required("CF_ZONE_ID"),
+			TunnelID: env.Required("CF_TUNNEL_ID"), HostSuffix: hostSuffix}); err != nil {
+			log.Fatal(err)
+		}
+	}
 
 	uc := usecase.NewConsoleUsecase(usecase.Deps{
 		Environment: cloudEnv,
@@ -91,7 +112,9 @@ func main() {
 		Monitors:       monitors,
 		AlertScope: service.AlertScope{Environment: cloudEnv, Cluster: cluster, Namespace: env.Required("APPS_NAMESPACE"),
 			APMEnv: env.Optional("DD_ENV", "prod"), InvokerService: gatewayServiceName},
-		APITarget:   service.APITarget{HostSuffix: env.Required("HOST_SUFFIX"), InvokerNamespace: namespace},
+		APITarget:   service.APITarget{HostSuffix: hostSuffix, InvokerNamespace: namespace},
+		Objects:     objects,
+		DNS:         dns,
 		IdleTimeout: idleTimeout(),
 		MetricsScope: service.MetricsScope{
 			Cluster:     cluster,
@@ -104,6 +127,9 @@ func main() {
 	handlers := di.NewHandlers(uc)
 	if err := server.Run(serviceName, func(mux *http.ServeMux) {
 		handlers.Register(mux, connect.WithInterceptors(verifier.Interceptor()))
+		if objects != nil {
+			mux.Handle("/storage/{bucket}/{key...}", verifier.Middleware(objectHandler(objects)))
+		}
 	}); err != nil {
 		log.Fatal(err)
 	}
@@ -120,8 +146,14 @@ func runGateway() {
 		log.Fatal(err)
 	}
 	idle := idleTimeout()
+	// バケットを元にした CDN が読む、ストレージの読むだけのポート
+	storageURL, err := url.Parse(env.Optional("STORAGE_PUBLIC_URL", "http://cloud-storage:8081"))
+	if err != nil {
+		log.Fatal(err)
+	}
 	inv := invoker.New(invoker.Config{
-		Scaler: kube,
+		StorageURL: storageURL,
+		Scaler:     kube,
 		Upstream: func(name string) *url.URL {
 			return &url.URL{Scheme: "http", Host: name + "." + appsNamespace + ".svc.cluster.local"}
 		},
@@ -134,6 +166,9 @@ func runGateway() {
 	go inv.Run(ctx, 30*time.Second)
 	// パスは関数しだいなので、APM のリソース名は関数名にする
 	name := func(r *http.Request) string {
+		if b := r.Header.Get(service.HeaderBucket); service.ValidName(b) {
+			return "bucket " + b
+		}
 		if fn := r.Header.Get(service.HeaderFunction); service.ValidName(fn) {
 			return fn
 		}
@@ -151,4 +186,68 @@ func idleTimeout() time.Duration {
 		log.Fatal("FUNCTION_IDLE_TIMEOUT must be a duration of at least 1m")
 	}
 	return idle
+}
+
+// objectHandler はコンソールからのアップロード（PUT）とダウンロード（GET）を、ストレージにそのまま渡す。
+// ダウンロードは必ずファイルとして保存させる（アップロードした HTML が、コンソールのオリジンでスクリプトとして動かないように）
+func objectHandler(objects gateway.ObjectStore) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		bucket, key := r.PathValue("bucket"), r.PathValue("key")
+		if !service.ValidName(bucket) || !storage.ValidKey(key) {
+			http.Error(w, "invalid bucket or key", http.StatusBadRequest)
+			return
+		}
+		switch r.Method {
+		case http.MethodGet, http.MethodHead:
+			w.Header().Set("Content-Disposition", "attachment")
+			w.Header().Set("Content-Security-Policy", "sandbox")
+		case http.MethodPut:
+		default:
+			w.Header().Set("Allow", "GET, HEAD, PUT")
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		objects.Proxy(w, r, bucket, key)
+	})
+}
+
+const storageServiceName = "cloud-storage"
+
+// runStorage はオブジェクトストレージ。読み書き（トークンが要る）を PORT で、読むだけ（CDN 用）を STORAGE_PUBLIC_PORT で開く。
+// バケットは、アプリ用 namespace の ConfigMap（ラベル cloud.taramanji.com/bucket）に合わせて作る
+func runStorage() {
+	kube, err := infragw.NewInClusterKube(env.Required("POD_NAMESPACE"), env.Required("APPS_NAMESPACE"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	store, err := storage.New(env.Optional("STORAGE_DIR", "/data"), []byte(env.Required("STORAGE_MASTER_KEY")))
+	if err != nil {
+		log.Fatal(err)
+	}
+	reconcile := func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		names, err := kube.LabeledConfigMaps(ctx, service.LabelBucket)
+		if err == nil {
+			err = store.Reconcile(names)
+		}
+		if err != nil {
+			logger.L().Warn("bucket reconcile failed", "error", err)
+		}
+	}
+	reconcile()
+	go func() {
+		for range time.Tick(15 * time.Second) {
+			reconcile()
+		}
+	}()
+	go func() {
+		srv := &http.Server{Addr: env.Optional("STORAGE_PUBLIC_PORT", ":8081"), Handler: store.PublicHandler(), ReadHeaderTimeout: 10 * time.Second}
+		log.Fatal(srv.ListenAndServe())
+	}()
+	// キーは利用者しだいなので、APM のリソース名はメソッドだけにする
+	name := func(r *http.Request) string { return r.Method + " object" }
+	if err := server.RunNamed(storageServiceName, name, func(mux *http.ServeMux) { mux.Handle("/b/", store.Handler()) }); err != nil {
+		log.Fatal(err)
+	}
 }

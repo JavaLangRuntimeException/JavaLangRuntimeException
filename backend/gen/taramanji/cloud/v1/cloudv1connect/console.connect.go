@@ -67,6 +67,33 @@ const (
 	// ConsoleServiceDeleteApiProcedure is the fully-qualified name of the ConsoleService's DeleteApi
 	// RPC.
 	ConsoleServiceDeleteApiProcedure = "/taramanji.cloud.v1.ConsoleService/DeleteApi"
+	// ConsoleServiceListBucketsProcedure is the fully-qualified name of the ConsoleService's
+	// ListBuckets RPC.
+	ConsoleServiceListBucketsProcedure = "/taramanji.cloud.v1.ConsoleService/ListBuckets"
+	// ConsoleServiceCreateBucketProcedure is the fully-qualified name of the ConsoleService's
+	// CreateBucket RPC.
+	ConsoleServiceCreateBucketProcedure = "/taramanji.cloud.v1.ConsoleService/CreateBucket"
+	// ConsoleServiceDeleteBucketProcedure is the fully-qualified name of the ConsoleService's
+	// DeleteBucket RPC.
+	ConsoleServiceDeleteBucketProcedure = "/taramanji.cloud.v1.ConsoleService/DeleteBucket"
+	// ConsoleServiceListObjectsProcedure is the fully-qualified name of the ConsoleService's
+	// ListObjects RPC.
+	ConsoleServiceListObjectsProcedure = "/taramanji.cloud.v1.ConsoleService/ListObjects"
+	// ConsoleServiceDeleteObjectProcedure is the fully-qualified name of the ConsoleService's
+	// DeleteObject RPC.
+	ConsoleServiceDeleteObjectProcedure = "/taramanji.cloud.v1.ConsoleService/DeleteObject"
+	// ConsoleServiceListDistributionsProcedure is the fully-qualified name of the ConsoleService's
+	// ListDistributions RPC.
+	ConsoleServiceListDistributionsProcedure = "/taramanji.cloud.v1.ConsoleService/ListDistributions"
+	// ConsoleServicePreviewDistributionProcedure is the fully-qualified name of the ConsoleService's
+	// PreviewDistribution RPC.
+	ConsoleServicePreviewDistributionProcedure = "/taramanji.cloud.v1.ConsoleService/PreviewDistribution"
+	// ConsoleServiceApplyDistributionProcedure is the fully-qualified name of the ConsoleService's
+	// ApplyDistribution RPC.
+	ConsoleServiceApplyDistributionProcedure = "/taramanji.cloud.v1.ConsoleService/ApplyDistribution"
+	// ConsoleServiceDeleteDistributionProcedure is the fully-qualified name of the ConsoleService's
+	// DeleteDistribution RPC.
+	ConsoleServiceDeleteDistributionProcedure = "/taramanji.cloud.v1.ConsoleService/DeleteDistribution"
 	// ConsoleServiceSyncAlertsProcedure is the fully-qualified name of the ConsoleService's SyncAlerts
 	// RPC.
 	ConsoleServiceSyncAlertsProcedure = "/taramanji.cloud.v1.ConsoleService/SyncAlerts"
@@ -93,6 +120,18 @@ type ConsoleServiceClient interface {
 	PreviewApi(context.Context, *connect.Request[v1.PreviewApiRequest]) (*connect.Response[v1.PreviewApiResponse], error)
 	ApplyApi(context.Context, *connect.Request[v1.ApplyApiRequest]) (*connect.Response[v1.ApplyApiResponse], error)
 	DeleteApi(context.Context, *connect.Request[v1.DeleteApiRequest]) (*connect.Response[v1.DeleteApiResponse], error)
+	// バケット: ファイルの置き場（<環境>/buckets/<名前>.yaml の ConfigMap）。外には CDN を通してだけ出せる
+	ListBuckets(context.Context, *connect.Request[v1.ListBucketsRequest]) (*connect.Response[v1.ListBucketsResponse], error)
+	CreateBucket(context.Context, *connect.Request[v1.CreateBucketRequest]) (*connect.Response[v1.CreateBucketResponse], error)
+	// 空で、どの CDN からも使われていないバケットだけ消せる
+	DeleteBucket(context.Context, *connect.Request[v1.DeleteBucketRequest]) (*connect.Response[v1.DeleteBucketResponse], error)
+	ListObjects(context.Context, *connect.Request[v1.ListObjectsRequest]) (*connect.Response[v1.ListObjectsResponse], error)
+	DeleteObject(context.Context, *connect.Request[v1.DeleteObjectRequest]) (*connect.Response[v1.DeleteObjectResponse], error)
+	// CDN: 公開するホスト名（<名前>-cloud.taramanji.com）と、その元（バケットか関数）、キャッシュの長さ
+	ListDistributions(context.Context, *connect.Request[v1.ListDistributionsRequest]) (*connect.Response[v1.ListDistributionsResponse], error)
+	PreviewDistribution(context.Context, *connect.Request[v1.PreviewDistributionRequest]) (*connect.Response[v1.PreviewDistributionResponse], error)
+	ApplyDistribution(context.Context, *connect.Request[v1.ApplyDistributionRequest]) (*connect.Response[v1.ApplyDistributionResponse], error)
+	DeleteDistribution(context.Context, *connect.Request[v1.DeleteDistributionRequest]) (*connect.Response[v1.DeleteDistributionResponse], error)
 	// リポジトリの YAML に合わせて、Datadog のモニターを作り直す（git に直接 push したあとに呼ぶ）
 	SyncAlerts(context.Context, *connect.Request[v1.SyncAlertsRequest]) (*connect.Response[v1.SyncAlertsResponse], error)
 }
@@ -180,6 +219,60 @@ func NewConsoleServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 			connect.WithSchema(consoleServiceMethods.ByName("DeleteApi")),
 			connect.WithClientOptions(opts...),
 		),
+		listBuckets: connect.NewClient[v1.ListBucketsRequest, v1.ListBucketsResponse](
+			httpClient,
+			baseURL+ConsoleServiceListBucketsProcedure,
+			connect.WithSchema(consoleServiceMethods.ByName("ListBuckets")),
+			connect.WithClientOptions(opts...),
+		),
+		createBucket: connect.NewClient[v1.CreateBucketRequest, v1.CreateBucketResponse](
+			httpClient,
+			baseURL+ConsoleServiceCreateBucketProcedure,
+			connect.WithSchema(consoleServiceMethods.ByName("CreateBucket")),
+			connect.WithClientOptions(opts...),
+		),
+		deleteBucket: connect.NewClient[v1.DeleteBucketRequest, v1.DeleteBucketResponse](
+			httpClient,
+			baseURL+ConsoleServiceDeleteBucketProcedure,
+			connect.WithSchema(consoleServiceMethods.ByName("DeleteBucket")),
+			connect.WithClientOptions(opts...),
+		),
+		listObjects: connect.NewClient[v1.ListObjectsRequest, v1.ListObjectsResponse](
+			httpClient,
+			baseURL+ConsoleServiceListObjectsProcedure,
+			connect.WithSchema(consoleServiceMethods.ByName("ListObjects")),
+			connect.WithClientOptions(opts...),
+		),
+		deleteObject: connect.NewClient[v1.DeleteObjectRequest, v1.DeleteObjectResponse](
+			httpClient,
+			baseURL+ConsoleServiceDeleteObjectProcedure,
+			connect.WithSchema(consoleServiceMethods.ByName("DeleteObject")),
+			connect.WithClientOptions(opts...),
+		),
+		listDistributions: connect.NewClient[v1.ListDistributionsRequest, v1.ListDistributionsResponse](
+			httpClient,
+			baseURL+ConsoleServiceListDistributionsProcedure,
+			connect.WithSchema(consoleServiceMethods.ByName("ListDistributions")),
+			connect.WithClientOptions(opts...),
+		),
+		previewDistribution: connect.NewClient[v1.PreviewDistributionRequest, v1.PreviewDistributionResponse](
+			httpClient,
+			baseURL+ConsoleServicePreviewDistributionProcedure,
+			connect.WithSchema(consoleServiceMethods.ByName("PreviewDistribution")),
+			connect.WithClientOptions(opts...),
+		),
+		applyDistribution: connect.NewClient[v1.ApplyDistributionRequest, v1.ApplyDistributionResponse](
+			httpClient,
+			baseURL+ConsoleServiceApplyDistributionProcedure,
+			connect.WithSchema(consoleServiceMethods.ByName("ApplyDistribution")),
+			connect.WithClientOptions(opts...),
+		),
+		deleteDistribution: connect.NewClient[v1.DeleteDistributionRequest, v1.DeleteDistributionResponse](
+			httpClient,
+			baseURL+ConsoleServiceDeleteDistributionProcedure,
+			connect.WithSchema(consoleServiceMethods.ByName("DeleteDistribution")),
+			connect.WithClientOptions(opts...),
+		),
 		syncAlerts: connect.NewClient[v1.SyncAlertsRequest, v1.SyncAlertsResponse](
 			httpClient,
 			baseURL+ConsoleServiceSyncAlertsProcedure,
@@ -191,19 +284,28 @@ func NewConsoleServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 
 // consoleServiceClient implements ConsoleServiceClient.
 type consoleServiceClient struct {
-	getOverview       *connect.Client[v1.GetOverviewRequest, v1.GetOverviewResponse]
-	getMetrics        *connect.Client[v1.GetMetricsRequest, v1.GetMetricsResponse]
-	getCapacity       *connect.Client[v1.GetCapacityRequest, v1.GetCapacityResponse]
-	getHostingOptions *connect.Client[v1.GetHostingOptionsRequest, v1.GetHostingOptionsResponse]
-	listFunctions     *connect.Client[v1.ListFunctionsRequest, v1.ListFunctionsResponse]
-	previewFunction   *connect.Client[v1.PreviewFunctionRequest, v1.PreviewFunctionResponse]
-	applyFunction     *connect.Client[v1.ApplyFunctionRequest, v1.ApplyFunctionResponse]
-	deleteFunction    *connect.Client[v1.DeleteFunctionRequest, v1.DeleteFunctionResponse]
-	listApis          *connect.Client[v1.ListApisRequest, v1.ListApisResponse]
-	previewApi        *connect.Client[v1.PreviewApiRequest, v1.PreviewApiResponse]
-	applyApi          *connect.Client[v1.ApplyApiRequest, v1.ApplyApiResponse]
-	deleteApi         *connect.Client[v1.DeleteApiRequest, v1.DeleteApiResponse]
-	syncAlerts        *connect.Client[v1.SyncAlertsRequest, v1.SyncAlertsResponse]
+	getOverview         *connect.Client[v1.GetOverviewRequest, v1.GetOverviewResponse]
+	getMetrics          *connect.Client[v1.GetMetricsRequest, v1.GetMetricsResponse]
+	getCapacity         *connect.Client[v1.GetCapacityRequest, v1.GetCapacityResponse]
+	getHostingOptions   *connect.Client[v1.GetHostingOptionsRequest, v1.GetHostingOptionsResponse]
+	listFunctions       *connect.Client[v1.ListFunctionsRequest, v1.ListFunctionsResponse]
+	previewFunction     *connect.Client[v1.PreviewFunctionRequest, v1.PreviewFunctionResponse]
+	applyFunction       *connect.Client[v1.ApplyFunctionRequest, v1.ApplyFunctionResponse]
+	deleteFunction      *connect.Client[v1.DeleteFunctionRequest, v1.DeleteFunctionResponse]
+	listApis            *connect.Client[v1.ListApisRequest, v1.ListApisResponse]
+	previewApi          *connect.Client[v1.PreviewApiRequest, v1.PreviewApiResponse]
+	applyApi            *connect.Client[v1.ApplyApiRequest, v1.ApplyApiResponse]
+	deleteApi           *connect.Client[v1.DeleteApiRequest, v1.DeleteApiResponse]
+	listBuckets         *connect.Client[v1.ListBucketsRequest, v1.ListBucketsResponse]
+	createBucket        *connect.Client[v1.CreateBucketRequest, v1.CreateBucketResponse]
+	deleteBucket        *connect.Client[v1.DeleteBucketRequest, v1.DeleteBucketResponse]
+	listObjects         *connect.Client[v1.ListObjectsRequest, v1.ListObjectsResponse]
+	deleteObject        *connect.Client[v1.DeleteObjectRequest, v1.DeleteObjectResponse]
+	listDistributions   *connect.Client[v1.ListDistributionsRequest, v1.ListDistributionsResponse]
+	previewDistribution *connect.Client[v1.PreviewDistributionRequest, v1.PreviewDistributionResponse]
+	applyDistribution   *connect.Client[v1.ApplyDistributionRequest, v1.ApplyDistributionResponse]
+	deleteDistribution  *connect.Client[v1.DeleteDistributionRequest, v1.DeleteDistributionResponse]
+	syncAlerts          *connect.Client[v1.SyncAlertsRequest, v1.SyncAlertsResponse]
 }
 
 // GetOverview calls taramanji.cloud.v1.ConsoleService.GetOverview.
@@ -266,6 +368,51 @@ func (c *consoleServiceClient) DeleteApi(ctx context.Context, req *connect.Reque
 	return c.deleteApi.CallUnary(ctx, req)
 }
 
+// ListBuckets calls taramanji.cloud.v1.ConsoleService.ListBuckets.
+func (c *consoleServiceClient) ListBuckets(ctx context.Context, req *connect.Request[v1.ListBucketsRequest]) (*connect.Response[v1.ListBucketsResponse], error) {
+	return c.listBuckets.CallUnary(ctx, req)
+}
+
+// CreateBucket calls taramanji.cloud.v1.ConsoleService.CreateBucket.
+func (c *consoleServiceClient) CreateBucket(ctx context.Context, req *connect.Request[v1.CreateBucketRequest]) (*connect.Response[v1.CreateBucketResponse], error) {
+	return c.createBucket.CallUnary(ctx, req)
+}
+
+// DeleteBucket calls taramanji.cloud.v1.ConsoleService.DeleteBucket.
+func (c *consoleServiceClient) DeleteBucket(ctx context.Context, req *connect.Request[v1.DeleteBucketRequest]) (*connect.Response[v1.DeleteBucketResponse], error) {
+	return c.deleteBucket.CallUnary(ctx, req)
+}
+
+// ListObjects calls taramanji.cloud.v1.ConsoleService.ListObjects.
+func (c *consoleServiceClient) ListObjects(ctx context.Context, req *connect.Request[v1.ListObjectsRequest]) (*connect.Response[v1.ListObjectsResponse], error) {
+	return c.listObjects.CallUnary(ctx, req)
+}
+
+// DeleteObject calls taramanji.cloud.v1.ConsoleService.DeleteObject.
+func (c *consoleServiceClient) DeleteObject(ctx context.Context, req *connect.Request[v1.DeleteObjectRequest]) (*connect.Response[v1.DeleteObjectResponse], error) {
+	return c.deleteObject.CallUnary(ctx, req)
+}
+
+// ListDistributions calls taramanji.cloud.v1.ConsoleService.ListDistributions.
+func (c *consoleServiceClient) ListDistributions(ctx context.Context, req *connect.Request[v1.ListDistributionsRequest]) (*connect.Response[v1.ListDistributionsResponse], error) {
+	return c.listDistributions.CallUnary(ctx, req)
+}
+
+// PreviewDistribution calls taramanji.cloud.v1.ConsoleService.PreviewDistribution.
+func (c *consoleServiceClient) PreviewDistribution(ctx context.Context, req *connect.Request[v1.PreviewDistributionRequest]) (*connect.Response[v1.PreviewDistributionResponse], error) {
+	return c.previewDistribution.CallUnary(ctx, req)
+}
+
+// ApplyDistribution calls taramanji.cloud.v1.ConsoleService.ApplyDistribution.
+func (c *consoleServiceClient) ApplyDistribution(ctx context.Context, req *connect.Request[v1.ApplyDistributionRequest]) (*connect.Response[v1.ApplyDistributionResponse], error) {
+	return c.applyDistribution.CallUnary(ctx, req)
+}
+
+// DeleteDistribution calls taramanji.cloud.v1.ConsoleService.DeleteDistribution.
+func (c *consoleServiceClient) DeleteDistribution(ctx context.Context, req *connect.Request[v1.DeleteDistributionRequest]) (*connect.Response[v1.DeleteDistributionResponse], error) {
+	return c.deleteDistribution.CallUnary(ctx, req)
+}
+
 // SyncAlerts calls taramanji.cloud.v1.ConsoleService.SyncAlerts.
 func (c *consoleServiceClient) SyncAlerts(ctx context.Context, req *connect.Request[v1.SyncAlertsRequest]) (*connect.Response[v1.SyncAlertsResponse], error) {
 	return c.syncAlerts.CallUnary(ctx, req)
@@ -292,6 +439,18 @@ type ConsoleServiceHandler interface {
 	PreviewApi(context.Context, *connect.Request[v1.PreviewApiRequest]) (*connect.Response[v1.PreviewApiResponse], error)
 	ApplyApi(context.Context, *connect.Request[v1.ApplyApiRequest]) (*connect.Response[v1.ApplyApiResponse], error)
 	DeleteApi(context.Context, *connect.Request[v1.DeleteApiRequest]) (*connect.Response[v1.DeleteApiResponse], error)
+	// バケット: ファイルの置き場（<環境>/buckets/<名前>.yaml の ConfigMap）。外には CDN を通してだけ出せる
+	ListBuckets(context.Context, *connect.Request[v1.ListBucketsRequest]) (*connect.Response[v1.ListBucketsResponse], error)
+	CreateBucket(context.Context, *connect.Request[v1.CreateBucketRequest]) (*connect.Response[v1.CreateBucketResponse], error)
+	// 空で、どの CDN からも使われていないバケットだけ消せる
+	DeleteBucket(context.Context, *connect.Request[v1.DeleteBucketRequest]) (*connect.Response[v1.DeleteBucketResponse], error)
+	ListObjects(context.Context, *connect.Request[v1.ListObjectsRequest]) (*connect.Response[v1.ListObjectsResponse], error)
+	DeleteObject(context.Context, *connect.Request[v1.DeleteObjectRequest]) (*connect.Response[v1.DeleteObjectResponse], error)
+	// CDN: 公開するホスト名（<名前>-cloud.taramanji.com）と、その元（バケットか関数）、キャッシュの長さ
+	ListDistributions(context.Context, *connect.Request[v1.ListDistributionsRequest]) (*connect.Response[v1.ListDistributionsResponse], error)
+	PreviewDistribution(context.Context, *connect.Request[v1.PreviewDistributionRequest]) (*connect.Response[v1.PreviewDistributionResponse], error)
+	ApplyDistribution(context.Context, *connect.Request[v1.ApplyDistributionRequest]) (*connect.Response[v1.ApplyDistributionResponse], error)
+	DeleteDistribution(context.Context, *connect.Request[v1.DeleteDistributionRequest]) (*connect.Response[v1.DeleteDistributionResponse], error)
 	// リポジトリの YAML に合わせて、Datadog のモニターを作り直す（git に直接 push したあとに呼ぶ）
 	SyncAlerts(context.Context, *connect.Request[v1.SyncAlertsRequest]) (*connect.Response[v1.SyncAlertsResponse], error)
 }
@@ -375,6 +534,60 @@ func NewConsoleServiceHandler(svc ConsoleServiceHandler, opts ...connect.Handler
 		connect.WithSchema(consoleServiceMethods.ByName("DeleteApi")),
 		connect.WithHandlerOptions(opts...),
 	)
+	consoleServiceListBucketsHandler := connect.NewUnaryHandler(
+		ConsoleServiceListBucketsProcedure,
+		svc.ListBuckets,
+		connect.WithSchema(consoleServiceMethods.ByName("ListBuckets")),
+		connect.WithHandlerOptions(opts...),
+	)
+	consoleServiceCreateBucketHandler := connect.NewUnaryHandler(
+		ConsoleServiceCreateBucketProcedure,
+		svc.CreateBucket,
+		connect.WithSchema(consoleServiceMethods.ByName("CreateBucket")),
+		connect.WithHandlerOptions(opts...),
+	)
+	consoleServiceDeleteBucketHandler := connect.NewUnaryHandler(
+		ConsoleServiceDeleteBucketProcedure,
+		svc.DeleteBucket,
+		connect.WithSchema(consoleServiceMethods.ByName("DeleteBucket")),
+		connect.WithHandlerOptions(opts...),
+	)
+	consoleServiceListObjectsHandler := connect.NewUnaryHandler(
+		ConsoleServiceListObjectsProcedure,
+		svc.ListObjects,
+		connect.WithSchema(consoleServiceMethods.ByName("ListObjects")),
+		connect.WithHandlerOptions(opts...),
+	)
+	consoleServiceDeleteObjectHandler := connect.NewUnaryHandler(
+		ConsoleServiceDeleteObjectProcedure,
+		svc.DeleteObject,
+		connect.WithSchema(consoleServiceMethods.ByName("DeleteObject")),
+		connect.WithHandlerOptions(opts...),
+	)
+	consoleServiceListDistributionsHandler := connect.NewUnaryHandler(
+		ConsoleServiceListDistributionsProcedure,
+		svc.ListDistributions,
+		connect.WithSchema(consoleServiceMethods.ByName("ListDistributions")),
+		connect.WithHandlerOptions(opts...),
+	)
+	consoleServicePreviewDistributionHandler := connect.NewUnaryHandler(
+		ConsoleServicePreviewDistributionProcedure,
+		svc.PreviewDistribution,
+		connect.WithSchema(consoleServiceMethods.ByName("PreviewDistribution")),
+		connect.WithHandlerOptions(opts...),
+	)
+	consoleServiceApplyDistributionHandler := connect.NewUnaryHandler(
+		ConsoleServiceApplyDistributionProcedure,
+		svc.ApplyDistribution,
+		connect.WithSchema(consoleServiceMethods.ByName("ApplyDistribution")),
+		connect.WithHandlerOptions(opts...),
+	)
+	consoleServiceDeleteDistributionHandler := connect.NewUnaryHandler(
+		ConsoleServiceDeleteDistributionProcedure,
+		svc.DeleteDistribution,
+		connect.WithSchema(consoleServiceMethods.ByName("DeleteDistribution")),
+		connect.WithHandlerOptions(opts...),
+	)
 	consoleServiceSyncAlertsHandler := connect.NewUnaryHandler(
 		ConsoleServiceSyncAlertsProcedure,
 		svc.SyncAlerts,
@@ -407,6 +620,24 @@ func NewConsoleServiceHandler(svc ConsoleServiceHandler, opts ...connect.Handler
 			consoleServiceApplyApiHandler.ServeHTTP(w, r)
 		case ConsoleServiceDeleteApiProcedure:
 			consoleServiceDeleteApiHandler.ServeHTTP(w, r)
+		case ConsoleServiceListBucketsProcedure:
+			consoleServiceListBucketsHandler.ServeHTTP(w, r)
+		case ConsoleServiceCreateBucketProcedure:
+			consoleServiceCreateBucketHandler.ServeHTTP(w, r)
+		case ConsoleServiceDeleteBucketProcedure:
+			consoleServiceDeleteBucketHandler.ServeHTTP(w, r)
+		case ConsoleServiceListObjectsProcedure:
+			consoleServiceListObjectsHandler.ServeHTTP(w, r)
+		case ConsoleServiceDeleteObjectProcedure:
+			consoleServiceDeleteObjectHandler.ServeHTTP(w, r)
+		case ConsoleServiceListDistributionsProcedure:
+			consoleServiceListDistributionsHandler.ServeHTTP(w, r)
+		case ConsoleServicePreviewDistributionProcedure:
+			consoleServicePreviewDistributionHandler.ServeHTTP(w, r)
+		case ConsoleServiceApplyDistributionProcedure:
+			consoleServiceApplyDistributionHandler.ServeHTTP(w, r)
+		case ConsoleServiceDeleteDistributionProcedure:
+			consoleServiceDeleteDistributionHandler.ServeHTTP(w, r)
 		case ConsoleServiceSyncAlertsProcedure:
 			consoleServiceSyncAlertsHandler.ServeHTTP(w, r)
 		default:
@@ -464,6 +695,42 @@ func (UnimplementedConsoleServiceHandler) ApplyApi(context.Context, *connect.Req
 
 func (UnimplementedConsoleServiceHandler) DeleteApi(context.Context, *connect.Request[v1.DeleteApiRequest]) (*connect.Response[v1.DeleteApiResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.cloud.v1.ConsoleService.DeleteApi is not implemented"))
+}
+
+func (UnimplementedConsoleServiceHandler) ListBuckets(context.Context, *connect.Request[v1.ListBucketsRequest]) (*connect.Response[v1.ListBucketsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.cloud.v1.ConsoleService.ListBuckets is not implemented"))
+}
+
+func (UnimplementedConsoleServiceHandler) CreateBucket(context.Context, *connect.Request[v1.CreateBucketRequest]) (*connect.Response[v1.CreateBucketResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.cloud.v1.ConsoleService.CreateBucket is not implemented"))
+}
+
+func (UnimplementedConsoleServiceHandler) DeleteBucket(context.Context, *connect.Request[v1.DeleteBucketRequest]) (*connect.Response[v1.DeleteBucketResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.cloud.v1.ConsoleService.DeleteBucket is not implemented"))
+}
+
+func (UnimplementedConsoleServiceHandler) ListObjects(context.Context, *connect.Request[v1.ListObjectsRequest]) (*connect.Response[v1.ListObjectsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.cloud.v1.ConsoleService.ListObjects is not implemented"))
+}
+
+func (UnimplementedConsoleServiceHandler) DeleteObject(context.Context, *connect.Request[v1.DeleteObjectRequest]) (*connect.Response[v1.DeleteObjectResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.cloud.v1.ConsoleService.DeleteObject is not implemented"))
+}
+
+func (UnimplementedConsoleServiceHandler) ListDistributions(context.Context, *connect.Request[v1.ListDistributionsRequest]) (*connect.Response[v1.ListDistributionsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.cloud.v1.ConsoleService.ListDistributions is not implemented"))
+}
+
+func (UnimplementedConsoleServiceHandler) PreviewDistribution(context.Context, *connect.Request[v1.PreviewDistributionRequest]) (*connect.Response[v1.PreviewDistributionResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.cloud.v1.ConsoleService.PreviewDistribution is not implemented"))
+}
+
+func (UnimplementedConsoleServiceHandler) ApplyDistribution(context.Context, *connect.Request[v1.ApplyDistributionRequest]) (*connect.Response[v1.ApplyDistributionResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.cloud.v1.ConsoleService.ApplyDistribution is not implemented"))
+}
+
+func (UnimplementedConsoleServiceHandler) DeleteDistribution(context.Context, *connect.Request[v1.DeleteDistributionRequest]) (*connect.Response[v1.DeleteDistributionResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.cloud.v1.ConsoleService.DeleteDistribution is not implemented"))
 }
 
 func (UnimplementedConsoleServiceHandler) SyncAlerts(context.Context, *connect.Request[v1.SyncAlertsRequest]) (*connect.Response[v1.SyncAlertsResponse], error) {
