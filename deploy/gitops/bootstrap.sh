@@ -24,7 +24,7 @@ helm --kube-context "$CTX" upgrade --install argocd argo/argo-cd --version 10.9.
 
 # リポジトリは private。読み取り専用の Deploy key（SSH）を SealedSecret で渡す（鍵は deploy/k8s/secrets/argocd/、git に入らない）
 k apply -f sealed/repo-taramanji.yaml
-# taramanji cloud のアプリ用のリポジトリ（deploy/cloud/scripts/seal-apps-repo.sh が作る。まだなければ飛ばす）
+# taramanji cloud のアプリ用のリポジトリ（作り方は deploy/cloud/README.md。まだなければ飛ばす）
 [ -f sealed/repo-taramanji-cloud-apps.yaml ] && k apply -f sealed/repo-taramanji-cloud-apps.yaml
 k apply -f root.yaml
 echo
