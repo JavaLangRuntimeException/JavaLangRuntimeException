@@ -127,6 +127,54 @@ type DistributionSpec struct {
 	CacheSeconds int32
 	SPA          bool
 	Behaviors    []DistributionOrigin
+	// Aliases は独自ドメイン（CloudFront の代替ドメイン名）。<ラベル>.taramanji.com だけ。<名前>-cdn-cloud と同じくログインあり
+	Aliases []string
+}
+
+// MaxAliases は 1 つの CDN に付けられる独自ドメインの数
+const MaxAliases = 5
+
+// reservedAliases は独自ドメインに使えないラベル（taramanji.com・gws・管理画面・taramanji cloud が使う名前と、使いそうな名前）。
+// DNS に別のレコードがある名前も、DNS を登録するときに弾く（自分が作ったレコードだけを扱う）
+var reservedAliases = map[string]bool{
+	"www": true, "gws": true, "stg": true, "stg-gws": true, "dev": true, "staging": true, "prod": true,
+	"dev01": true, "dev02": true, "dev03": true, "dev01-gws": true, "dev02-gws": true, "dev03-gws": true,
+	"rollouts": true, "argocd": true, "grafana": true, "datadog": true, "status": true, "admin": true, "api": true, "auth": true, "login": true,
+	"mail": true, "smtp": true, "imap": true, "mx": true, "ns1": true, "ns2": true, "autoconfig": true, "autodiscover": true,
+	"cloud": true, "cloud-stg": true, "cloud-dev": true,
+}
+
+// ValidateAliases は独自ドメインが <ラベル>.<ゾーン>（1 階層）で、予約した名前・taramanji cloud のホスト名の形でないことを確かめる
+func (s DistributionSpec) ValidateAliases(t APITarget) error {
+	if len(s.Aliases) == 0 {
+		return nil
+	}
+	if t.AliasZone == "" {
+		return fieldErr("aliases", "この環境では独自ドメインは使えません")
+	}
+	if len(s.Aliases) > MaxAliases {
+		return fieldErr("aliases", "独自ドメインは %d 個までです", MaxAliases)
+	}
+	seen := map[string]bool{}
+	for _, a := range s.Aliases {
+		label, ok := strings.CutSuffix(a, "."+t.AliasZone)
+		if !ok || !ValidName(label) {
+			return fieldErr("aliases", "独自ドメイン %q は <英小文字・数字・ハイフン>.%s の形（1 階層）にしてください", a, t.AliasZone)
+		}
+		if reservedAliases[label] || strings.HasPrefix(label, "cloud") || strings.Contains(label, "-cloud") {
+			return fieldErr("aliases", "%s は使えません（予約している名前か、taramanji cloud のホスト名の形です）", a)
+		}
+		if seen[a] {
+			return fieldErr("aliases", "独自ドメイン %s が重複しています", a)
+		}
+		seen[a] = true
+	}
+	return nil
+}
+
+// Hosts は、この CDN のホスト名（<名前>-cdn-cloud と独自ドメイン）
+func (s DistributionSpec) Hosts(t APITarget) []string {
+	return append([]string{t.Host(HostCDN, s.Name)}, s.Aliases...)
 }
 
 // MaxBehaviors は既定（/）のほかに足せるパスの数（HTTPRoute の rules は 16 まで）
@@ -142,8 +190,16 @@ func (s DistributionSpec) Origins() []DistributionOrigin {
 	return append(append([]DistributionOrigin{}, s.Normalize().Behaviors...), s.Default())
 }
 
-// Normalize はパスの前後の空白と末尾の / を落とし、長いパスが先に来るように並べる
+// Normalize はパスの前後の空白と末尾の / を落とし、長いパスが先に来るように並べる。独自ドメインは小文字にして並べる
 func (s DistributionSpec) Normalize() DistributionSpec {
+	aliases := []string{}
+	for _, a := range s.Aliases {
+		if a = strings.TrimRight(strings.ToLower(strings.TrimSpace(a)), "."); a != "" && !containsString(aliases, a) {
+			aliases = append(aliases, a)
+		}
+	}
+	sort.Strings(aliases)
+	s.Aliases = aliases
 	b := make([]DistributionOrigin, len(s.Behaviors))
 	for i, o := range s.Behaviors {
 		p := strings.TrimSpace(o.Path)
@@ -241,7 +297,10 @@ func RenderDistributionYAML(s DistributionSpec, t APITarget) (string, error) {
 		Namespace   string `yaml:"namespace"`
 		SectionName string `yaml:"sectionName"`
 	}{Name: gatewayName, Namespace: gatewayNamespace, SectionName: gatewayListener})
-	r.Spec.Hostnames = []string{t.Host(HostCDN, s.Name)}
+	if err := s.ValidateAliases(t); err != nil {
+		return "", err
+	}
+	r.Spec.Hostnames = s.Hosts(t)
 	for _, o := range s.Origins() {
 		var rule routeRule
 		var m routeMatch
@@ -290,6 +349,10 @@ func ParseDistributionYAML(name, src string, t APITarget) (*ParsedDistribution, 
 		return nil, fieldErr("yaml", "HTTPRoute を 1 つだけ書いてください")
 	}
 	spec := DistributionSpec{Name: name}
+	// 1 つ目は <名前>-cdn-cloud、残りは独自ドメイン（形は下の作り直しで確かめる）
+	if len(r.Spec.Hostnames) > 1 {
+		spec.Aliases = r.Spec.Hostnames[1:]
+	}
 	hasDefault := false
 	for _, rule := range r.Spec.Rules {
 		if len(rule.Matches) != 1 || len(rule.Filters) != 1 {
@@ -323,6 +386,9 @@ func ParseDistributionYAML(name, src string, t APITarget) (*ParsedDistribution, 
 	if err := spec.Validate(); err != nil {
 		return nil, fieldErr("yaml", "%v", err)
 	}
+	if err := spec.ValidateAliases(t); err != nil {
+		return nil, fieldErr("yaml", "%v", err)
+	}
 	again, err := RenderDistributionYAML(spec, t)
 	if err != nil {
 		return nil, err
@@ -331,4 +397,27 @@ func ParseDistributionYAML(name, src string, t APITarget) (*ParsedDistribution, 
 		return nil, fieldErr("yaml", "CDN の YAML は、コンソールが作る形（ホスト名 %s・パスごとに cloud-gw へ・ヘッダー 3 つ・長いパスから順で最後が /）から変えられません", t.Host(HostCDN, name))
 	}
 	return &ParsedDistribution{Spec: spec, FormEditable: true}, nil
+}
+
+// AliasesInYAML は CDN の YAML の HTTPRoute に書かれた独自ドメイン（<ラベル>.<ゾーン>）を返す。
+// YAML が決まりに合わなくても読む（Access の守りを外してよいかを決めるときに、読めない YAML の独自ドメインを見落とさないため）
+func AliasesInYAML(src, zone string) []string {
+	if zone == "" {
+		return nil
+	}
+	var r k8sHTTPRoute
+	if n, err := decodeKind(src, "HTTPRoute", &r); err != nil || n == 0 {
+		return nil
+	}
+	out := []string{}
+	for _, h := range r.Spec.Hostnames {
+		h = strings.ToLower(strings.TrimRight(h, "."))
+		label, ok := strings.CutSuffix(h, "."+zone)
+		// taramanji cloud が作るホスト名（<名前>-cdn-cloud など）は独自ドメインではない
+		if !ok || label == "" || strings.Contains(label, "-cloud") || containsString(out, h) {
+			continue
+		}
+		out = append(out, h)
+	}
+	return out
 }

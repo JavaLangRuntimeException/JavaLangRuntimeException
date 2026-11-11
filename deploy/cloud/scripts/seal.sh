@@ -44,6 +44,9 @@ fi
 if [ "$ENV" = prod ] && [ -f "$SRC/cloudflare.env" ] && [ -f "$SRC/tunnel-cloud.json" ]; then
   args+=(--from-literal=CF_DNS_API_TOKEN="$(get CF_DNS_API_TOKEN "$SRC/cloudflare.env")" --from-literal=CF_ZONE_ID="$(get CF_ZONE_ID "$SRC/cloudflare.env")" \
     --from-literal=CF_TUNNEL_ID="$(python3 -c "import json,sys;print(json.load(open(sys.argv[1]))['TunnelID'])" "$SRC/tunnel-cloud.json")")
+  # CDN の独自ドメインを Cloudflare Access に登録するトークン（Account › Access: Apps and Policies › Edit）。cloudflare.env の CF_ACCESS_API_TOKEN
+  ACCESS_TOKEN="$(get CF_ACCESS_API_TOKEN "$SRC/cloudflare.env" || true)"
+  [ -z "$ACCESS_TOKEN" ] || args+=(--from-literal=CF_ACCESS_API_TOKEN="$ACCESS_TOKEN")
 fi
 # Argo CD の画面で関数の Pod を見るための、ApplicationSet（plugin ジェネレーター）とコントローラーのあいだのトークン（本番だけ）。
 # 1 回だけ作る。Argo CD 側の Secret（argocd namespace）も同じ値で作る

@@ -187,6 +187,12 @@ type DNS interface {
 	Remove(ctx context.Context, host string) error
 }
 
+// AccessHosts は CDN の独自ドメインを Cloudflare Access で守る（ログインあり）。
+// SetHosts は守るホスト名の一覧を、渡したものにそろえる（空なら守るアプリを消す）
+type AccessHosts interface {
+	SetHosts(ctx context.Context, hosts []string) error
+}
+
 // LabeledObject は ConfigMap / Secret / Namespace の、名前・ラベル・注釈（ConfigMap は data も）
 type LabeledObject struct {
 	Name        string

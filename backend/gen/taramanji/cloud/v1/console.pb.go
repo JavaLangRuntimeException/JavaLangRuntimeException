@@ -1114,6 +1114,8 @@ type GetHostingOptionsResponse struct {
 	CdnHostSuffix string `protobuf:"bytes,20,opt,name=cdn_host_suffix,json=cdnHostSuffix,proto3" json:"cdn_host_suffix,omitempty"`
 	// 公開バケット: <バケット> + これ。例: -storage-cloud.taramanji.com（ログインなし）
 	StorageHostSuffix string `protobuf:"bytes,21,opt,name=storage_host_suffix,json=storageHostSuffix,proto3" json:"storage_host_suffix,omitempty"`
+	// CDN の独自ドメインに使えるゾーン（taramanji.com）。空なら独自ドメインは使えない（Access と DNS のトークンがない環境）
+	CustomDomainZone string `protobuf:"bytes,22,opt,name=custom_domain_zone,json=customDomainZone,proto3" json:"custom_domain_zone,omitempty"`
 	// 系統（画面で型をまとめて見せる順）
 	InstanceFamilies []*InstanceFamily `protobuf:"bytes,18,rep,name=instance_families,json=instanceFamilies,proto3" json:"instance_families,omitempty"`
 	// オブジェクトストレージが動いているか
@@ -1264,6 +1266,13 @@ func (x *GetHostingOptionsResponse) GetCdnHostSuffix() string {
 func (x *GetHostingOptionsResponse) GetStorageHostSuffix() string {
 	if x != nil {
 		return x.StorageHostSuffix
+	}
+	return ""
+}
+
+func (x *GetHostingOptionsResponse) GetCustomDomainZone() string {
+	if x != nil {
+		return x.CustomDomainZone
 	}
 	return ""
 }
@@ -3740,7 +3749,10 @@ type DistributionSpec struct {
 	// バケットが元のとき: ファイルがないパスに index.html を返す（SPA）
 	Spa bool `protobuf:"varint,5,opt,name=spa,proto3" json:"spa,omitempty"`
 	// パスごとの元（CloudFront の behavior）。ここにないパスは、上の元（既定、/）に送る。長いパスが先に当たる
-	Behaviors     []*DistributionBehavior `protobuf:"bytes,6,rep,name=behaviors,proto3" json:"behaviors,omitempty"`
+	Behaviors []*DistributionBehavior `protobuf:"bytes,6,rep,name=behaviors,proto3" json:"behaviors,omitempty"`
+	// 独自ドメイン（CloudFront の代替ドメイン名）。<ラベル>.taramanji.com だけ。CDN を作ったあとに足せる。
+	// 保存すると、Cloudflare Access に登録してから（ログインあり）DNS を作る
+	Aliases       []string `protobuf:"bytes,7,rep,name=aliases,proto3" json:"aliases,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -3813,6 +3825,13 @@ func (x *DistributionSpec) GetSpa() bool {
 func (x *DistributionSpec) GetBehaviors() []*DistributionBehavior {
 	if x != nil {
 		return x.Behaviors
+	}
+	return nil
+}
+
+func (x *DistributionSpec) GetAliases() []string {
+	if x != nil {
+		return x.Aliases
 	}
 	return nil
 }
@@ -5042,7 +5061,7 @@ const file_taramanji_cloud_v1_console_proto_rawDesc = "" +
 	"\x0eInstanceFamily\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05label\x18\x02 \x01(\tR\x05label\x12 \n" +
-	"\vdescription\x18\x03 \x01(\tR\vdescription\"\x88\a\n" +
+	"\vdescription\x18\x03 \x01(\tR\vdescription\"\xb6\a\n" +
 	"\x19GetHostingOptionsResponse\x12G\n" +
 	"\x0einstance_types\x18\x01 \x03(\v2 .taramanji.cloud.v1.InstanceTypeR\rinstanceTypes\x12D\n" +
 	"\ralert_presets\x18\x02 \x03(\v2\x1f.taramanji.cloud.v1.AlertPresetR\falertPresets\x12'\n" +
@@ -5065,7 +5084,8 @@ const file_taramanji_cloud_v1_console_proto_rawDesc = "" +
 	"hostSuffix\x12&\n" +
 	"\x0fapi_host_suffix\x18\x13 \x01(\tR\rapiHostSuffix\x12&\n" +
 	"\x0fcdn_host_suffix\x18\x14 \x01(\tR\rcdnHostSuffix\x12.\n" +
-	"\x13storage_host_suffix\x18\x15 \x01(\tR\x11storageHostSuffix\x12O\n" +
+	"\x13storage_host_suffix\x18\x15 \x01(\tR\x11storageHostSuffix\x12,\n" +
+	"\x12custom_domain_zone\x18\x16 \x01(\tR\x10customDomainZone\x12O\n" +
 	"\x11instance_families\x18\x12 \x03(\v2\".taramanji.cloud.v1.InstanceFamilyR\x10instanceFamilies\x12'\n" +
 	"\x0fstorage_enabled\x18\x0f \x01(\bR\x0estorageEnabled\x12\x1f\n" +
 	"\vdns_enabled\x18\x10 \x01(\bR\n" +
@@ -5224,7 +5244,7 @@ const file_taramanji_cloud_v1_console_proto_rawDesc = "" +
 	"\x13DeleteObjectRequest\x12\x16\n" +
 	"\x06bucket\x18\x01 \x01(\tR\x06bucket\x12\x10\n" +
 	"\x03key\x18\x02 \x01(\tR\x03key\"\x16\n" +
-	"\x14DeleteObjectResponse\"\xde\x01\n" +
+	"\x14DeleteObjectResponse\"\xf8\x01\n" +
 	"\x10DistributionSpec\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1f\n" +
 	"\vorigin_type\x18\x02 \x01(\tR\n" +
@@ -5232,7 +5252,8 @@ const file_taramanji_cloud_v1_console_proto_rawDesc = "" +
 	"\x06origin\x18\x03 \x01(\tR\x06origin\x12#\n" +
 	"\rcache_seconds\x18\x04 \x01(\x05R\fcacheSeconds\x12\x10\n" +
 	"\x03spa\x18\x05 \x01(\bR\x03spa\x12F\n" +
-	"\tbehaviors\x18\x06 \x03(\v2(.taramanji.cloud.v1.DistributionBehaviorR\tbehaviors\"\x9a\x01\n" +
+	"\tbehaviors\x18\x06 \x03(\v2(.taramanji.cloud.v1.DistributionBehaviorR\tbehaviors\x12\x18\n" +
+	"\aaliases\x18\a \x03(\tR\aaliases\"\x9a\x01\n" +
 	"\x14DistributionBehavior\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1f\n" +
 	"\vorigin_type\x18\x02 \x01(\tR\n" +

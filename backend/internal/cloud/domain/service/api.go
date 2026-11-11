@@ -286,6 +286,8 @@ type APITarget struct {
 	HostSuffix string
 	// InvokerNamespace は API Gateway（cloud-gw）がいる namespace（cloud / taramanji-cloud-stg / taramanji-cloud-dev）
 	InvokerNamespace string
+	// AliasZone は CDN の独自ドメイン（代替ドメイン名）に使えるゾーン（"taramanji.com"）。空なら独自ドメインは使えない
+	AliasZone string
 }
 
 // Suffix はサービスのホスト名の接尾辞（"-apigw-cloud.taramanji.com" など）

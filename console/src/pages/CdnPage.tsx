@@ -7,6 +7,7 @@ import { QueryError } from "@/components/QueryError";
 import { DeployBadge, DeployHistory } from "@/components/Deploy";
 import { ResourceEditor } from "@/components/ResourceEditor";
 import {
+  aliasLabelError,
   cachePresets,
   distributionFormErrors,
   distributionFormOf,
@@ -110,6 +111,11 @@ export function CdnPage() {
                         <a href={`https://${d.host}`} target="_blank" rel="noreferrer" className="font-mono text-[13px] text-accent hover:underline">
                           {d.host}
                         </a>
+                        {(d.spec?.aliases ?? []).map((a) => (
+                          <a key={a} href={`https://${a}`} target="_blank" rel="noreferrer" className="block font-mono text-[13px] text-accent hover:underline">
+                            {a}
+                          </a>
+                        ))}
                       </td>
                       <td className="px-4 py-2.5">
                         <DeployBadge kind="cdn" name={d.spec?.name ?? ""} revision={d.source?.revision} />
@@ -330,6 +336,8 @@ function Editor({
           パスを足す
         </button>
       </fieldset>
+
+      {!isNew && <AliasesField zone={opt.customDomainZone} aliases={form.aliases} onChange={(aliases) => set({ aliases })} />}
     </ResourceEditor>
   );
 }
@@ -398,5 +406,73 @@ function BehaviorRow({
       </div>
       {error && <p className="mt-1 text-xs text-bad">{error}</p>}
     </li>
+  );
+}
+
+/** 独自ドメイン（CloudFront の代替ドメイン名）。CDN を作ったあとに足せる。保存すると Access に登録してから DNS を作る */
+function AliasesField({ zone, aliases, onChange }: { zone: string; aliases: string[]; onChange: (aliases: string[]) => void }) {
+  const [label, setLabel] = useState("");
+  const [error, setError] = useState<string | undefined>();
+  const add = () => {
+    const l = label.trim().toLowerCase();
+    const e = aliasLabelError(l) ?? (aliases.includes(`${l}.${zone}`) ? "もう足してあります" : aliases.length >= 5 ? "5 個までです" : undefined);
+    setError(e);
+    if (e) return;
+    onChange([...aliases, `${l}.${zone}`].sort());
+    setLabel("");
+  };
+  return (
+    <fieldset>
+      <Legend
+        info={
+          <>
+            CloudFront の代替ドメイン名にあたります。<code>&lt;ラベル&gt;.{zone || "taramanji.com"}</code> でも、この CDN を開けるようにします。
+            保存すると、先に Cloudflare Access に登録してから（ログインあり）DNS を作ります。外すと DNS を消してから Access から外します。
+            taramanji.com がもう使っている名前（www・gws・stg など）や、ほかの DNS レコードがある名前は使えません。
+          </>
+        }
+      >
+        独自ドメイン
+      </Legend>
+      {!zone ? (
+        <p className="text-sm text-muted">この環境では使えません（Cloudflare Access と DNS のトークンが要ります）。</p>
+      ) : (
+        <>
+          {aliases.length > 0 && (
+            <ul className="mb-2 space-y-1">
+              {aliases.map((a) => (
+                <li key={a} className="flex items-center gap-2">
+                  <Mono>https://{a}</Mono>
+                  <button type="button" className="rounded px-2 py-0.5 text-sm text-muted hover:bg-surface-2 hover:text-bad" onClick={() => onChange(aliases.filter((x) => x !== a))}>
+                    外す
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="flex flex-wrap items-center gap-2">
+            <input
+              className={`${input} w-48 font-mono`}
+              aria-label="独自ドメインのラベル"
+              value={label}
+              onChange={(e) => setLabel(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  add();
+                }
+              }}
+              placeholder="qa"
+              spellCheck={false}
+            />
+            <span className="font-mono text-ink-2">.{zone}</span>
+            <button type="button" className="rounded border border-line-strong px-3 py-1.5 text-sm text-ink-2 hover:bg-surface-2 disabled:opacity-50" disabled={label.trim() === "" || aliases.length >= 5} onClick={add}>
+              足す
+            </button>
+          </div>
+          <p className={`mt-1 text-xs ${error ? "text-bad" : "text-muted"}`}>{error ?? "足したあと「保存」を押すと反映されます（5 個まで）。"}</p>
+        </>
+      )}
+    </fieldset>
   );
 }

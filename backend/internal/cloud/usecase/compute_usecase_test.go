@@ -584,3 +584,124 @@ func TestListDeployments(t *testing.T) {
 		t.Fatalf("%+v %v", out, err)
 	}
 }
+
+// 順番を記録する DNS と Access（独自ドメインは、Access に登録してから DNS を作り、DNS を消してから Access から外す）
+type orderLog struct{ steps []string }
+
+type loggingDNS struct {
+	log   *orderLog
+	hosts map[string]bool
+}
+
+func (d *loggingDNS) Ensure(_ context.Context, host string) error {
+	d.log.steps = append(d.log.steps, "dns+ "+host)
+	d.hosts[host] = true
+	return nil
+}
+
+func (d *loggingDNS) Remove(_ context.Context, host string) error {
+	d.log.steps = append(d.log.steps, "dns- "+host)
+	delete(d.hosts, host)
+	return nil
+}
+
+type fakeAccess struct {
+	log   *orderLog
+	hosts []string
+	err   error
+}
+
+func (a *fakeAccess) SetHosts(_ context.Context, hosts []string) error {
+	if a.err != nil {
+		return a.err
+	}
+	a.log.steps = append(a.log.steps, "access "+strings.Join(hosts, ","))
+	a.hosts = hosts
+	return nil
+}
+
+func TestCDNAliases(t *testing.T) {
+	uc, store, _ := newComputeUC()
+	log := &orderLog{}
+	dns := &loggingDNS{log: log, hosts: map[string]bool{}}
+	acc := &fakeAccess{log: log}
+	uc.d.Objects, uc.d.DNS, uc.d.Access = &fakeObjects{objects: map[string][]gateway.StoredObject{}}, dns, acc
+	uc.d.APITarget.AliasZone = "taramanji.com"
+	ctx := context.Background()
+	if _, err := uc.CreateBucket(ctx, CreateBucketInput{Name: "front"}); err != nil {
+		t.Fatal(err)
+	}
+	opts, _ := uc.GetHostingOptions(ctx, GetHostingOptionsInput{})
+	if opts.CustomDomainZone != "taramanji.com" {
+		t.Fatalf("zone: %q", opts.CustomDomainZone)
+	}
+	base := func(aliases ...string) *DistributionSpec {
+		return &DistributionSpec{Name: "vrst", OriginType: "bucket", Origin: "front", CacheSeconds: 300, Aliases: aliases}
+	}
+	// 作るときは独自ドメインを付けられない（作ってから）
+	if _, err := uc.ApplyDistribution(ctx, ApplyDistributionInput{Spec: base("qa.taramanji.com")}); code(err) != "invalid" {
+		t.Fatalf("作るとき: %v", err)
+	}
+	made, err := uc.ApplyDistribution(ctx, ApplyDistributionInput{Spec: base()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// 予約した名前は使えない
+	if _, err := uc.ApplyDistribution(ctx, ApplyDistributionInput{Spec: base("www.taramanji.com"), Revision: made.Distribution.Source.Revision}); code(err) != "invalid" {
+		t.Fatalf("www: %v", err)
+	}
+	// Access に登録できなければ、保存も DNS もしない
+	acc.err = errors.New("forbidden")
+	log.steps = nil
+	if _, err := uc.ApplyDistribution(ctx, ApplyDistributionInput{Spec: base("qa.taramanji.com"), Revision: made.Distribution.Source.Revision}); code(err) != "access_failed" {
+		t.Fatalf("access 失敗: %v", err)
+	}
+	if strings.Contains(store.files["cdn/vrst"].YAML, "qa.taramanji.com") || dns.hosts["qa.taramanji.com"] {
+		t.Fatal("Access に登録できないのに保存・DNS をした")
+	}
+	acc.err = nil
+	// 足す: Access → DNS の順
+	log.steps = nil
+	added, err := uc.ApplyDistribution(ctx, ApplyDistributionInput{Spec: base("qa.taramanji.com"), Revision: made.Distribution.Source.Revision})
+	if err != nil || added.DnsProblem != "" || len(added.Distribution.Spec.Aliases) != 1 {
+		t.Fatalf("add: %+v %v", added, err)
+	}
+	if strings.Join(log.steps, " | ") != "access qa.taramanji.com | dns+ vrst-cdn-cloud.taramanji.com | dns+ qa.taramanji.com" {
+		t.Fatalf("順番: %v", log.steps)
+	}
+	// ほかの CDN は、同じ独自ドメインを使えない
+	if _, err := uc.ApplyDistribution(ctx, ApplyDistributionInput{Spec: &DistributionSpec{Name: "other", OriginType: "bucket", Origin: "front"}}); err != nil {
+		t.Fatal(err)
+	}
+	other := store.files["cdn/other"]
+	if _, err := uc.ApplyDistribution(ctx, ApplyDistributionInput{Spec: &DistributionSpec{Name: "other", OriginType: "bucket", Origin: "front", Aliases: []string{"qa.taramanji.com"}}, Revision: other.Revision}); code(err) != "host_taken" {
+		t.Fatalf("host_taken: %v", err)
+	}
+	// 外す: DNS を消してから Access から外す
+	log.steps = nil
+	removed, err := uc.ApplyDistribution(ctx, ApplyDistributionInput{Spec: base(), Revision: added.Distribution.Source.Revision})
+	if err != nil || removed.DnsProblem != "" {
+		t.Fatalf("remove: %+v %v", removed, err)
+	}
+	if strings.Join(log.steps, " | ") != "dns+ vrst-cdn-cloud.taramanji.com | dns- qa.taramanji.com | access " {
+		t.Fatalf("外す順番: %v", log.steps)
+	}
+	// 消す: 独自ドメインの DNS も消し、Access から外す
+	again, _ := uc.ApplyDistribution(ctx, ApplyDistributionInput{Spec: base("docs.taramanji.com"), Revision: removed.Distribution.Source.Revision})
+	log.steps = nil
+	if out, err := uc.DeleteDistribution(ctx, DeleteDistributionInput{Name: "vrst", Revision: again.Distribution.Source.Revision}); err != nil || out.DnsProblem != "" {
+		t.Fatalf("delete: %+v %v", out, err)
+	}
+	if strings.Join(log.steps, " | ") != "dns- vrst-cdn-cloud.taramanji.com | dns- docs.taramanji.com | access " || dns.hosts["docs.taramanji.com"] {
+		t.Fatalf("消す順番: %v", log.steps)
+	}
+	// Access がなければ、独自ドメインは使えない
+	uc.d.Access = nil
+	if o, _ := uc.GetHostingOptions(ctx, GetHostingOptionsInput{}); o.CustomDomainZone != "" {
+		t.Fatal("Access がないのにゾーンを返す")
+	}
+	other = store.files["cdn/other"]
+	if _, err := uc.ApplyDistribution(ctx, ApplyDistributionInput{Spec: &DistributionSpec{Name: "other", OriginType: "bucket", Origin: "front", Aliases: []string{"qa.taramanji.com"}}, Revision: other.Revision}); code(err) != "invalid" {
+		t.Fatalf("Access なし: %v", err)
+	}
+}
