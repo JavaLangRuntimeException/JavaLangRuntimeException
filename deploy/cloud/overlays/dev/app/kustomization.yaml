@@ -14,7 +14,7 @@ components:
 # set-version.sh が書き換える（CI の deploy-dev ジョブ）
 images:
   - { name: taramanji/cloud, newName: ghcr.io/javalangruntimeexception/taramanji-cloud, newTag: sha-b720503 }
-  - { name: taramanji/console, newName: ghcr.io/javalangruntimeexception/taramanji-console, newTag: sha-4861cf6 }
+  - { name: taramanji/console, newName: ghcr.io/javalangruntimeexception/taramanji-console, newTag: sha-a532e37 }
 
 patches:
   # 台数（PR を閉じたら 0 にして止める。replicas.yaml）
