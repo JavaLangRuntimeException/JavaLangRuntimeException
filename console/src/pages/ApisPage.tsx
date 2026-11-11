@@ -87,14 +87,14 @@ function ApiTable({ apis, onOpen }: { apis: Api[]; onOpen: (api: Api) => void })
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[640px] text-left">
-        <thead className="border-b border-line text-xs text-muted">
+        <thead className="border-b border-line bg-surface-2 text-[13px] text-ink-2">
           <tr>
-            <th className="px-4 py-2 font-medium">名前</th>
-            <th className="px-4 py-2 font-medium">URL</th>
-            <th className="px-4 py-2 font-medium">ルート</th>
+            <th className="px-4 py-2 font-semibold">名前</th>
+            <th className="px-4 py-2 font-semibold">URL</th>
+            <th className="px-4 py-2 font-semibold">ルート</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-line">
+        <tbody className="divide-y divide-line [&>tr:hover]:bg-surface-2">
           {apis.map((api) => (
             <tr key={api.spec?.name} className="align-top">
               <td className="px-4 py-2.5">

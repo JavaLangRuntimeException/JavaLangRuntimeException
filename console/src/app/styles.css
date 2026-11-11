@@ -1,21 +1,33 @@
 @import "tailwindcss";
 
 /*
- * 色はすべてここの変数で決める。ライト / ダークは OS の設定（prefers-color-scheme）に従う。
+ * 色はすべてここの変数で決める。配色は AWS のコンソールにならう（暗い色の上の帯・灰色の地・白い面・青いリンク・橙の主ボタン）。
+ *ライト / ダークは OS の設定（prefers-color-scheme）に従う。
  * グラフの系列色（--s1〜--s8）は dataviz の検証済みの並び（順番を変えない。色覚の違いでも隣どうしが見分けられる順）
  */
 :root {
   color-scheme: light;
-  --page: #f2f4f5;
+  --page: #f2f3f3;
   --surface: #ffffff;
-  --surface-2: #f6f7f8;
-  --line: #dfe3e6;
-  --line-strong: #c3cbd0;
-  --ink: #14191d;
-  --ink-2: #444e57;
-  --muted: #626c75;
-  --accent: #1b5d6c;
-  --accent-soft: #e2edf0;
+  --surface-2: #f4f6f7;
+  --line: #e1e4e8;
+  --line-strong: #aab1b9;
+  --ink: #16191f;
+  --ink-2: #414b57;
+  --muted: #5f6b7a;
+  /* リンクと選択中（青）。押す操作のうち主なもの（作る・保存する）は primary（橙）にする */
+  --accent: #0b62c4;
+  --accent-soft: #eaf3fd;
+  --primary: #ec7211;
+  --primary-hover: #dd6608;
+  --primary-ink: #16191f;
+  /* 上の帯（どちらの配色でも暗い色） */
+  --nav: #232f3e;
+  --nav-hover: #37475a;
+  --nav-line: #5c6b7c;
+  --nav-ink: #ffffff;
+  --nav-muted: #c5ccd3;
+  --nav-accent: #ff9d2e;
   --ok: #1a7f37;
   --bad: #c62828;
   --warn: #9a6700;
@@ -39,16 +51,25 @@
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
-    --page: #0f1315;
-    --surface: #161b1e;
-    --surface-2: #1c2226;
-    --line: #262e33;
-    --line-strong: #364148;
-    --ink: #e4e9ec;
-    --ink-2: #aab4ba;
-    --muted: #8d989f;
-    --accent: #7cc0cc;
-    --accent-soft: #173339;
+    --page: #0f141a;
+    --surface: #171d25;
+    --surface-2: #1e2630;
+    --line: #2b3542;
+    --line-strong: #4a5868;
+    --ink: #e6eaee;
+    --ink-2: #b1bac4;
+    --muted: #8c98a6;
+    --accent: #5aa7f0;
+    --accent-soft: #14304d;
+    --primary: #f08a2c;
+    --primary-hover: #ff9d42;
+    --primary-ink: #16191f;
+    --nav: #1b2430;
+    --nav-hover: #2c3948;
+    --nav-line: #4a5868;
+    --nav-ink: #ffffff;
+    --nav-muted: #b1bac4;
+    --nav-accent: #ff9d2e;
     --ok: #3fb950;
     --bad: #f47171;
     --warn: #d4a72c;
@@ -83,6 +104,14 @@
   --color-muted: var(--muted);
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-ink: var(--primary-ink);
+  --color-nav: var(--nav);
+  --color-nav-hover: var(--nav-hover);
+  --color-nav-line: var(--nav-line);
+  --color-nav-ink: var(--nav-ink);
+  --color-nav-muted: var(--nav-muted);
   --color-ok: var(--ok);
   --color-bad: var(--bad);
   --color-warn: var(--warn);

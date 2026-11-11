@@ -67,15 +67,15 @@ export function DatabasesPage() {
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[560px] text-left">
-                  <thead className="border-b border-line text-xs text-muted">
+                  <thead className="border-b border-line bg-surface-2 text-[13px] text-ink-2">
                     <tr>
-                      <th className="px-4 py-2 font-medium">名前</th>
-                      <th className="px-4 py-2 font-medium">エンジン</th>
-                      <th className="px-4 py-2 font-medium">状態</th>
-                      <th className="px-4 py-2 font-medium">つないでいる関数</th>
+                      <th className="px-4 py-2 font-semibold">名前</th>
+                      <th className="px-4 py-2 font-semibold">エンジン</th>
+                      <th className="px-4 py-2 font-semibold">状態</th>
+                      <th className="px-4 py-2 font-semibold">つないでいる関数</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-line">
+                  <tbody className="divide-y divide-line [&>tr:hover]:bg-surface-2">
                     {databases.data.databases.map((d) => {
                       const st = databaseStatus({ ...d, problem: d.source?.problem ?? "" });
                       return (

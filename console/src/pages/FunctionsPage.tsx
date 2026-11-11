@@ -104,16 +104,16 @@ function FunctionTable({ functions, onOpen }: { functions: Fn[]; onOpen: (fn: Fn
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[640px] text-left">
-        <thead className="border-b border-line text-xs text-muted">
+        <thead className="border-b border-line bg-surface-2 text-[13px] text-ink-2">
           <tr>
-            <th className="px-4 py-2 font-medium">名前</th>
-            <th className="px-4 py-2 font-medium">状態</th>
-            <th className="px-4 py-2 font-medium">インスタンスタイプ</th>
-            <th className="px-4 py-2 font-medium">監視</th>
-            <th className="px-4 py-2 font-medium">API</th>
+            <th className="px-4 py-2 font-semibold">名前</th>
+            <th className="px-4 py-2 font-semibold">状態</th>
+            <th className="px-4 py-2 font-semibold">インスタンスタイプ</th>
+            <th className="px-4 py-2 font-semibold">監視</th>
+            <th className="px-4 py-2 font-semibold">API</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-line">
+        <tbody className="divide-y divide-line [&>tr:hover]:bg-surface-2">
           {functions.map((fn) => {
             const spec = fn.spec;
             const problem = fn.source?.problem ?? "";
