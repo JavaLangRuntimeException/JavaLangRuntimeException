@@ -62,7 +62,19 @@ func NewInClusterKube(namespace, appsNamespace string) (*Kube, error) {
 }
 
 func (k *Kube) get(ctx context.Context, path string, out any) error {
-	return k.do(ctx, http.MethodGet, path, nil, out)
+	return k.do(ctx, http.MethodGet, path, "", nil, out)
+}
+
+// send は JSON の本文で POST / PUT / DELETE する
+func (k *Kube) send(ctx context.Context, method, path string, body any) error {
+	var b []byte
+	if body != nil {
+		var err error
+		if b, err = json.Marshal(body); err != nil {
+			return err
+		}
+	}
+	return k.do(ctx, method, path, "application/json", b, nil)
 }
 
 // patch は JSON Merge Patch（RFC 7386）を送る
@@ -71,10 +83,10 @@ func (k *Kube) patch(ctx context.Context, path string, body, out any) error {
 	if err != nil {
 		return err
 	}
-	return k.do(ctx, http.MethodPatch, path, b, out)
+	return k.do(ctx, http.MethodPatch, path, "application/merge-patch+json", b, out)
 }
 
-func (k *Kube) do(ctx context.Context, method, path string, body []byte, out any) error {
+func (k *Kube) do(ctx context.Context, method, path, contentType string, body []byte, out any) error {
 	// 投影されたトークンは kubelet が入れ替えるので、毎回読む
 	token, err := os.ReadFile(k.tokenPath)
 	if err != nil {
@@ -89,7 +101,7 @@ func (k *Kube) do(ctx context.Context, method, path string, body []byte, out any
 		return err
 	}
 	if body != nil {
-		req.Header.Set("Content-Type", "application/merge-patch+json")
+		req.Header.Set("Content-Type", contentType)
 	}
 	req.Header.Set("Authorization", "Bearer "+strings.TrimSpace(string(token)))
 	req.Header.Set("Accept", "application/json")
@@ -99,7 +111,7 @@ func (k *Kube) do(ctx context.Context, method, path string, body []byte, out any
 	}
 	defer res.Body.Close()
 	body, _ = io.ReadAll(io.LimitReader(res.Body, 8<<20))
-	if res.StatusCode != http.StatusOK {
+	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusCreated {
 		if len(body) > 300 {
 			body = body[:300]
 		}

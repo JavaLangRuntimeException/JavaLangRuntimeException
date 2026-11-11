@@ -49,6 +49,14 @@ service ConsoleService {
   rpc ApplyDistribution(ApplyDistributionRequest) returns (ApplyDistributionResponse) {}
   rpc DeleteDistribution(DeleteDistributionRequest) returns (DeleteDistributionResponse) {}
 
+  // ---- データベース ----
+  // 共有の PostgreSQL / Redis から、データベース（とユーザー）を切り出す（<環境>/databases/<名前>.yaml の ConfigMap）。
+  // つなぎ方は、関数の「つなぐデータベース」に足す（接続先が環境変数に入る）。パスワードは画面にも git にも出ない
+  rpc ListDatabases(ListDatabasesRequest) returns (ListDatabasesResponse) {}
+  rpc CreateDatabase(CreateDatabaseRequest) returns (CreateDatabaseResponse) {}
+  // どの関数にもつながれていないデータベースだけ消せる。中身は残る（ログインだけ止める）
+  rpc DeleteDatabase(DeleteDatabaseRequest) returns (DeleteDatabaseResponse) {}
+
   // リポジトリの YAML に合わせて、Datadog のモニターを作り直す（git に直接 push したあとに呼ぶ）
   rpc SyncAlerts(SyncAlertsRequest) returns (SyncAlertsResponse) {}
 }
@@ -199,6 +207,8 @@ message GetHostingOptionsResponse {
   bool storage_enabled = 15;
   // ホスト名の DNS を自動で登録できるか（false なら手で登録する）
   bool dns_enabled = 16;
+  // データベースを切り出せるか（共有の PostgreSQL / Redis とコントローラーが動いているか）
+  bool databases_enabled = 17;
 }
 
 message EnvVar {
@@ -235,6 +245,10 @@ message FunctionSpec {
   repeated string alerts = 8;
   // mail / discord
   repeated string notify = 9;
+  // つなぐデータベースの名前。接続先が環境変数 DB_<名前>_URL などに入る
+  repeated string databases = 10;
+  // つなぐバケットの名前。環境変数 BUCKET_<名前>_URL と BUCKET_<名前>_TOKEN が入る
+  repeated string buckets = 11;
 }
 
 message Function {
@@ -460,3 +474,39 @@ message DeleteDistributionRequest {
 message DeleteDistributionResponse {
   string dns_problem = 1;
 }
+
+message Database {
+  string name = 1;
+  // postgres / redis
+  string engine = 2;
+  Source source = 3;
+  // ready / pending / エラーの理由
+  string status = 4;
+  bool ready = 5;
+  // つないだ関数に入る環境変数の名前（値は出さない）
+  repeated string env_names = 6;
+  // このデータベースをつないでいる関数
+  repeated string functions = 7;
+}
+
+message ListDatabasesRequest {}
+
+message ListDatabasesResponse {
+  repeated Database databases = 1;
+}
+
+message CreateDatabaseRequest {
+  string name = 1;
+  string engine = 2;
+}
+
+message CreateDatabaseResponse {
+  Database database = 1;
+}
+
+message DeleteDatabaseRequest {
+  string name = 1;
+  string revision = 2;
+}
+
+message DeleteDatabaseResponse {}

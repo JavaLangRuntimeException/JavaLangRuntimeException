@@ -271,3 +271,48 @@ func TestBucketAndDistributionYAML(t *testing.T) {
 		t.Fatalf("api:\n%s", api)
 	}
 }
+
+func TestDatabaseYAMLAndConnections(t *testing.T) {
+	y, err := RenderDatabaseYAML("main-db", EnginePostgres)
+	if err != nil || !strings.Contains(y, "name: db-main-db") || !strings.Contains(y, "cloud.taramanji.com/engine: postgres") {
+		t.Fatalf("%v\n%s", err, y)
+	}
+	if e, err := ParseDatabaseYAML("main-db", y); err != nil || e != EnginePostgres {
+		t.Fatalf("%s %v", e, err)
+	}
+	if _, err := ParseDatabaseYAML("main-db", strings.Replace(y, "engine: postgres", "engine: mysql", 1)); err == nil {
+		t.Fatal("知らないエンジンは通さない")
+	}
+	if got := strings.Join(DatabaseEnvNames("main-db", EngineRedis), ","); got != "DB_MAIN_DB_URL,DB_MAIN_DB_HOST,DB_MAIN_DB_PORT,DB_MAIN_DB_USER,DB_MAIN_DB_PASSWORD,DB_MAIN_DB_PREFIX" {
+		t.Fatal(got)
+	}
+	key := []byte("0123456789abcdef")
+	if a, b := DatabasePassword(key, EnginePostgres, "main"), DatabasePassword(key, EngineRedis, "main"); a == b || len(a) != 64 || a != DatabasePassword(key, EnginePostgres, "main") {
+		t.Fatal("パスワードは名前とエンジンごとに決まる")
+	}
+	if PostgresIdent("main-db") != "main_db" || RedisPrefix("cache") != "cache:" {
+		t.Fatal("ident")
+	}
+
+	// つないだデータベースとバケットは、接頭辞付きの envFrom になり、読み戻せる
+	s := validSpec()
+	s.Databases, s.Buckets = []string{"main-db", "cache", "cache"}, []string{"site"}
+	s = s.Normalize()
+	fy, err := RenderFunctionYAML(s)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"prefix: DB_CACHE_", "name: db-cache", "prefix: DB_MAIN_DB_", "prefix: BUCKET_SITE_", "name: bucket-site"} {
+		if !strings.Contains(fy, want) {
+			t.Errorf("YAML に %q がない:\n%s", want, fy)
+		}
+	}
+	p, err := ParseFunctionYAML("blog", fy)
+	if err != nil || !p.FormEditable || strings.Join(p.Spec.Databases, ",") != "cache,main-db" || strings.Join(p.Spec.Buckets, ",") != "site" {
+		t.Fatalf("読み戻し: %+v %v", p, err)
+	}
+	// ほかの Secret は envFrom で読ませない
+	if _, err := ParseFunctionYAML("blog", strings.Replace(fy, "name: bucket-site", "name: other-secret", 1)); err == nil {
+		t.Fatal("ほかの Secret は通さない")
+	}
+}

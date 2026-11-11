@@ -387,3 +387,62 @@ func TestBucketsAndCDN(t *testing.T) {
 		t.Fatalf("api の DNS を消す: %v", err)
 	}
 }
+
+type fakeState []gateway.LabeledObject
+
+func (f fakeState) ConfigMaps(context.Context, string) ([]gateway.LabeledObject, error) {
+	return f, nil
+}
+
+func TestDatabasesAndConnections(t *testing.T) {
+	uc, store, _ := newComputeUC()
+	uc.d.State = fakeState{{Name: "db-main", Labels: map[string]string{service.LabelDatabase: "main"}, Annotations: map[string]string{service.AnnotationStatus: "ready"}}}
+	ctx := context.Background()
+
+	made, err := uc.CreateDatabase(ctx, CreateDatabaseInput{Name: "main", Engine: "postgres"})
+	if err != nil || made.Database.Ready || made.Database.Status != "pending" || made.Database.EnvNames[0] != "DB_MAIN_URL" {
+		t.Fatalf("create: %+v %v", made, err)
+	}
+	if _, err := uc.CreateDatabase(ctx, CreateDatabaseInput{Name: "x", Engine: "mysql"}); code(err) != "invalid" {
+		t.Fatalf("engine: %v", err)
+	}
+	if _, err := uc.CreateDatabase(ctx, CreateDatabaseInput{Name: "main", Engine: "redis"}); code(err) != "conflict" {
+		t.Fatalf("同じ名前: %v", err)
+	}
+	if _, err := uc.CreateDatabase(ctx, CreateDatabaseInput{Name: "cache", Engine: "redis"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := uc.CreateBucket(ctx, CreateBucketInput{Name: "site"}); err != nil {
+		t.Fatal(err)
+	}
+
+	// ないものはつなげない。あるものをつなぐと、YAML に envFrom が入る
+	spec := blogSpec()
+	spec.Databases, spec.Buckets = []string{"none"}, []string{"site"}
+	if _, err := uc.ApplyFunction(ctx, ApplyFunctionInput{Spec: spec}); code(err) != "invalid" {
+		t.Fatalf("ないデータベース: %v", err)
+	}
+	spec.Databases = []string{"main"}
+	fn, err := uc.ApplyFunction(ctx, ApplyFunctionInput{Spec: spec})
+	if err != nil || !strings.Contains(fn.Function.Source.Yaml, "prefix: DB_MAIN_") || !strings.Contains(fn.Function.Source.Yaml, "name: bucket-site") ||
+		!fn.Function.Source.FormEditable || fn.Function.Spec.Databases[0] != "main" || fn.Function.Spec.Buckets[0] != "site" {
+		t.Fatalf("function: %+v %v", fn, err)
+	}
+
+	list, err := uc.ListDatabases(ctx, ListDatabasesInput{})
+	if err != nil || len(list.Databases) != 2 || list.Databases[1].Name != "main" || !list.Databases[1].Ready ||
+		list.Databases[1].Functions[0] != "blog" || list.Databases[0].Ready || list.Databases[0].Engine != "redis" {
+		t.Fatalf("list: %+v %v", list, err)
+	}
+
+	// 関数がつないでいるデータベース・バケットは消せない
+	if err := uc.DeleteDatabase(ctx, DeleteDatabaseInput{Name: "main", Revision: store.files["databases/main"].Revision}); code(err) != "database_in_use" {
+		t.Fatalf("database_in_use: %v", err)
+	}
+	if err := uc.DeleteBucket(ctx, DeleteBucketInput{Name: "site", Revision: store.files["buckets/site"].Revision}); code(err) != "bucket_in_use" {
+		t.Fatalf("bucket_in_use: %v", err)
+	}
+	if err := uc.DeleteDatabase(ctx, DeleteDatabaseInput{Name: "cache", Revision: store.files["databases/cache"].Revision}); err != nil {
+		t.Fatal(err)
+	}
+}

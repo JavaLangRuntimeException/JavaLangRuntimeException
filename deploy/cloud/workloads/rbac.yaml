@@ -12,6 +12,10 @@ rules:
   - apiGroups: ["apps"]
     resources: ["deployments"]
     verbs: ["get", "list"]
+  # データベースの状態（コントローラーが ConfigMap の注釈に書く）を読む。Secret は読めない
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list"]
   - apiGroups: ["metrics.k8s.io"]
     resources: ["pods"]
     verbs: ["get", "list"]
@@ -76,4 +80,30 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: cloud-storage
+    namespace: cloud
+---
+# コントローラー（cloud-ctl）: 定義（ConfigMap）を読んで状態を書き、接続先の Secret を作る・消す
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cloud-ctl
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "patch"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "create", "update", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cloud-ctl
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: cloud-ctl
+subjects:
+  - kind: ServiceAccount
+    name: cloud-ctl
     namespace: cloud

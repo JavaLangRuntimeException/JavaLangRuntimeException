@@ -98,7 +98,7 @@ metadata:
 Cloudflare Worker `taramanji-uptime`）。コンソールで保存・削除したときにそろえる。YAML を手で push したときは、コンソールの「監視を同期」を押す。
 stg・dev は Datadog で監視していないので、注釈は残るが通知は飛ばない。
 
-まだないもの: 秘密の環境変数・非公開イメージは扱えない。
+まだないもの: 自分で決める秘密の環境変数・非公開イメージは扱えない（データベースとバケットの接続先は「つなぐ」で入る）。
 
 ## オブジェクトストレージと CDN
 
@@ -125,7 +125,30 @@ S3 と CloudFront にあたるもの。
   扱うのは `-cloud.taramanji.com`（stg・dev は `-cloud-stg`・`-cloud-dev`）で終わるホスト名だけ。消すのは自分が作った印（コメント）のあるレコードだけ。
   トークンがなければ登録せず、コンソールに手で実行するコマンドを出す
 
-関数からバケットを読み書きする方法は、まだない（データベースの PR で、つなぐ仕組みと一緒に入れる）。
+## データベースと、関数へのつなぎ込み
+
+サーバーレスのデータベースにあたるもの。環境ごとに共有の PostgreSQL と Redis を 1 台ずつ動かし、そこからデータベースを切り出す（サイズは選ばない）。
+
+| リソース | YAML の場所 | 中身 |
+|---|---|---|
+| データベース | `<環境>/databases/<名前>.yaml` | ConfigMap `db-<名前>`（ラベル `cloud.taramanji.com/database` と `cloud.taramanji.com/engine: postgres` か `redis`） |
+
+- **コントローラー**（`cloud-ctl`。cloud のイメージを `CLOUD_MODE=controller` で動かす）が 20 秒ごとに定義を見て、
+  - PostgreSQL: ロールとデータベースを作る（ほかのデータベースのユーザーからはつなげない）
+  - Redis: ACL のユーザーを作る。触れるのは `<名前>:` で始まるキーだけで、`KEYS`・`FLUSHALL`・`CONFIG` などは使えない
+  - 接続先の Secret（`db-<名前>`、バケットは `bucket-<名前>`）をアプリ用 namespace に作る
+  - 状態（`ready` か、エラーの理由）を ConfigMap の注釈 `cloud.taramanji.com/status` に書く。コンソールはこれを読む
+- **パスワードとトークン**は、マスターキー（`cloud-storage-key`）から導く。git にも、コンソールにも出ない。cloud-api は Secret を読めない
+- **つなぎ方**: 関数の「つなぐ」で選ぶ（YAML では `envFrom` の `secretRef`）。接頭辞の付いた環境変数になる
+  - データベース `main`: `DB_MAIN_URL`・`DB_MAIN_HOST`・`DB_MAIN_PORT`・`DB_MAIN_USER`・`DB_MAIN_PASSWORD` と、PostgreSQL は `DB_MAIN_NAME`、Redis は `DB_MAIN_PREFIX`
+  - バケット `site`: `BUCKET_SITE_URL`（`http://cloud-storage.<namespace>.svc.cluster.local:8080/b/site`）と `BUCKET_SITE_TOKEN`。
+    `Authorization: Bearer <TOKEN>` を付けて、`GET / PUT / DELETE <URL>/<キー>`、一覧は `GET <URL>?prefix=`
+- **消すとき**: どの関数にもつながれていないものだけ消せる。定義を消すと、Secret を消してログインを止める。**中身は消さない**
+  （同じ名前で作り直すと、また使える。本当に消すには、管理者で `DROP DATABASE` する）
+- **メモリ**: PostgreSQL は上限 256 MiB、Redis は上限 128 MiB（`maxmemory` 96 MB。満杯になると書き込みがエラーになる）。
+  アプリ用 namespace の枠（ResourceQuota）とは別に、コンソールの namespace で使う。3 環境で 6 台動く
+- バックアップは、まだない
+
 
 ## 構成
 
@@ -177,7 +200,8 @@ deploy/cloud/
    - Cloudflare で API トークンを作る（権限は「ゾーン → DNS → 編集」、対象は taramanji.com だけ）。`deploy/cloud/secrets/cloudflare.env` に書く:
      `CF_DNS_API_TOKEN=...` と `CF_ZONE_ID=...`（ゾーン ID はダッシュボードの概要にある）
    - ストレージのマスターキーは `seal.sh` が環境ごとに 1 回だけ作る（`secrets/storage-master-key-<環境>`。なくすとトークンが変わるので消さない）
-   - どちらも 4 の `seal.sh` で SealedSecret になる。`cloud-storage-key` がないと cloud-storage の Pod は起動しない
+   - 共有の PostgreSQL / Redis の管理者のパスワードも `seal.sh` が環境ごとに 1 回だけ作る（`cloud-data-admin`。PostgreSQL は最初の起動のときの値を覚えるので、あとから変えない）
+   - どれも 4 の `seal.sh` で SealedSecret になる。`cloud-storage-key`・`cloud-data-admin` がないと、cloud-storage・cloud-postgres・cloud-redis・cloud-ctl の Pod は起動しない
 
 6. **アプリ用のリポジトリ**（関数と API を使うとき。なくてもコンソールのほかの画面は動く）
    - GitHub に private の `JavaLangRuntimeException/taramanji-cloud-apps` を作り、`prod/`・`stg/`・`dev/` に空のファイル（`.gitkeep`）を置く（Argo CD は空のディレクトリを読めない）

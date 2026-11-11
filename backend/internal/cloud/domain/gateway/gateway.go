@@ -82,6 +82,7 @@ const (
 	KindAPIs      = "apis"
 	KindBuckets   = "buckets"
 	KindCDN       = "cdn"
+	KindDatabases = "databases"
 )
 
 // ResourceFile はアプリ用のリポジトリにある、リソース（関数・API）1 つの YAML
@@ -182,4 +183,33 @@ type DNS interface {
 	// Ensure はホスト名をトンネルに向ける。既に別の向き先のレコードがあればエラー
 	Ensure(ctx context.Context, host string) error
 	Remove(ctx context.Context, host string) error
+}
+
+// LabeledObject はアプリ用 namespace の ConfigMap / Secret の、名前・ラベル・注釈
+type LabeledObject struct {
+	Name        string
+	Labels      map[string]string
+	Annotations map[string]string
+}
+
+// ResourceState はコンソールが、データベースの状態（コントローラーが ConfigMap の注釈に書く）を読む
+type ResourceState interface {
+	ConfigMaps(ctx context.Context, labelKey string) ([]LabeledObject, error)
+}
+
+// ResourceCluster はコントローラーが使う Kubernetes API: 定義（ConfigMap）を読み、状態を書き、接続先の Secret を作る・消す
+type ResourceCluster interface {
+	ResourceState
+	AnnotateConfigMap(ctx context.Context, name, key, value string) error
+	Secrets(ctx context.Context, labelSelector string) ([]LabeledObject, error)
+	PutSecret(ctx context.Context, name string, labels, data map[string]string) error
+	DeleteSecret(ctx context.Context, name string) error
+}
+
+// DatabaseEngine は共有の PostgreSQL / Redis から、データベース（とユーザー）を切り出す。何度呼んでも同じ結果になる
+type DatabaseEngine interface {
+	// Ensure は name のデータベースとユーザーを、このパスワードで使えるようにする
+	Ensure(ctx context.Context, name, password string) error
+	// Disable はログインを止める。中身は消さない（同じ名前で作り直すと、また使える）
+	Disable(ctx context.Context, name string) error
 }

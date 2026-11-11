@@ -20,6 +20,9 @@ export type FunctionForm = {
   env: EnvRow[];
   alerts: string[];
   notify: string[];
+  /** つなぐデータベースとバケットの名前 */
+  databases: string[];
+  buckets: string[];
 };
 
 type ApiType = { name: string; cpuMillis: bigint | number; memory: bigint | number };
@@ -41,6 +44,8 @@ export function emptyForm(types: readonly TypeOption[]): FunctionForm {
     env: [],
     alerts: [],
     notify: [],
+    databases: [],
+    buckets: [],
   };
 }
 
@@ -65,6 +70,8 @@ type ApiSpec = {
   env: readonly { name: string; value: string }[];
   alerts: readonly string[];
   notify: readonly string[];
+  databases: readonly string[];
+  buckets: readonly string[];
 };
 
 export function formOf(spec: ApiSpec): FunctionForm {
@@ -78,6 +85,8 @@ export function formOf(spec: ApiSpec): FunctionForm {
     env: spec.env.map((e) => ({ name: e.name, value: e.value })),
     alerts: [...spec.alerts],
     notify: [...spec.notify],
+    databases: [...spec.databases],
+    buckets: [...spec.buckets],
   };
 }
 
@@ -93,6 +102,8 @@ export function specOf(form: FunctionForm) {
     env: form.env.filter((e) => e.name.trim() !== "").map((e) => ({ name: e.name.trim(), value: e.value })),
     alerts: form.alerts,
     notify: form.notify,
+    databases: form.databases,
+    buckets: form.buckets,
   };
 }
 
@@ -247,4 +258,30 @@ export function entriesOf(objects: readonly { key: string; size: bigint | number
 export function crumbsOf(prefix: string): { name: string; prefix: string }[] {
   const parts = prefix.split("/").filter((p) => p !== "");
   return parts.map((name, i) => ({ name, prefix: parts.slice(0, i + 1).join("/") + "/" }));
+}
+
+// ---- つなぎ込み ----
+
+/** 名前を環境変数に使える形にする（main-db → MAIN_DB）。API（Go の envToken）と同じ */
+export function envToken(name: string): string {
+  return name.replaceAll("-", "_").toUpperCase();
+}
+
+/** つないだ関数に入る環境変数の接頭辞（DB_MAIN_ / BUCKET_SITE_） */
+export function envPrefix(kind: "database" | "bucket", name: string): string {
+  return `${kind === "database" ? "DB" : "BUCKET"}_${envToken(name)}_`;
+}
+
+const engineLabels: Record<string, string> = { postgres: "PostgreSQL", redis: "Redis" };
+
+export function engineLabel(engine: string): string {
+  return engineLabels[engine] ?? engine;
+}
+
+/** データベースの状態。ready 以外で pending でもないものは、コントローラーが書いたエラーの理由 */
+export function databaseStatus(db: { ready: boolean; status: string; problem: string }): { label: string; level: "ok" | "warn" | "bad"; detail?: string } {
+  if (db.problem) return { label: "YAML に問題", level: "bad", detail: db.problem };
+  if (db.ready) return { label: "使用可能", level: "ok" };
+  if (db.status === "" || db.status === "pending") return { label: "作成中", level: "warn" };
+  return { label: "エラー", level: "bad", detail: db.status };
 }

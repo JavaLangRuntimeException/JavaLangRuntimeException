@@ -71,6 +71,9 @@ type FunctionSpec struct {
 	Env          []EnvVar
 	Alerts       []string
 	Notify       []string
+	// Databases・Buckets はつなぐデータベースとバケットの名前。接続先の Secret を、接頭辞を付けた環境変数として入れる
+	Databases []string
+	Buckets   []string
 }
 
 // FieldError はどの項目がなぜ通らないか
@@ -98,6 +101,7 @@ func (s FunctionSpec) Normalize() FunctionSpec {
 			s.MemoryBytes = t.MemoryBytes
 		}
 	}
+	s.Databases, s.Buckets = connections(s.Databases), connections(s.Buckets)
 	s.Alerts = ordered(s.Alerts, alertIDs())
 	s.Notify = ordered(s.Notify, NotifyChannels)
 	return s
@@ -151,6 +155,16 @@ func (s FunctionSpec) Validate() error {
 			return fieldErr("alerts", "監視 %q はありません", a)
 		}
 	}
+	for _, d := range s.Databases {
+		if !ValidName(d) {
+			return fieldErr("databases", "データベース %q の名前が正しくありません", d)
+		}
+	}
+	for _, b := range s.Buckets {
+		if !ValidName(b) {
+			return fieldErr("buckets", "バケット %q の名前が正しくありません", b)
+		}
+	}
 	for _, n := range s.Notify {
 		if !slices.Contains(NotifyChannels, n) {
 			return fieldErr("notify", "通知先 %q はありません", n)
@@ -184,6 +198,13 @@ type k8sEnv struct {
 	Value string `yaml:"value"`
 }
 
+type k8sEnvFrom struct {
+	Prefix    string `yaml:"prefix"`
+	SecretRef struct {
+		Name string `yaml:"name"`
+	} `yaml:"secretRef"`
+}
+
 type k8sContainer struct {
 	Name  string `yaml:"name"`
 	Image string `yaml:"image"`
@@ -191,7 +212,8 @@ type k8sContainer struct {
 		Name          string `yaml:"name,omitempty"`
 		ContainerPort int32  `yaml:"containerPort"`
 	} `yaml:"ports,omitempty"`
-	Env       []k8sEnv `yaml:"env,omitempty"`
+	Env       []k8sEnv     `yaml:"env,omitempty"`
+	EnvFrom   []k8sEnvFrom `yaml:"envFrom,omitempty"`
 	Resources struct {
 		Requests map[string]string `yaml:"requests,omitempty"`
 		Limits   map[string]string `yaml:"limits,omitempty"`
@@ -276,6 +298,13 @@ func RenderFunctionYAML(s FunctionSpec) (string, error) {
 	for _, e := range s.Env {
 		c.Env = append(c.Env, k8sEnv(e))
 	}
+	// つないだデータベース・バケットの接続先（コントローラーが作る Secret）を、接頭辞を付けて環境変数にする
+	for _, d := range s.Databases {
+		c.EnvFrom = append(c.EnvFrom, envFrom(DatabaseEnvPrefix(d), DatabaseObjectName(d)))
+	}
+	for _, b := range s.Buckets {
+		c.EnvFrom = append(c.EnvFrom, envFrom(BucketEnvPrefix(b), BucketSecretName(b)))
+	}
 	// requests = limits（メモリは LimitRange が同じ値を求める。CPU もそろえて、予約した分をそのまま使える上限にする）
 	res := map[string]string{"cpu": cpuQuantity(s.CPUMillis), "memory": memQuantity(s.MemoryBytes)}
 	c.Resources.Requests, c.Resources.Limits = res, res
@@ -291,6 +320,12 @@ func RenderFunctionYAML(s FunctionSpec) (string, error) {
 		TargetPort string `yaml:"targetPort"`
 	}{Name: portName, Port: 80, TargetPort: portName})
 	return encodeDocs(d, svc)
+}
+
+func envFrom(prefix, secret string) k8sEnvFrom {
+	e := k8sEnvFrom{Prefix: prefix}
+	e.SecretRef.Name = secret
+	return e
 }
 
 func encodeDocs(docs ...any) (string, error) {
@@ -428,6 +463,16 @@ func ParseFunctionYAML(name, src string) (*ParsedFunction, error) {
 	}
 	for _, e := range c.Env {
 		spec.Env = append(spec.Env, EnvVar(e))
+	}
+	for _, e := range c.EnvFrom {
+		if n, ok := strings.CutPrefix(e.SecretRef.Name, "db-"); ok {
+			spec.Databases = append(spec.Databases, n)
+		} else if n, ok := strings.CutPrefix(e.SecretRef.Name, "bucket-"); ok {
+			spec.Buckets = append(spec.Buckets, n)
+		} else {
+			// アプリ用 namespace のほかの Secret（別のリソースの接続先など）を勝手に読ませない
+			return nil, fieldErr("yaml", "envFrom の secretRef は、つなぐデータベース（db-<名前>）かバケット（bucket-<名前>）だけにしてください")
+		}
 	}
 	if spec.CPUMillis, err = parseCPU(c.Resources.Limits["cpu"]); err != nil {
 		return nil, fieldErr("yaml", "resources.limits.cpu: %v", err)

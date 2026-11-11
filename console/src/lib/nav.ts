@@ -10,4 +10,5 @@ export const navItems: NavItem[] = [
   { to: "/apis", label: "API Gateway" },
   { to: "/storage", label: "ストレージ" },
   { to: "/cdn", label: "CDN" },
+  { to: "/databases", label: "データベース" },
 ];

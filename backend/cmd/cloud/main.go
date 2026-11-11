@@ -13,6 +13,7 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/javalangruntimeexception/taramanji/backend/internal/cloud/controller"
 	"github.com/javalangruntimeexception/taramanji/backend/internal/cloud/di"
 	"github.com/javalangruntimeexception/taramanji/backend/internal/cloud/domain/gateway"
 	"github.com/javalangruntimeexception/taramanji/backend/internal/cloud/domain/service"
@@ -34,13 +35,17 @@ func main() {
 	_, stop := observability.Init(serviceName)
 	defer stop()
 
-	// 同じイメージを役割ごとに動かす: コンソールの API（既定）・関数と CDN のデータプレーン（gateway）・オブジェクトストレージ（storage）
+	// 同じイメージを役割ごとに動かす: コンソールの API（既定）・関数と CDN のデータプレーン（gateway）・
+	// オブジェクトストレージ（storage）・データベースと接続先のコントローラー（controller）
 	switch env.Optional("CLOUD_MODE", "api") {
 	case "gateway":
 		runGateway()
 		return
 	case "storage":
 		runStorage()
+		return
+	case "controller":
+		runController()
 		return
 	}
 
@@ -112,10 +117,13 @@ func main() {
 		Monitors:       monitors,
 		AlertScope: service.AlertScope{Environment: cloudEnv, Cluster: cluster, Namespace: env.Required("APPS_NAMESPACE"),
 			APMEnv: env.Optional("DD_ENV", "prod"), InvokerService: gatewayServiceName},
-		APITarget:   service.APITarget{HostSuffix: hostSuffix, InvokerNamespace: namespace},
-		Objects:     objects,
-		DNS:         dns,
-		IdleTimeout: idleTimeout(),
+		APITarget: service.APITarget{HostSuffix: hostSuffix, InvokerNamespace: namespace},
+		Objects:   objects,
+		State:     kube,
+		// 共有の PostgreSQL / Redis とコントローラー（cloud-ctl）を、この環境に入れてあるか
+		DatabasesEnabled: env.Optional("DATABASES_ENABLED", "") == "true",
+		DNS:              dns,
+		IdleTimeout:      idleTimeout(),
 		MetricsScope: service.MetricsScope{
 			Cluster:     cluster,
 			Namespaces:  strings.Split(env.Optional("METRICS_NAMESPACES", namespace), ","),
@@ -248,6 +256,44 @@ func runStorage() {
 	// キーは利用者しだいなので、APM のリソース名はメソッドだけにする
 	name := func(r *http.Request) string { return r.Method + " object" }
 	if err := server.RunNamed(storageServiceName, name, func(mux *http.ServeMux) { mux.Handle("/b/", store.Handler()) }); err != nil {
+		log.Fatal(err)
+	}
+}
+
+const controllerServiceName = "cloud-ctl"
+
+// runController はコントローラー。データベース・バケットの定義（アプリ用 namespace の ConfigMap）に合わせて、
+// 共有の PostgreSQL / Redis からデータベースを切り出し、接続先の Secret を作る
+func runController() {
+	namespace := env.Required("POD_NAMESPACE")
+	kube, err := infragw.NewInClusterKube(namespace, env.Required("APPS_NAMESPACE"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	svc := func(name string) string { return name + "." + namespace + ".svc.cluster.local" }
+	pg, err := infragw.NewPostgresEngine((&url.URL{Scheme: "postgres", User: url.UserPassword("postgres", env.Required("POSTGRES_ADMIN_PASSWORD")),
+		Host: svc("cloud-postgres") + ":5432", Path: "/postgres", RawQuery: "sslmode=disable"}).String())
+	if err != nil {
+		log.Fatal(err)
+	}
+	ctl := controller.New(controller.Config{
+		Cluster:   kube,
+		MasterKey: []byte(env.Required("STORAGE_MASTER_KEY")),
+		Engines: map[string]gateway.DatabaseEngine{
+			service.EnginePostgres: pg,
+			service.EngineRedis:    infragw.NewRedisEngine(svc("cloud-redis")+":6379", env.Required("REDIS_ADMIN_PASSWORD")),
+		},
+		Endpoints: map[string]controller.Endpoint{
+			service.EnginePostgres: {Host: svc("cloud-postgres"), Port: 5432},
+			service.EngineRedis:    {Host: svc("cloud-redis"), Port: 6379},
+		},
+		StorageURL: "http://" + svc("cloud-storage") + ":8080",
+		Log:        logger.L(),
+	})
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go ctl.Run(ctx, 20*time.Second)
+	if err := server.Run(controllerServiceName, func(*http.ServeMux) {}); err != nil {
 		log.Fatal(err)
 	}
 }

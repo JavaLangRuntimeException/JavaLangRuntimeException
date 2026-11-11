@@ -32,6 +32,10 @@ type Deps struct {
 	Objects gateway.ObjectStore
 	// DNS は公開ホスト名の DNS の自動登録。nil なら手で登録する
 	DNS gateway.DNS
+	// State はデータベースの状態（コントローラーが書く）を読む。nil なら状態は出さない
+	State gateway.ResourceState
+	// DatabasesEnabled は共有の PostgreSQL / Redis とコントローラーが動いているか（画面に出すだけ）
+	DatabasesEnabled bool
 	// IdleTimeout は関数を 0 台に戻すまでの時間（画面に出すだけ。実際に戻すのは API Gateway）
 	IdleTimeout time.Duration
 	// AppsRepository は画面に出すリポジトリ名（owner/name）
