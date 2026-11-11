@@ -619,12 +619,13 @@ func splitList(s string) []string {
 
 // nearestType は CPU・メモリが収まる一番小さい型（ラベルのない手書きの YAML 用）
 func nearestType(cpu, mem int64) string {
+	// 汎用（t1）で収まればそれ、なければ c1・r1 の順に、収まる一番小さいもの
 	for _, t := range InstanceTypes {
 		if cpu <= t.CPUMillis && mem <= t.MemoryBytes {
 			return t.Name
 		}
 	}
-	return InstanceTypes[len(InstanceTypes)-1].Name
+	return "t1.xlarge"
 }
 
 // parseCPU は "250m"・"1"・"0.5" をミリコアにする

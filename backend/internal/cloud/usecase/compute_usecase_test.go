@@ -121,7 +121,7 @@ func TestHostingOptions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(out.InstanceTypes) != 4 || out.InstanceTypes[0].Name != "t1.small" || out.InstanceTypes[0].Family != "t1" ||
+	if len(out.InstanceTypes) != 10 || out.InstanceTypes[0].Name != "t1.small" || out.InstanceTypes[0].Family != "t1" || len(out.InstanceFamilies) != 3 || out.InstanceTypes[9].Family != "r1" ||
 		len(out.AlertPresets) != len(service.AlertPresets) || !out.StoreEnabled || !out.AlertsEnabled || out.Directory != "prod" ||
 		out.IdleTimeoutSeconds != 300 || out.HostSuffix != "-cloud.taramanji.com" {
 		t.Fatalf("options: %+v", out)

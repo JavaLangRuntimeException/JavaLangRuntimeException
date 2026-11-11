@@ -633,7 +633,7 @@ func (x *Machine) GetCpuUsedMillis() int64 {
 // アプリの大きさ（1 つあたり）ごとの「あと何個置けるか」
 type SizeFit struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// インスタンスタイプの名前（t1.small / t1.medium / t1.large / t1.xlarge）
+	// インスタンスタイプの名前（t1.small・c1.medium・r1.large など）
 	Name      string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Memory    int64  `protobuf:"varint,2,opt,name=memory,proto3" json:"memory,omitempty"`
 	CpuMillis int64  `protobuf:"varint,3,opt,name=cpu_millis,json=cpuMillis,proto3" json:"cpu_millis,omitempty"`
@@ -1015,6 +1015,67 @@ func (*GetHostingOptionsRequest) Descriptor() ([]byte, []int) {
 	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{15}
 }
 
+// インスタンスタイプの系統（t1 汎用・c1 コンピューティング最適化・r1 メモリ最適化）
+type InstanceFamily struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Label         string                 `protobuf:"bytes,2,opt,name=label,proto3" json:"label,omitempty"`
+	Description   string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *InstanceFamily) Reset() {
+	*x = InstanceFamily{}
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[16]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *InstanceFamily) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*InstanceFamily) ProtoMessage() {}
+
+func (x *InstanceFamily) ProtoReflect() protoreflect.Message {
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[16]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use InstanceFamily.ProtoReflect.Descriptor instead.
+func (*InstanceFamily) Descriptor() ([]byte, []int) {
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *InstanceFamily) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *InstanceFamily) GetLabel() string {
+	if x != nil {
+		return x.Label
+	}
+	return ""
+}
+
+func (x *InstanceFamily) GetDescription() string {
+	if x != nil {
+		return x.Description
+	}
+	return ""
+}
+
 type GetHostingOptionsResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	InstanceTypes []*InstanceType        `protobuf:"bytes,1,rep,name=instance_types,json=instanceTypes,proto3" json:"instance_types,omitempty"`
@@ -1037,6 +1098,8 @@ type GetHostingOptionsResponse struct {
 	IdleTimeoutSeconds int32 `protobuf:"varint,13,opt,name=idle_timeout_seconds,json=idleTimeoutSeconds,proto3" json:"idle_timeout_seconds,omitempty"`
 	// 公開 URL のホスト名の接尾辞（<名前> + これ）。例: -cloud.taramanji.com
 	HostSuffix string `protobuf:"bytes,14,opt,name=host_suffix,json=hostSuffix,proto3" json:"host_suffix,omitempty"`
+	// 系統（画面で型をまとめて見せる順）
+	InstanceFamilies []*InstanceFamily `protobuf:"bytes,18,rep,name=instance_families,json=instanceFamilies,proto3" json:"instance_families,omitempty"`
 	// オブジェクトストレージが動いているか
 	StorageEnabled bool `protobuf:"varint,15,opt,name=storage_enabled,json=storageEnabled,proto3" json:"storage_enabled,omitempty"`
 	// ホスト名の DNS を自動で登録できるか（false なら手で登録する）
@@ -1049,7 +1112,7 @@ type GetHostingOptionsResponse struct {
 
 func (x *GetHostingOptionsResponse) Reset() {
 	*x = GetHostingOptionsResponse{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[16]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1061,7 +1124,7 @@ func (x *GetHostingOptionsResponse) String() string {
 func (*GetHostingOptionsResponse) ProtoMessage() {}
 
 func (x *GetHostingOptionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[16]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1074,7 +1137,7 @@ func (x *GetHostingOptionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetHostingOptionsResponse.ProtoReflect.Descriptor instead.
 func (*GetHostingOptionsResponse) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{16}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *GetHostingOptionsResponse) GetInstanceTypes() []*InstanceType {
@@ -1168,6 +1231,13 @@ func (x *GetHostingOptionsResponse) GetHostSuffix() string {
 	return ""
 }
 
+func (x *GetHostingOptionsResponse) GetInstanceFamilies() []*InstanceFamily {
+	if x != nil {
+		return x.InstanceFamilies
+	}
+	return nil
+}
+
 func (x *GetHostingOptionsResponse) GetStorageEnabled() bool {
 	if x != nil {
 		return x.StorageEnabled
@@ -1200,7 +1270,7 @@ type EnvVar struct {
 
 func (x *EnvVar) Reset() {
 	*x = EnvVar{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[17]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1212,7 +1282,7 @@ func (x *EnvVar) String() string {
 func (*EnvVar) ProtoMessage() {}
 
 func (x *EnvVar) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[17]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1225,7 +1295,7 @@ func (x *EnvVar) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use EnvVar.ProtoReflect.Descriptor instead.
 func (*EnvVar) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{17}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *EnvVar) GetName() string {
@@ -1260,7 +1330,7 @@ type Source struct {
 
 func (x *Source) Reset() {
 	*x = Source{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[18]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1272,7 +1342,7 @@ func (x *Source) String() string {
 func (*Source) ProtoMessage() {}
 
 func (x *Source) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[18]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1285,7 +1355,7 @@ func (x *Source) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Source.ProtoReflect.Descriptor instead.
 func (*Source) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{18}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *Source) GetYaml() string {
@@ -1349,7 +1419,7 @@ type FunctionSpec struct {
 
 func (x *FunctionSpec) Reset() {
 	*x = FunctionSpec{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[19]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1361,7 +1431,7 @@ func (x *FunctionSpec) String() string {
 func (*FunctionSpec) ProtoMessage() {}
 
 func (x *FunctionSpec) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[19]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1374,7 +1444,7 @@ func (x *FunctionSpec) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FunctionSpec.ProtoReflect.Descriptor instead.
 func (*FunctionSpec) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{19}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *FunctionSpec) GetName() string {
@@ -1473,7 +1543,7 @@ type Function struct {
 
 func (x *Function) Reset() {
 	*x = Function{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[20]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1485,7 +1555,7 @@ func (x *Function) String() string {
 func (*Function) ProtoMessage() {}
 
 func (x *Function) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[20]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1498,7 +1568,7 @@ func (x *Function) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Function.ProtoReflect.Descriptor instead.
 func (*Function) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{20}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *Function) GetSpec() *FunctionSpec {
@@ -1558,7 +1628,7 @@ type ListFunctionsRequest struct {
 
 func (x *ListFunctionsRequest) Reset() {
 	*x = ListFunctionsRequest{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[21]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1570,7 +1640,7 @@ func (x *ListFunctionsRequest) String() string {
 func (*ListFunctionsRequest) ProtoMessage() {}
 
 func (x *ListFunctionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[21]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1583,7 +1653,7 @@ func (x *ListFunctionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListFunctionsRequest.ProtoReflect.Descriptor instead.
 func (*ListFunctionsRequest) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{21}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{22}
 }
 
 type ListFunctionsResponse struct {
@@ -1595,7 +1665,7 @@ type ListFunctionsResponse struct {
 
 func (x *ListFunctionsResponse) Reset() {
 	*x = ListFunctionsResponse{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[22]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1607,7 +1677,7 @@ func (x *ListFunctionsResponse) String() string {
 func (*ListFunctionsResponse) ProtoMessage() {}
 
 func (x *ListFunctionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[22]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1620,7 +1690,7 @@ func (x *ListFunctionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListFunctionsResponse.ProtoReflect.Descriptor instead.
 func (*ListFunctionsResponse) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{22}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *ListFunctionsResponse) GetFunctions() []*Function {
@@ -1639,7 +1709,7 @@ type PreviewFunctionRequest struct {
 
 func (x *PreviewFunctionRequest) Reset() {
 	*x = PreviewFunctionRequest{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[23]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1651,7 +1721,7 @@ func (x *PreviewFunctionRequest) String() string {
 func (*PreviewFunctionRequest) ProtoMessage() {}
 
 func (x *PreviewFunctionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[23]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1664,7 +1734,7 @@ func (x *PreviewFunctionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PreviewFunctionRequest.ProtoReflect.Descriptor instead.
 func (*PreviewFunctionRequest) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{23}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *PreviewFunctionRequest) GetSpec() *FunctionSpec {
@@ -1683,7 +1753,7 @@ type PreviewFunctionResponse struct {
 
 func (x *PreviewFunctionResponse) Reset() {
 	*x = PreviewFunctionResponse{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[24]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1695,7 +1765,7 @@ func (x *PreviewFunctionResponse) String() string {
 func (*PreviewFunctionResponse) ProtoMessage() {}
 
 func (x *PreviewFunctionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[24]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1708,7 +1778,7 @@ func (x *PreviewFunctionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PreviewFunctionResponse.ProtoReflect.Descriptor instead.
 func (*PreviewFunctionResponse) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{24}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *PreviewFunctionResponse) GetYaml() string {
@@ -1731,7 +1801,7 @@ type ApplyFunctionRequest struct {
 
 func (x *ApplyFunctionRequest) Reset() {
 	*x = ApplyFunctionRequest{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[25]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1743,7 +1813,7 @@ func (x *ApplyFunctionRequest) String() string {
 func (*ApplyFunctionRequest) ProtoMessage() {}
 
 func (x *ApplyFunctionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[25]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1756,7 +1826,7 @@ func (x *ApplyFunctionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ApplyFunctionRequest.ProtoReflect.Descriptor instead.
 func (*ApplyFunctionRequest) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{25}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *ApplyFunctionRequest) GetSpec() *FunctionSpec {
@@ -1791,7 +1861,7 @@ type ApplyFunctionResponse struct {
 
 func (x *ApplyFunctionResponse) Reset() {
 	*x = ApplyFunctionResponse{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[26]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1803,7 +1873,7 @@ func (x *ApplyFunctionResponse) String() string {
 func (*ApplyFunctionResponse) ProtoMessage() {}
 
 func (x *ApplyFunctionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[26]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1816,7 +1886,7 @@ func (x *ApplyFunctionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ApplyFunctionResponse.ProtoReflect.Descriptor instead.
 func (*ApplyFunctionResponse) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{26}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *ApplyFunctionResponse) GetFunction() *Function {
@@ -1843,7 +1913,7 @@ type DeleteFunctionRequest struct {
 
 func (x *DeleteFunctionRequest) Reset() {
 	*x = DeleteFunctionRequest{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[27]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1855,7 +1925,7 @@ func (x *DeleteFunctionRequest) String() string {
 func (*DeleteFunctionRequest) ProtoMessage() {}
 
 func (x *DeleteFunctionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[27]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1868,7 +1938,7 @@ func (x *DeleteFunctionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteFunctionRequest.ProtoReflect.Descriptor instead.
 func (*DeleteFunctionRequest) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{27}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *DeleteFunctionRequest) GetName() string {
@@ -1894,7 +1964,7 @@ type DeleteFunctionResponse struct {
 
 func (x *DeleteFunctionResponse) Reset() {
 	*x = DeleteFunctionResponse{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[28]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1906,7 +1976,7 @@ func (x *DeleteFunctionResponse) String() string {
 func (*DeleteFunctionResponse) ProtoMessage() {}
 
 func (x *DeleteFunctionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[28]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1919,7 +1989,7 @@ func (x *DeleteFunctionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteFunctionResponse.ProtoReflect.Descriptor instead.
 func (*DeleteFunctionResponse) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{28}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *DeleteFunctionResponse) GetAlertsProblem() string {
@@ -1941,7 +2011,7 @@ type ApiRoute struct {
 
 func (x *ApiRoute) Reset() {
 	*x = ApiRoute{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[29]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1953,7 +2023,7 @@ func (x *ApiRoute) String() string {
 func (*ApiRoute) ProtoMessage() {}
 
 func (x *ApiRoute) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[29]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1966,7 +2036,7 @@ func (x *ApiRoute) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ApiRoute.ProtoReflect.Descriptor instead.
 func (*ApiRoute) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{29}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *ApiRoute) GetPath() string {
@@ -1994,7 +2064,7 @@ type ApiSpec struct {
 
 func (x *ApiSpec) Reset() {
 	*x = ApiSpec{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[30]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2006,7 +2076,7 @@ func (x *ApiSpec) String() string {
 func (*ApiSpec) ProtoMessage() {}
 
 func (x *ApiSpec) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[30]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2019,7 +2089,7 @@ func (x *ApiSpec) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ApiSpec.ProtoReflect.Descriptor instead.
 func (*ApiSpec) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{30}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *ApiSpec) GetName() string {
@@ -2048,7 +2118,7 @@ type Api struct {
 
 func (x *Api) Reset() {
 	*x = Api{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[31]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2060,7 +2130,7 @@ func (x *Api) String() string {
 func (*Api) ProtoMessage() {}
 
 func (x *Api) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[31]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2073,7 +2143,7 @@ func (x *Api) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Api.ProtoReflect.Descriptor instead.
 func (*Api) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{31}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *Api) GetSpec() *ApiSpec {
@@ -2105,7 +2175,7 @@ type ListApisRequest struct {
 
 func (x *ListApisRequest) Reset() {
 	*x = ListApisRequest{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[32]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2117,7 +2187,7 @@ func (x *ListApisRequest) String() string {
 func (*ListApisRequest) ProtoMessage() {}
 
 func (x *ListApisRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[32]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2130,7 +2200,7 @@ func (x *ListApisRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListApisRequest.ProtoReflect.Descriptor instead.
 func (*ListApisRequest) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{32}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{33}
 }
 
 type ListApisResponse struct {
@@ -2142,7 +2212,7 @@ type ListApisResponse struct {
 
 func (x *ListApisResponse) Reset() {
 	*x = ListApisResponse{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[33]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2154,7 +2224,7 @@ func (x *ListApisResponse) String() string {
 func (*ListApisResponse) ProtoMessage() {}
 
 func (x *ListApisResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[33]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2167,7 +2237,7 @@ func (x *ListApisResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListApisResponse.ProtoReflect.Descriptor instead.
 func (*ListApisResponse) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{33}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{34}
 }
 
 func (x *ListApisResponse) GetApis() []*Api {
@@ -2186,7 +2256,7 @@ type PreviewApiRequest struct {
 
 func (x *PreviewApiRequest) Reset() {
 	*x = PreviewApiRequest{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[34]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[35]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2198,7 +2268,7 @@ func (x *PreviewApiRequest) String() string {
 func (*PreviewApiRequest) ProtoMessage() {}
 
 func (x *PreviewApiRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[34]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[35]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2211,7 +2281,7 @@ func (x *PreviewApiRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PreviewApiRequest.ProtoReflect.Descriptor instead.
 func (*PreviewApiRequest) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{34}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{35}
 }
 
 func (x *PreviewApiRequest) GetSpec() *ApiSpec {
@@ -2230,7 +2300,7 @@ type PreviewApiResponse struct {
 
 func (x *PreviewApiResponse) Reset() {
 	*x = PreviewApiResponse{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[35]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[36]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2242,7 +2312,7 @@ func (x *PreviewApiResponse) String() string {
 func (*PreviewApiResponse) ProtoMessage() {}
 
 func (x *PreviewApiResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[35]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[36]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2255,7 +2325,7 @@ func (x *PreviewApiResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PreviewApiResponse.ProtoReflect.Descriptor instead.
 func (*PreviewApiResponse) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{35}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{36}
 }
 
 func (x *PreviewApiResponse) GetYaml() string {
@@ -2276,7 +2346,7 @@ type ApplyApiRequest struct {
 
 func (x *ApplyApiRequest) Reset() {
 	*x = ApplyApiRequest{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[36]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[37]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2288,7 +2358,7 @@ func (x *ApplyApiRequest) String() string {
 func (*ApplyApiRequest) ProtoMessage() {}
 
 func (x *ApplyApiRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[36]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[37]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2301,7 +2371,7 @@ func (x *ApplyApiRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ApplyApiRequest.ProtoReflect.Descriptor instead.
 func (*ApplyApiRequest) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{36}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{37}
 }
 
 func (x *ApplyApiRequest) GetSpec() *ApiSpec {
@@ -2336,7 +2406,7 @@ type ApplyApiResponse struct {
 
 func (x *ApplyApiResponse) Reset() {
 	*x = ApplyApiResponse{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[37]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[38]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2348,7 +2418,7 @@ func (x *ApplyApiResponse) String() string {
 func (*ApplyApiResponse) ProtoMessage() {}
 
 func (x *ApplyApiResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[37]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[38]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2361,7 +2431,7 @@ func (x *ApplyApiResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ApplyApiResponse.ProtoReflect.Descriptor instead.
 func (*ApplyApiResponse) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{37}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{38}
 }
 
 func (x *ApplyApiResponse) GetApi() *Api {
@@ -2388,7 +2458,7 @@ type DeleteApiRequest struct {
 
 func (x *DeleteApiRequest) Reset() {
 	*x = DeleteApiRequest{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[38]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[39]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2400,7 +2470,7 @@ func (x *DeleteApiRequest) String() string {
 func (*DeleteApiRequest) ProtoMessage() {}
 
 func (x *DeleteApiRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[38]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[39]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2413,7 +2483,7 @@ func (x *DeleteApiRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteApiRequest.ProtoReflect.Descriptor instead.
 func (*DeleteApiRequest) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{38}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{39}
 }
 
 func (x *DeleteApiRequest) GetName() string {
@@ -2440,7 +2510,7 @@ type DeleteApiResponse struct {
 
 func (x *DeleteApiResponse) Reset() {
 	*x = DeleteApiResponse{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[39]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[40]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2452,7 +2522,7 @@ func (x *DeleteApiResponse) String() string {
 func (*DeleteApiResponse) ProtoMessage() {}
 
 func (x *DeleteApiResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[39]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[40]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2465,7 +2535,7 @@ func (x *DeleteApiResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteApiResponse.ProtoReflect.Descriptor instead.
 func (*DeleteApiResponse) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{39}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{40}
 }
 
 func (x *DeleteApiResponse) GetDnsProblem() string {
@@ -2483,7 +2553,7 @@ type SyncAlertsRequest struct {
 
 func (x *SyncAlertsRequest) Reset() {
 	*x = SyncAlertsRequest{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[40]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2495,7 +2565,7 @@ func (x *SyncAlertsRequest) String() string {
 func (*SyncAlertsRequest) ProtoMessage() {}
 
 func (x *SyncAlertsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[40]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2508,7 +2578,7 @@ func (x *SyncAlertsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SyncAlertsRequest.ProtoReflect.Descriptor instead.
 func (*SyncAlertsRequest) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{40}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{41}
 }
 
 type SyncAlertsResponse struct {
@@ -2522,7 +2592,7 @@ type SyncAlertsResponse struct {
 
 func (x *SyncAlertsResponse) Reset() {
 	*x = SyncAlertsResponse{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[41]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[42]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2534,7 +2604,7 @@ func (x *SyncAlertsResponse) String() string {
 func (*SyncAlertsResponse) ProtoMessage() {}
 
 func (x *SyncAlertsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[41]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[42]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2547,7 +2617,7 @@ func (x *SyncAlertsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SyncAlertsResponse.ProtoReflect.Descriptor instead.
 func (*SyncAlertsResponse) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{41}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{42}
 }
 
 func (x *SyncAlertsResponse) GetCreated() int32 {
@@ -2587,7 +2657,7 @@ type Bucket struct {
 
 func (x *Bucket) Reset() {
 	*x = Bucket{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[42]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[43]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2599,7 +2669,7 @@ func (x *Bucket) String() string {
 func (*Bucket) ProtoMessage() {}
 
 func (x *Bucket) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[42]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[43]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2612,7 +2682,7 @@ func (x *Bucket) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Bucket.ProtoReflect.Descriptor instead.
 func (*Bucket) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{42}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{43}
 }
 
 func (x *Bucket) GetName() string {
@@ -2665,7 +2735,7 @@ type ListBucketsRequest struct {
 
 func (x *ListBucketsRequest) Reset() {
 	*x = ListBucketsRequest{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[43]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[44]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2677,7 +2747,7 @@ func (x *ListBucketsRequest) String() string {
 func (*ListBucketsRequest) ProtoMessage() {}
 
 func (x *ListBucketsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[43]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[44]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2690,7 +2760,7 @@ func (x *ListBucketsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListBucketsRequest.ProtoReflect.Descriptor instead.
 func (*ListBucketsRequest) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{43}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{44}
 }
 
 type ListBucketsResponse struct {
@@ -2702,7 +2772,7 @@ type ListBucketsResponse struct {
 
 func (x *ListBucketsResponse) Reset() {
 	*x = ListBucketsResponse{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[44]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2714,7 +2784,7 @@ func (x *ListBucketsResponse) String() string {
 func (*ListBucketsResponse) ProtoMessage() {}
 
 func (x *ListBucketsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[44]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2727,7 +2797,7 @@ func (x *ListBucketsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListBucketsResponse.ProtoReflect.Descriptor instead.
 func (*ListBucketsResponse) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{44}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *ListBucketsResponse) GetBuckets() []*Bucket {
@@ -2746,7 +2816,7 @@ type CreateBucketRequest struct {
 
 func (x *CreateBucketRequest) Reset() {
 	*x = CreateBucketRequest{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[45]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2758,7 +2828,7 @@ func (x *CreateBucketRequest) String() string {
 func (*CreateBucketRequest) ProtoMessage() {}
 
 func (x *CreateBucketRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[45]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2771,7 +2841,7 @@ func (x *CreateBucketRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateBucketRequest.ProtoReflect.Descriptor instead.
 func (*CreateBucketRequest) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{45}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *CreateBucketRequest) GetName() string {
@@ -2790,7 +2860,7 @@ type CreateBucketResponse struct {
 
 func (x *CreateBucketResponse) Reset() {
 	*x = CreateBucketResponse{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[46]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2802,7 +2872,7 @@ func (x *CreateBucketResponse) String() string {
 func (*CreateBucketResponse) ProtoMessage() {}
 
 func (x *CreateBucketResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[46]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2815,7 +2885,7 @@ func (x *CreateBucketResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateBucketResponse.ProtoReflect.Descriptor instead.
 func (*CreateBucketResponse) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{46}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *CreateBucketResponse) GetBucket() *Bucket {
@@ -2835,7 +2905,7 @@ type DeleteBucketRequest struct {
 
 func (x *DeleteBucketRequest) Reset() {
 	*x = DeleteBucketRequest{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[47]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2847,7 +2917,7 @@ func (x *DeleteBucketRequest) String() string {
 func (*DeleteBucketRequest) ProtoMessage() {}
 
 func (x *DeleteBucketRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[47]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2860,7 +2930,7 @@ func (x *DeleteBucketRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteBucketRequest.ProtoReflect.Descriptor instead.
 func (*DeleteBucketRequest) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{47}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *DeleteBucketRequest) GetName() string {
@@ -2885,7 +2955,7 @@ type DeleteBucketResponse struct {
 
 func (x *DeleteBucketResponse) Reset() {
 	*x = DeleteBucketResponse{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[48]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2897,7 +2967,7 @@ func (x *DeleteBucketResponse) String() string {
 func (*DeleteBucketResponse) ProtoMessage() {}
 
 func (x *DeleteBucketResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[48]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2910,7 +2980,7 @@ func (x *DeleteBucketResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteBucketResponse.ProtoReflect.Descriptor instead.
 func (*DeleteBucketResponse) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{48}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{49}
 }
 
 type StorageObject struct {
@@ -2924,7 +2994,7 @@ type StorageObject struct {
 
 func (x *StorageObject) Reset() {
 	*x = StorageObject{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[49]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2936,7 +3006,7 @@ func (x *StorageObject) String() string {
 func (*StorageObject) ProtoMessage() {}
 
 func (x *StorageObject) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[49]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2949,7 +3019,7 @@ func (x *StorageObject) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StorageObject.ProtoReflect.Descriptor instead.
 func (*StorageObject) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{49}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{50}
 }
 
 func (x *StorageObject) GetKey() string {
@@ -2984,7 +3054,7 @@ type ListObjectsRequest struct {
 
 func (x *ListObjectsRequest) Reset() {
 	*x = ListObjectsRequest{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[50]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[51]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2996,7 +3066,7 @@ func (x *ListObjectsRequest) String() string {
 func (*ListObjectsRequest) ProtoMessage() {}
 
 func (x *ListObjectsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[50]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[51]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3009,7 +3079,7 @@ func (x *ListObjectsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListObjectsRequest.ProtoReflect.Descriptor instead.
 func (*ListObjectsRequest) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{50}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{51}
 }
 
 func (x *ListObjectsRequest) GetBucket() string {
@@ -3037,7 +3107,7 @@ type ListObjectsResponse struct {
 
 func (x *ListObjectsResponse) Reset() {
 	*x = ListObjectsResponse{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[51]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[52]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3049,7 +3119,7 @@ func (x *ListObjectsResponse) String() string {
 func (*ListObjectsResponse) ProtoMessage() {}
 
 func (x *ListObjectsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[51]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[52]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3062,7 +3132,7 @@ func (x *ListObjectsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListObjectsResponse.ProtoReflect.Descriptor instead.
 func (*ListObjectsResponse) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{51}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{52}
 }
 
 func (x *ListObjectsResponse) GetObjects() []*StorageObject {
@@ -3089,7 +3159,7 @@ type DeleteObjectRequest struct {
 
 func (x *DeleteObjectRequest) Reset() {
 	*x = DeleteObjectRequest{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[52]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[53]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3101,7 +3171,7 @@ func (x *DeleteObjectRequest) String() string {
 func (*DeleteObjectRequest) ProtoMessage() {}
 
 func (x *DeleteObjectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[52]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[53]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3114,7 +3184,7 @@ func (x *DeleteObjectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteObjectRequest.ProtoReflect.Descriptor instead.
 func (*DeleteObjectRequest) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{52}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{53}
 }
 
 func (x *DeleteObjectRequest) GetBucket() string {
@@ -3139,7 +3209,7 @@ type DeleteObjectResponse struct {
 
 func (x *DeleteObjectResponse) Reset() {
 	*x = DeleteObjectResponse{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[53]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[54]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3151,7 +3221,7 @@ func (x *DeleteObjectResponse) String() string {
 func (*DeleteObjectResponse) ProtoMessage() {}
 
 func (x *DeleteObjectResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[53]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[54]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3164,7 +3234,7 @@ func (x *DeleteObjectResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteObjectResponse.ProtoReflect.Descriptor instead.
 func (*DeleteObjectResponse) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{53}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{54}
 }
 
 type DistributionSpec struct {
@@ -3184,7 +3254,7 @@ type DistributionSpec struct {
 
 func (x *DistributionSpec) Reset() {
 	*x = DistributionSpec{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[54]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[55]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3196,7 +3266,7 @@ func (x *DistributionSpec) String() string {
 func (*DistributionSpec) ProtoMessage() {}
 
 func (x *DistributionSpec) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[54]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[55]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3209,7 +3279,7 @@ func (x *DistributionSpec) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DistributionSpec.ProtoReflect.Descriptor instead.
 func (*DistributionSpec) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{54}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{55}
 }
 
 func (x *DistributionSpec) GetName() string {
@@ -3258,7 +3328,7 @@ type Distribution struct {
 
 func (x *Distribution) Reset() {
 	*x = Distribution{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[55]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[56]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3270,7 +3340,7 @@ func (x *Distribution) String() string {
 func (*Distribution) ProtoMessage() {}
 
 func (x *Distribution) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[55]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[56]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3283,7 +3353,7 @@ func (x *Distribution) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Distribution.ProtoReflect.Descriptor instead.
 func (*Distribution) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{55}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{56}
 }
 
 func (x *Distribution) GetSpec() *DistributionSpec {
@@ -3315,7 +3385,7 @@ type ListDistributionsRequest struct {
 
 func (x *ListDistributionsRequest) Reset() {
 	*x = ListDistributionsRequest{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[56]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[57]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3327,7 +3397,7 @@ func (x *ListDistributionsRequest) String() string {
 func (*ListDistributionsRequest) ProtoMessage() {}
 
 func (x *ListDistributionsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[56]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[57]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3340,7 +3410,7 @@ func (x *ListDistributionsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListDistributionsRequest.ProtoReflect.Descriptor instead.
 func (*ListDistributionsRequest) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{56}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{57}
 }
 
 type ListDistributionsResponse struct {
@@ -3352,7 +3422,7 @@ type ListDistributionsResponse struct {
 
 func (x *ListDistributionsResponse) Reset() {
 	*x = ListDistributionsResponse{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[57]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[58]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3364,7 +3434,7 @@ func (x *ListDistributionsResponse) String() string {
 func (*ListDistributionsResponse) ProtoMessage() {}
 
 func (x *ListDistributionsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[57]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[58]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3377,7 +3447,7 @@ func (x *ListDistributionsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListDistributionsResponse.ProtoReflect.Descriptor instead.
 func (*ListDistributionsResponse) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{57}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{58}
 }
 
 func (x *ListDistributionsResponse) GetDistributions() []*Distribution {
@@ -3396,7 +3466,7 @@ type PreviewDistributionRequest struct {
 
 func (x *PreviewDistributionRequest) Reset() {
 	*x = PreviewDistributionRequest{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[58]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[59]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3408,7 +3478,7 @@ func (x *PreviewDistributionRequest) String() string {
 func (*PreviewDistributionRequest) ProtoMessage() {}
 
 func (x *PreviewDistributionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[58]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[59]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3421,7 +3491,7 @@ func (x *PreviewDistributionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PreviewDistributionRequest.ProtoReflect.Descriptor instead.
 func (*PreviewDistributionRequest) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{58}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{59}
 }
 
 func (x *PreviewDistributionRequest) GetSpec() *DistributionSpec {
@@ -3440,7 +3510,7 @@ type PreviewDistributionResponse struct {
 
 func (x *PreviewDistributionResponse) Reset() {
 	*x = PreviewDistributionResponse{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[59]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[60]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3452,7 +3522,7 @@ func (x *PreviewDistributionResponse) String() string {
 func (*PreviewDistributionResponse) ProtoMessage() {}
 
 func (x *PreviewDistributionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[59]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[60]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3465,7 +3535,7 @@ func (x *PreviewDistributionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PreviewDistributionResponse.ProtoReflect.Descriptor instead.
 func (*PreviewDistributionResponse) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{59}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{60}
 }
 
 func (x *PreviewDistributionResponse) GetYaml() string {
@@ -3486,7 +3556,7 @@ type ApplyDistributionRequest struct {
 
 func (x *ApplyDistributionRequest) Reset() {
 	*x = ApplyDistributionRequest{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[60]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[61]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3498,7 +3568,7 @@ func (x *ApplyDistributionRequest) String() string {
 func (*ApplyDistributionRequest) ProtoMessage() {}
 
 func (x *ApplyDistributionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[60]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[61]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3511,7 +3581,7 @@ func (x *ApplyDistributionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ApplyDistributionRequest.ProtoReflect.Descriptor instead.
 func (*ApplyDistributionRequest) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{60}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{61}
 }
 
 func (x *ApplyDistributionRequest) GetSpec() *DistributionSpec {
@@ -3545,7 +3615,7 @@ type ApplyDistributionResponse struct {
 
 func (x *ApplyDistributionResponse) Reset() {
 	*x = ApplyDistributionResponse{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[61]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[62]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3557,7 +3627,7 @@ func (x *ApplyDistributionResponse) String() string {
 func (*ApplyDistributionResponse) ProtoMessage() {}
 
 func (x *ApplyDistributionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[61]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[62]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3570,7 +3640,7 @@ func (x *ApplyDistributionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ApplyDistributionResponse.ProtoReflect.Descriptor instead.
 func (*ApplyDistributionResponse) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{61}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{62}
 }
 
 func (x *ApplyDistributionResponse) GetDistribution() *Distribution {
@@ -3597,7 +3667,7 @@ type DeleteDistributionRequest struct {
 
 func (x *DeleteDistributionRequest) Reset() {
 	*x = DeleteDistributionRequest{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[62]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[63]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3609,7 +3679,7 @@ func (x *DeleteDistributionRequest) String() string {
 func (*DeleteDistributionRequest) ProtoMessage() {}
 
 func (x *DeleteDistributionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[62]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[63]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3622,7 +3692,7 @@ func (x *DeleteDistributionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteDistributionRequest.ProtoReflect.Descriptor instead.
 func (*DeleteDistributionRequest) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{62}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{63}
 }
 
 func (x *DeleteDistributionRequest) GetName() string {
@@ -3648,7 +3718,7 @@ type DeleteDistributionResponse struct {
 
 func (x *DeleteDistributionResponse) Reset() {
 	*x = DeleteDistributionResponse{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[63]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[64]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3660,7 +3730,7 @@ func (x *DeleteDistributionResponse) String() string {
 func (*DeleteDistributionResponse) ProtoMessage() {}
 
 func (x *DeleteDistributionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[63]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[64]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3673,7 +3743,7 @@ func (x *DeleteDistributionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteDistributionResponse.ProtoReflect.Descriptor instead.
 func (*DeleteDistributionResponse) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{63}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{64}
 }
 
 func (x *DeleteDistributionResponse) GetDnsProblem() string {
@@ -3702,7 +3772,7 @@ type Database struct {
 
 func (x *Database) Reset() {
 	*x = Database{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[64]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[65]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3714,7 +3784,7 @@ func (x *Database) String() string {
 func (*Database) ProtoMessage() {}
 
 func (x *Database) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[64]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[65]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3727,7 +3797,7 @@ func (x *Database) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Database.ProtoReflect.Descriptor instead.
 func (*Database) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{64}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{65}
 }
 
 func (x *Database) GetName() string {
@@ -3787,7 +3857,7 @@ type ListDatabasesRequest struct {
 
 func (x *ListDatabasesRequest) Reset() {
 	*x = ListDatabasesRequest{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[65]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[66]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3799,7 +3869,7 @@ func (x *ListDatabasesRequest) String() string {
 func (*ListDatabasesRequest) ProtoMessage() {}
 
 func (x *ListDatabasesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[65]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[66]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3812,7 +3882,7 @@ func (x *ListDatabasesRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListDatabasesRequest.ProtoReflect.Descriptor instead.
 func (*ListDatabasesRequest) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{65}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{66}
 }
 
 type ListDatabasesResponse struct {
@@ -3824,7 +3894,7 @@ type ListDatabasesResponse struct {
 
 func (x *ListDatabasesResponse) Reset() {
 	*x = ListDatabasesResponse{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[66]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[67]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3836,7 +3906,7 @@ func (x *ListDatabasesResponse) String() string {
 func (*ListDatabasesResponse) ProtoMessage() {}
 
 func (x *ListDatabasesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[66]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[67]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3849,7 +3919,7 @@ func (x *ListDatabasesResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ListDatabasesResponse.ProtoReflect.Descriptor instead.
 func (*ListDatabasesResponse) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{66}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{67}
 }
 
 func (x *ListDatabasesResponse) GetDatabases() []*Database {
@@ -3869,7 +3939,7 @@ type CreateDatabaseRequest struct {
 
 func (x *CreateDatabaseRequest) Reset() {
 	*x = CreateDatabaseRequest{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[67]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[68]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3881,7 +3951,7 @@ func (x *CreateDatabaseRequest) String() string {
 func (*CreateDatabaseRequest) ProtoMessage() {}
 
 func (x *CreateDatabaseRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[67]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[68]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3894,7 +3964,7 @@ func (x *CreateDatabaseRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateDatabaseRequest.ProtoReflect.Descriptor instead.
 func (*CreateDatabaseRequest) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{67}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{68}
 }
 
 func (x *CreateDatabaseRequest) GetName() string {
@@ -3920,7 +3990,7 @@ type CreateDatabaseResponse struct {
 
 func (x *CreateDatabaseResponse) Reset() {
 	*x = CreateDatabaseResponse{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[68]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[69]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3932,7 +4002,7 @@ func (x *CreateDatabaseResponse) String() string {
 func (*CreateDatabaseResponse) ProtoMessage() {}
 
 func (x *CreateDatabaseResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[68]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[69]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3945,7 +4015,7 @@ func (x *CreateDatabaseResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateDatabaseResponse.ProtoReflect.Descriptor instead.
 func (*CreateDatabaseResponse) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{68}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{69}
 }
 
 func (x *CreateDatabaseResponse) GetDatabase() *Database {
@@ -3965,7 +4035,7 @@ type DeleteDatabaseRequest struct {
 
 func (x *DeleteDatabaseRequest) Reset() {
 	*x = DeleteDatabaseRequest{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[69]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[70]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -3977,7 +4047,7 @@ func (x *DeleteDatabaseRequest) String() string {
 func (*DeleteDatabaseRequest) ProtoMessage() {}
 
 func (x *DeleteDatabaseRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[69]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[70]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -3990,7 +4060,7 @@ func (x *DeleteDatabaseRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteDatabaseRequest.ProtoReflect.Descriptor instead.
 func (*DeleteDatabaseRequest) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{69}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{70}
 }
 
 func (x *DeleteDatabaseRequest) GetName() string {
@@ -4015,7 +4085,7 @@ type DeleteDatabaseResponse struct {
 
 func (x *DeleteDatabaseResponse) Reset() {
 	*x = DeleteDatabaseResponse{}
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[70]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[71]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -4027,7 +4097,7 @@ func (x *DeleteDatabaseResponse) String() string {
 func (*DeleteDatabaseResponse) ProtoMessage() {}
 
 func (x *DeleteDatabaseResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[70]
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[71]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -4040,7 +4110,7 @@ func (x *DeleteDatabaseResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DeleteDatabaseResponse.ProtoReflect.Descriptor instead.
 func (*DeleteDatabaseResponse) Descriptor() ([]byte, []int) {
-	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{70}
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{71}
 }
 
 var File_taramanji_cloud_v1_console_proto protoreflect.FileDescriptor
@@ -4119,7 +4189,11 @@ const file_taramanji_cloud_v1_console_proto_rawDesc = "" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05label\x18\x02 \x01(\tR\x05label\x12 \n" +
 	"\vdescription\x18\x03 \x01(\tR\vdescription\"\x1a\n" +
-	"\x18GetHostingOptionsRequest\"\xb7\x05\n" +
+	"\x18GetHostingOptionsRequest\"X\n" +
+	"\x0eInstanceFamily\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
+	"\x05label\x18\x02 \x01(\tR\x05label\x12 \n" +
+	"\vdescription\x18\x03 \x01(\tR\vdescription\"\x88\x06\n" +
 	"\x19GetHostingOptionsResponse\x12G\n" +
 	"\x0einstance_types\x18\x01 \x03(\v2 .taramanji.cloud.v1.InstanceTypeR\rinstanceTypes\x12D\n" +
 	"\ralert_presets\x18\x02 \x03(\v2\x1f.taramanji.cloud.v1.AlertPresetR\falertPresets\x12'\n" +
@@ -4139,7 +4213,8 @@ const file_taramanji_cloud_v1_console_proto_rawDesc = "" +
 	"\tdirectory\x18\f \x01(\tR\tdirectory\x120\n" +
 	"\x14idle_timeout_seconds\x18\r \x01(\x05R\x12idleTimeoutSeconds\x12\x1f\n" +
 	"\vhost_suffix\x18\x0e \x01(\tR\n" +
-	"hostSuffix\x12'\n" +
+	"hostSuffix\x12O\n" +
+	"\x11instance_families\x18\x12 \x03(\v2\".taramanji.cloud.v1.InstanceFamilyR\x10instanceFamilies\x12'\n" +
 	"\x0fstorage_enabled\x18\x0f \x01(\bR\x0estorageEnabled\x12\x1f\n" +
 	"\vdns_enabled\x18\x10 \x01(\bR\n" +
 	"dnsEnabled\x12+\n" +
@@ -4358,7 +4433,7 @@ func file_taramanji_cloud_v1_console_proto_rawDescGZIP() []byte {
 	return file_taramanji_cloud_v1_console_proto_rawDescData
 }
 
-var file_taramanji_cloud_v1_console_proto_msgTypes = make([]protoimpl.MessageInfo, 71)
+var file_taramanji_cloud_v1_console_proto_msgTypes = make([]protoimpl.MessageInfo, 72)
 var file_taramanji_cloud_v1_console_proto_goTypes = []any{
 	(*Component)(nil),                   // 0: taramanji.cloud.v1.Component
 	(*GetOverviewRequest)(nil),          // 1: taramanji.cloud.v1.GetOverviewRequest
@@ -4376,61 +4451,62 @@ var file_taramanji_cloud_v1_console_proto_goTypes = []any{
 	(*InstanceType)(nil),                // 13: taramanji.cloud.v1.InstanceType
 	(*AlertPreset)(nil),                 // 14: taramanji.cloud.v1.AlertPreset
 	(*GetHostingOptionsRequest)(nil),    // 15: taramanji.cloud.v1.GetHostingOptionsRequest
-	(*GetHostingOptionsResponse)(nil),   // 16: taramanji.cloud.v1.GetHostingOptionsResponse
-	(*EnvVar)(nil),                      // 17: taramanji.cloud.v1.EnvVar
-	(*Source)(nil),                      // 18: taramanji.cloud.v1.Source
-	(*FunctionSpec)(nil),                // 19: taramanji.cloud.v1.FunctionSpec
-	(*Function)(nil),                    // 20: taramanji.cloud.v1.Function
-	(*ListFunctionsRequest)(nil),        // 21: taramanji.cloud.v1.ListFunctionsRequest
-	(*ListFunctionsResponse)(nil),       // 22: taramanji.cloud.v1.ListFunctionsResponse
-	(*PreviewFunctionRequest)(nil),      // 23: taramanji.cloud.v1.PreviewFunctionRequest
-	(*PreviewFunctionResponse)(nil),     // 24: taramanji.cloud.v1.PreviewFunctionResponse
-	(*ApplyFunctionRequest)(nil),        // 25: taramanji.cloud.v1.ApplyFunctionRequest
-	(*ApplyFunctionResponse)(nil),       // 26: taramanji.cloud.v1.ApplyFunctionResponse
-	(*DeleteFunctionRequest)(nil),       // 27: taramanji.cloud.v1.DeleteFunctionRequest
-	(*DeleteFunctionResponse)(nil),      // 28: taramanji.cloud.v1.DeleteFunctionResponse
-	(*ApiRoute)(nil),                    // 29: taramanji.cloud.v1.ApiRoute
-	(*ApiSpec)(nil),                     // 30: taramanji.cloud.v1.ApiSpec
-	(*Api)(nil),                         // 31: taramanji.cloud.v1.Api
-	(*ListApisRequest)(nil),             // 32: taramanji.cloud.v1.ListApisRequest
-	(*ListApisResponse)(nil),            // 33: taramanji.cloud.v1.ListApisResponse
-	(*PreviewApiRequest)(nil),           // 34: taramanji.cloud.v1.PreviewApiRequest
-	(*PreviewApiResponse)(nil),          // 35: taramanji.cloud.v1.PreviewApiResponse
-	(*ApplyApiRequest)(nil),             // 36: taramanji.cloud.v1.ApplyApiRequest
-	(*ApplyApiResponse)(nil),            // 37: taramanji.cloud.v1.ApplyApiResponse
-	(*DeleteApiRequest)(nil),            // 38: taramanji.cloud.v1.DeleteApiRequest
-	(*DeleteApiResponse)(nil),           // 39: taramanji.cloud.v1.DeleteApiResponse
-	(*SyncAlertsRequest)(nil),           // 40: taramanji.cloud.v1.SyncAlertsRequest
-	(*SyncAlertsResponse)(nil),          // 41: taramanji.cloud.v1.SyncAlertsResponse
-	(*Bucket)(nil),                      // 42: taramanji.cloud.v1.Bucket
-	(*ListBucketsRequest)(nil),          // 43: taramanji.cloud.v1.ListBucketsRequest
-	(*ListBucketsResponse)(nil),         // 44: taramanji.cloud.v1.ListBucketsResponse
-	(*CreateBucketRequest)(nil),         // 45: taramanji.cloud.v1.CreateBucketRequest
-	(*CreateBucketResponse)(nil),        // 46: taramanji.cloud.v1.CreateBucketResponse
-	(*DeleteBucketRequest)(nil),         // 47: taramanji.cloud.v1.DeleteBucketRequest
-	(*DeleteBucketResponse)(nil),        // 48: taramanji.cloud.v1.DeleteBucketResponse
-	(*StorageObject)(nil),               // 49: taramanji.cloud.v1.StorageObject
-	(*ListObjectsRequest)(nil),          // 50: taramanji.cloud.v1.ListObjectsRequest
-	(*ListObjectsResponse)(nil),         // 51: taramanji.cloud.v1.ListObjectsResponse
-	(*DeleteObjectRequest)(nil),         // 52: taramanji.cloud.v1.DeleteObjectRequest
-	(*DeleteObjectResponse)(nil),        // 53: taramanji.cloud.v1.DeleteObjectResponse
-	(*DistributionSpec)(nil),            // 54: taramanji.cloud.v1.DistributionSpec
-	(*Distribution)(nil),                // 55: taramanji.cloud.v1.Distribution
-	(*ListDistributionsRequest)(nil),    // 56: taramanji.cloud.v1.ListDistributionsRequest
-	(*ListDistributionsResponse)(nil),   // 57: taramanji.cloud.v1.ListDistributionsResponse
-	(*PreviewDistributionRequest)(nil),  // 58: taramanji.cloud.v1.PreviewDistributionRequest
-	(*PreviewDistributionResponse)(nil), // 59: taramanji.cloud.v1.PreviewDistributionResponse
-	(*ApplyDistributionRequest)(nil),    // 60: taramanji.cloud.v1.ApplyDistributionRequest
-	(*ApplyDistributionResponse)(nil),   // 61: taramanji.cloud.v1.ApplyDistributionResponse
-	(*DeleteDistributionRequest)(nil),   // 62: taramanji.cloud.v1.DeleteDistributionRequest
-	(*DeleteDistributionResponse)(nil),  // 63: taramanji.cloud.v1.DeleteDistributionResponse
-	(*Database)(nil),                    // 64: taramanji.cloud.v1.Database
-	(*ListDatabasesRequest)(nil),        // 65: taramanji.cloud.v1.ListDatabasesRequest
-	(*ListDatabasesResponse)(nil),       // 66: taramanji.cloud.v1.ListDatabasesResponse
-	(*CreateDatabaseRequest)(nil),       // 67: taramanji.cloud.v1.CreateDatabaseRequest
-	(*CreateDatabaseResponse)(nil),      // 68: taramanji.cloud.v1.CreateDatabaseResponse
-	(*DeleteDatabaseRequest)(nil),       // 69: taramanji.cloud.v1.DeleteDatabaseRequest
-	(*DeleteDatabaseResponse)(nil),      // 70: taramanji.cloud.v1.DeleteDatabaseResponse
+	(*InstanceFamily)(nil),              // 16: taramanji.cloud.v1.InstanceFamily
+	(*GetHostingOptionsResponse)(nil),   // 17: taramanji.cloud.v1.GetHostingOptionsResponse
+	(*EnvVar)(nil),                      // 18: taramanji.cloud.v1.EnvVar
+	(*Source)(nil),                      // 19: taramanji.cloud.v1.Source
+	(*FunctionSpec)(nil),                // 20: taramanji.cloud.v1.FunctionSpec
+	(*Function)(nil),                    // 21: taramanji.cloud.v1.Function
+	(*ListFunctionsRequest)(nil),        // 22: taramanji.cloud.v1.ListFunctionsRequest
+	(*ListFunctionsResponse)(nil),       // 23: taramanji.cloud.v1.ListFunctionsResponse
+	(*PreviewFunctionRequest)(nil),      // 24: taramanji.cloud.v1.PreviewFunctionRequest
+	(*PreviewFunctionResponse)(nil),     // 25: taramanji.cloud.v1.PreviewFunctionResponse
+	(*ApplyFunctionRequest)(nil),        // 26: taramanji.cloud.v1.ApplyFunctionRequest
+	(*ApplyFunctionResponse)(nil),       // 27: taramanji.cloud.v1.ApplyFunctionResponse
+	(*DeleteFunctionRequest)(nil),       // 28: taramanji.cloud.v1.DeleteFunctionRequest
+	(*DeleteFunctionResponse)(nil),      // 29: taramanji.cloud.v1.DeleteFunctionResponse
+	(*ApiRoute)(nil),                    // 30: taramanji.cloud.v1.ApiRoute
+	(*ApiSpec)(nil),                     // 31: taramanji.cloud.v1.ApiSpec
+	(*Api)(nil),                         // 32: taramanji.cloud.v1.Api
+	(*ListApisRequest)(nil),             // 33: taramanji.cloud.v1.ListApisRequest
+	(*ListApisResponse)(nil),            // 34: taramanji.cloud.v1.ListApisResponse
+	(*PreviewApiRequest)(nil),           // 35: taramanji.cloud.v1.PreviewApiRequest
+	(*PreviewApiResponse)(nil),          // 36: taramanji.cloud.v1.PreviewApiResponse
+	(*ApplyApiRequest)(nil),             // 37: taramanji.cloud.v1.ApplyApiRequest
+	(*ApplyApiResponse)(nil),            // 38: taramanji.cloud.v1.ApplyApiResponse
+	(*DeleteApiRequest)(nil),            // 39: taramanji.cloud.v1.DeleteApiRequest
+	(*DeleteApiResponse)(nil),           // 40: taramanji.cloud.v1.DeleteApiResponse
+	(*SyncAlertsRequest)(nil),           // 41: taramanji.cloud.v1.SyncAlertsRequest
+	(*SyncAlertsResponse)(nil),          // 42: taramanji.cloud.v1.SyncAlertsResponse
+	(*Bucket)(nil),                      // 43: taramanji.cloud.v1.Bucket
+	(*ListBucketsRequest)(nil),          // 44: taramanji.cloud.v1.ListBucketsRequest
+	(*ListBucketsResponse)(nil),         // 45: taramanji.cloud.v1.ListBucketsResponse
+	(*CreateBucketRequest)(nil),         // 46: taramanji.cloud.v1.CreateBucketRequest
+	(*CreateBucketResponse)(nil),        // 47: taramanji.cloud.v1.CreateBucketResponse
+	(*DeleteBucketRequest)(nil),         // 48: taramanji.cloud.v1.DeleteBucketRequest
+	(*DeleteBucketResponse)(nil),        // 49: taramanji.cloud.v1.DeleteBucketResponse
+	(*StorageObject)(nil),               // 50: taramanji.cloud.v1.StorageObject
+	(*ListObjectsRequest)(nil),          // 51: taramanji.cloud.v1.ListObjectsRequest
+	(*ListObjectsResponse)(nil),         // 52: taramanji.cloud.v1.ListObjectsResponse
+	(*DeleteObjectRequest)(nil),         // 53: taramanji.cloud.v1.DeleteObjectRequest
+	(*DeleteObjectResponse)(nil),        // 54: taramanji.cloud.v1.DeleteObjectResponse
+	(*DistributionSpec)(nil),            // 55: taramanji.cloud.v1.DistributionSpec
+	(*Distribution)(nil),                // 56: taramanji.cloud.v1.Distribution
+	(*ListDistributionsRequest)(nil),    // 57: taramanji.cloud.v1.ListDistributionsRequest
+	(*ListDistributionsResponse)(nil),   // 58: taramanji.cloud.v1.ListDistributionsResponse
+	(*PreviewDistributionRequest)(nil),  // 59: taramanji.cloud.v1.PreviewDistributionRequest
+	(*PreviewDistributionResponse)(nil), // 60: taramanji.cloud.v1.PreviewDistributionResponse
+	(*ApplyDistributionRequest)(nil),    // 61: taramanji.cloud.v1.ApplyDistributionRequest
+	(*ApplyDistributionResponse)(nil),   // 62: taramanji.cloud.v1.ApplyDistributionResponse
+	(*DeleteDistributionRequest)(nil),   // 63: taramanji.cloud.v1.DeleteDistributionRequest
+	(*DeleteDistributionResponse)(nil),  // 64: taramanji.cloud.v1.DeleteDistributionResponse
+	(*Database)(nil),                    // 65: taramanji.cloud.v1.Database
+	(*ListDatabasesRequest)(nil),        // 66: taramanji.cloud.v1.ListDatabasesRequest
+	(*ListDatabasesResponse)(nil),       // 67: taramanji.cloud.v1.ListDatabasesResponse
+	(*CreateDatabaseRequest)(nil),       // 68: taramanji.cloud.v1.CreateDatabaseRequest
+	(*CreateDatabaseResponse)(nil),      // 69: taramanji.cloud.v1.CreateDatabaseResponse
+	(*DeleteDatabaseRequest)(nil),       // 70: taramanji.cloud.v1.DeleteDatabaseRequest
+	(*DeleteDatabaseResponse)(nil),      // 71: taramanji.cloud.v1.DeleteDatabaseResponse
 }
 var file_taramanji_cloud_v1_console_proto_depIdxs = []int32{
 	0,  // 0: taramanji.cloud.v1.GetOverviewResponse.components:type_name -> taramanji.cloud.v1.Component
@@ -4445,88 +4521,89 @@ var file_taramanji_cloud_v1_console_proto_depIdxs = []int32{
 	11, // 9: taramanji.cloud.v1.GetCapacityResponse.pods:type_name -> taramanji.cloud.v1.PodUsage
 	13, // 10: taramanji.cloud.v1.GetHostingOptionsResponse.instance_types:type_name -> taramanji.cloud.v1.InstanceType
 	14, // 11: taramanji.cloud.v1.GetHostingOptionsResponse.alert_presets:type_name -> taramanji.cloud.v1.AlertPreset
-	17, // 12: taramanji.cloud.v1.FunctionSpec.env:type_name -> taramanji.cloud.v1.EnvVar
-	19, // 13: taramanji.cloud.v1.Function.spec:type_name -> taramanji.cloud.v1.FunctionSpec
-	18, // 14: taramanji.cloud.v1.Function.source:type_name -> taramanji.cloud.v1.Source
-	20, // 15: taramanji.cloud.v1.ListFunctionsResponse.functions:type_name -> taramanji.cloud.v1.Function
-	19, // 16: taramanji.cloud.v1.PreviewFunctionRequest.spec:type_name -> taramanji.cloud.v1.FunctionSpec
-	19, // 17: taramanji.cloud.v1.ApplyFunctionRequest.spec:type_name -> taramanji.cloud.v1.FunctionSpec
-	20, // 18: taramanji.cloud.v1.ApplyFunctionResponse.function:type_name -> taramanji.cloud.v1.Function
-	29, // 19: taramanji.cloud.v1.ApiSpec.routes:type_name -> taramanji.cloud.v1.ApiRoute
-	30, // 20: taramanji.cloud.v1.Api.spec:type_name -> taramanji.cloud.v1.ApiSpec
-	18, // 21: taramanji.cloud.v1.Api.source:type_name -> taramanji.cloud.v1.Source
-	31, // 22: taramanji.cloud.v1.ListApisResponse.apis:type_name -> taramanji.cloud.v1.Api
-	30, // 23: taramanji.cloud.v1.PreviewApiRequest.spec:type_name -> taramanji.cloud.v1.ApiSpec
-	30, // 24: taramanji.cloud.v1.ApplyApiRequest.spec:type_name -> taramanji.cloud.v1.ApiSpec
-	31, // 25: taramanji.cloud.v1.ApplyApiResponse.api:type_name -> taramanji.cloud.v1.Api
-	18, // 26: taramanji.cloud.v1.Bucket.source:type_name -> taramanji.cloud.v1.Source
-	42, // 27: taramanji.cloud.v1.ListBucketsResponse.buckets:type_name -> taramanji.cloud.v1.Bucket
-	42, // 28: taramanji.cloud.v1.CreateBucketResponse.bucket:type_name -> taramanji.cloud.v1.Bucket
-	49, // 29: taramanji.cloud.v1.ListObjectsResponse.objects:type_name -> taramanji.cloud.v1.StorageObject
-	54, // 30: taramanji.cloud.v1.Distribution.spec:type_name -> taramanji.cloud.v1.DistributionSpec
-	18, // 31: taramanji.cloud.v1.Distribution.source:type_name -> taramanji.cloud.v1.Source
-	55, // 32: taramanji.cloud.v1.ListDistributionsResponse.distributions:type_name -> taramanji.cloud.v1.Distribution
-	54, // 33: taramanji.cloud.v1.PreviewDistributionRequest.spec:type_name -> taramanji.cloud.v1.DistributionSpec
-	54, // 34: taramanji.cloud.v1.ApplyDistributionRequest.spec:type_name -> taramanji.cloud.v1.DistributionSpec
-	55, // 35: taramanji.cloud.v1.ApplyDistributionResponse.distribution:type_name -> taramanji.cloud.v1.Distribution
-	18, // 36: taramanji.cloud.v1.Database.source:type_name -> taramanji.cloud.v1.Source
-	64, // 37: taramanji.cloud.v1.ListDatabasesResponse.databases:type_name -> taramanji.cloud.v1.Database
-	64, // 38: taramanji.cloud.v1.CreateDatabaseResponse.database:type_name -> taramanji.cloud.v1.Database
-	1,  // 39: taramanji.cloud.v1.ConsoleService.GetOverview:input_type -> taramanji.cloud.v1.GetOverviewRequest
-	4,  // 40: taramanji.cloud.v1.ConsoleService.GetMetrics:input_type -> taramanji.cloud.v1.GetMetricsRequest
-	6,  // 41: taramanji.cloud.v1.ConsoleService.GetCapacity:input_type -> taramanji.cloud.v1.GetCapacityRequest
-	15, // 42: taramanji.cloud.v1.ConsoleService.GetHostingOptions:input_type -> taramanji.cloud.v1.GetHostingOptionsRequest
-	21, // 43: taramanji.cloud.v1.ConsoleService.ListFunctions:input_type -> taramanji.cloud.v1.ListFunctionsRequest
-	23, // 44: taramanji.cloud.v1.ConsoleService.PreviewFunction:input_type -> taramanji.cloud.v1.PreviewFunctionRequest
-	25, // 45: taramanji.cloud.v1.ConsoleService.ApplyFunction:input_type -> taramanji.cloud.v1.ApplyFunctionRequest
-	27, // 46: taramanji.cloud.v1.ConsoleService.DeleteFunction:input_type -> taramanji.cloud.v1.DeleteFunctionRequest
-	32, // 47: taramanji.cloud.v1.ConsoleService.ListApis:input_type -> taramanji.cloud.v1.ListApisRequest
-	34, // 48: taramanji.cloud.v1.ConsoleService.PreviewApi:input_type -> taramanji.cloud.v1.PreviewApiRequest
-	36, // 49: taramanji.cloud.v1.ConsoleService.ApplyApi:input_type -> taramanji.cloud.v1.ApplyApiRequest
-	38, // 50: taramanji.cloud.v1.ConsoleService.DeleteApi:input_type -> taramanji.cloud.v1.DeleteApiRequest
-	43, // 51: taramanji.cloud.v1.ConsoleService.ListBuckets:input_type -> taramanji.cloud.v1.ListBucketsRequest
-	45, // 52: taramanji.cloud.v1.ConsoleService.CreateBucket:input_type -> taramanji.cloud.v1.CreateBucketRequest
-	47, // 53: taramanji.cloud.v1.ConsoleService.DeleteBucket:input_type -> taramanji.cloud.v1.DeleteBucketRequest
-	50, // 54: taramanji.cloud.v1.ConsoleService.ListObjects:input_type -> taramanji.cloud.v1.ListObjectsRequest
-	52, // 55: taramanji.cloud.v1.ConsoleService.DeleteObject:input_type -> taramanji.cloud.v1.DeleteObjectRequest
-	56, // 56: taramanji.cloud.v1.ConsoleService.ListDistributions:input_type -> taramanji.cloud.v1.ListDistributionsRequest
-	58, // 57: taramanji.cloud.v1.ConsoleService.PreviewDistribution:input_type -> taramanji.cloud.v1.PreviewDistributionRequest
-	60, // 58: taramanji.cloud.v1.ConsoleService.ApplyDistribution:input_type -> taramanji.cloud.v1.ApplyDistributionRequest
-	62, // 59: taramanji.cloud.v1.ConsoleService.DeleteDistribution:input_type -> taramanji.cloud.v1.DeleteDistributionRequest
-	65, // 60: taramanji.cloud.v1.ConsoleService.ListDatabases:input_type -> taramanji.cloud.v1.ListDatabasesRequest
-	67, // 61: taramanji.cloud.v1.ConsoleService.CreateDatabase:input_type -> taramanji.cloud.v1.CreateDatabaseRequest
-	69, // 62: taramanji.cloud.v1.ConsoleService.DeleteDatabase:input_type -> taramanji.cloud.v1.DeleteDatabaseRequest
-	40, // 63: taramanji.cloud.v1.ConsoleService.SyncAlerts:input_type -> taramanji.cloud.v1.SyncAlertsRequest
-	2,  // 64: taramanji.cloud.v1.ConsoleService.GetOverview:output_type -> taramanji.cloud.v1.GetOverviewResponse
-	5,  // 65: taramanji.cloud.v1.ConsoleService.GetMetrics:output_type -> taramanji.cloud.v1.GetMetricsResponse
-	12, // 66: taramanji.cloud.v1.ConsoleService.GetCapacity:output_type -> taramanji.cloud.v1.GetCapacityResponse
-	16, // 67: taramanji.cloud.v1.ConsoleService.GetHostingOptions:output_type -> taramanji.cloud.v1.GetHostingOptionsResponse
-	22, // 68: taramanji.cloud.v1.ConsoleService.ListFunctions:output_type -> taramanji.cloud.v1.ListFunctionsResponse
-	24, // 69: taramanji.cloud.v1.ConsoleService.PreviewFunction:output_type -> taramanji.cloud.v1.PreviewFunctionResponse
-	26, // 70: taramanji.cloud.v1.ConsoleService.ApplyFunction:output_type -> taramanji.cloud.v1.ApplyFunctionResponse
-	28, // 71: taramanji.cloud.v1.ConsoleService.DeleteFunction:output_type -> taramanji.cloud.v1.DeleteFunctionResponse
-	33, // 72: taramanji.cloud.v1.ConsoleService.ListApis:output_type -> taramanji.cloud.v1.ListApisResponse
-	35, // 73: taramanji.cloud.v1.ConsoleService.PreviewApi:output_type -> taramanji.cloud.v1.PreviewApiResponse
-	37, // 74: taramanji.cloud.v1.ConsoleService.ApplyApi:output_type -> taramanji.cloud.v1.ApplyApiResponse
-	39, // 75: taramanji.cloud.v1.ConsoleService.DeleteApi:output_type -> taramanji.cloud.v1.DeleteApiResponse
-	44, // 76: taramanji.cloud.v1.ConsoleService.ListBuckets:output_type -> taramanji.cloud.v1.ListBucketsResponse
-	46, // 77: taramanji.cloud.v1.ConsoleService.CreateBucket:output_type -> taramanji.cloud.v1.CreateBucketResponse
-	48, // 78: taramanji.cloud.v1.ConsoleService.DeleteBucket:output_type -> taramanji.cloud.v1.DeleteBucketResponse
-	51, // 79: taramanji.cloud.v1.ConsoleService.ListObjects:output_type -> taramanji.cloud.v1.ListObjectsResponse
-	53, // 80: taramanji.cloud.v1.ConsoleService.DeleteObject:output_type -> taramanji.cloud.v1.DeleteObjectResponse
-	57, // 81: taramanji.cloud.v1.ConsoleService.ListDistributions:output_type -> taramanji.cloud.v1.ListDistributionsResponse
-	59, // 82: taramanji.cloud.v1.ConsoleService.PreviewDistribution:output_type -> taramanji.cloud.v1.PreviewDistributionResponse
-	61, // 83: taramanji.cloud.v1.ConsoleService.ApplyDistribution:output_type -> taramanji.cloud.v1.ApplyDistributionResponse
-	63, // 84: taramanji.cloud.v1.ConsoleService.DeleteDistribution:output_type -> taramanji.cloud.v1.DeleteDistributionResponse
-	66, // 85: taramanji.cloud.v1.ConsoleService.ListDatabases:output_type -> taramanji.cloud.v1.ListDatabasesResponse
-	68, // 86: taramanji.cloud.v1.ConsoleService.CreateDatabase:output_type -> taramanji.cloud.v1.CreateDatabaseResponse
-	70, // 87: taramanji.cloud.v1.ConsoleService.DeleteDatabase:output_type -> taramanji.cloud.v1.DeleteDatabaseResponse
-	41, // 88: taramanji.cloud.v1.ConsoleService.SyncAlerts:output_type -> taramanji.cloud.v1.SyncAlertsResponse
-	64, // [64:89] is the sub-list for method output_type
-	39, // [39:64] is the sub-list for method input_type
-	39, // [39:39] is the sub-list for extension type_name
-	39, // [39:39] is the sub-list for extension extendee
-	0,  // [0:39] is the sub-list for field type_name
+	16, // 12: taramanji.cloud.v1.GetHostingOptionsResponse.instance_families:type_name -> taramanji.cloud.v1.InstanceFamily
+	18, // 13: taramanji.cloud.v1.FunctionSpec.env:type_name -> taramanji.cloud.v1.EnvVar
+	20, // 14: taramanji.cloud.v1.Function.spec:type_name -> taramanji.cloud.v1.FunctionSpec
+	19, // 15: taramanji.cloud.v1.Function.source:type_name -> taramanji.cloud.v1.Source
+	21, // 16: taramanji.cloud.v1.ListFunctionsResponse.functions:type_name -> taramanji.cloud.v1.Function
+	20, // 17: taramanji.cloud.v1.PreviewFunctionRequest.spec:type_name -> taramanji.cloud.v1.FunctionSpec
+	20, // 18: taramanji.cloud.v1.ApplyFunctionRequest.spec:type_name -> taramanji.cloud.v1.FunctionSpec
+	21, // 19: taramanji.cloud.v1.ApplyFunctionResponse.function:type_name -> taramanji.cloud.v1.Function
+	30, // 20: taramanji.cloud.v1.ApiSpec.routes:type_name -> taramanji.cloud.v1.ApiRoute
+	31, // 21: taramanji.cloud.v1.Api.spec:type_name -> taramanji.cloud.v1.ApiSpec
+	19, // 22: taramanji.cloud.v1.Api.source:type_name -> taramanji.cloud.v1.Source
+	32, // 23: taramanji.cloud.v1.ListApisResponse.apis:type_name -> taramanji.cloud.v1.Api
+	31, // 24: taramanji.cloud.v1.PreviewApiRequest.spec:type_name -> taramanji.cloud.v1.ApiSpec
+	31, // 25: taramanji.cloud.v1.ApplyApiRequest.spec:type_name -> taramanji.cloud.v1.ApiSpec
+	32, // 26: taramanji.cloud.v1.ApplyApiResponse.api:type_name -> taramanji.cloud.v1.Api
+	19, // 27: taramanji.cloud.v1.Bucket.source:type_name -> taramanji.cloud.v1.Source
+	43, // 28: taramanji.cloud.v1.ListBucketsResponse.buckets:type_name -> taramanji.cloud.v1.Bucket
+	43, // 29: taramanji.cloud.v1.CreateBucketResponse.bucket:type_name -> taramanji.cloud.v1.Bucket
+	50, // 30: taramanji.cloud.v1.ListObjectsResponse.objects:type_name -> taramanji.cloud.v1.StorageObject
+	55, // 31: taramanji.cloud.v1.Distribution.spec:type_name -> taramanji.cloud.v1.DistributionSpec
+	19, // 32: taramanji.cloud.v1.Distribution.source:type_name -> taramanji.cloud.v1.Source
+	56, // 33: taramanji.cloud.v1.ListDistributionsResponse.distributions:type_name -> taramanji.cloud.v1.Distribution
+	55, // 34: taramanji.cloud.v1.PreviewDistributionRequest.spec:type_name -> taramanji.cloud.v1.DistributionSpec
+	55, // 35: taramanji.cloud.v1.ApplyDistributionRequest.spec:type_name -> taramanji.cloud.v1.DistributionSpec
+	56, // 36: taramanji.cloud.v1.ApplyDistributionResponse.distribution:type_name -> taramanji.cloud.v1.Distribution
+	19, // 37: taramanji.cloud.v1.Database.source:type_name -> taramanji.cloud.v1.Source
+	65, // 38: taramanji.cloud.v1.ListDatabasesResponse.databases:type_name -> taramanji.cloud.v1.Database
+	65, // 39: taramanji.cloud.v1.CreateDatabaseResponse.database:type_name -> taramanji.cloud.v1.Database
+	1,  // 40: taramanji.cloud.v1.ConsoleService.GetOverview:input_type -> taramanji.cloud.v1.GetOverviewRequest
+	4,  // 41: taramanji.cloud.v1.ConsoleService.GetMetrics:input_type -> taramanji.cloud.v1.GetMetricsRequest
+	6,  // 42: taramanji.cloud.v1.ConsoleService.GetCapacity:input_type -> taramanji.cloud.v1.GetCapacityRequest
+	15, // 43: taramanji.cloud.v1.ConsoleService.GetHostingOptions:input_type -> taramanji.cloud.v1.GetHostingOptionsRequest
+	22, // 44: taramanji.cloud.v1.ConsoleService.ListFunctions:input_type -> taramanji.cloud.v1.ListFunctionsRequest
+	24, // 45: taramanji.cloud.v1.ConsoleService.PreviewFunction:input_type -> taramanji.cloud.v1.PreviewFunctionRequest
+	26, // 46: taramanji.cloud.v1.ConsoleService.ApplyFunction:input_type -> taramanji.cloud.v1.ApplyFunctionRequest
+	28, // 47: taramanji.cloud.v1.ConsoleService.DeleteFunction:input_type -> taramanji.cloud.v1.DeleteFunctionRequest
+	33, // 48: taramanji.cloud.v1.ConsoleService.ListApis:input_type -> taramanji.cloud.v1.ListApisRequest
+	35, // 49: taramanji.cloud.v1.ConsoleService.PreviewApi:input_type -> taramanji.cloud.v1.PreviewApiRequest
+	37, // 50: taramanji.cloud.v1.ConsoleService.ApplyApi:input_type -> taramanji.cloud.v1.ApplyApiRequest
+	39, // 51: taramanji.cloud.v1.ConsoleService.DeleteApi:input_type -> taramanji.cloud.v1.DeleteApiRequest
+	44, // 52: taramanji.cloud.v1.ConsoleService.ListBuckets:input_type -> taramanji.cloud.v1.ListBucketsRequest
+	46, // 53: taramanji.cloud.v1.ConsoleService.CreateBucket:input_type -> taramanji.cloud.v1.CreateBucketRequest
+	48, // 54: taramanji.cloud.v1.ConsoleService.DeleteBucket:input_type -> taramanji.cloud.v1.DeleteBucketRequest
+	51, // 55: taramanji.cloud.v1.ConsoleService.ListObjects:input_type -> taramanji.cloud.v1.ListObjectsRequest
+	53, // 56: taramanji.cloud.v1.ConsoleService.DeleteObject:input_type -> taramanji.cloud.v1.DeleteObjectRequest
+	57, // 57: taramanji.cloud.v1.ConsoleService.ListDistributions:input_type -> taramanji.cloud.v1.ListDistributionsRequest
+	59, // 58: taramanji.cloud.v1.ConsoleService.PreviewDistribution:input_type -> taramanji.cloud.v1.PreviewDistributionRequest
+	61, // 59: taramanji.cloud.v1.ConsoleService.ApplyDistribution:input_type -> taramanji.cloud.v1.ApplyDistributionRequest
+	63, // 60: taramanji.cloud.v1.ConsoleService.DeleteDistribution:input_type -> taramanji.cloud.v1.DeleteDistributionRequest
+	66, // 61: taramanji.cloud.v1.ConsoleService.ListDatabases:input_type -> taramanji.cloud.v1.ListDatabasesRequest
+	68, // 62: taramanji.cloud.v1.ConsoleService.CreateDatabase:input_type -> taramanji.cloud.v1.CreateDatabaseRequest
+	70, // 63: taramanji.cloud.v1.ConsoleService.DeleteDatabase:input_type -> taramanji.cloud.v1.DeleteDatabaseRequest
+	41, // 64: taramanji.cloud.v1.ConsoleService.SyncAlerts:input_type -> taramanji.cloud.v1.SyncAlertsRequest
+	2,  // 65: taramanji.cloud.v1.ConsoleService.GetOverview:output_type -> taramanji.cloud.v1.GetOverviewResponse
+	5,  // 66: taramanji.cloud.v1.ConsoleService.GetMetrics:output_type -> taramanji.cloud.v1.GetMetricsResponse
+	12, // 67: taramanji.cloud.v1.ConsoleService.GetCapacity:output_type -> taramanji.cloud.v1.GetCapacityResponse
+	17, // 68: taramanji.cloud.v1.ConsoleService.GetHostingOptions:output_type -> taramanji.cloud.v1.GetHostingOptionsResponse
+	23, // 69: taramanji.cloud.v1.ConsoleService.ListFunctions:output_type -> taramanji.cloud.v1.ListFunctionsResponse
+	25, // 70: taramanji.cloud.v1.ConsoleService.PreviewFunction:output_type -> taramanji.cloud.v1.PreviewFunctionResponse
+	27, // 71: taramanji.cloud.v1.ConsoleService.ApplyFunction:output_type -> taramanji.cloud.v1.ApplyFunctionResponse
+	29, // 72: taramanji.cloud.v1.ConsoleService.DeleteFunction:output_type -> taramanji.cloud.v1.DeleteFunctionResponse
+	34, // 73: taramanji.cloud.v1.ConsoleService.ListApis:output_type -> taramanji.cloud.v1.ListApisResponse
+	36, // 74: taramanji.cloud.v1.ConsoleService.PreviewApi:output_type -> taramanji.cloud.v1.PreviewApiResponse
+	38, // 75: taramanji.cloud.v1.ConsoleService.ApplyApi:output_type -> taramanji.cloud.v1.ApplyApiResponse
+	40, // 76: taramanji.cloud.v1.ConsoleService.DeleteApi:output_type -> taramanji.cloud.v1.DeleteApiResponse
+	45, // 77: taramanji.cloud.v1.ConsoleService.ListBuckets:output_type -> taramanji.cloud.v1.ListBucketsResponse
+	47, // 78: taramanji.cloud.v1.ConsoleService.CreateBucket:output_type -> taramanji.cloud.v1.CreateBucketResponse
+	49, // 79: taramanji.cloud.v1.ConsoleService.DeleteBucket:output_type -> taramanji.cloud.v1.DeleteBucketResponse
+	52, // 80: taramanji.cloud.v1.ConsoleService.ListObjects:output_type -> taramanji.cloud.v1.ListObjectsResponse
+	54, // 81: taramanji.cloud.v1.ConsoleService.DeleteObject:output_type -> taramanji.cloud.v1.DeleteObjectResponse
+	58, // 82: taramanji.cloud.v1.ConsoleService.ListDistributions:output_type -> taramanji.cloud.v1.ListDistributionsResponse
+	60, // 83: taramanji.cloud.v1.ConsoleService.PreviewDistribution:output_type -> taramanji.cloud.v1.PreviewDistributionResponse
+	62, // 84: taramanji.cloud.v1.ConsoleService.ApplyDistribution:output_type -> taramanji.cloud.v1.ApplyDistributionResponse
+	64, // 85: taramanji.cloud.v1.ConsoleService.DeleteDistribution:output_type -> taramanji.cloud.v1.DeleteDistributionResponse
+	67, // 86: taramanji.cloud.v1.ConsoleService.ListDatabases:output_type -> taramanji.cloud.v1.ListDatabasesResponse
+	69, // 87: taramanji.cloud.v1.ConsoleService.CreateDatabase:output_type -> taramanji.cloud.v1.CreateDatabaseResponse
+	71, // 88: taramanji.cloud.v1.ConsoleService.DeleteDatabase:output_type -> taramanji.cloud.v1.DeleteDatabaseResponse
+	42, // 89: taramanji.cloud.v1.ConsoleService.SyncAlerts:output_type -> taramanji.cloud.v1.SyncAlertsResponse
+	65, // [65:90] is the sub-list for method output_type
+	40, // [40:65] is the sub-list for method input_type
+	40, // [40:40] is the sub-list for extension type_name
+	40, // [40:40] is the sub-list for extension extendee
+	0,  // [0:40] is the sub-list for field type_name
 }
 
 func init() { file_taramanji_cloud_v1_console_proto_init() }
@@ -4540,7 +4617,7 @@ func file_taramanji_cloud_v1_console_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_taramanji_cloud_v1_console_proto_rawDesc), len(file_taramanji_cloud_v1_console_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   71,
+			NumMessages:   72,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

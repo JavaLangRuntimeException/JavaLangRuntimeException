@@ -15,7 +15,7 @@ import (
 
 func (u *ConsoleUsecaseImpl) GetHostingOptions(_ context.Context, _ GetHostingOptionsInput) (*GetHostingOptionsOutput, error) {
 	out := &GetHostingOptionsOutput{
-		InstanceTypes: []*InstanceType{}, AlertPresets: []*AlertPreset{}, NotifyChannels: service.NotifyChannels,
+		InstanceTypes: []*InstanceType{}, InstanceFamilies: []*InstanceFamily{}, AlertPresets: []*AlertPreset{}, NotifyChannels: service.NotifyChannels,
 		MinCpuMillis: service.MinCPUMillis, MaxCpuMillis: service.MaxCPUMillis,
 		MinMemory: service.MinMemoryBytes, MaxMemory: service.MaxMemoryBytes,
 		StoreEnabled: u.d.Apps != nil, AlertsEnabled: u.d.Monitors != nil,
@@ -24,7 +24,10 @@ func (u *ConsoleUsecaseImpl) GetHostingOptions(_ context.Context, _ GetHostingOp
 		StorageEnabled: u.d.Objects != nil, DnsEnabled: u.d.DNS != nil, DatabasesEnabled: u.d.DatabasesEnabled,
 	}
 	for _, t := range service.InstanceTypes {
-		out.InstanceTypes = append(out.InstanceTypes, &InstanceType{Name: t.Name, Family: service.InstanceFamily(t.Name), Memory: t.MemoryBytes, CpuMillis: t.CPUMillis})
+		out.InstanceTypes = append(out.InstanceTypes, &InstanceType{Name: t.Name, Family: service.FamilyOf(t.Name), Memory: t.MemoryBytes, CpuMillis: t.CPUMillis})
+	}
+	for _, f := range service.InstanceFamilies {
+		out.InstanceFamilies = append(out.InstanceFamilies, &InstanceFamily{ID: f.ID, Label: f.Label, Description: f.Description})
 	}
 	for _, p := range service.AlertPresets {
 		out.AlertPresets = append(out.AlertPresets, &AlertPreset{ID: p.ID, Label: p.Label, Description: p.Description})

@@ -45,6 +45,16 @@ func TestFits(t *testing.T) {
 		"t1.medium": {8, LimitedByQuotaMemory},
 		"t1.large":  {4, LimitedByQuotaMemory},
 		"t1.xlarge": {2, LimitedByQuotaMemory},
+		// CPU が多い型は、CPU の枠（残り 3500m）で先に止まる
+		"c1.small":  {14, LimitedByQuotaCPU},
+		"c1.medium": {7, LimitedByQuotaCPU},
+		"c1.large":  {3, LimitedByQuotaCPU},
+		"r1.small":  {8, LimitedByQuotaMemory},
+		"r1.medium": {4, LimitedByQuotaMemory},
+		"r1.large":  {2, LimitedByQuotaMemory},
+	}
+	if len(fits) != len(want) {
+		t.Fatalf("型ごとに 1 つ: %d", len(fits))
 	}
 	for _, f := range fits {
 		if w := want[f.Type.Name]; f.Count != w.n || f.LimitedBy != w.by {

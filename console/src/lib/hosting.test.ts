@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { databaseStatus, engineLabel, envPrefix } from "./hosting";
+import { databaseStatus, engineLabel, envPrefix, familyOf, groupByFamily } from "./hosting";
 import { cachePresets, crumbsOf, distributionFormErrors, distributionFormOf, distributionSpecOf, emptyDistributionForm, entriesOf, formatCache } from "./hosting";
 import { apiFormErrors, apiFormOf, apiSpecOf, emptyApiForm, emptyForm, formatIdle, formErrors, formOf, isCustom, specOf, statusOf, toggle, typeOptions, withInstanceType } from "./hosting";
 
@@ -134,5 +134,17 @@ describe("つなぎ込み", () => {
     expect(databaseStatus({ ready: false, status: "pending", problem: "" }).label).toBe("作成中");
     expect(databaseStatus({ ready: false, status: "postgres に作れませんでした", problem: "" })).toEqual({ label: "エラー", level: "bad", detail: "postgres に作れませんでした" });
     expect(databaseStatus({ ready: false, status: "", problem: "x" }).level).toBe("bad");
+  });
+});
+
+describe("インスタンスタイプの系統", () => {
+  it("系統ごとにまとめる", () => {
+    expect(familyOf("c1.large")).toBe("c1");
+    const g = groupByFamily([{ name: "t1.small" }, { name: "r1.small" }, { name: "c1.small" }, { name: "t1.large" }], ["t1", "c1", "r1"]);
+    expect(g.map((x) => [x.family, x.items.map((i) => i.name)])).toEqual([
+      ["t1", ["t1.small", "t1.large"]],
+      ["c1", ["c1.small"]],
+      ["r1", ["r1.small"]],
+    ]);
   });
 });
