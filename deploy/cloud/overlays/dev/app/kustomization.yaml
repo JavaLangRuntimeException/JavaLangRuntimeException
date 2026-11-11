@@ -8,7 +8,7 @@ resources:
 
 # set-version.sh が書き換える（CI の deploy-dev ジョブ）
 images:
-  - { name: taramanji/cloud, newName: ghcr.io/javalangruntimeexception/taramanji-cloud, newTag: sha-1b87b66 }
+  - { name: taramanji/cloud, newName: ghcr.io/javalangruntimeexception/taramanji-cloud, newTag: sha-38bce2b }
   - { name: taramanji/console, newName: ghcr.io/javalangruntimeexception/taramanji-console, newTag: sha-5c47366 }
 
 patches:
