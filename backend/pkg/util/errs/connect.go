@@ -24,6 +24,7 @@ var connectCodeOf = map[ErrorType]connect.Code{
 	ErrorTypeConcurrency:  connect.CodeUnavailable,
 	ErrorTypeInternal:     connect.CodeInternal,
 	ErrorTypeUpstream:     connect.CodeUnavailable,
+	ErrorTypeRateLimited:  connect.CodeResourceExhausted,
 }
 
 // ToConnect は usecase が返したエラーを Connect（gRPC）のエラーに変換し、ログに残す。

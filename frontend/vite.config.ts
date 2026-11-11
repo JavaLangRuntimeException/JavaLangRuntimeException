@@ -18,7 +18,8 @@ export default defineConfig({
       "/api": proxy,
     },
   },
+  // ソースマップは出さない（dist に入ると nginx がそのまま公開し、ソースがコメントごと読める）
   build: {
-    sourcemap: true,
+    sourcemap: false,
   },
 });

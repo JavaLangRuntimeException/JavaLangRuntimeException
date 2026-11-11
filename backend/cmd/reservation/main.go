@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -24,6 +25,7 @@ import (
 	"github.com/javalangruntimeexception/taramanji/backend/pkg/util/env"
 	"github.com/javalangruntimeexception/taramanji/backend/pkg/util/logger"
 	"github.com/javalangruntimeexception/taramanji/backend/pkg/util/observability"
+	"github.com/javalangruntimeexception/taramanji/backend/pkg/util/ratelimit"
 	"github.com/javalangruntimeexception/taramanji/backend/pkg/util/server"
 )
 
@@ -89,9 +91,17 @@ func main() {
 		infragw.NewIcalFetcher(), infragw.NewMapsFetcher(), metrics)
 	handlers := di.NewHandlers(uc)
 	adminOnly := auth.AdminInterceptor([]string{reservationv1connect.ReservationServiceListIcalSourcesProcedure}, nil, "")
+	// Calendar API への書き込みと外部 URL の取得の濫用を防ぐ（IP ごと）。
+	// ResolveMapsUrl は場所のリンクを打つたびに呼ばれるので緩め
+	limit := ratelimit.Interceptor(map[string]ratelimit.Rule{
+		reservationv1connect.ReservationServiceCreateReservationProcedure: {Burst: 5, Every: 2 * time.Minute},
+		reservationv1connect.ReservationServiceReserveResearchProcedure:   {Burst: 5, Every: 2 * time.Minute},
+		reservationv1connect.ReservationServiceCancelReservationProcedure: {Burst: 10, Every: time.Minute},
+		reservationv1connect.ReservationServiceResolveMapsUrlProcedure:    {Burst: 30, Every: 2 * time.Second},
+	})
 
 	if err := server.Run(serviceName, func(mux *http.ServeMux) {
-		handlers.Register(mux, connect.WithInterceptors(adminOnly))
+		handlers.Register(mux, connect.WithInterceptors(limit, adminOnly))
 	}); err != nil {
 		log.Fatal(err)
 	}

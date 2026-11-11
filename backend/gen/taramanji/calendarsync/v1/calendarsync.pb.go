@@ -641,6 +641,96 @@ func (x *RunSyncResponse) GetSkipped() bool {
 	return false
 }
 
+type RunReminderRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RunReminderRequest) Reset() {
+	*x = RunReminderRequest{}
+	mi := &file_taramanji_calendarsync_v1_calendarsync_proto_msgTypes[10]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RunReminderRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RunReminderRequest) ProtoMessage() {}
+
+func (x *RunReminderRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_taramanji_calendarsync_v1_calendarsync_proto_msgTypes[10]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RunReminderRequest.ProtoReflect.Descriptor instead.
+func (*RunReminderRequest) Descriptor() ([]byte, []int) {
+	return file_taramanji_calendarsync_v1_calendarsync_proto_rawDescGZIP(), []int{10}
+}
+
+type RunReminderResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// 今回 Discord に送った予定の数（前の回までに送ったものは数えない）
+	Notified int32 `protobuf:"varint,1,opt,name=notified,proto3" json:"notified,omitempty"`
+	// 読めなかったアカウント・送れなかった予定の数（次の回でやり直す）
+	Failed        int32 `protobuf:"varint,2,opt,name=failed,proto3" json:"failed,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RunReminderResponse) Reset() {
+	*x = RunReminderResponse{}
+	mi := &file_taramanji_calendarsync_v1_calendarsync_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RunReminderResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RunReminderResponse) ProtoMessage() {}
+
+func (x *RunReminderResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_taramanji_calendarsync_v1_calendarsync_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RunReminderResponse.ProtoReflect.Descriptor instead.
+func (*RunReminderResponse) Descriptor() ([]byte, []int) {
+	return file_taramanji_calendarsync_v1_calendarsync_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *RunReminderResponse) GetNotified() int32 {
+	if x != nil {
+		return x.Notified
+	}
+	return 0
+}
+
+func (x *RunReminderResponse) GetFailed() int32 {
+	if x != nil {
+		return x.Failed
+	}
+	return 0
+}
+
 type UpdateSettingsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// set_master が true のとき master を変更（空ならマスター解除）
@@ -658,7 +748,7 @@ type UpdateSettingsRequest struct {
 
 func (x *UpdateSettingsRequest) Reset() {
 	*x = UpdateSettingsRequest{}
-	mi := &file_taramanji_calendarsync_v1_calendarsync_proto_msgTypes[10]
+	mi := &file_taramanji_calendarsync_v1_calendarsync_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -670,7 +760,7 @@ func (x *UpdateSettingsRequest) String() string {
 func (*UpdateSettingsRequest) ProtoMessage() {}
 
 func (x *UpdateSettingsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_calendarsync_v1_calendarsync_proto_msgTypes[10]
+	mi := &file_taramanji_calendarsync_v1_calendarsync_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -683,7 +773,7 @@ func (x *UpdateSettingsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateSettingsRequest.ProtoReflect.Descriptor instead.
 func (*UpdateSettingsRequest) Descriptor() ([]byte, []int) {
-	return file_taramanji_calendarsync_v1_calendarsync_proto_rawDescGZIP(), []int{10}
+	return file_taramanji_calendarsync_v1_calendarsync_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *UpdateSettingsRequest) GetSetMaster() bool {
@@ -736,7 +826,7 @@ type UpdateSettingsResponse struct {
 
 func (x *UpdateSettingsResponse) Reset() {
 	*x = UpdateSettingsResponse{}
-	mi := &file_taramanji_calendarsync_v1_calendarsync_proto_msgTypes[11]
+	mi := &file_taramanji_calendarsync_v1_calendarsync_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -748,7 +838,7 @@ func (x *UpdateSettingsResponse) String() string {
 func (*UpdateSettingsResponse) ProtoMessage() {}
 
 func (x *UpdateSettingsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_calendarsync_v1_calendarsync_proto_msgTypes[11]
+	mi := &file_taramanji_calendarsync_v1_calendarsync_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -761,7 +851,7 @@ func (x *UpdateSettingsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use UpdateSettingsResponse.ProtoReflect.Descriptor instead.
 func (*UpdateSettingsResponse) Descriptor() ([]byte, []int) {
-	return file_taramanji_calendarsync_v1_calendarsync_proto_rawDescGZIP(), []int{11}
+	return file_taramanji_calendarsync_v1_calendarsync_proto_rawDescGZIP(), []int{13}
 }
 
 type DisconnectRequest struct {
@@ -773,7 +863,7 @@ type DisconnectRequest struct {
 
 func (x *DisconnectRequest) Reset() {
 	*x = DisconnectRequest{}
-	mi := &file_taramanji_calendarsync_v1_calendarsync_proto_msgTypes[12]
+	mi := &file_taramanji_calendarsync_v1_calendarsync_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -785,7 +875,7 @@ func (x *DisconnectRequest) String() string {
 func (*DisconnectRequest) ProtoMessage() {}
 
 func (x *DisconnectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_calendarsync_v1_calendarsync_proto_msgTypes[12]
+	mi := &file_taramanji_calendarsync_v1_calendarsync_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -798,7 +888,7 @@ func (x *DisconnectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DisconnectRequest.ProtoReflect.Descriptor instead.
 func (*DisconnectRequest) Descriptor() ([]byte, []int) {
-	return file_taramanji_calendarsync_v1_calendarsync_proto_rawDescGZIP(), []int{12}
+	return file_taramanji_calendarsync_v1_calendarsync_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *DisconnectRequest) GetCalendarId() string {
@@ -818,7 +908,7 @@ type DisconnectResponse struct {
 
 func (x *DisconnectResponse) Reset() {
 	*x = DisconnectResponse{}
-	mi := &file_taramanji_calendarsync_v1_calendarsync_proto_msgTypes[13]
+	mi := &file_taramanji_calendarsync_v1_calendarsync_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -830,7 +920,7 @@ func (x *DisconnectResponse) String() string {
 func (*DisconnectResponse) ProtoMessage() {}
 
 func (x *DisconnectResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_taramanji_calendarsync_v1_calendarsync_proto_msgTypes[13]
+	mi := &file_taramanji_calendarsync_v1_calendarsync_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -843,7 +933,7 @@ func (x *DisconnectResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DisconnectResponse.ProtoReflect.Descriptor instead.
 func (*DisconnectResponse) Descriptor() ([]byte, []int) {
-	return file_taramanji_calendarsync_v1_calendarsync_proto_rawDescGZIP(), []int{13}
+	return file_taramanji_calendarsync_v1_calendarsync_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *DisconnectResponse) GetDeleted() int32 {
@@ -910,7 +1000,11 @@ const file_taramanji_calendarsync_v1_calendarsync_proto_rawDesc = "" +
 	"\x0eRunSyncRequest\"a\n" +
 	"\x0fRunSyncResponse\x124\n" +
 	"\x03run\x18\x01 \x01(\v2\".taramanji.calendarsync.v1.LastRunR\x03run\x12\x18\n" +
-	"\askipped\x18\x02 \x01(\bR\askipped\"\xea\x01\n" +
+	"\askipped\x18\x02 \x01(\bR\askipped\"\x14\n" +
+	"\x12RunReminderRequest\"I\n" +
+	"\x13RunReminderResponse\x12\x1a\n" +
+	"\bnotified\x18\x01 \x01(\x05R\bnotified\x12\x16\n" +
+	"\x06failed\x18\x02 \x01(\x05R\x06failed\"\xea\x01\n" +
 	"\x15UpdateSettingsRequest\x12\x1d\n" +
 	"\n" +
 	"set_master\x18\x01 \x01(\bR\tsetMaster\x12\x16\n" +
@@ -925,10 +1019,11 @@ const file_taramanji_calendarsync_v1_calendarsync_proto_rawDesc = "" +
 	"calendarId\"F\n" +
 	"\x12DisconnectResponse\x12\x18\n" +
 	"\adeleted\x18\x01 \x01(\x05R\adeleted\x12\x16\n" +
-	"\x06failed\x18\x02 \x01(\x05R\x06failed2\xc9\x03\n" +
+	"\x06failed\x18\x02 \x01(\x05R\x06failed2\xb9\x04\n" +
 	"\x13CalendarSyncService\x12h\n" +
 	"\tGetStatus\x12+.taramanji.calendarsync.v1.GetStatusRequest\x1a,.taramanji.calendarsync.v1.GetStatusResponse\"\x00\x12b\n" +
-	"\aRunSync\x12).taramanji.calendarsync.v1.RunSyncRequest\x1a*.taramanji.calendarsync.v1.RunSyncResponse\"\x00\x12w\n" +
+	"\aRunSync\x12).taramanji.calendarsync.v1.RunSyncRequest\x1a*.taramanji.calendarsync.v1.RunSyncResponse\"\x00\x12n\n" +
+	"\vRunReminder\x12-.taramanji.calendarsync.v1.RunReminderRequest\x1a..taramanji.calendarsync.v1.RunReminderResponse\"\x00\x12w\n" +
 	"\x0eUpdateSettings\x120.taramanji.calendarsync.v1.UpdateSettingsRequest\x1a1.taramanji.calendarsync.v1.UpdateSettingsResponse\"\x00\x12k\n" +
 	"\n" +
 	"Disconnect\x12,.taramanji.calendarsync.v1.DisconnectRequest\x1a-.taramanji.calendarsync.v1.DisconnectResponse\"\x00B\x9c\x02\n" +
@@ -946,7 +1041,7 @@ func file_taramanji_calendarsync_v1_calendarsync_proto_rawDescGZIP() []byte {
 	return file_taramanji_calendarsync_v1_calendarsync_proto_rawDescData
 }
 
-var file_taramanji_calendarsync_v1_calendarsync_proto_msgTypes = make([]protoimpl.MessageInfo, 14)
+var file_taramanji_calendarsync_v1_calendarsync_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_taramanji_calendarsync_v1_calendarsync_proto_goTypes = []any{
 	(*CalendarAccount)(nil),        // 0: taramanji.calendarsync.v1.CalendarAccount
 	(*SyncSetting)(nil),            // 1: taramanji.calendarsync.v1.SyncSetting
@@ -958,10 +1053,12 @@ var file_taramanji_calendarsync_v1_calendarsync_proto_goTypes = []any{
 	(*GetStatusResponse)(nil),      // 7: taramanji.calendarsync.v1.GetStatusResponse
 	(*RunSyncRequest)(nil),         // 8: taramanji.calendarsync.v1.RunSyncRequest
 	(*RunSyncResponse)(nil),        // 9: taramanji.calendarsync.v1.RunSyncResponse
-	(*UpdateSettingsRequest)(nil),  // 10: taramanji.calendarsync.v1.UpdateSettingsRequest
-	(*UpdateSettingsResponse)(nil), // 11: taramanji.calendarsync.v1.UpdateSettingsResponse
-	(*DisconnectRequest)(nil),      // 12: taramanji.calendarsync.v1.DisconnectRequest
-	(*DisconnectResponse)(nil),     // 13: taramanji.calendarsync.v1.DisconnectResponse
+	(*RunReminderRequest)(nil),     // 10: taramanji.calendarsync.v1.RunReminderRequest
+	(*RunReminderResponse)(nil),    // 11: taramanji.calendarsync.v1.RunReminderResponse
+	(*UpdateSettingsRequest)(nil),  // 12: taramanji.calendarsync.v1.UpdateSettingsRequest
+	(*UpdateSettingsResponse)(nil), // 13: taramanji.calendarsync.v1.UpdateSettingsResponse
+	(*DisconnectRequest)(nil),      // 14: taramanji.calendarsync.v1.DisconnectRequest
+	(*DisconnectResponse)(nil),     // 15: taramanji.calendarsync.v1.DisconnectResponse
 }
 var file_taramanji_calendarsync_v1_calendarsync_proto_depIdxs = []int32{
 	4,  // 0: taramanji.calendarsync.v1.LastRun.errors:type_name -> taramanji.calendarsync.v1.SyncError
@@ -970,14 +1067,16 @@ var file_taramanji_calendarsync_v1_calendarsync_proto_depIdxs = []int32{
 	5,  // 3: taramanji.calendarsync.v1.RunSyncResponse.run:type_name -> taramanji.calendarsync.v1.LastRun
 	6,  // 4: taramanji.calendarsync.v1.CalendarSyncService.GetStatus:input_type -> taramanji.calendarsync.v1.GetStatusRequest
 	8,  // 5: taramanji.calendarsync.v1.CalendarSyncService.RunSync:input_type -> taramanji.calendarsync.v1.RunSyncRequest
-	10, // 6: taramanji.calendarsync.v1.CalendarSyncService.UpdateSettings:input_type -> taramanji.calendarsync.v1.UpdateSettingsRequest
-	12, // 7: taramanji.calendarsync.v1.CalendarSyncService.Disconnect:input_type -> taramanji.calendarsync.v1.DisconnectRequest
-	7,  // 8: taramanji.calendarsync.v1.CalendarSyncService.GetStatus:output_type -> taramanji.calendarsync.v1.GetStatusResponse
-	9,  // 9: taramanji.calendarsync.v1.CalendarSyncService.RunSync:output_type -> taramanji.calendarsync.v1.RunSyncResponse
-	11, // 10: taramanji.calendarsync.v1.CalendarSyncService.UpdateSettings:output_type -> taramanji.calendarsync.v1.UpdateSettingsResponse
-	13, // 11: taramanji.calendarsync.v1.CalendarSyncService.Disconnect:output_type -> taramanji.calendarsync.v1.DisconnectResponse
-	8,  // [8:12] is the sub-list for method output_type
-	4,  // [4:8] is the sub-list for method input_type
+	10, // 6: taramanji.calendarsync.v1.CalendarSyncService.RunReminder:input_type -> taramanji.calendarsync.v1.RunReminderRequest
+	12, // 7: taramanji.calendarsync.v1.CalendarSyncService.UpdateSettings:input_type -> taramanji.calendarsync.v1.UpdateSettingsRequest
+	14, // 8: taramanji.calendarsync.v1.CalendarSyncService.Disconnect:input_type -> taramanji.calendarsync.v1.DisconnectRequest
+	7,  // 9: taramanji.calendarsync.v1.CalendarSyncService.GetStatus:output_type -> taramanji.calendarsync.v1.GetStatusResponse
+	9,  // 10: taramanji.calendarsync.v1.CalendarSyncService.RunSync:output_type -> taramanji.calendarsync.v1.RunSyncResponse
+	11, // 11: taramanji.calendarsync.v1.CalendarSyncService.RunReminder:output_type -> taramanji.calendarsync.v1.RunReminderResponse
+	13, // 12: taramanji.calendarsync.v1.CalendarSyncService.UpdateSettings:output_type -> taramanji.calendarsync.v1.UpdateSettingsResponse
+	15, // 13: taramanji.calendarsync.v1.CalendarSyncService.Disconnect:output_type -> taramanji.calendarsync.v1.DisconnectResponse
+	9,  // [9:14] is the sub-list for method output_type
+	4,  // [4:9] is the sub-list for method input_type
 	4,  // [4:4] is the sub-list for extension type_name
 	4,  // [4:4] is the sub-list for extension extendee
 	0,  // [0:4] is the sub-list for field type_name
@@ -995,7 +1094,7 @@ func file_taramanji_calendarsync_v1_calendarsync_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_taramanji_calendarsync_v1_calendarsync_proto_rawDesc), len(file_taramanji_calendarsync_v1_calendarsync_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   14,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

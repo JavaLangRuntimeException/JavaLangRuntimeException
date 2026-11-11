@@ -5,6 +5,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"time"
 
 	"connectrpc.com/connect"
 
@@ -16,6 +17,7 @@ import (
 	"github.com/javalangruntimeexception/taramanji/backend/pkg/util/env"
 	"github.com/javalangruntimeexception/taramanji/backend/pkg/util/logger"
 	"github.com/javalangruntimeexception/taramanji/backend/pkg/util/observability"
+	"github.com/javalangruntimeexception/taramanji/backend/pkg/util/ratelimit"
 	"github.com/javalangruntimeexception/taramanji/backend/pkg/util/server"
 )
 
@@ -39,9 +41,14 @@ func main() {
 	)
 	handlers := di.NewHandlers(uc)
 	adminOnly := auth.AdminInterceptor([]string{inquiryv1connect.InquiryServiceSendAdminEmailProcedure}, nil, "")
+	// メール送信の濫用を防ぐ（IP ごと）。アンケートは実験室から同じ IP で何人も答えるので緩め
+	limit := ratelimit.Interceptor(map[string]ratelimit.Rule{
+		inquiryv1connect.InquiryServiceSubmitContactProcedure:       {Burst: 5, Every: 2 * time.Minute},
+		inquiryv1connect.InquiryServiceSubmitQuestionnaireProcedure: {Burst: 20, Every: 30 * time.Second},
+	})
 
 	if err := server.Run(serviceName, func(mux *http.ServeMux) {
-		handlers.Register(mux, connect.WithInterceptors(adminOnly), connect.WithReadMaxBytes(maxRequestBytes))
+		handlers.Register(mux, connect.WithInterceptors(limit, adminOnly), connect.WithReadMaxBytes(maxRequestBytes))
 	}); err != nil {
 		log.Fatal(err)
 	}

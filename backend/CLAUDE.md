@@ -10,7 +10,7 @@ taramanji.com のバックエンド。Go + DDD + クリーンアーキテクチ�
 - **API スタイル**: Connect（connect-go）。1 つのハンドラで **gRPC / gRPC-Web / Connect（JSON over HTTP）** を受ける
   - ブラウザ → Envoy Gateway → 各サービス: Connect（フロントは connect-es）
   - サービス間: gRPC（h2c）。`pkg/util/server.InternalHTTPClient()` + `InternalClientOptions()`（`connect.WithGRPC()`）
-  - ブラウザのリダイレクトや sendBeacon を受ける口だけは素の HTTP ハンドラ（OAuth の `/api/auth/*`・`/api/calendar-sync/connect|callback`・`/api/metrics/pageview`）。URL は旧 Next.js と同じで、Google に登録済みのリダイレクト URI を変えない
+  - ブラウザのリダイレクトや sendBeacon を受ける口だけは素の HTTP ハンドラ（ログインの `/api/auth/*`・`/api/calendar-sync/connect|callback`・`/api/metrics/pageview`）。URL は旧 Next.js と同じで、Google に登録済みのリダイレクト URI を変えない
 - **Proto**: Protocol Buffers + buf。`proto/taramanji/<context>/v1/*.proto`
 - **コード生成**: `protoc-gen-go` + `protoc-gen-connect-go`（`gen/`）と、独自の `mss-protoc-gen`（`cmd/mss-protoc-gen/`）。buf.gen.yaml の opt:
   - `go_module=github.com/javalangruntimeexception/taramanji/backend`（`module=` は protogen の予約語なので使わない）
@@ -51,19 +51,20 @@ taramanji.com のバックエンド。Go + DDD + クリーンアーキテクチ�
   - `ErrorTypeInternal` は内容を返さない（ログだけ）。外部 API の失敗は `ErrorTypeUpstream`（502 相当、detail はクライアントにも返す）
   - ログは `errs.Report` に集約（4xx 相当は WARN、Internal / Concurrency / Upstream は ERROR）
 - **認可**: `pkg/util/auth`。セッションは identity が発行する HS256 JWT の Cookie（`taramanji_session`、AUTH_SECRET 共有）。`auth.AdminInterceptor(adminProcs, cronProcs, cronToken)` を main で付ける
+- **レート制限**: `pkg/util/ratelimit`。公開フォームの RPC を `Cf-Connecting-Ip` ごとに数える（Pod 内のメモリ）。超えたら `rate_limited`（ResourceExhausted）。`ratelimit.Interceptor(rules)` を main で付ける
 - **時刻**: 日付の判定は日本時間（`pkg/util/jst`）。「いま」は `clock func() time.Time` で注入
 
 ## サービス（コンテキスト）
 
 | サービス | 公開 | 担当 |
 | --- | --- | --- |
-| identity | Connect + HTTP `/api/auth/*` | Google ログイン、セッション |
+| identity | Connect + HTTP `/api/auth/*` | 管理者ログイン（Cloudflare Access のトークンを検証してセッションに替える）、セッション |
 | notification | **内部 gRPC のみ** | SES でメール送信 |
 | inquiry | Connect | お問い合わせ・アンケート・管理者メール → notification |
 | reservation | Connect | 予約（Google Calendar API。サービスアカウントがドメイン全体の委任で `GCAL_SA_SUBJECT` になりかわる）、空き時間（iCal）、Google マップ → worklocation |
 | worklocation | Connect（GetWorkLocation は内部用） | 勤務場所 |
 | content | Connect | Qiita・connpass・ORCID・OGP |
-| calendarsync | Connect + HTTP `/api/calendar-sync/*` | 複数アカウントのカレンダー同期（RunSync は CronJob） |
+| calendarsync | Connect + HTTP `/api/calendar-sync/*` | 複数アカウントのカレンダー同期（RunSync は CronJob）、10 分以内に始まる予定の Discord 通知（RunReminder は CronJob） |
 | analytics | HTTP `/api/metrics/pageview` | ページビュー → web.pageviews |
 | cloud | Connect（cloud.taramanji.com） | taramanji cloud のコンソールの API。認証は Cloudflare Access の JWT（`pkg/util/cfaccess`）で、taramanji のセッションは使わない。マニフェストは `deploy/cloud/` |
 

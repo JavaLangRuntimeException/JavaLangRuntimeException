@@ -16,15 +16,15 @@ components:
 
 # set-version.sh が書き換える（CI の deploy-stg ジョブ）
 images:
-  - { name: taramanji/identity, newName: ghcr.io/javalangruntimeexception/taramanji-identity, newTag: sha-41a4323 }
-  - { name: taramanji/notification, newName: ghcr.io/javalangruntimeexception/taramanji-notification, newTag: sha-41a4323 }
-  - { name: taramanji/inquiry, newName: ghcr.io/javalangruntimeexception/taramanji-inquiry, newTag: sha-41a4323 }
-  - { name: taramanji/reservation, newName: ghcr.io/javalangruntimeexception/taramanji-reservation, newTag: sha-41a4323 }
-  - { name: taramanji/worklocation, newName: ghcr.io/javalangruntimeexception/taramanji-worklocation, newTag: sha-41a4323 }
-  - { name: taramanji/content, newName: ghcr.io/javalangruntimeexception/taramanji-content, newTag: sha-41a4323 }
-  - { name: taramanji/calendarsync, newName: ghcr.io/javalangruntimeexception/taramanji-calendarsync, newTag: sha-41a4323 }
-  - { name: taramanji/analytics, newName: ghcr.io/javalangruntimeexception/taramanji-analytics, newTag: sha-41a4323 }
-  - { name: taramanji/web, newName: ghcr.io/javalangruntimeexception/taramanji-web, newTag: sha-4398144 }
+  - { name: taramanji/identity, newName: ghcr.io/javalangruntimeexception/taramanji-identity, newTag: sha-bf22dc0 }
+  - { name: taramanji/notification, newName: ghcr.io/javalangruntimeexception/taramanji-notification, newTag: sha-b9630fb }
+  - { name: taramanji/inquiry, newName: ghcr.io/javalangruntimeexception/taramanji-inquiry, newTag: sha-bf22dc0 }
+  - { name: taramanji/reservation, newName: ghcr.io/javalangruntimeexception/taramanji-reservation, newTag: sha-bf22dc0 }
+  - { name: taramanji/worklocation, newName: ghcr.io/javalangruntimeexception/taramanji-worklocation, newTag: sha-bf22dc0 }
+  - { name: taramanji/content, newName: ghcr.io/javalangruntimeexception/taramanji-content, newTag: sha-b9630fb }
+  - { name: taramanji/calendarsync, newName: ghcr.io/javalangruntimeexception/taramanji-calendarsync, newTag: sha-bf22dc0 }
+  - { name: taramanji/analytics, newName: ghcr.io/javalangruntimeexception/taramanji-analytics, newTag: sha-b9630fb }
+  - { name: taramanji/web, newName: ghcr.io/javalangruntimeexception/taramanji-web, newTag: sha-bf22dc0 }
 
 patches:
   - target: { kind: Deployment }
@@ -71,7 +71,7 @@ patches:
       - op: replace
         path: /spec/rules/0/filters/0/requestRedirect/hostname
         value: stg.taramanji.com
-  # ログインを受けるホストと、カレンダー同期の戻り先
+  # ログインを受け付ける Cloudflare Access のアプリと、カレンダー同期の戻り先
   # 名前で書き換える（番号で指すと、env を足したときに別の項目を上書きしてしまう）
   - patch: |-
       apiVersion: apps/v1
@@ -83,7 +83,7 @@ patches:
             containers:
               - name: app
                 env:
-                  - { name: LOGIN_HOSTS, value: "stg.taramanji.com,stg-gws.taramanji.com" }
+                  - { name: CF_ACCESS_AUD, value: "02959ac7e5c5f24ee262b1fb9d5e4ea06eefaa5dec631b737f8e6af3fa655e81" }  # taramanji-stg（Access アプリ）
   - patch: |-
       apiVersion: apps/v1
       kind: Deployment

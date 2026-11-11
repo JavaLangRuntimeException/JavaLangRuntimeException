@@ -117,3 +117,58 @@ func TestRetryAndErrors(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestTasks(t *testing.T) {
+	ctx := context.Background()
+	var queries []string
+	mux := http.NewServeMux()
+	mux.HandleFunc("/users/@me/lists", func(w http.ResponseWriter, r *http.Request) {
+		_ = json.NewEncoder(w).Encode(map[string]any{"items": []map[string]any{{"id": "L1"}, {"id": "L2"}}})
+	})
+	mux.HandleFunc("/lists/", func(w http.ResponseWriter, r *http.Request) {
+		queries = append(queries, r.URL.Path+"?"+r.URL.RawQuery)
+		items := []map[string]any{}
+		if strings.HasPrefix(r.URL.Path, "/lists/L1/") {
+			if r.URL.Query().Get("pageToken") == "" {
+				items = append(items, map[string]any{"id": "t1", "title": "請求書", "notes": "メモ", "due": "2026-10-30T00:00:00.000Z",
+					"status": "needsAction", "webViewLink": "https://tasks.google.com/task/t1"})
+				_ = json.NewEncoder(w).Encode(map[string]any{"items": items, "nextPageToken": "p2"})
+				return
+			}
+			items = append(items, map[string]any{"id": "t2", "title": "期限なし", "status": "needsAction"},
+				map[string]any{"id": "t3", "title": "完了", "due": "2026-10-30T00:00:00.000Z", "status": "completed"})
+		} else {
+			items = append(items, map[string]any{"id": "t4", "title": "", "due": "2026-11-01T00:00:00.000Z", "status": "needsAction"})
+		}
+		_ = json.NewEncoder(w).Encode(map[string]any{"items": items})
+	})
+	srv := httptest.NewServer(mux)
+	t.Cleanup(srv.Close)
+	cal := &calendar{client: client{http: srv.Client(), sleep: func(time.Duration) {}}, id: "a@example.com", tasksBase: srv.URL}
+	got, err := cal.Tasks(ctx, time.Date(2026, 10, 26, 0, 0, 0, 0, time.UTC), time.Date(2027, 1, 24, 0, 0, 0, 0, time.UTC))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []gateway.Task{
+		{ID: "t1", Title: "請求書", Notes: "メモ", Due: "2026-10-30", WebViewLink: "https://tasks.google.com/task/t1"},
+		{ID: "t4", Due: "2026-11-01"},
+	}
+	if len(got) != len(want) || got[0] != want[0] || got[1] != want[1] {
+		t.Fatalf("tasks %+v", got)
+	}
+	if len(queries) != 3 || !strings.Contains(queries[0], "dueMin=2026-10-26T00%3A00%3A00.000Z") || !strings.Contains(queries[0], "showCompleted=false") {
+		t.Fatalf("queries %v", queries)
+	}
+}
+
+func TestTasksNotGranted(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+		_, _ = io.WriteString(w, `{"error":{"code":403,"status":"PERMISSION_DENIED","details":[{"reason":"ACCESS_TOKEN_SCOPE_INSUFFICIENT"}]}}`)
+	}))
+	t.Cleanup(srv.Close)
+	cal := &calendar{client: client{http: srv.Client(), sleep: func(time.Duration) {}}, id: "a@example.com", tasksBase: srv.URL}
+	if _, err := cal.Tasks(context.Background(), time.Now(), time.Now()); err != gateway.ErrTasksNotGranted {
+		t.Fatalf("err %v", err)
+	}
+}

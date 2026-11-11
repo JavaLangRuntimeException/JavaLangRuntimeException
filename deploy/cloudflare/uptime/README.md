@@ -5,6 +5,7 @@ kind（Mac の OrbStack）の外、Cloudflare Workers で動く外形監視。
 - 1 分ごとに `TARGETS`（taramanji.com・gws.taramanji.com/admin）を見て、**2 分続けて** 5xx・つながらない・10 秒で返らないなら「落ちています」、戻ったら「戻りました」をメールする
 - Datadog のモニターの通知（Webhook `taramanji-mail`）も受けてメールにする（VM のメモリ不足・再起動の繰り返しなど、落ちる前の兆し）
 - 送り方は予約のメールと同じ: SES の `SendRawEmail`、送信元 `noreply@taramanji.com`、宛先 `shuta.tanahashi@taramanji.com`
+- secret `DISCORD_WEBHOOK_ALERT_URL` があれば、同じ件名・本文を Discord にも送る（先頭で `DISCORD_MENTION_USER_ID` の人を呼び出す）。どちらかに届けば送れた扱い（両方失敗したときだけ次の分に送り直す）
 
 Datadog の HTTP Check は kind の中の Agent が動かしているので、クラスターごと落ちると「No Data」になって知らせられない。
 2026-10-14 の障害では 0:16 に検知していたが、どのモニターにも通知先がなく、誰にも届かなかった。
@@ -40,6 +41,22 @@ cd ../../..
 python3 deploy/cloudflare/uptime/datadog-webhook.py "$URL" deploy/k8s/secrets/prod/uptime-webhook-token
 NOTIFY="@webhook-taramanji-mail" python3 deploy/k8s/observability/monitors.py
 ```
+
+## Discord にも送る
+
+Discord のチャンネルの設定 › 連携サービス › ウェブフック で URL を発行し、secret に入れる（URL にトークンが入っているので、自分のターミナルで入れる）
+
+```sh
+cd deploy/cloudflare/uptime
+export CLOUDFLARE_API_TOKEN="$(cat ~/Downloads/cf-workers-token.txt)"
+npx wrangler secret put DISCORD_WEBHOOK_ALERT_URL   # 聞かれたら URL を貼る
+npx wrangler deploy
+# テスト（メールと Discord の両方に届く）
+curl -fsS -X POST "$URL/datadog" -H "X-Webhook-Token: $(cat ../../k8s/secrets/prod/uptime-webhook-token)" \
+  -H 'Content-Type: application/json' -d '{"title":"テスト","message":"Worker からのテストです"}'
+```
+
+止めるときは `npx wrangler secret delete DISCORD_WEBHOOK_ALERT_URL`。
 
 ## 変えるとき
 

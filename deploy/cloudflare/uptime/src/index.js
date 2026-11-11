@@ -1,4 +1,5 @@
 // 外形監視と Datadog の通知を、予約のメールと同じ SES（FROM_EMAIL）から NOTIFY_EMAIL に送る。
+// DISCORD_WEBHOOK_ALERT_URL（secret）があれば、同じ内容を Discord にも送る。
 // kind（Mac の OrbStack）の外で動くので、クラスターごと落ちても知らせられる
 import { AwsClient } from "aws4fetch";
 
@@ -56,14 +57,14 @@ async function checkOne(env, target, threshold, now) {
     const prev = await env.STATE.get(key, "json");
     const { state, mail } = next(prev, result, threshold, now);
     if (mail === "down") {
-      await sendMail(env, `【taramanji】${host(target)} が落ちています`,
+      await notify(env, `【taramanji】${host(target)} が落ちています`,
         `${target} に ${state.fails} 分続けてつながりません（${result.detail}）。\n落ち始め: ${jst(state.since)}\n\n` +
         `確認: kubectl get pods -A / OrbStack のメモリ / cloudflared\n手順: deploy/k8s/README.md`);
     } else if (mail === "recovered") {
-      await sendMail(env, `【taramanji】${host(target)} が戻りました`,
+      await notify(env, `【taramanji】${host(target)} が戻りました`,
         `${target} が応答しています（${result.detail}）。\n落ちていた時間: ${jst(prev.since)} 〜 ${jst(now)}`);
     }
-    // メールを送れなかったときは状態を進めない（次の分にもう一度送る）
+    // どこにも送れなかったときは状態を進めない（次の分にもう一度送る）
     if (state) await env.STATE.put(key, JSON.stringify(state));
   }
 }
@@ -76,8 +77,41 @@ async function datadog(req, env) {
   const body = await req.json().catch(() => ({}));
   const title = String(body.title || "Datadog のアラート").slice(0, 200);
   const text = [body.message, body.link && `Datadog: ${body.link}`].filter(Boolean).join("\n\n");
-  await sendMail(env, `【taramanji】${title}`, text || title);
+  await notify(env, `【taramanji】${title}`, text || title);
   return new Response("ok");
+}
+
+// メールと Discord に送る。どちらかに届けば成功とする（失敗した側のために送り直すと、届いた側に同じ通知が重なる）
+export async function notify(env, subject, text, senders = { mail: sendMail, discord: sendDiscord }) {
+  const channels = [["mail", senders.mail]];
+  if (env.DISCORD_WEBHOOK_ALERT_URL) channels.push(["discord", senders.discord]);
+  const results = await Promise.allSettled(channels.map(([, send]) => send(env, subject, text)));
+  const failed = results.flatMap((r, i) => (r.status === "rejected" ? [`${channels[i][0]}: ${r.reason?.message || r.reason}`] : []));
+  if (failed.length === channels.length) throw new Error(failed.join(" / "));
+  for (const f of failed) console.error(f);
+}
+
+const DISCORD_PREFIX = "https://discord.com/api/webhooks/";
+const DISCORD_MAX = 2000;
+
+// Discord の 1 メッセージ（2,000 文字まで）。先頭で mentionUserId の人だけを呼び出す。
+// 本文に @everyone などがあっても、ほかの誰も呼び出さない
+export function discordMessage(subject, text, mentionUserId) {
+  const id = /^\d+$/.test(mentionUserId || "") ? mentionUserId : "";
+  const content = `${id ? `<@${id}> ` : ""}**${subject}**\n${text}`;
+  return {
+    content: content.length > DISCORD_MAX ? `${content.slice(0, DISCORD_MAX - 1)}…` : content,
+    allowed_mentions: { parse: [], users: id ? [id] : [] },
+  };
+}
+
+async function sendDiscord(env, subject, text) {
+  // URL にトークンが入っているので、エラーにも URL は出さない
+  if (!env.DISCORD_WEBHOOK_ALERT_URL.startsWith(DISCORD_PREFIX)) throw new Error("DISCORD_WEBHOOK_ALERT_URL が Discord の Webhook ではない");
+  const res = await fetch(env.DISCORD_WEBHOOK_ALERT_URL, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(discordMessage(subject, text, env.DISCORD_MENTION_USER_ID)),
+  });
+  if (!res.ok) throw new Error(`Discord ${res.status}: ${(await res.text()).slice(0, 300)}`);
 }
 
 // SES の SendRawEmail（notification サービスと同じ API・同じ権限）で送る

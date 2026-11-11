@@ -279,3 +279,79 @@ func TestColorsAssignedAndEditable(t *testing.T) {
 		t.Fatalf("color after reconnect %q", a.ColorID)
 	}
 }
+
+type fakeNotifier struct {
+	mu   sync.Mutex
+	sent []gateway.Reminder
+	fail bool
+}
+
+func (n *fakeNotifier) Notify(_ context.Context, r gateway.Reminder) error {
+	n.mu.Lock()
+	defer n.mu.Unlock()
+	if n.fail {
+		return errors.New("discord webhook: HTTP 429")
+	}
+	n.sent = append(n.sent, r)
+	return nil
+}
+
+func TestRunReminderNotifiesOncePerEvent(t *testing.T) {
+	f := setup(t)
+	ctx := context.Background()
+	now := time.Date(2026, 10, 6, 0, 0, 0, 0, time.UTC) // setup の Clock
+	n := &fakeNotifier{}
+	f.uc.d.Notifier = n
+	soon := gateway.Event{ID: "m1", ICalUID: "meeting@google.com", Status: "confirmed", Summary: "定例",
+		Start: gateway.EventTime{"dateTime": now.Add(7 * time.Minute).Format(time.RFC3339)},
+		End:   gateway.EventTime{"dateTime": now.Add(37 * time.Minute).Format(time.RFC3339)}}
+	f.cals["a@example.com"].events = []gateway.Event{soon, ev("later")}
+	// b にも同じ会議の招待がある
+	f.cals["b@example.com"].events = []gateway.Event{soon}
+	t0 := time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC)
+	f.connect(t, "a@example.com", "ta", false, t0)
+	f.connect(t, "b@example.com", "tb", true, t0.Add(time.Hour))
+	f.connect(t, "c@example.com", "revoked", false, t0.Add(2*time.Hour))
+
+	out, err := f.uc.RunReminder(ctx, RunReminderInput{})
+	if err != nil || out.Notified != 1 || out.Failed != 1 || len(n.sent) != 1 || n.sent[0].CalendarID != "a@example.com" {
+		t.Fatalf("out %+v err %v sent %+v", out, err, n.sent)
+	}
+	// 次の回では同じ予定を送らない
+	out, _ = f.uc.RunReminder(ctx, RunReminderInput{})
+	if out.Notified != 0 || len(n.sent) != 1 {
+		t.Fatalf("second run %+v", out)
+	}
+}
+
+func TestRunReminderRetriesAfterFailure(t *testing.T) {
+	f := setup(t)
+	ctx := context.Background()
+	now := time.Date(2026, 10, 6, 0, 0, 0, 0, time.UTC)
+	n := &fakeNotifier{fail: true}
+	f.uc.d.Notifier = n
+	f.cals["a@example.com"].events = []gateway.Event{{ID: "m1", Status: "confirmed",
+		Start: gateway.EventTime{"dateTime": now.Add(9 * time.Minute).Format(time.RFC3339)},
+		End:   gateway.EventTime{"dateTime": now.Add(time.Hour).Format(time.RFC3339)}}}
+	f.connect(t, "a@example.com", "ta", false, time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC))
+
+	out, _ := f.uc.RunReminder(ctx, RunReminderInput{})
+	if out.Notified != 0 || out.Failed != 1 {
+		t.Fatalf("failed run %+v", out)
+	}
+	// 送れなかったものは次の回で送り直す
+	n.fail = false
+	out, _ = f.uc.RunReminder(ctx, RunReminderInput{})
+	if out.Notified != 1 || len(n.sent) != 1 {
+		t.Fatalf("retry %+v", out)
+	}
+}
+
+func TestRunReminderWithoutWebhookDoesNothing(t *testing.T) {
+	f := setup(t)
+	f.connect(t, "a@example.com", "ta", false, time.Date(2026, 9, 1, 0, 0, 0, 0, time.UTC))
+	out, err := f.uc.RunReminder(context.Background(), RunReminderInput{})
+	if err != nil || out.Notified != 0 || out.Failed != 0 {
+		t.Fatalf("out %+v err %v", out, err)
+	}
+}

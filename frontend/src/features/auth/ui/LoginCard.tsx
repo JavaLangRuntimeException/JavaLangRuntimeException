@@ -1,11 +1,26 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { Button } from "@/components/base/buttons/button";
-import { SocialButton } from "@/components/base/social-button/social-button";
-import { signIn, signOutQuietly, useClearSession, useSession } from "@/entities/session";
+import { signIn, signOutEverywhere, signOutQuietly, useClearSession, useSession } from "@/entities/session";
 import { useT } from "@/shared/lib/i18n";
 
-/** 管理者ログイン（旧 src/app/admin/login/page.tsx と同じ流れと文言） */
+// 自動でログインへ進むのは 30 秒に 1 回まで（セッションが読めないときに /admin と行き来し続けないため）
+const AUTO_SIGNIN_KEY = "admin-login-auto-signin";
+function claimAutoSignIn() {
+  try {
+    const last = Number(sessionStorage.getItem(AUTO_SIGNIN_KEY) ?? 0);
+    if (Date.now() - last < 30_000) return false;
+    sessionStorage.setItem(AUTO_SIGNIN_KEY, String(Date.now()));
+  } catch {
+    // 使えないときも 1 回は進む（ボタンでも入れる）
+  }
+  return true;
+}
+
+/**
+ * 管理者ログイン。ログインは Cloudflare Access だけ（この画面も Access の後ろにある）。
+ * 未ログインなら、Access のトークンをアプリのセッションに替える口（/api/auth/signin/access）へそのまま進む
+ */
 export function LoginCard() {
   const { user, isLoading } = useSession();
   const clearSession = useClearSession();
@@ -28,9 +43,14 @@ export function LoginCard() {
     // セッションがあれば直接管理者ページにリダイレクト
     if (user?.email && !errorParam) {
       navigate("/admin");
+      return;
+    }
+    // 未ログインなら Access のログインでセッションを作る（失敗して戻ってきたとき（error=Callback）は止めて、ボタンで再試行）
+    if (!isLoading && !user && !errorParam && claimAutoSignIn()) {
+      signIn("/admin");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.email, searchParams]);
+  }, [user?.email, isLoading, searchParams]);
 
   const handleLogout = async () => {
     await signOutQuietly();
@@ -64,18 +84,24 @@ export function LoginCard() {
 
         {!user && (
           <div className="flex flex-col gap-4">
-            {!error && <p className="mb-2 text-center text-body-regular text-text-secondary">{t({ ja: "許可されたGoogleアカウントでログインしてください", en: "Sign in with an authorized Google account" })}</p>}
-            <SocialButton
-              brand="google"
-              appearance="white"
-              fullWidth
+            {searchParams.get("error") === "Callback" && (
+              <p role="alert" className="text-center text-body-2-regular text-text-error-primary">
+                {t({ ja: "ログインできませんでした。もう一度お試しください。", en: "Could not sign in. Please try again." })}
+              </p>
+            )}
+            {!error && <p className="mb-2 text-center text-body-regular text-text-secondary">{t({ ja: "Cloudflare Access でログインしています...", en: "Signing in with Cloudflare Access..." })}</p>}
+            <Button
+              size="medium"
+              className="w-full"
               onClick={() => {
                 setError(false);
-                signIn("/admin");
+                // 許可されていないアカウントのときは Access からもログアウトし、別のアカウントで入り直せるようにする
+                if (error) void signOutEverywhere();
+                else signIn("/admin");
               }}
             >
-              {error ? t({ ja: "別のアカウントで再ログイン", en: "Sign in with another account" }) : t({ ja: "Googleでログイン", en: "Sign in with Google" })}
-            </SocialButton>
+              {error ? t({ ja: "別のアカウントで再ログイン", en: "Sign in with another account" }) : t({ ja: "Cloudflare Access でログイン", en: "Sign in with Cloudflare Access" })}
+            </Button>
           </div>
         )}
 

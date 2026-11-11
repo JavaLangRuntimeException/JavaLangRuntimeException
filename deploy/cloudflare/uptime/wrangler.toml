@@ -23,7 +23,10 @@ NOTIFY_EMAIL = "shuta.tanahashi@taramanji.com"
 TARGETS = "https://taramanji.com/,https://gws.taramanji.com/admin"
 # 何回（分）続けて失敗したら知らせるか（一瞬の揺れでは送らない）
 FAIL_THRESHOLD = "2"
+# Discord の通知の先頭で呼び出す人（Discord のユーザー ID。空なら誰も呼び出さない）
+DISCORD_MENTION_USER_ID = "692695641549307926"
 
 # secrets（wrangler secret put で入れる。git には入れない）
 #   AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY: notification と同じ SES の送信用キー
 #   WEBHOOK_TOKEN: Datadog の webhook が付けるヘッダー X-Webhook-Token の値
+#   DISCORD_WEBHOOK_ALERT_URL: 同じ通知を送る Discord の Webhook（任意。なければメールだけ）
