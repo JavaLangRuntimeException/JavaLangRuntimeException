@@ -904,6 +904,32 @@ func consoleStorageObjectToPb(u *usecase.StorageObject) *cloudv1.StorageObject {
 	}
 }
 
+func consolePbToDistributionBehavior(p *cloudv1.DistributionBehavior) *usecase.DistributionBehavior {
+	if p == nil {
+		return nil
+	}
+	return &usecase.DistributionBehavior{
+		Path:         p.GetPath(),
+		OriginType:   p.GetOriginType(),
+		Origin:       p.GetOrigin(),
+		CacheSeconds: p.GetCacheSeconds(),
+		Spa:          p.GetSpa(),
+	}
+}
+
+func consoleDistributionBehaviorToPb(u *usecase.DistributionBehavior) *cloudv1.DistributionBehavior {
+	if u == nil {
+		return nil
+	}
+	return &cloudv1.DistributionBehavior{
+		Path:         u.Path,
+		OriginType:   u.OriginType,
+		Origin:       u.Origin,
+		CacheSeconds: u.CacheSeconds,
+		Spa:          u.Spa,
+	}
+}
+
 func consolePbToDistributionSpec(p *cloudv1.DistributionSpec) *usecase.DistributionSpec {
 	if p == nil {
 		return nil
@@ -914,6 +940,16 @@ func consolePbToDistributionSpec(p *cloudv1.DistributionSpec) *usecase.Distribut
 		Origin:       p.GetOrigin(),
 		CacheSeconds: p.GetCacheSeconds(),
 		Spa:          p.GetSpa(),
+		Behaviors: func(l []*cloudv1.DistributionBehavior) []*usecase.DistributionBehavior {
+			if l == nil {
+				return nil
+			}
+			out := make([]*usecase.DistributionBehavior, 0, len(l))
+			for _, v := range l {
+				out = append(out, consolePbToDistributionBehavior(v))
+			}
+			return out
+		}(p.GetBehaviors()),
 	}
 }
 
@@ -927,6 +963,16 @@ func consoleDistributionSpecToPb(u *usecase.DistributionSpec) *cloudv1.Distribut
 		Origin:       u.Origin,
 		CacheSeconds: u.CacheSeconds,
 		Spa:          u.Spa,
+		Behaviors: func(l []*usecase.DistributionBehavior) []*cloudv1.DistributionBehavior {
+			if l == nil {
+				return nil
+			}
+			out := make([]*cloudv1.DistributionBehavior, 0, len(l))
+			for _, v := range l {
+				out = append(out, consoleDistributionBehaviorToPb(v))
+			}
+			return out
+		}(u.Behaviors),
 	}
 }
 

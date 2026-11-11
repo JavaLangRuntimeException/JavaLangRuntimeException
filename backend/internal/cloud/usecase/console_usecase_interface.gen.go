@@ -305,12 +305,21 @@ type Distribution struct {
 	Host   string            `json:"host"`
 }
 
-type DistributionSpec struct {
-	Name         string `json:"name"`
+type DistributionBehavior struct {
+	Path         string `json:"path"`
 	OriginType   string `json:"origin_type"`
 	Origin       string `json:"origin"`
 	CacheSeconds int32  `json:"cache_seconds"`
 	Spa          bool   `json:"spa"`
+}
+
+type DistributionSpec struct {
+	Name         string                  `json:"name"`
+	OriginType   string                  `json:"origin_type"`
+	Origin       string                  `json:"origin"`
+	CacheSeconds int32                   `json:"cache_seconds"`
+	Spa          bool                    `json:"spa"`
+	Behaviors    []*DistributionBehavior `json:"behaviors"`
 }
 
 type EnvVar struct {

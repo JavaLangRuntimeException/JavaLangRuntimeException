@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -248,7 +249,7 @@ func TestBucketAndDistributionYAML(t *testing.T) {
 		}
 	}
 	p, err := ParseDistributionYAML("www", d, target)
-	if err != nil || p.Spec != s {
+	if err != nil || !reflect.DeepEqual(p.Spec, s.Normalize()) {
 		t.Fatalf("読み戻し: %+v %v", p, err)
 	}
 	// 関数が元のときは、バケットのヘッダーを消す

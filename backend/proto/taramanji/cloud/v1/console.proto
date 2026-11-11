@@ -446,6 +446,19 @@ message DistributionSpec {
   int32 cache_seconds = 4;
   // バケットが元のとき: ファイルがないパスに index.html を返す（SPA）
   bool spa = 5;
+  // パスごとの元（CloudFront の behavior）。ここにないパスは、上の元（既定、/）に送る。長いパスが先に当たる
+  repeated DistributionBehavior behaviors = 6;
+}
+
+// DistributionBehavior は、パスの前方一致ごとの元。パスはそのまま元に渡る（取り除かない）
+message DistributionBehavior {
+  // / で始まるパス（/api など）。/ そのものは既定の元なので書かない
+  string path = 1;
+  // bucket / function
+  string origin_type = 2;
+  string origin = 3;
+  int32 cache_seconds = 4;
+  bool spa = 5;
 }
 
 message Distribution {

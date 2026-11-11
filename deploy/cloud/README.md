@@ -131,7 +131,7 @@ S3 と CloudFront にあたるもの。
 | リソース | YAML の場所 | 中身 |
 |---|---|---|
 | バケット | `<環境>/buckets/<名前>.yaml` | ConfigMap `bucket-<名前>`（ラベル `cloud.taramanji.com/bucket`）。あることがバケットの定義 |
-| CDN | `<環境>/cdn/<名前>.yaml` | HTTPRoute 1 つ。`<名前>-cloud.taramanji.com` を、バケットか関数に向ける |
+| CDN | `<環境>/cdn/<名前>.yaml` | HTTPRoute 1 つ。`<名前>-cloud.taramanji.com` を、バケットか関数に向ける。パスごとに別の元にも向けられる（behavior） |
 
 - **ストレージ**（`cloud-storage`。cloud のイメージを `CLOUD_MODE=storage` で動かす StatefulSet）: バケットは PVC の上のディレクトリ。
   ラベル付きの ConfigMap を 15 秒ごとに見て、バケットを作る。ConfigMap が消えても、中身のあるバケットは消さない
@@ -140,6 +140,8 @@ S3 と CloudFront にあたるもの。
 - **ファイルの出し入れ**: コンソールのストレージの画面から。`PUT / GET /_objects/<バケット>/<キー>` を cloud-api がストレージに渡す（Access の JWT を確かめる）。
   ダウンロードは必ずファイルとして保存させる（置いた HTML がコンソールのオリジンで動かないように）。1 つ 1 GiB まで
 - **CDN**: HTTPRoute が、元（`X-Cloud-Bucket` か `X-Cloud-Function`）・キャッシュの秒数・SPA をヘッダーに付けて cloud-gw に送る
+- **パスごとの元（behavior）**: CloudFront の behavior にあたる。HTTPRoute のルールをパス（PathPrefix）ごとに分け、ルールごとに元・キャッシュ・SPA のヘッダーを付ける。
+  長いパスから順に並べ、最後が既定の `/`。既定のほかに 15 個まで（rules は 16 まで）。パスは取り除かずに元に渡す。画面と API を同じホスト名にまとめると、Access のログインがそのまま使える
   - バケットが元: パスをキーにして返す（GET・HEAD だけ）。`/` で終わるパスは `index.html`。SPA にすると、ファイルがないパスに `/index.html` を返す
   - 関数が元: 関数が `Cache-Control` を付けていない GET の 200 に、キャッシュの長さを付ける
   - キャッシュするのは Cloudflare のエッジ。応答に `Cache-Control: public, max-age=<秒>` を付ける。Cloudflare の既定では、

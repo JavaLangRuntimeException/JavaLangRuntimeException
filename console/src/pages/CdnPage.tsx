@@ -6,7 +6,18 @@ import { EmptyState, Mono, PageHeader, Panel, Skeleton } from "@/components/Page
 import { QueryError } from "@/components/QueryError";
 import { DeployBadge, DeployHistory } from "@/components/Deploy";
 import { ResourceEditor } from "@/components/ResourceEditor";
-import { cachePresets, distributionFormErrors, distributionFormOf, distributionSpecOf, emptyDistributionForm, formatCache, type DistributionForm } from "@/lib/hosting";
+import {
+  cachePresets,
+  distributionFormErrors,
+  distributionFormOf,
+  distributionSpecOf,
+  emptyBehavior,
+  emptyDistributionForm,
+  formatCache,
+  MAX_BEHAVIORS,
+  type BehaviorForm,
+  type DistributionForm,
+} from "@/lib/hosting";
 import { StoreDisabled } from "@/pages/FunctionsPage";
 
 /** DNS を自動で登録できない・できなかったときの案内 */
@@ -110,8 +121,23 @@ export function CdnPage() {
                       ) : (
                         <>
                           <td className="px-4 py-2.5 text-ink-2">
-                            {d.spec?.originType === "function" ? "関数" : "バケット"} <Mono>{d.spec?.origin}</Mono>
-                            {d.spec?.spa && <span className="ml-1.5 rounded bg-accent-soft px-1.5 py-0.5 text-xs text-accent">SPA</span>}
+                            <ul className="space-y-0.5">
+                              {(d.spec?.behaviors ?? []).map((b) => (
+                                <li key={b.path}>
+                                  <Mono>{b.path}</Mono> → {b.originType === "function" ? "関数" : "バケット"} <Mono>{b.origin}</Mono>
+                                  {b.spa && <span className="ml-1.5 rounded bg-accent-soft px-1.5 py-0.5 text-xs text-accent">SPA</span>}
+                                </li>
+                              ))}
+                              <li>
+                                {(d.spec?.behaviors.length ?? 0) > 0 && (
+                                  <>
+                                    <Mono>/</Mono> →{" "}
+                                  </>
+                                )}
+                                {d.spec?.originType === "function" ? "関数" : "バケット"} <Mono>{d.spec?.origin}</Mono>
+                                {d.spec?.spa && <span className="ml-1.5 rounded bg-accent-soft px-1.5 py-0.5 text-xs text-accent">SPA</span>}
+                              </li>
+                            </ul>
                           </td>
                           <td className="px-4 py-2.5 text-ink-2">{formatCache(d.spec?.cacheSeconds ?? 0)}</td>
                         </>
@@ -149,7 +175,7 @@ function Editor({
   const { applyDistribution, deleteDistribution } = useStorageMutations();
   const errors = distributionFormErrors(form);
   const set = (patch: Partial<DistributionForm>) => setForm((f) => ({ ...f, ...patch }));
-  const err = (k: keyof DistributionForm) => (showErrors ? errors[k] : undefined);
+  const err = (k: Exclude<keyof DistributionForm, "behaviors">) => (showErrors ? errors[k] : undefined);
   const host = `${form.name.trim() || "<名前>"}${opt.hostSuffix}`;
   const origins = form.originType === "bucket" ? buckets : functions;
   // 一覧にない元（消された）も、選択肢に残して見えるようにする
@@ -162,7 +188,7 @@ function Editor({
       title={isNew ? "CDN を作る" : (dist.spec?.name ?? "")}
       source={dist?.source ?? null}
       yamlLabel="Kubernetes の YAML（HTTPRoute）"
-      yamlHint="形は決まっています。変えられるのは、元の名前・キャッシュの秒数・SPA の値だけです。"
+      yamlHint="形は決まっています。変えられるのは、パス・元の名前・キャッシュの秒数・SPA の値だけです（長いパスから順に並べ、最後は / のルール）。"
       formValid={() => {
         setShowErrors(true);
         return Object.keys(errors).length === 0;
@@ -197,7 +223,7 @@ function Editor({
       </Field>
 
       <fieldset>
-        <Legend info={<>どこから中身を取ってくるかです。バケットなら、置いたファイルをパスのとおりに返します（読むだけ）。関数なら、関数の応答にキャッシュの長さを付けて返します（関数が自分で <code>Cache-Control</code> を付けていればそちらを使います）。</>}>元（オリジン）</Legend>
+        <Legend info={<>どこから中身を取ってくるかです。下の「パスごとの元」に当たらないパス（<code>/</code>）は、すべてここに送ります。バケットなら、置いたファイルをパスのとおりに返します（読むだけ）。関数なら、関数の応答にキャッシュの長さを付けて返します（関数が自分で <code>Cache-Control</code> を付けていればそちらを使います）。</>}>元（オリジン）・既定</Legend>
         <div className="flex flex-wrap gap-2">
           {(["bucket", "function"] as const).map((t) => (
             <label key={t} className={`cursor-pointer rounded border px-3 py-2 ${form.originType === t ? "border-accent bg-accent-soft" : "border-line-strong hover:bg-surface-2"}`}>
@@ -242,7 +268,7 @@ function Editor({
       </fieldset>
 
       <fieldset>
-        <Legend info={<>応答に <code>Cache-Control: public, max-age=&lt;秒&gt;</code> を付けます。その間は Cloudflare のエッジが応答を持ち、元に取りに来ません。Cloudflare の既定では、画像・CSS・JS などの拡張子だけがキャッシュされ、HTML はされません。キャッシュの消去はまだできないので、同じ名前で中身を変えるファイルは短めにしてください。</>}>キャッシュの長さ</Legend>
+        <Legend info={<>応答に <code>Cache-Control: public, max-age=&lt;秒&gt;</code> を付けます。その間は Cloudflare のエッジが応答を持ち、元に取りに来ません。Cloudflare の既定では、画像・CSS・JS などの拡張子だけがキャッシュされ、HTML はされません。キャッシュの消去はまだできないので、同じ名前で中身を変えるファイルは短めにしてください。</>}>キャッシュの長さ（既定の元）</Legend>
         <div className="flex flex-wrap items-center gap-2">
           {cachePresets.map((p) => (
             <button
@@ -265,6 +291,112 @@ function Editor({
             "応答に Cache-Control: public, max-age を付けます。Cloudflare は画像・CSS・JS などをこの長さでキャッシュします（HTML は Cloudflare の既定ではキャッシュされません）。"}
         </p>
       </fieldset>
+
+      <fieldset>
+        <Legend
+          info={
+            <>
+              CloudFront の behavior にあたります。パスの前方一致ごとに、別の元に送れます（例: <code>/api</code> は関数、それ以外は画面のバケット）。長いパスが先に当たり、どれにも当たらないものは上の既定の元に行きます。
+              パスはそのまま元に渡ります（<code>/api/x</code> なら関数にも <code>/api/x</code> が届きます）。画面と API を同じホスト名にまとめると、Cloudflare Access のログインもそのまま使えます。
+            </>
+          }
+        >
+          パスごとの元
+        </Legend>
+        {form.behaviors.length === 0 ? (
+          <p className="text-sm text-muted">ありません。全部のパスを既定の元に送ります。</p>
+        ) : (
+          <ul className="space-y-2">
+            {form.behaviors.map((b, i) => (
+              <BehaviorRow
+                key={i}
+                row={b}
+                buckets={buckets}
+                functions={functions}
+                error={showErrors ? errors.behaviors?.[i] : undefined}
+                onChange={(patch) => set({ behaviors: form.behaviors.map((x, j) => (j === i ? { ...x, ...patch } : x)) })}
+                onRemove={() => set({ behaviors: form.behaviors.filter((_, j) => j !== i) })}
+              />
+            ))}
+          </ul>
+        )}
+        {showErrors && errors.behaviors?.[MAX_BEHAVIORS] && <p className="mt-1 text-xs text-bad">{errors.behaviors[MAX_BEHAVIORS]}</p>}
+        <button
+          type="button"
+          className="mt-2 rounded border border-line-strong px-3 py-1.5 text-sm text-ink-2 hover:bg-surface-2 disabled:opacity-50"
+          disabled={form.behaviors.length >= MAX_BEHAVIORS}
+          onClick={() => set({ behaviors: [...form.behaviors, emptyBehavior(buckets, functions)] })}
+        >
+          パスを足す
+        </button>
+      </fieldset>
     </ResourceEditor>
+  );
+}
+
+/** パスごとの元 1 行: パス・元の種類・元・キャッシュ・SPA */
+function BehaviorRow({
+  row,
+  buckets,
+  functions,
+  error,
+  onChange,
+  onRemove,
+}: {
+  row: BehaviorForm;
+  buckets: string[];
+  functions: string[];
+  error?: string;
+  onChange: (patch: Partial<BehaviorForm>) => void;
+  onRemove: () => void;
+}) {
+  const origins = row.originType === "bucket" ? buckets : functions;
+  const choices = row.origin && !origins.includes(row.origin) ? [...origins, row.origin] : origins;
+  const presets: { seconds: number; label: string }[] = [...cachePresets];
+  if (!presets.some((p) => String(p.seconds) === row.cacheSeconds)) presets.push({ seconds: Number(row.cacheSeconds) || 0, label: formatCache(Number(row.cacheSeconds) || 0) });
+  return (
+    <li className={`rounded border px-3 py-2 ${error ? "border-bad" : "border-line"}`}>
+      <div className="flex flex-wrap items-center gap-2">
+        <input className={`${input} w-36 font-mono`} aria-label="パス" value={row.path} onChange={(e) => onChange({ path: e.target.value })} placeholder="/api" spellCheck={false} />
+        <span className="text-muted">→</span>
+        <select
+          className={`${input} w-28`}
+          aria-label="元の種類"
+          value={row.originType}
+          onChange={(e) => {
+            const t = e.target.value === "function" ? "function" : "bucket";
+            onChange({ originType: t, origin: (t === "bucket" ? buckets : functions)[0] ?? "", spa: false, cacheSeconds: t === "function" ? "0" : "300" });
+          }}
+        >
+          <option value="bucket">バケット</option>
+          <option value="function">関数</option>
+        </select>
+        <select className={`${input} w-48`} aria-label={row.originType === "bucket" ? "バケット" : "関数"} value={row.origin} onChange={(e) => onChange({ origin: e.target.value })}>
+          <option value="">選ぶ</option>
+          {choices.map((n) => (
+            <option key={n} value={n}>
+              {n}
+            </option>
+          ))}
+        </select>
+        <select className={`${input} w-36`} aria-label="キャッシュの長さ" value={row.cacheSeconds} onChange={(e) => onChange({ cacheSeconds: e.target.value })}>
+          {presets.map((p) => (
+            <option key={p.seconds} value={String(p.seconds)}>
+              {p.label}
+            </option>
+          ))}
+        </select>
+        {row.originType === "bucket" && (
+          <label className="flex items-center gap-1.5 text-sm text-ink-2">
+            <input type="checkbox" checked={row.spa} onChange={(e) => onChange({ spa: e.target.checked })} />
+            SPA
+          </label>
+        )}
+        <button type="button" className="ml-auto rounded px-2 py-1 text-sm text-muted hover:bg-surface-2 hover:text-bad" onClick={onRemove} aria-label={`${row.path} を外す`}>
+          外す
+        </button>
+      </div>
+      {error && <p className="mt-1 text-xs text-bad">{error}</p>}
+    </li>
   );
 }

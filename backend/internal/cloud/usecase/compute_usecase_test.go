@@ -389,6 +389,36 @@ func TestBucketsAndCDN(t *testing.T) {
 	}
 }
 
+// パスごとの元: 画面（バケット）と API（関数）を同じホスト名にまとめる
+func TestCDNBehaviors(t *testing.T) {
+	uc, store, _ := newComputeUC()
+	uc.d.Objects, uc.d.DNS = &fakeObjects{objects: map[string][]gateway.StoredObject{}}, &fakeDNS{hosts: map[string]bool{}}
+	ctx := context.Background()
+	if _, err := uc.CreateBucket(ctx, CreateBucketInput{Name: "front"}); err != nil {
+		t.Fatal(err)
+	}
+	spec := &DistributionSpec{Name: "vrst", OriginType: "bucket", Origin: "front", CacheSeconds: 300, Spa: true,
+		Behaviors: []*DistributionBehavior{{Path: "/api", OriginType: "function", Origin: "blog"}}}
+	// パスごとの元も、ないものには向けられない（欄は behaviors）
+	if _, err := uc.ApplyDistribution(ctx, ApplyDistributionInput{Spec: spec}); code(err) != "invalid" {
+		t.Fatalf("ない関数: %v", err)
+	}
+	if _, err := uc.ApplyFunction(ctx, ApplyFunctionInput{Spec: blogSpec()}); err != nil {
+		t.Fatal(err)
+	}
+	out, err := uc.ApplyDistribution(ctx, ApplyDistributionInput{Spec: spec})
+	if err != nil || len(out.Distribution.Spec.Behaviors) != 1 || out.Distribution.Spec.Behaviors[0].Origin != "blog" || !out.Distribution.Source.FormEditable {
+		t.Fatalf("cdn: %+v %v", out, err)
+	}
+	if y := store.files["cdn/vrst"].YAML; !strings.Contains(y, "value: /api") || !strings.Contains(y, "value: blog") {
+		t.Fatalf("yaml:\n%s", y)
+	}
+	// パスごとの元として使われている関数も消せない
+	if _, err := uc.DeleteFunction(ctx, DeleteFunctionInput{Name: "blog", Revision: store.files["functions/blog"].Revision}); code(err) != "function_in_use" {
+		t.Fatalf("function_in_use: %v", err)
+	}
+}
+
 type fakeState []gateway.LabeledObject
 
 func (f fakeState) ConfigMaps(context.Context, string) ([]gateway.LabeledObject, error) {
