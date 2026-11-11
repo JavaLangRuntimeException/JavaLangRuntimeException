@@ -4,6 +4,7 @@ kind: Kustomization
 namespace: cloud
 resources:
   - ../../../base
+  - rollouts.yaml
 
 # set-version.sh が書き換える（タグ v* の push で CI の deploy-prod ジョブ）。初回のリリースまでイメージはない
 images:
@@ -12,11 +13,13 @@ images:
 
 patches:
   # 2 台にして、片方の入れ替え中・ノードの drain 中も止めない
-  - target: { kind: Deployment, labelSelector: "app.kubernetes.io/name!=cloud-ctl" }
+  # cloud-api・cloud-gw・console の Pod は Rollout が持つ（カナリア）ので、Deployment 自体は 0 台（workloadRef の作法）。
+  # コントローラー（cloud-ctl）は 1 台のまま、入れ替えも Recreate のまま
+  - target: { kind: Deployment, labelSelector: "app.kubernetes.io/name in (cloud-api,cloud-gw,console)" }
     patch: |-
       - op: replace
         path: /spec/replicas
-        value: 2
+        value: 0
   - patch: |-
       apiVersion: apps/v1
       kind: Deployment
@@ -66,6 +69,8 @@ replacements:
       - select: { kind: Deployment, name: cloud-api }
         fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
         options: { create: true }
+      - select: { kind: Rollout, name: cloud-api }
+        fieldPaths: ["spec.strategy.canary.analysis.args.[name=version].value"]
   - source: { kind: Deployment, name: cloud-gw, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
     targets:
       - select: { kind: Deployment, name: cloud-gw }
