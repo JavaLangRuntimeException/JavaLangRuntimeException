@@ -53,6 +53,10 @@ type Config struct {
 	Endpoints map[string]Endpoint
 	// StorageURL は関数から見たオブジェクトストレージ（http://cloud-storage.<namespace>.svc.cluster.local:8080）
 	StorageURL string
+	// PullSecret は非公開のイメージを読むための認証情報（.dockerconfigjson の中身。GHCR・Docker Hub）。
+	// あれば関数の namespace ごとに Secret（PullSecretName）を置き、default の ServiceAccount の imagePullSecrets にする。
+	// 使うのは kubelet だけ（関数の Pod にはトークンがないので、Secret は読めない）
+	PullSecret string
 	Log        *slog.Logger
 }
 
@@ -261,7 +265,7 @@ func (c *Controller) ensureFunction(ctx context.Context, reg service.Registratio
 	if err := c.c.Cluster.PutNamespace(ctx, ns, nsLabels); err != nil {
 		return fmt.Errorf("namespace を作れませんでした: %w", err)
 	}
-	for _, o := range FunctionGuardrails(reg, c.c.ConsoleNamespace) {
+	for _, o := range FunctionGuardrails(reg, c.c.ConsoleNamespace, c.c.PullSecret != "") {
 		if err := c.c.Cluster.Put(ctx, ns, o.Resource, o.Name, labels, o.Body); err != nil {
 			return fmt.Errorf("%s %s を作れませんでした: %w", o.Resource, o.Name, err)
 		}
@@ -269,6 +273,13 @@ func (c *Controller) ensureFunction(ctx context.Context, reg service.Registratio
 
 	// つないだデータベース・バケットの接続先を、この namespace にだけ置く
 	wantSecrets := map[string]bool{}
+	// 非公開のイメージを読むための認証情報（kubelet が使う）
+	if c.c.PullSecret != "" {
+		wantSecrets[PullSecretName] = true
+		if err := c.c.Cluster.PutSecret(ctx, ns, PullSecretName, labels, map[string]string{gateway.DockerConfigKey: c.c.PullSecret}); err != nil {
+			return fmt.Errorf("イメージを読む認証情報を置けませんでした: %w", err)
+		}
+	}
 	var missing []string
 	for _, d := range reg.Databases {
 		wantSecrets[service.DatabaseObjectName(d)] = true
@@ -323,7 +334,14 @@ type Guardrail struct {
 //   - 順番: 優先度 cloud-workload のない Pod は作れない（メモリが足りなくなったら taramanji より先に止める）
 //   - 通信: 受けるのは API Gateway（cloud-gw）からだけ。出られるのは DNS・データベースとストレージ・インターネットだけ
 //   - 権限: Pod に Kubernetes のトークンを渡さない。API Gateway は台数だけ、コンソールの API は読むだけ
-func FunctionGuardrails(reg service.Registration, consoleNS string) []Guardrail {
+// PullSecretName は非公開のイメージを読むための Secret（関数の namespace ごと）
+const PullSecretName = "cloud-registry"
+
+func FunctionGuardrails(reg service.Registration, consoleNS string, pullSecret bool) []Guardrail {
+	sa := map[string]any{"automountServiceAccountToken": false}
+	if pullSecret {
+		sa["imagePullSecrets"] = []any{map[string]string{"name": PullSecretName}}
+	}
 	mem := strconv.FormatInt(reg.MemoryBytes>>20, 10) + "Mi"
 	mem2 := strconv.FormatInt(2*(reg.MemoryBytes>>20), 10) + "Mi"
 	cpu := strconv.FormatInt(reg.CPUMillis, 10) + "m"
@@ -363,7 +381,7 @@ func FunctionGuardrails(reg service.Registration, consoleNS string) []Guardrail 
 				map[string]any{"to": []any{map[string]any{"ipBlock": map[string]any{"cidr": "0.0.0.0/0", "except": private}}}},
 			},
 		}}},
-		{"serviceaccounts", "default", map[string]any{"automountServiceAccountToken": false}},
+		{"serviceaccounts", "default", sa},
 		{"rolebindings", "cloud-gw", map[string]any{
 			"roleRef":  map[string]string{"apiGroup": "rbac.authorization.k8s.io", "kind": "ClusterRole", "name": "cloud-function-scaler"},
 			"subjects": []any{map[string]string{"kind": "ServiceAccount", "name": "cloud-gw", "namespace": consoleNS}},

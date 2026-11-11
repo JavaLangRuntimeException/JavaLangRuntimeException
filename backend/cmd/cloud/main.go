@@ -295,7 +295,9 @@ func runController() {
 			service.EnginePostgres: {Host: svc("cloud-postgres"), Port: 5432},
 			service.EngineRedis:    {Host: svc("cloud-redis"), Port: 6379},
 		},
-		StorageURL:       "http://" + svc("cloud-storage") + ":8080",
+		StorageURL: "http://" + svc("cloud-storage") + ":8080",
+		// 非公開のイメージ（GHCR・Docker Hub）を読む認証情報。なければ公開のイメージだけ
+		PullSecret:       secretEnv("REGISTRY_DOCKERCONFIG", false),
 		Env:              env.Required("CLOUD_ENV"),
 		Registry:         env.Required("APPS_NAMESPACE"),
 		ConsoleNamespace: namespace,

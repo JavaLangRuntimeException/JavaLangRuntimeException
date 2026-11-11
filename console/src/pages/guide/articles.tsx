@@ -521,6 +521,9 @@ spec:
         <H2 id="rules">手で書くときの決まり</H2>
         <UL>
           <li>
+            GHCR・Docker Hub の非公開のイメージは、<C>image</C> に書くだけで使えます（<C>imagePullSecrets</C> は書きません。関数の namespace に、読み取り専用の認証情報が自動で置かれます）。
+          </li>
+          <li>
             関数の YAML の Deployment・Service・ConfigMap などは <C>metadata.namespace: taramanji-cloud-fn-&lt;名前&gt;</C> に入れます。登録の ConfigMap（<C>function-&lt;名前&gt;</C>）と、API・CDN・バケット・データベースの YAML には namespace を書きません。
           </li>
           <li>登録の data（CPU・メモリ・つなぐもの）は、Deployment と同じ値にします。ずれていると「YAML に問題」になります。</li>
@@ -622,7 +625,7 @@ spec:
         <H2 id="todo">まだできないこと</H2>
         <UL>
           <li>負荷に合わせて関数の台数を増やす（今は 1 台まで）</li>
-          <li>自分で決める秘密の環境変数、非公開のイメージ</li>
+          <li>自分で決める秘密の環境変数、GHCR・Docker Hub 以外の非公開のイメージ</li>
           <li>データベースのバックアップ、CDN のキャッシュの消去</li>
           <li>コンソールからフォルダーごとアップロードする</li>
           <li>外部のサービスからの Webhook を受ける（Access の後ろにあるため）</li>

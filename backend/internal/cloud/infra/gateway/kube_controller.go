@@ -133,7 +133,11 @@ func (k *Kube) PutSecret(ctx context.Context, ns, name string, labels, data map[
 	for key, v := range data {
 		enc[key] = base64.StdEncoding.EncodeToString([]byte(v))
 	}
-	return k.put(ctx, k.nsPath(ns, "secrets"), name, map[string]any{"apiVersion": "v1", "kind": "Secret", "type": "Opaque",
+	typ := "Opaque"
+	if _, ok := data[gateway.DockerConfigKey]; ok && len(data) == 1 {
+		typ = "kubernetes.io/dockerconfigjson"
+	}
+	return k.put(ctx, k.nsPath(ns, "secrets"), name, map[string]any{"apiVersion": "v1", "kind": "Secret", "type": typ,
 		"metadata": map[string]any{"name": name, "labels": labels}, "data": enc})
 }
 

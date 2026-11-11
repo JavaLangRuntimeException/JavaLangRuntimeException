@@ -256,7 +256,7 @@ function Editor({ fn, opt, onClose }: { fn: Fn | null; opt: GetHostingOptionsRes
           <input className={input} inputMode="numeric" value={form.port} onChange={(e) => set({ port: e.target.value })} />
         </Field>
       </div>
-      <Field label="イメージ" error={err("image")} hint="公開されているイメージだけ使えます。起動が速いほど、最初のリクエストの待ち時間が短くなります" info={<>動かすコンテナイメージです（例: <code>ghcr.io/owner/app:v1</code>）。非公開のイメージはまだ使えません。タグを変えて保存すると、次に起きたときから新しい版で動きます。<code>latest</code> は版がわからなくなるので、版の付いたタグをおすすめします。</>}>
+      <Field label="イメージ" error={err("image")} hint="公開のイメージと、GHCR・Docker Hub の非公開のイメージが使えます。起動が速いほど、最初のリクエストの待ち時間が短くなります" info={<>動かすコンテナイメージです（例: <code>ghcr.io/owner/app:v1</code>）。GHCR（<code>ghcr.io/…</code>）と Docker Hub の非公開のイメージも使えます（読み取り専用のトークンを管理者が登録してあるとき）。ほかのレジストリの非公開のイメージは使えません。タグを変えて保存すると、次に起きたときから新しい版で動きます。<code>latest</code> は版がわからなくなるので、版の付いたタグをおすすめします。</>}>
         <input className={`${input} font-mono text-[13px]`} value={form.image} onChange={(e) => set({ image: e.target.value })} placeholder="ghcr.io/owner/name:tag" autoComplete="off" spellCheck={false} />
       </Field>
 
