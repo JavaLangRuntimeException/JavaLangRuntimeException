@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -91,7 +92,7 @@ func main() {
 	hostSuffix := env.Required("HOST_SUFFIX")
 	// オブジェクトストレージ（cloud-storage）。マスターキーがなければバケットの中身は扱えない
 	var objects gateway.ObjectStore
-	if key := env.Optional("STORAGE_MASTER_KEY", ""); key != "" {
+	if key := secretEnv("STORAGE_MASTER_KEY", false); key != "" {
 		if objects, err = infragw.NewObjectStore(env.Optional("STORAGE_URL", "http://cloud-storage:8080"), storage.Token([]byte(key), "*")); err != nil {
 			log.Fatal(err)
 		}
@@ -228,7 +229,7 @@ func runStorage() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	store, err := storage.New(env.Optional("STORAGE_DIR", "/data"), []byte(env.Required("STORAGE_MASTER_KEY")))
+	store, err := storage.New(env.Optional("STORAGE_DIR", "/data"), []byte(secretEnv("STORAGE_MASTER_KEY", true)))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -271,17 +272,17 @@ func runController() {
 		log.Fatal(err)
 	}
 	svc := func(name string) string { return name + "." + namespace + ".svc.cluster.local" }
-	pg, err := infragw.NewPostgresEngine((&url.URL{Scheme: "postgres", User: url.UserPassword("postgres", env.Required("POSTGRES_ADMIN_PASSWORD")),
+	pg, err := infragw.NewPostgresEngine((&url.URL{Scheme: "postgres", User: url.UserPassword("postgres", secretEnv("POSTGRES_ADMIN_PASSWORD", true)),
 		Host: svc("cloud-postgres") + ":5432", Path: "/postgres", RawQuery: "sslmode=disable"}).String())
 	if err != nil {
 		log.Fatal(err)
 	}
 	ctl := controller.New(controller.Config{
 		Cluster:   kube,
-		MasterKey: []byte(env.Required("STORAGE_MASTER_KEY")),
+		MasterKey: []byte(secretEnv("STORAGE_MASTER_KEY", true)),
 		Engines: map[string]gateway.DatabaseEngine{
 			service.EnginePostgres: pg,
-			service.EngineRedis:    infragw.NewRedisEngine(svc("cloud-redis")+":6379", env.Required("REDIS_ADMIN_PASSWORD")),
+			service.EngineRedis:    infragw.NewRedisEngine(svc("cloud-redis")+":6379", secretEnv("REDIS_ADMIN_PASSWORD", true)),
 		},
 		Endpoints: map[string]controller.Endpoint{
 			service.EnginePostgres: {Host: svc("cloud-postgres"), Port: 5432},
@@ -296,4 +297,14 @@ func runController() {
 	if err := server.Run(controllerServiceName, func(*http.ServeMux) {}); err != nil {
 		log.Fatal(err)
 	}
+}
+
+// secretEnv は Secret から入る値を読み、前後の空白と改行を落とす（seal.sh がファイルから作るので、末尾に改行が付く）。
+// PostgreSQL は初期化のときにパスワードの改行を落とすので、そろえないとつなげない
+func secretEnv(key string, required bool) string {
+	v := strings.TrimSpace(os.Getenv(key))
+	if v == "" && required {
+		log.Fatalf("%s is not set", key)
+	}
+	return v
 }
