@@ -26,7 +26,14 @@ type Deps struct {
 	Capacity gateway.Capacity
 	// MemoryReserve は taramanji.com・gws の伸びしろとして、アプリに渡さずに残すメモリ（バイト）
 	MemoryReserve int64
-	Clock         func() time.Time
+	// Apps はアプリの YAML の置き場（アプリ専用の git リポジトリ）。nil ならホスティングは使えない
+	Apps gateway.AppStore
+	// AppsRepository は画面に出すリポジトリ名（owner/name）
+	AppsRepository string
+	// Monitors は Datadog のモニター（本番だけ）。nil なら監視は YAML に残すだけ
+	Monitors   gateway.Monitors
+	AlertScope service.AlertScope
+	Clock      func() time.Time
 }
 
 type ConsoleUsecaseImpl struct{ d Deps }
@@ -127,7 +134,7 @@ func (u *ConsoleUsecaseImpl) GetCapacity(ctx context.Context, _ GetCapacityInput
 		Pods: []*PodUsage{},
 	}
 	for _, f := range service.Fits(q, free) {
-		out.Fits = append(out.Fits, &SizeFit{Name: f.Size.Name, Memory: f.Size.MemoryBytes, CpuMillis: f.Size.CPUMillis,
+		out.Fits = append(out.Fits, &SizeFit{Name: f.Type.Name, Memory: f.Type.MemoryBytes, CpuMillis: f.Type.CPUMillis,
 			Count: int32(min(f.Count, math.MaxInt32)), LimitedBy: f.LimitedBy})
 	}
 	for _, p := range pods {

@@ -132,16 +132,31 @@ func (k *Kube) Workloads(ctx context.Context) ([]gateway.Workload, error) {
 		if err := k.get(ctx, "/apis/apps/v1/namespaces/"+url.PathEscape(k.namespace)+"/"+kind+q, &list); err != nil {
 			return nil, err
 		}
-		for _, it := range list.Items {
-			w := gateway.Workload{Name: it.Metadata.Name, Ready: it.Status.ReadyReplicas, Desired: 1}
-			if it.Spec.Replicas != nil {
-				w.Desired = *it.Spec.Replicas
-			}
-			if c := it.Spec.Template.Spec.Containers; len(c) > 0 {
-				w.Image = c[0].Image
-			}
-			out = append(out, w)
-		}
+		out = append(out, list.workloads()...)
 	}
 	return out, nil
+}
+
+func (l workloadList) workloads() []gateway.Workload {
+	out := make([]gateway.Workload, 0, len(l.Items))
+	for _, it := range l.Items {
+		w := gateway.Workload{Name: it.Metadata.Name, Ready: it.Status.ReadyReplicas, Desired: 1}
+		if it.Spec.Replicas != nil {
+			w.Desired = *it.Spec.Replicas
+		}
+		if c := it.Spec.Template.Spec.Containers; len(c) > 0 {
+			w.Image = c[0].Image
+		}
+		out = append(out, w)
+	}
+	return out
+}
+
+// AppWorkloads はアプリ用 namespace の Deployment（Argo CD がアプリのリポジトリから入れたもの）
+func (k *Kube) AppWorkloads(ctx context.Context) ([]gateway.Workload, error) {
+	var list workloadList
+	if err := k.get(ctx, "/apis/apps/v1/namespaces/"+url.PathEscape(k.appsNamespace)+"/deployments", &list); err != nil {
+		return nil, err
+	}
+	return list.workloads(), nil
 }

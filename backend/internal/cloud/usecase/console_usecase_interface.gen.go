@@ -14,6 +14,31 @@ type GetMetricsInput struct {
 
 type GetCapacityInput struct{}
 
+type GetHostingOptionsInput struct{}
+
+type ListAppsInput struct{}
+
+type GetAppInput struct {
+	Name string
+}
+
+type PreviewAppInput struct {
+	Spec *AppSpec
+}
+
+type ApplyAppInput struct {
+	Spec     *AppSpec
+	Yaml     string
+	Revision string
+}
+
+type DeleteAppInput struct {
+	Name     string
+	Revision string
+}
+
+type SyncAlertsInput struct{}
+
 type GetOverviewOutput struct {
 	Environment       string       `json:"environment"`
 	Email             string       `json:"email"`
@@ -34,9 +59,84 @@ type GetCapacityOutput struct {
 	Pods    []*PodUsage `json:"pods"`
 }
 
+type GetHostingOptionsOutput struct {
+	InstanceTypes  []*InstanceType `json:"instance_types"`
+	AlertPresets   []*AlertPreset  `json:"alert_presets"`
+	NotifyChannels []string        `json:"notify_channels"`
+	MinCpuMillis   int64           `json:"min_cpu_millis"`
+	MaxCpuMillis   int64           `json:"max_cpu_millis"`
+	MinMemory      int64           `json:"min_memory"`
+	MaxMemory      int64           `json:"max_memory"`
+	MaxReplicas    int32           `json:"max_replicas"`
+	StoreEnabled   bool            `json:"store_enabled"`
+	AlertsEnabled  bool            `json:"alerts_enabled"`
+	Repository     string          `json:"repository"`
+	Directory      string          `json:"directory"`
+}
+
+type ListAppsOutput struct {
+	Apps []*App `json:"apps"`
+}
+
+type GetAppOutput struct {
+	App *App `json:"app"`
+}
+
+type PreviewAppOutput struct {
+	Yaml string `json:"yaml"`
+}
+
+type ApplyAppOutput struct {
+	App           *App   `json:"app"`
+	AlertsProblem string `json:"alerts_problem"`
+}
+
+type DeleteAppOutput struct {
+	AlertsProblem string `json:"alerts_problem"`
+}
+
+type SyncAlertsOutput struct {
+	Created int32 `json:"created"`
+	Updated int32 `json:"updated"`
+	Deleted int32 `json:"deleted"`
+}
+
+type AlertPreset struct {
+	ID          string `json:"id"`
+	Label       string `json:"label"`
+	Description string `json:"description"`
+}
+
 type Amount struct {
 	Used  int64 `json:"used"`
 	Limit int64 `json:"limit"`
+}
+
+type App struct {
+	Spec            *AppSpec `json:"spec"`
+	Yaml            string   `json:"yaml"`
+	Revision        string   `json:"revision"`
+	FormEditable    bool     `json:"form_editable"`
+	CustomResources bool     `json:"custom_resources"`
+	Host            string   `json:"host"`
+	SourceURL       string   `json:"source_url"`
+	Deployed        bool     `json:"deployed"`
+	Ready           int32    `json:"ready"`
+	Desired         int32    `json:"desired"`
+	Problem         string   `json:"problem"`
+}
+
+type AppSpec struct {
+	Name         string    `json:"name"`
+	Image        string    `json:"image"`
+	Port         int32     `json:"port"`
+	Replicas     int32     `json:"replicas"`
+	InstanceType string    `json:"instance_type"`
+	CpuMillis    int64     `json:"cpu_millis"`
+	Memory       int64     `json:"memory"`
+	Env          []*EnvVar `json:"env"`
+	Alerts       []string  `json:"alerts"`
+	Notify       []string  `json:"notify"`
 }
 
 type Component struct {
@@ -44,6 +144,18 @@ type Component struct {
 	Ready   int32  `json:"ready"`
 	Desired int32  `json:"desired"`
 	Version string `json:"version"`
+}
+
+type EnvVar struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+}
+
+type InstanceType struct {
+	Name      string `json:"name"`
+	Family    string `json:"family"`
+	Memory    int64  `json:"memory"`
+	CpuMillis int64  `json:"cpu_millis"`
 }
 
 type Machine struct {
@@ -92,4 +204,11 @@ type ConsoleUsecase interface {
 	GetOverview(ctx context.Context, input GetOverviewInput) (*GetOverviewOutput, error)
 	GetMetrics(ctx context.Context, input GetMetricsInput) (*GetMetricsOutput, error)
 	GetCapacity(ctx context.Context, input GetCapacityInput) (*GetCapacityOutput, error)
+	GetHostingOptions(ctx context.Context, input GetHostingOptionsInput) (*GetHostingOptionsOutput, error)
+	ListApps(ctx context.Context, input ListAppsInput) (*ListAppsOutput, error)
+	GetApp(ctx context.Context, input GetAppInput) (*GetAppOutput, error)
+	PreviewApp(ctx context.Context, input PreviewAppInput) (*PreviewAppOutput, error)
+	ApplyApp(ctx context.Context, input ApplyAppInput) (*ApplyAppOutput, error)
+	DeleteApp(ctx context.Context, input DeleteAppInput) (*DeleteAppOutput, error)
+	SyncAlerts(ctx context.Context, input SyncAlertsInput) (*SyncAlertsOutput, error)
 }

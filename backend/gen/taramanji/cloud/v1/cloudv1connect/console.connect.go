@@ -42,6 +42,24 @@ const (
 	// ConsoleServiceGetCapacityProcedure is the fully-qualified name of the ConsoleService's
 	// GetCapacity RPC.
 	ConsoleServiceGetCapacityProcedure = "/taramanji.cloud.v1.ConsoleService/GetCapacity"
+	// ConsoleServiceGetHostingOptionsProcedure is the fully-qualified name of the ConsoleService's
+	// GetHostingOptions RPC.
+	ConsoleServiceGetHostingOptionsProcedure = "/taramanji.cloud.v1.ConsoleService/GetHostingOptions"
+	// ConsoleServiceListAppsProcedure is the fully-qualified name of the ConsoleService's ListApps RPC.
+	ConsoleServiceListAppsProcedure = "/taramanji.cloud.v1.ConsoleService/ListApps"
+	// ConsoleServiceGetAppProcedure is the fully-qualified name of the ConsoleService's GetApp RPC.
+	ConsoleServiceGetAppProcedure = "/taramanji.cloud.v1.ConsoleService/GetApp"
+	// ConsoleServicePreviewAppProcedure is the fully-qualified name of the ConsoleService's PreviewApp
+	// RPC.
+	ConsoleServicePreviewAppProcedure = "/taramanji.cloud.v1.ConsoleService/PreviewApp"
+	// ConsoleServiceApplyAppProcedure is the fully-qualified name of the ConsoleService's ApplyApp RPC.
+	ConsoleServiceApplyAppProcedure = "/taramanji.cloud.v1.ConsoleService/ApplyApp"
+	// ConsoleServiceDeleteAppProcedure is the fully-qualified name of the ConsoleService's DeleteApp
+	// RPC.
+	ConsoleServiceDeleteAppProcedure = "/taramanji.cloud.v1.ConsoleService/DeleteApp"
+	// ConsoleServiceSyncAlertsProcedure is the fully-qualified name of the ConsoleService's SyncAlerts
+	// RPC.
+	ConsoleServiceSyncAlertsProcedure = "/taramanji.cloud.v1.ConsoleService/SyncAlerts"
 )
 
 // ConsoleServiceClient is a client for the taramanji.cloud.v1.ConsoleService service.
@@ -51,6 +69,17 @@ type ConsoleServiceClient interface {
 	GetMetrics(context.Context, *connect.Request[v1.GetMetricsRequest]) (*connect.Response[v1.GetMetricsResponse], error)
 	// あとどのくらいアプリを置けるか（この環境の枠と、Mac mini 全体の空き）。全環境で使える（Datadog は使わない）
 	GetCapacity(context.Context, *connect.Request[v1.GetCapacityRequest]) (*connect.Response[v1.GetCapacityResponse], error)
+	// 選べるもの（インスタンスタイプ・用意した監視・通知先）と、この環境で使える機能
+	GetHostingOptions(context.Context, *connect.Request[v1.GetHostingOptionsRequest]) (*connect.Response[v1.GetHostingOptionsResponse], error)
+	ListApps(context.Context, *connect.Request[v1.ListAppsRequest]) (*connect.Response[v1.ListAppsResponse], error)
+	GetApp(context.Context, *connect.Request[v1.GetAppRequest]) (*connect.Response[v1.GetAppResponse], error)
+	// フォームの定義を YAML にして返す（保存はしない。確かめるだけ）
+	PreviewApp(context.Context, *connect.Request[v1.PreviewAppRequest]) (*connect.Response[v1.PreviewAppResponse], error)
+	// 作る・更新する。フォームの定義（spec）か、YAML そのもの（yaml）のどちらかを渡す
+	ApplyApp(context.Context, *connect.Request[v1.ApplyAppRequest]) (*connect.Response[v1.ApplyAppResponse], error)
+	DeleteApp(context.Context, *connect.Request[v1.DeleteAppRequest]) (*connect.Response[v1.DeleteAppResponse], error)
+	// リポジトリの YAML に合わせて、Datadog のモニターを作り直す（git に直接 push したあとに呼ぶ）
+	SyncAlerts(context.Context, *connect.Request[v1.SyncAlertsRequest]) (*connect.Response[v1.SyncAlertsResponse], error)
 }
 
 // NewConsoleServiceClient constructs a client for the taramanji.cloud.v1.ConsoleService service. By
@@ -82,14 +111,63 @@ func NewConsoleServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 			connect.WithSchema(consoleServiceMethods.ByName("GetCapacity")),
 			connect.WithClientOptions(opts...),
 		),
+		getHostingOptions: connect.NewClient[v1.GetHostingOptionsRequest, v1.GetHostingOptionsResponse](
+			httpClient,
+			baseURL+ConsoleServiceGetHostingOptionsProcedure,
+			connect.WithSchema(consoleServiceMethods.ByName("GetHostingOptions")),
+			connect.WithClientOptions(opts...),
+		),
+		listApps: connect.NewClient[v1.ListAppsRequest, v1.ListAppsResponse](
+			httpClient,
+			baseURL+ConsoleServiceListAppsProcedure,
+			connect.WithSchema(consoleServiceMethods.ByName("ListApps")),
+			connect.WithClientOptions(opts...),
+		),
+		getApp: connect.NewClient[v1.GetAppRequest, v1.GetAppResponse](
+			httpClient,
+			baseURL+ConsoleServiceGetAppProcedure,
+			connect.WithSchema(consoleServiceMethods.ByName("GetApp")),
+			connect.WithClientOptions(opts...),
+		),
+		previewApp: connect.NewClient[v1.PreviewAppRequest, v1.PreviewAppResponse](
+			httpClient,
+			baseURL+ConsoleServicePreviewAppProcedure,
+			connect.WithSchema(consoleServiceMethods.ByName("PreviewApp")),
+			connect.WithClientOptions(opts...),
+		),
+		applyApp: connect.NewClient[v1.ApplyAppRequest, v1.ApplyAppResponse](
+			httpClient,
+			baseURL+ConsoleServiceApplyAppProcedure,
+			connect.WithSchema(consoleServiceMethods.ByName("ApplyApp")),
+			connect.WithClientOptions(opts...),
+		),
+		deleteApp: connect.NewClient[v1.DeleteAppRequest, v1.DeleteAppResponse](
+			httpClient,
+			baseURL+ConsoleServiceDeleteAppProcedure,
+			connect.WithSchema(consoleServiceMethods.ByName("DeleteApp")),
+			connect.WithClientOptions(opts...),
+		),
+		syncAlerts: connect.NewClient[v1.SyncAlertsRequest, v1.SyncAlertsResponse](
+			httpClient,
+			baseURL+ConsoleServiceSyncAlertsProcedure,
+			connect.WithSchema(consoleServiceMethods.ByName("SyncAlerts")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // consoleServiceClient implements ConsoleServiceClient.
 type consoleServiceClient struct {
-	getOverview *connect.Client[v1.GetOverviewRequest, v1.GetOverviewResponse]
-	getMetrics  *connect.Client[v1.GetMetricsRequest, v1.GetMetricsResponse]
-	getCapacity *connect.Client[v1.GetCapacityRequest, v1.GetCapacityResponse]
+	getOverview       *connect.Client[v1.GetOverviewRequest, v1.GetOverviewResponse]
+	getMetrics        *connect.Client[v1.GetMetricsRequest, v1.GetMetricsResponse]
+	getCapacity       *connect.Client[v1.GetCapacityRequest, v1.GetCapacityResponse]
+	getHostingOptions *connect.Client[v1.GetHostingOptionsRequest, v1.GetHostingOptionsResponse]
+	listApps          *connect.Client[v1.ListAppsRequest, v1.ListAppsResponse]
+	getApp            *connect.Client[v1.GetAppRequest, v1.GetAppResponse]
+	previewApp        *connect.Client[v1.PreviewAppRequest, v1.PreviewAppResponse]
+	applyApp          *connect.Client[v1.ApplyAppRequest, v1.ApplyAppResponse]
+	deleteApp         *connect.Client[v1.DeleteAppRequest, v1.DeleteAppResponse]
+	syncAlerts        *connect.Client[v1.SyncAlertsRequest, v1.SyncAlertsResponse]
 }
 
 // GetOverview calls taramanji.cloud.v1.ConsoleService.GetOverview.
@@ -107,6 +185,41 @@ func (c *consoleServiceClient) GetCapacity(ctx context.Context, req *connect.Req
 	return c.getCapacity.CallUnary(ctx, req)
 }
 
+// GetHostingOptions calls taramanji.cloud.v1.ConsoleService.GetHostingOptions.
+func (c *consoleServiceClient) GetHostingOptions(ctx context.Context, req *connect.Request[v1.GetHostingOptionsRequest]) (*connect.Response[v1.GetHostingOptionsResponse], error) {
+	return c.getHostingOptions.CallUnary(ctx, req)
+}
+
+// ListApps calls taramanji.cloud.v1.ConsoleService.ListApps.
+func (c *consoleServiceClient) ListApps(ctx context.Context, req *connect.Request[v1.ListAppsRequest]) (*connect.Response[v1.ListAppsResponse], error) {
+	return c.listApps.CallUnary(ctx, req)
+}
+
+// GetApp calls taramanji.cloud.v1.ConsoleService.GetApp.
+func (c *consoleServiceClient) GetApp(ctx context.Context, req *connect.Request[v1.GetAppRequest]) (*connect.Response[v1.GetAppResponse], error) {
+	return c.getApp.CallUnary(ctx, req)
+}
+
+// PreviewApp calls taramanji.cloud.v1.ConsoleService.PreviewApp.
+func (c *consoleServiceClient) PreviewApp(ctx context.Context, req *connect.Request[v1.PreviewAppRequest]) (*connect.Response[v1.PreviewAppResponse], error) {
+	return c.previewApp.CallUnary(ctx, req)
+}
+
+// ApplyApp calls taramanji.cloud.v1.ConsoleService.ApplyApp.
+func (c *consoleServiceClient) ApplyApp(ctx context.Context, req *connect.Request[v1.ApplyAppRequest]) (*connect.Response[v1.ApplyAppResponse], error) {
+	return c.applyApp.CallUnary(ctx, req)
+}
+
+// DeleteApp calls taramanji.cloud.v1.ConsoleService.DeleteApp.
+func (c *consoleServiceClient) DeleteApp(ctx context.Context, req *connect.Request[v1.DeleteAppRequest]) (*connect.Response[v1.DeleteAppResponse], error) {
+	return c.deleteApp.CallUnary(ctx, req)
+}
+
+// SyncAlerts calls taramanji.cloud.v1.ConsoleService.SyncAlerts.
+func (c *consoleServiceClient) SyncAlerts(ctx context.Context, req *connect.Request[v1.SyncAlertsRequest]) (*connect.Response[v1.SyncAlertsResponse], error) {
+	return c.syncAlerts.CallUnary(ctx, req)
+}
+
 // ConsoleServiceHandler is an implementation of the taramanji.cloud.v1.ConsoleService service.
 type ConsoleServiceHandler interface {
 	GetOverview(context.Context, *connect.Request[v1.GetOverviewRequest]) (*connect.Response[v1.GetOverviewResponse], error)
@@ -114,6 +227,17 @@ type ConsoleServiceHandler interface {
 	GetMetrics(context.Context, *connect.Request[v1.GetMetricsRequest]) (*connect.Response[v1.GetMetricsResponse], error)
 	// あとどのくらいアプリを置けるか（この環境の枠と、Mac mini 全体の空き）。全環境で使える（Datadog は使わない）
 	GetCapacity(context.Context, *connect.Request[v1.GetCapacityRequest]) (*connect.Response[v1.GetCapacityResponse], error)
+	// 選べるもの（インスタンスタイプ・用意した監視・通知先）と、この環境で使える機能
+	GetHostingOptions(context.Context, *connect.Request[v1.GetHostingOptionsRequest]) (*connect.Response[v1.GetHostingOptionsResponse], error)
+	ListApps(context.Context, *connect.Request[v1.ListAppsRequest]) (*connect.Response[v1.ListAppsResponse], error)
+	GetApp(context.Context, *connect.Request[v1.GetAppRequest]) (*connect.Response[v1.GetAppResponse], error)
+	// フォームの定義を YAML にして返す（保存はしない。確かめるだけ）
+	PreviewApp(context.Context, *connect.Request[v1.PreviewAppRequest]) (*connect.Response[v1.PreviewAppResponse], error)
+	// 作る・更新する。フォームの定義（spec）か、YAML そのもの（yaml）のどちらかを渡す
+	ApplyApp(context.Context, *connect.Request[v1.ApplyAppRequest]) (*connect.Response[v1.ApplyAppResponse], error)
+	DeleteApp(context.Context, *connect.Request[v1.DeleteAppRequest]) (*connect.Response[v1.DeleteAppResponse], error)
+	// リポジトリの YAML に合わせて、Datadog のモニターを作り直す（git に直接 push したあとに呼ぶ）
+	SyncAlerts(context.Context, *connect.Request[v1.SyncAlertsRequest]) (*connect.Response[v1.SyncAlertsResponse], error)
 }
 
 // NewConsoleServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -141,6 +265,48 @@ func NewConsoleServiceHandler(svc ConsoleServiceHandler, opts ...connect.Handler
 		connect.WithSchema(consoleServiceMethods.ByName("GetCapacity")),
 		connect.WithHandlerOptions(opts...),
 	)
+	consoleServiceGetHostingOptionsHandler := connect.NewUnaryHandler(
+		ConsoleServiceGetHostingOptionsProcedure,
+		svc.GetHostingOptions,
+		connect.WithSchema(consoleServiceMethods.ByName("GetHostingOptions")),
+		connect.WithHandlerOptions(opts...),
+	)
+	consoleServiceListAppsHandler := connect.NewUnaryHandler(
+		ConsoleServiceListAppsProcedure,
+		svc.ListApps,
+		connect.WithSchema(consoleServiceMethods.ByName("ListApps")),
+		connect.WithHandlerOptions(opts...),
+	)
+	consoleServiceGetAppHandler := connect.NewUnaryHandler(
+		ConsoleServiceGetAppProcedure,
+		svc.GetApp,
+		connect.WithSchema(consoleServiceMethods.ByName("GetApp")),
+		connect.WithHandlerOptions(opts...),
+	)
+	consoleServicePreviewAppHandler := connect.NewUnaryHandler(
+		ConsoleServicePreviewAppProcedure,
+		svc.PreviewApp,
+		connect.WithSchema(consoleServiceMethods.ByName("PreviewApp")),
+		connect.WithHandlerOptions(opts...),
+	)
+	consoleServiceApplyAppHandler := connect.NewUnaryHandler(
+		ConsoleServiceApplyAppProcedure,
+		svc.ApplyApp,
+		connect.WithSchema(consoleServiceMethods.ByName("ApplyApp")),
+		connect.WithHandlerOptions(opts...),
+	)
+	consoleServiceDeleteAppHandler := connect.NewUnaryHandler(
+		ConsoleServiceDeleteAppProcedure,
+		svc.DeleteApp,
+		connect.WithSchema(consoleServiceMethods.ByName("DeleteApp")),
+		connect.WithHandlerOptions(opts...),
+	)
+	consoleServiceSyncAlertsHandler := connect.NewUnaryHandler(
+		ConsoleServiceSyncAlertsProcedure,
+		svc.SyncAlerts,
+		connect.WithSchema(consoleServiceMethods.ByName("SyncAlerts")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/taramanji.cloud.v1.ConsoleService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case ConsoleServiceGetOverviewProcedure:
@@ -149,6 +315,20 @@ func NewConsoleServiceHandler(svc ConsoleServiceHandler, opts ...connect.Handler
 			consoleServiceGetMetricsHandler.ServeHTTP(w, r)
 		case ConsoleServiceGetCapacityProcedure:
 			consoleServiceGetCapacityHandler.ServeHTTP(w, r)
+		case ConsoleServiceGetHostingOptionsProcedure:
+			consoleServiceGetHostingOptionsHandler.ServeHTTP(w, r)
+		case ConsoleServiceListAppsProcedure:
+			consoleServiceListAppsHandler.ServeHTTP(w, r)
+		case ConsoleServiceGetAppProcedure:
+			consoleServiceGetAppHandler.ServeHTTP(w, r)
+		case ConsoleServicePreviewAppProcedure:
+			consoleServicePreviewAppHandler.ServeHTTP(w, r)
+		case ConsoleServiceApplyAppProcedure:
+			consoleServiceApplyAppHandler.ServeHTTP(w, r)
+		case ConsoleServiceDeleteAppProcedure:
+			consoleServiceDeleteAppHandler.ServeHTTP(w, r)
+		case ConsoleServiceSyncAlertsProcedure:
+			consoleServiceSyncAlertsHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -168,4 +348,32 @@ func (UnimplementedConsoleServiceHandler) GetMetrics(context.Context, *connect.R
 
 func (UnimplementedConsoleServiceHandler) GetCapacity(context.Context, *connect.Request[v1.GetCapacityRequest]) (*connect.Response[v1.GetCapacityResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.cloud.v1.ConsoleService.GetCapacity is not implemented"))
+}
+
+func (UnimplementedConsoleServiceHandler) GetHostingOptions(context.Context, *connect.Request[v1.GetHostingOptionsRequest]) (*connect.Response[v1.GetHostingOptionsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.cloud.v1.ConsoleService.GetHostingOptions is not implemented"))
+}
+
+func (UnimplementedConsoleServiceHandler) ListApps(context.Context, *connect.Request[v1.ListAppsRequest]) (*connect.Response[v1.ListAppsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.cloud.v1.ConsoleService.ListApps is not implemented"))
+}
+
+func (UnimplementedConsoleServiceHandler) GetApp(context.Context, *connect.Request[v1.GetAppRequest]) (*connect.Response[v1.GetAppResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.cloud.v1.ConsoleService.GetApp is not implemented"))
+}
+
+func (UnimplementedConsoleServiceHandler) PreviewApp(context.Context, *connect.Request[v1.PreviewAppRequest]) (*connect.Response[v1.PreviewAppResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.cloud.v1.ConsoleService.PreviewApp is not implemented"))
+}
+
+func (UnimplementedConsoleServiceHandler) ApplyApp(context.Context, *connect.Request[v1.ApplyAppRequest]) (*connect.Response[v1.ApplyAppResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.cloud.v1.ConsoleService.ApplyApp is not implemented"))
+}
+
+func (UnimplementedConsoleServiceHandler) DeleteApp(context.Context, *connect.Request[v1.DeleteAppRequest]) (*connect.Response[v1.DeleteAppResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.cloud.v1.ConsoleService.DeleteApp is not implemented"))
+}
+
+func (UnimplementedConsoleServiceHandler) SyncAlerts(context.Context, *connect.Request[v1.SyncAlertsRequest]) (*connect.Response[v1.SyncAlertsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.cloud.v1.ConsoleService.SyncAlerts is not implemented"))
 }
