@@ -4,5 +4,6 @@ kind: Kustomization
 resources:
   - cloud-api-env.yaml
   - cloud-data-admin.yaml
+  - cloud-registry.yaml
   - cloud-storage-key.yaml
   - tunnel-credentials-cloud.yaml
