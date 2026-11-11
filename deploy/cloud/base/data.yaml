@@ -207,6 +207,8 @@ spec:
             - { name: http, containerPort: 8080 }
           env:
             - { name: CLOUD_MODE, value: controller }
+            # 環境（関数ごとの namespace の名前 cloud-fn-<名前> などに使う）
+            - { name: CLOUD_ENV, value: prod }
             - { name: APP_ENV, value: prod }
             - { name: PORT, value: ":8080" }
             - name: POD_NAMESPACE
