@@ -13,39 +13,39 @@ export type Service = {
 
 export type ServiceGroup = { label: string; services: Service[] };
 
-export const home: Service = { id: "home", to: "/", label: "コンソールのホーム", description: "環境と部品の状態" };
+export const home: Service = { id: "home", to: "/", label: "Console Home", description: "環境と部品の状態" };
 
-// 分類は AWS のコンソールと同じ並び（コンピューティング → ネットワーキング → ストレージ → データベース → 管理 → ヘルプ）
+// 分類は AWS のコンソールと同じ並び（Compute → Networking → Storage → Database → Management → Help）。名前は英語（AWS と同じ）、説明は日本語
 export const serviceGroups: ServiceGroup[] = [
   {
-    label: "コンピューティング",
-    services: [{ id: "functions", to: "/functions", label: "関数", description: "コンテナを、リクエストが来たときだけ動かす" }],
+    label: "Compute",
+    services: [{ id: "functions", to: "/functions", label: "Functions", description: "コンテナを、リクエストが来たときだけ動かす" }],
   },
   {
-    label: "ネットワーキングとコンテンツ配信",
+    label: "Networking & Content Delivery",
     services: [
       { id: "apis", to: "/apis", label: "API Gateway", description: "ホスト名とパスを関数に結びつける" },
       { id: "cdn", to: "/cdn", label: "CDN", description: "バケットや関数を公開し、キャッシュさせる" },
     ],
   },
   {
-    label: "ストレージ",
-    services: [{ id: "storage", to: "/storage", label: "ストレージ", description: "ファイルを置くバケット" }],
+    label: "Storage",
+    services: [{ id: "storage", to: "/storage", label: "Storage", description: "ファイルを置くバケット" }],
   },
   {
-    label: "データベース",
-    services: [{ id: "databases", to: "/databases", label: "データベース", description: "PostgreSQL と Redis を切り出す" }],
+    label: "Database",
+    services: [{ id: "databases", to: "/databases", label: "Databases", description: "PostgreSQL と Redis を切り出す" }],
   },
   {
-    label: "管理",
+    label: "Management",
     services: [
-      { id: "capacity", to: "/capacity", label: "容量", description: "あとどれだけ置けるか" },
-      { id: "metrics", to: "/metrics", label: "メトリクス", description: "リクエスト・エラー・CPU・メモリ" },
+      { id: "capacity", to: "/capacity", label: "Capacity", description: "あとどれだけ置けるか" },
+      { id: "metrics", to: "/metrics", label: "Metrics", description: "リクエスト・エラー・CPU・メモリ" },
     ],
   },
   {
-    label: "ヘルプ",
-    services: [{ id: "guide", to: "/guide", label: "ガイド", description: "しくみの説明と、手を動かすチュートリアル" }],
+    label: "Help",
+    services: [{ id: "guide", to: "/guide", label: "Guide", description: "しくみの説明と、手を動かすチュートリアル" }],
   },
 ];
 

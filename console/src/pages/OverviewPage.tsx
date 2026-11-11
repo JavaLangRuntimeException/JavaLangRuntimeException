@@ -19,7 +19,7 @@ export function OverviewPage() {
   if (overview.isError) {
     return (
       <>
-        <PageHeader title="コンソールのホーム" />
+        <PageHeader title="Console Home" />
         <QueryError error={overview.error} onRetry={() => overview.refetch()} />
       </>
     );
@@ -30,7 +30,7 @@ export function OverviewPage() {
 
   return (
     <>
-      <PageHeader title="コンソールのホーム" description="サービスの一覧と、この環境の状態です。" />
+      <PageHeader title="Console Home" description="サービスの一覧と、この環境の状態です。" />
 
       <Link to="/guide/overview" className="mb-4 flex items-center gap-4 rounded-xl border border-accent bg-accent-soft px-5 py-4 hover:underline">
         <ServiceIcon id="guide" size={32} />

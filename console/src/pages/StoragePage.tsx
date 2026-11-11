@@ -23,7 +23,7 @@ export function StoragePage() {
   return (
     <>
       <PageHeader
-        title="ストレージ"
+        title="Storage"
         description="ファイルを置くバケットです。外に出すときは、CDN でホスト名を付けます。"
         actions={
           enabled &&
