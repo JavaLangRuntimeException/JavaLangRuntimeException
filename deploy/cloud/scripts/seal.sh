@@ -13,8 +13,8 @@ cd "$(dirname "$0")/.."
 CTX="${KUBE_CONTEXT:-kind-taramanji}"
 SRC=secrets
 OUT="overlays/$ENV/sealed"
-NS=cloud
-[ "$ENV" = prod ] || NS="cloud-$ENV"
+NS=taramanji-cloud
+[ "$ENV" = prod ] || NS="taramanji-cloud-$ENV"
 mkdir -p "$OUT"
 rm -f "$OUT"/*.yaml
 
@@ -35,13 +35,13 @@ args=(--from-literal=CF_ACCESS_AUD="$AUD" --from-literal=ADMIN_EMAIL="$EMAIL")
 if [ "$ENV" = prod ] && [ -f "$SRC/datadog-api-key" ]; then
   args+=(--from-file=DD_METRICS_API_KEY="$SRC/datadog-api-key" --from-file=DD_METRICS_APP_KEY="$SRC/datadog-app-key")
 fi
-# アプリ用のリポジトリに書くトークン（そのリポジトリの Contents の読み書きだけを許した fine-grained PAT）。なければホスティングは使えない
-if [ -f "$SRC/apps-repo-token" ]; then
+# アプリ用のリポジトリに書くトークン（そのリポジトリの Contents の読み書きだけを許した fine-grained PAT）。本番だけ（アプリは本番だけ）。なければホスティングは使えない
+if [ "$ENV" = prod ] && [ -f "$SRC/apps-repo-token" ]; then
   args+=(--from-file=APPS_REPO_TOKEN="$SRC/apps-repo-token")
 fi
 # 公開ホスト名の DNS の自動登録（Cloudflare）。cloudflare.env に CF_DNS_API_TOKEN（ゾーンの DNS の編集だけ）と CF_ZONE_ID を書く。
 # 向き先のトンネルは tunnel-cloud.json から取る。なければ DNS は手で登録する
-if [ -f "$SRC/cloudflare.env" ] && [ -f "$SRC/tunnel-cloud.json" ]; then
+if [ "$ENV" = prod ] && [ -f "$SRC/cloudflare.env" ] && [ -f "$SRC/tunnel-cloud.json" ]; then
   args+=(--from-literal=CF_DNS_API_TOKEN="$(get CF_DNS_API_TOKEN "$SRC/cloudflare.env")" --from-literal=CF_ZONE_ID="$(get CF_ZONE_ID "$SRC/cloudflare.env")" \
     --from-literal=CF_TUNNEL_ID="$(python3 -c "import json,sys;print(json.load(open(sys.argv[1]))['TunnelID'])" "$SRC/tunnel-cloud.json")")
 fi
@@ -61,7 +61,7 @@ seal cloud-data-admin "$NS" --from-file=POSTGRES_ADMIN_PASSWORD="$SRC/postgres-a
 
 if [ "$ENV" = prod ]; then
   [ -f "$SRC/tunnel-cloud.json" ] || { echo "$SRC/tunnel-cloud.json がない（cloudflared tunnel create taramanji-cloud）" >&2; exit 1; }
-  seal tunnel-credentials-cloud cloud-cloudflared --from-file=credentials.json="$SRC/tunnel-cloud.json" \
+  seal tunnel-credentials-cloud taramanji-cloud-cloudflared --from-file=credentials.json="$SRC/tunnel-cloud.json" \
     --from-literal=tunnel-id="$(python3 -c "import json,sys;print(json.load(open(sys.argv[1]))['TunnelID'])" "$SRC/tunnel-cloud.json")"
 fi
 

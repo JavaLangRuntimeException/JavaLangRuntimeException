@@ -66,7 +66,7 @@ spec:
             - { name: DD_TRACE_SPAN_ATTRIBUTE_SCHEMA, value: v1 }
             - name: GOMEMLIMIT
               valueFrom: { resourceFieldRef: { resource: limits.memory } }
-            - { name: APPS_NAMESPACE, value: cloud-apps }
+            - { name: APPS_NAMESPACE, value: taramanji-cloud-apps }
             - name: STORAGE_MASTER_KEY
               valueFrom: { secretKeyRef: { name: cloud-storage-key, key: STORAGE_MASTER_KEY } }
           volumeMounts:

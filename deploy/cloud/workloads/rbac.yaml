@@ -21,7 +21,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: cloud-api
-    namespace: cloud
+    namespace: taramanji-cloud
 ---
 # オブジェクトストレージ（cloud-storage）が、バケットの定義（ラベル付きの ConfigMap）を読む
 apiVersion: rbac.authorization.k8s.io/v1
@@ -44,7 +44,7 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: cloud-storage
-    namespace: cloud
+    namespace: taramanji-cloud
 ---
 # コントローラー（cloud-ctl）: 定義（ConfigMap）を読んで状態を書き、接続先の Secret を作る・消す
 apiVersion: rbac.authorization.k8s.io/v1
@@ -70,4 +70,4 @@ roleRef:
 subjects:
   - kind: ServiceAccount
     name: cloud-ctl
-    namespace: cloud
+    namespace: taramanji-cloud

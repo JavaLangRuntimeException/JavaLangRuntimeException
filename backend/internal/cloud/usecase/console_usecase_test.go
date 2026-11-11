@@ -39,12 +39,12 @@ func (f *fakeMetrics) Query(_ context.Context, q string, from, _ time.Time) ([]g
 var now = time.Date(2026, 10, 22, 12, 0, 0, 0, time.UTC)
 
 func newUC(m gateway.Metrics) *ConsoleUsecaseImpl {
-	d := Deps{Environment: "prod", APITarget: service.APITarget{HostSuffix: "-cloud.taramanji.com", InvokerNamespace: "cloud"},
+	d := Deps{Environment: "prod", APITarget: service.APITarget{HostSuffix: "-cloud.taramanji.com", InvokerNamespace: "taramanji-cloud"},
 		Cluster: fakeCluster{
 			{Name: "console", Ready: 2, Desired: 2, Image: "ghcr.io/javalangruntimeexception/taramanji-console:v0.3.0"},
 			{Name: "cloud-api", Ready: 1, Desired: 2, Image: "ghcr.io/javalangruntimeexception/taramanji-cloud:sha-abc1234"},
 		},
-		MetricsScope: service.MetricsScope{Cluster: "taramanji-kind", Namespaces: []string{"cloud"}, Gateway: "cloud", APMEnv: "prod", APMServices: []string{"cloud-api"}},
+		MetricsScope: service.MetricsScope{Cluster: "taramanji-kind", Namespaces: []string{"taramanji-cloud"}, Gateway: "cloud", APMEnv: "prod", APMServices: []string{"cloud-api"}},
 		Clock:        func() time.Time { return now }}
 	if m != nil {
 		d.Metrics = m
@@ -114,7 +114,7 @@ type fakeCapacity struct {
 	workloads []gateway.Workload
 }
 
-func (f *fakeCapacity) AppsNamespace() string { return "cloud-apps" }
+func (f *fakeCapacity) AppsNamespace() string { return "taramanji-cloud-apps" }
 func (f *fakeCapacity) AppQuota(context.Context) (gateway.QuotaStatus, error) {
 	return f.quota, f.err
 }
@@ -141,7 +141,7 @@ func TestGetCapacity(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if out.Quota.Namespace != "cloud-apps" || out.Quota.Memory.Limit != 2560*mib || out.Quota.Cpu.Used != 500 || out.Quota.VolumeStorage.Limit != 50<<30 {
+	if out.Quota.Namespace != "taramanji-cloud-apps" || out.Quota.Memory.Limit != 2560*mib || out.Quota.Cpu.Used != 500 || out.Quota.VolumeStorage.Limit != 50<<30 {
 		t.Fatalf("quota %+v", out.Quota)
 	}
 	if m := out.Machine; m.MemoryTotal != 12<<30 || m.MemoryUsed != 7<<30 || m.MemoryReserved != 2<<30 || m.CpuTotalMillis != 10000 || m.CpuUsedMillis != 300 {

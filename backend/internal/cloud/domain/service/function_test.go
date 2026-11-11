@@ -13,7 +13,7 @@ func validSpec() FunctionSpec {
 		Env: []EnvVar{{Name: "MODE", Value: "prod: \"yes\""}}, Alerts: []string{"restarts", "cpu-high"}, Notify: []string{"discord", "mail"}}.Normalize()
 }
 
-const testNS = "cloud-fn-blog"
+const testNS = "taramanji-cloud-fn-blog"
 
 func TestNormalizeAndValidate(t *testing.T) {
 	s := validSpec()
@@ -62,7 +62,7 @@ func TestFunctionYAMLRoundTrip(t *testing.T) {
 		}
 	}
 	// 台数は API Gateway が決める。外への公開は API（HTTPRoute）の YAML に書く
-	for _, want := range []string{"name: function-blog", "cloud.taramanji.com/function: blog", "cpuMillis: \"300\"", "memoryMiB: \"200\"", "namespace: cloud-fn-blog"} {
+	for _, want := range []string{"name: function-blog", "cloud.taramanji.com/function: blog", "cpuMillis: \"300\"", "memoryMiB: \"200\"", "namespace: taramanji-cloud-fn-blog"} {
 		if !strings.Contains(y, want) {
 			t.Errorf("YAML に %q がない:\n%s", want, y)
 		}
@@ -84,7 +84,7 @@ func TestFunctionYAMLRoundTrip(t *testing.T) {
 func TestParseHandWrittenFunctionYAML(t *testing.T) {
 	y, _ := RenderFunctionYAML(validSpec(), testNS)
 	// 手で書き足した YAML は通すが、フォームでは編集できない
-	p, err := ParseFunctionYAML("blog", y+"---\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: blog-config\n  namespace: cloud-fn-blog\ndata:\n  a: b\n", testNS)
+	p, err := ParseFunctionYAML("blog", y+"---\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: blog-config\n  namespace: taramanji-cloud-fn-blog\ndata:\n  a: b\n", testNS)
 	if err != nil || p.FormEditable {
 		t.Fatalf("ConfigMap を足した YAML: %+v %v", p, err)
 	}
@@ -95,11 +95,11 @@ func TestParseHandWrittenFunctionYAML(t *testing.T) {
 	}
 
 	rejected := map[string]string{
-		"別の namespace":       strings.Replace(y, "namespace: cloud-fn-blog", "namespace: taramanji", 1),
-		"namespace なし":       strings.Replace(y, "  namespace: cloud-fn-blog\n", "", 1),
+		"別の namespace":       strings.Replace(y, "namespace: taramanji-cloud-fn-blog", "namespace: taramanji", 1),
+		"namespace なし":       strings.Replace(y, "  namespace: taramanji-cloud-fn-blog\n", "", 1),
 		"登録とずれている":           strings.Replace(y, "memoryMiB: \"128\"", "memoryMiB: \"64\"", 1),
 		"登録なし":               y[strings.Index(y, "---\n")+4:],
-		"登録を関数の namespace に": strings.Replace(y, "  name: function-blog\n", "  name: function-blog\n  namespace: cloud-fn-blog\n", 1),
+		"登録を関数の namespace に": strings.Replace(y, "  name: function-blog\n", "  name: function-blog\n  namespace: taramanji-cloud-fn-blog\n", 1),
 		"許可していない種類":          y + "---\napiVersion: v1\nkind: Secret\nmetadata:\n  name: blog\n",
 		"HTTPRoute は API に":  y + "---\napiVersion: gateway.networking.k8s.io/v1\nkind: HTTPRoute\nmetadata:\n  name: blog\n",
 		"優先度なし":              strings.Replace(y, "priorityClassName: cloud-workload", "priorityClassName: other", 1),
@@ -120,7 +120,7 @@ func TestParseHandWrittenFunctionYAML(t *testing.T) {
 	}
 }
 
-var target = APITarget{HostSuffix: "-cloud.taramanji.com", InvokerNamespace: "cloud"}
+var target = APITarget{HostSuffix: "-cloud.taramanji.com", InvokerNamespace: "taramanji-cloud"}
 
 func TestAPIYAMLRoundTrip(t *testing.T) {
 	s := APISpec{Name: "shop", Routes: []APIRoute{{Path: "/", Function: "web"}, {Path: "/api/", Function: "api"}}}.Normalize()
@@ -137,7 +137,7 @@ func TestAPIYAMLRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"kind: HTTPRoute", "shop-cloud.taramanji.com", "name: X-Cloud-Function", "value: api", "name: cloud-gw", "namespace: cloud\n", "cloud.taramanji.com/kind: api"} {
+	for _, want := range []string{"kind: HTTPRoute", "shop-cloud.taramanji.com", "name: X-Cloud-Function", "value: api", "name: cloud-gw", "namespace: taramanji-cloud\n", "cloud.taramanji.com/kind: api"} {
 		if !strings.Contains(y, want) {
 			t.Errorf("YAML に %q がない:\n%s", want, y)
 		}
@@ -150,9 +150,9 @@ func TestAPIYAMLRoundTrip(t *testing.T) {
 	rejected := map[string]string{
 		"よそのホスト名":         strings.Replace(y, "shop-cloud.taramanji.com", "cloud.taramanji.com", 1),
 		"ほかの Service に送る": strings.Replace(y, "name: cloud-gw", "name: cloud-api", 1),
-		"ほかの namespace":   strings.Replace(y, "namespace: cloud\n", "namespace: taramanji\n", 1),
+		"ほかの namespace":   strings.Replace(y, "namespace: taramanji-cloud\n", "namespace: taramanji\n", 1),
 		"関数名なし":           strings.ReplaceAll(y, "X-Cloud-Function", "X-Other"),
-		"ほかの Gateway":     strings.Replace(y, "namespace: cloud-gateway", "namespace: gateway", 1),
+		"ほかの Gateway":     strings.Replace(y, "namespace: taramanji-cloud-gateway", "namespace: gateway", 1),
 		"HTTPRoute 以外":    y + "---\napiVersion: v1\nkind: Service\nmetadata:\n  name: shop\n",
 	}
 	for name, src := range rejected {
@@ -191,7 +191,7 @@ func TestQuantities(t *testing.T) {
 }
 
 func TestMonitors(t *testing.T) {
-	scope := AlertScope{Environment: "prod", Cluster: "taramanji-kind", Namespace: "cloud-apps", APMEnv: "prod", InvokerService: "cloud-gw"}
+	scope := AlertScope{Environment: "prod", Cluster: "taramanji-kind", Namespace: "taramanji-cloud-apps", APMEnv: "prod", InvokerService: "cloud-gw"}
 	spec := validSpec()
 	spec.Alerts = append(spec.Alerts, "errors")
 	desired := DesiredMonitors(scope, []FunctionSpec{spec})
@@ -199,7 +199,7 @@ func TestMonitors(t *testing.T) {
 		t.Fatalf("監視 3 つ分のモニター: %d", len(desired))
 	}
 	m := desired[0]
-	if !strings.Contains(m.Query, "kube_namespace:cloud-fn-blog,kube_deployment:blog") ||
+	if !strings.Contains(m.Query, "kube_namespace:taramanji-cloud-fn-blog,kube_deployment:blog") ||
 		!strings.Contains(m.Message, "@webhook-taramanji-cloud-mail @webhook-taramanji-cloud-discord") ||
 		!strings.Contains(strings.Join(m.Tags, " "), "cloud-app:blog cloud-alert:cpu-high") {
 		t.Fatalf("モニター: %+v", m)

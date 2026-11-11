@@ -10,7 +10,7 @@ import (
 // cloud の Gateway（deploy/cloud/platform/gateway.yaml）と、関数を呼び出す API Gateway（cloud-gw）の Service
 const (
 	gatewayName      = "cloud"
-	gatewayNamespace = "cloud-gateway"
+	gatewayNamespace = "taramanji-cloud-gateway"
 	gatewayListener  = "http"
 	InvokerService   = "cloud-gw"
 	InvokerPort      = int32(8080)
@@ -150,7 +150,7 @@ type k8sHTTPRoute struct {
 type APITarget struct {
 	// HostSuffix は "-cloud.taramanji.com" など
 	HostSuffix string
-	// InvokerNamespace は API Gateway（cloud-gw）がいる namespace（cloud / cloud-stg / cloud-dev）
+	// InvokerNamespace は API Gateway（cloud-gw）がいる namespace（cloud / taramanji-cloud-stg / taramanji-cloud-dev）
 	InvokerNamespace string
 }
 

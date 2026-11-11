@@ -87,13 +87,16 @@ export const articles: Article[] = [
         </UL>
 
         <H2 id="env">環境（本番・stg・dev）</H2>
-        <P>コンソールは環境ごとに 1 つずつあり、作ったものは環境どうしで混ざりません。右上のバッジで、今どの環境にいるかがわかります。</P>
+        <P>
+          コンソールは環境ごとに 1 つずつあり、右上のバッジで、今どの環境にいるかがわかります。アプリ（関数・API・CDN・バケット・データベース）を作れるのは本番だけです。
+          stg・dev は taramanji cloud そのもの（コンソール・API Gateway など）を試すための環境で、アプリは置きません。
+        </P>
         <Table
           rows={[
             ["環境", "コンソール", "公開する URL", "監視（Datadog）"],
             ["本番", <C>cloud.taramanji.com</C>, <C>&lt;名前&gt;-cloud.taramanji.com</C>, "あり"],
-            ["stg", <C>cloud-stg.taramanji.com</C>, <C>&lt;名前&gt;-cloud-stg.taramanji.com</C>, "なし"],
-            ["dev", <C>cloud-dev.taramanji.com</C>, <C>&lt;名前&gt;-cloud-dev.taramanji.com</C>, "なし"],
+            ["stg", <C>cloud-stg.taramanji.com</C>, "なし（アプリは本番だけ）", "なし"],
+            ["dev", <C>cloud-dev.taramanji.com</C>, "なし（アプリは本番だけ）", "なし"],
           ]}
         />
 
@@ -431,7 +434,7 @@ const { objects } = await (await fetch(\`\${base}?prefix=uploads/\`, { headers: 
         <H2 id="function">関数の YAML</H2>
         <P>
           フォームで作ると、次のような YAML になります。1 つ目の ConfigMap は「登録」で、環境の共有の namespace に入ります。コントローラーはこれを見て、
-          関数ごとの namespace（<C>cloud-fn-&lt;名前&gt;</C>）と、その囲いを作ります。Deployment と Service は、その namespace に入ります。
+          関数ごとの namespace（<C>taramanji-cloud-fn-&lt;名前&gt;</C>）と、その囲いを作ります。Deployment と Service は、その namespace に入ります。
           監視・つなぐものは、注釈と envFrom に入ります。
         </P>
         <Code lang="prod/functions/hello.yaml">{`
@@ -452,7 +455,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: hello
-  namespace: cloud-fn-hello
+  namespace: taramanji-cloud-fn-hello
   labels:
     app.kubernetes.io/name: hello
     cloud.taramanji.com/app: hello
@@ -501,7 +504,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: hello
-  namespace: cloud-fn-hello
+  namespace: taramanji-cloud-fn-hello
   labels:
     app.kubernetes.io/name: hello
     cloud.taramanji.com/app: hello
@@ -518,8 +521,7 @@ spec:
         <H2 id="rules">手で書くときの決まり</H2>
         <UL>
           <li>
-            関数の YAML の Deployment・Service・ConfigMap などは <C>metadata.namespace: cloud-fn-&lt;名前&gt;</C>（stg は <C>cloud-stg-fn-</C>、dev は
-            <C>cloud-dev-fn-</C>）に入れます。登録の ConfigMap（<C>function-&lt;名前&gt;</C>）と、API・CDN・バケット・データベースの YAML には namespace を書きません。
+            関数の YAML の Deployment・Service・ConfigMap などは <C>metadata.namespace: taramanji-cloud-fn-&lt;名前&gt;</C> に入れます。登録の ConfigMap（<C>function-&lt;名前&gt;</C>）と、API・CDN・バケット・データベースの YAML には namespace を書きません。
           </li>
           <li>登録の data（CPU・メモリ・つなぐもの）は、Deployment と同じ値にします。ずれていると「YAML に問題」になります。</li>
           <li>
@@ -586,7 +588,7 @@ spec:
 
         <H2 id="quota">置ける量</H2>
         <P>
-          関数が使えるメモリの合計は、本番 2.5 GiB、stg・dev 各 512 MiB です。動いている関数だけが数に入るので、0 台の関数は場所を取りません。
+          関数が使えるメモリの合計は、本番 2.5 GiB です（アプリは本番だけ）。動いている関数だけが数に入るので、0 台の関数は場所を取りません。
           関数を起こすと合計が枠を超えるときは、起こさずに 503 を返します（ほかの関数が 0 台に戻ると、また起こせます）。
           あとどれだけ置けるかは <To to="/capacity">容量</To> で見られます。
         </P>
@@ -598,7 +600,6 @@ spec:
         <P>関数の編集画面の「監視」で、用意した監視を選べます。本番では Datadog のモニターになり、Datadog の画面に出ます。</P>
         <UL>
           <li>CPU の使いすぎ・メモリの使いすぎ・再起動の繰り返し・エラーの増加（5xx が 5% を超えた）</li>
-          <li>stg・dev は Datadog で見ていないので、選んでも YAML に残るだけです。</li>
           <li>YAML を手で push したときは、関数の画面の「監視を同期」を押すと、モニターが YAML に合わせて作り直されます。</li>
         </UL>
         <Note kind="warn" title="通知先は空のままにしてください">
@@ -609,7 +610,7 @@ spec:
         <UL>
           <li>公開したもの（{host}）も Cloudflare Access の後ろにあり、使えるのは管理者のアカウントだけです。</li>
           <li>
-            関数は 1 つずつ別の namespace（<C>cloud-fn-&lt;名前&gt;</C>）で動きます。namespace と囲い（量の上限・通信の制限・Pod Security・権限）は
+            関数は 1 つずつ別の namespace（<C>taramanji-cloud-fn-&lt;名前&gt;</C>）で動きます。namespace と囲い（量の上限・通信の制限・Pod Security・権限）は
             コントローラーが作り、YAML のリポジトリからは作れません。
           </li>
           <li>データベースとバケットの接続先（パスワード・トークン）は、それをつないだ関数の namespace にだけ置かれます。ほかの関数からは読めません。</li>

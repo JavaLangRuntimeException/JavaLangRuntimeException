@@ -134,13 +134,15 @@ jobs:
           all="$(deploy/k8s/scripts/built-services.sh "$TAG")"
           echo "版を書き換えるサービス: ${all:-（なし）}"
           # taramanji cloud（cloud・console）は dev が 1 つだけ（cloud-dev.taramanji.com）なので、devN を選ばずに出す
+          # （taramanji の devN と同じく、PR を閉じて止めていた（0 台の）dev なら 1 台に戻す。閉じると dev-park が 0 台にする）
           cloud=""; services=""
           for s in $all; do case "$s" in cloud|console) cloud="$cloud $s" ;; *) services="$services $s" ;; esac; done
           if [ -n "$cloud" ]; then
+            deploy/k8s/scripts/set-dev-replicas.sh dev 1
             # shellcheck disable=SC2086
             deploy/k8s/scripts/bump-and-push.sh dev "$TAG" "$SOURCE" $cloud
             echo "cloud=1" >> "$GITHUB_OUTPUT"
-            echo "### cloud-dev に出しました: https://cloud-dev.taramanji.com（${cloud# }）" >> "$GITHUB_STEP_SUMMARY"
+            echo "### taramanji-cloud-dev に出しました: https://cloud-dev.taramanji.com（${cloud# }）" >> "$GITHUB_STEP_SUMMARY"
           fi
           [ -n "$services" ] || exit 0
           env="$(deploy/k8s/scripts/pick-dev.sh "$SOURCE")"
@@ -169,7 +171,7 @@ jobs:
           fi
           if [ -n "$CLOUD" ]; then
             body="${body:+$body
-          }**cloud-dev** に出しました（\`${SHA::7}\`）: https://cloud-dev.taramanji.com"
+          }**taramanji-cloud-dev** に出しました（\`${SHA::7}\`）: https://cloud-dev.taramanji.com"
           fi
           # 同じ PR で何度出しても、コメントは 1 つを書き換える
           gh pr comment "$PR_URL" --body "$body" --edit-last --create-if-none

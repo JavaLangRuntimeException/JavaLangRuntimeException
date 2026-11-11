@@ -144,7 +144,7 @@ func registration(name, dbs, buckets string) gateway.LabeledObject {
 var key = []byte("0123456789abcdef0123456789abcdef")
 
 func newController(cluster *fakeCluster, pg, rd *fakeEngine) *Controller {
-	return New(Config{Cluster: cluster, MasterKey: key, Env: "prod", Registry: "cloud-apps", ConsoleNamespace: "cloud",
+	return New(Config{Cluster: cluster, MasterKey: key, Env: "prod", Registry: "taramanji-cloud-apps", ConsoleNamespace: "taramanji-cloud",
 		Engines:    map[string]gateway.DatabaseEngine{"postgres": pg, "redis": rd},
 		Endpoints:  map[string]Endpoint{"postgres": {Host: "cloud-postgres.cloud.svc.cluster.local", Port: 5432}, "redis": {Host: "cloud-redis.cloud.svc.cluster.local", Port: 6379}},
 		StorageURL: "http://cloud-storage.cloud.svc.cluster.local:8080"})
@@ -217,26 +217,26 @@ func TestFunctionNamespaces(t *testing.T) {
 	}
 
 	// 関数ごとに namespace と囲いができる
-	ns := cluster.namespaces["cloud-fn-blog"]
-	if ns["pod-security.kubernetes.io/enforce"] != "baseline" || ns["cloud.taramanji.com/registry"] != "cloud-apps" || ns[service.LabelFunction] != "blog" {
+	ns := cluster.namespaces["taramanji-cloud-fn-blog"]
+	if ns["pod-security.kubernetes.io/enforce"] != "baseline" || ns["cloud.taramanji.com/registry"] != "taramanji-cloud-apps" || ns[service.LabelFunction] != "blog" {
 		t.Fatalf("namespace labels: %v", ns)
 	}
 	for _, o := range []string{"resourcequotas/function", "resourcequotas/require-cloud-priority", "limitranges/function",
 		"networkpolicies/default-deny", "networkpolicies/function", "serviceaccounts/default", "rolebindings/cloud-gw", "rolebindings/cloud-api"} {
-		if _, ok := cluster.objects["cloud-fn-blog/"+o]; !ok {
+		if _, ok := cluster.objects["taramanji-cloud-fn-blog/"+o]; !ok {
 			t.Errorf("%s がない", o)
 		}
 	}
-	hard := cluster.objects["cloud-fn-blog/resourcequotas/function"]["spec"].(map[string]any)["hard"].(map[string]string)
+	hard := cluster.objects["taramanji-cloud-fn-blog/resourcequotas/function"]["spec"].(map[string]any)["hard"].(map[string]string)
 	if hard["limits.memory"] != "512Mi" || hard["pods"] != "2" {
 		t.Fatalf("quota: %v", hard)
 	}
 
 	// 接続先は、つないだ関数の namespace にだけ置く
-	if cluster.data["cloud-fn-blog/db-main"]["URL"] == "" || cluster.data["cloud-fn-blog/bucket-site"]["TOKEN"] == "" {
+	if cluster.data["taramanji-cloud-fn-blog/db-main"]["URL"] == "" || cluster.data["taramanji-cloud-fn-blog/bucket-site"]["TOKEN"] == "" {
 		t.Fatal("つないだものの Secret がない")
 	}
-	if _, ok := cluster.secrets["cloud-fn-api/db-main"]; ok {
+	if _, ok := cluster.secrets["taramanji-cloud-fn-api/db-main"]; ok {
 		t.Fatal("つないでいない関数に Secret を置いてはいけない")
 	}
 	status := map[string]string{}
@@ -252,21 +252,21 @@ func TestFunctionNamespaces(t *testing.T) {
 	if err := ctl.Reconcile(ctx); err != nil {
 		t.Fatal(err)
 	}
-	if _, ok := cluster.secrets["cloud-fn-blog/db-main"]; ok {
+	if _, ok := cluster.secrets["taramanji-cloud-fn-blog/db-main"]; ok {
 		t.Fatal("外したデータベースの Secret が残っている")
 	}
 
 	// 登録が消えたら namespace ごと消す。手で作った・ほかの環境の namespace には触れない
-	cluster.namespaces["cloud-stg-fn-x"] = map[string]string{labelManaged: managedValue, labelRegistry: "cloud-stg-apps", service.LabelFunction: "x"}
-	cluster.namespaces["cloud-fn-hand"] = map[string]string{service.LabelFunction: "hand"}
+	cluster.namespaces["taramanji-cloud-stg-fn-x"] = map[string]string{labelManaged: managedValue, labelRegistry: "taramanji-cloud-stg-apps", service.LabelFunction: "x"}
+	cluster.namespaces["taramanji-cloud-fn-hand"] = map[string]string{service.LabelFunction: "hand"}
 	cluster.configMaps = cluster.configMaps[:3]
 	if err := ctl.Reconcile(ctx); err != nil {
 		t.Fatal(err)
 	}
-	if _, ok := cluster.namespaces["cloud-fn-api"]; ok {
+	if _, ok := cluster.namespaces["taramanji-cloud-fn-api"]; ok {
 		t.Fatal("登録が消えた関数の namespace が残っている")
 	}
-	for _, keep := range []string{"cloud-fn-blog", "cloud-stg-fn-x", "cloud-fn-hand"} {
+	for _, keep := range []string{"taramanji-cloud-fn-blog", "taramanji-cloud-stg-fn-x", "taramanji-cloud-fn-hand"} {
 		if _, ok := cluster.namespaces[keep]; !ok {
 			t.Errorf("%s を消してはいけない", keep)
 		}

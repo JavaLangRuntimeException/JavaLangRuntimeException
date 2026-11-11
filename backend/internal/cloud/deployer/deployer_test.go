@@ -60,7 +60,7 @@ func (f *fakeApplier) PutConfigMap(_ context.Context, _ string, _, data map[stri
 
 func functionYAML(t *testing.T, name, image string) string {
 	t.Helper()
-	y, err := service.RenderFunctionYAML(service.FunctionSpec{Name: name, Image: image, Port: 8080, InstanceType: "t1.small"}.Normalize(), service.FunctionNamespace("stg", name))
+	y, err := service.RenderFunctionYAML(service.FunctionSpec{Name: name, Image: image, Port: 8080, InstanceType: "t1.small"}.Normalize(), service.FunctionNamespace("prod", name))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -77,7 +77,7 @@ func status(t *testing.T, a *fakeApplier, key string) Status {
 }
 
 func TestSync(t *testing.T) {
-	target := service.APITarget{HostSuffix: "-cloud-stg.taramanji.com", InvokerNamespace: "cloud-stg"}
+	target := service.APITarget{HostSuffix: "-cloud.taramanji.com", InvokerNamespace: "taramanji-cloud"}
 	api, _ := service.RenderAPIYAML(service.APISpec{Name: "shop", Routes: []service.APIRoute{{Path: "/", Function: "blog"}}}, target)
 	src := &fakeSource{head: "aaaaaaaaaa", files: map[string][]gateway.ResourceFile{
 		gateway.KindFunctions: {{Name: "blog", YAML: functionYAML(t, "blog", "ghcr.io/me/blog:v1"), Revision: "r1"}},
@@ -86,8 +86,8 @@ func TestSync(t *testing.T) {
 	ap := &fakeApplier{objects: map[string]map[string]any{}, namespaces: map[string]bool{}}
 	reconciled := 0
 	now := time.Date(2026, 11, 11, 0, 0, 0, 0, time.UTC)
-	d := New(Config{Source: src, Applier: ap, Env: "stg", Registry: "cloud-stg-apps", Target: target,
-		Reconcile: func(context.Context) error { reconciled++; ap.namespaces["cloud-stg-fn-blog"] = true; return nil },
+	d := New(Config{Source: src, Applier: ap, Env: "prod", Registry: "taramanji-cloud-apps", Target: target,
+		Reconcile: func(context.Context) error { reconciled++; ap.namespaces["taramanji-cloud-fn-blog"] = true; return nil },
 		Clock:     func() time.Time { return now }})
 	ctx := context.Background()
 
@@ -95,13 +95,13 @@ func TestSync(t *testing.T) {
 	if err := d.Sync(ctx); err != nil {
 		t.Fatal(err)
 	}
-	for _, k := range []string{"ConfigMap/cloud-stg-apps/function-blog", "HTTPRoute/cloud-stg-apps/shop", "Deployment/cloud-stg-fn-blog/blog", "Service/cloud-stg-fn-blog/blog"} {
+	for _, k := range []string{"ConfigMap/taramanji-cloud-apps/function-blog", "HTTPRoute/taramanji-cloud-apps/shop", "Deployment/taramanji-cloud-fn-blog/blog", "Service/taramanji-cloud-fn-blog/blog"} {
 		if _, ok := ap.objects[k]; !ok {
 			t.Errorf("%s が入っていない", k)
 		}
 	}
-	labels := ap.objects["Deployment/cloud-stg-fn-blog/blog"]["metadata"].(map[string]any)["labels"].(map[string]any)
-	if labels["cloud.taramanji.com/source"] != "functions.blog" || labels["cloud.taramanji.com/deploy-env"] != "stg" || reconciled != 1 {
+	labels := ap.objects["Deployment/taramanji-cloud-fn-blog/blog"]["metadata"].(map[string]any)["labels"].(map[string]any)
+	if labels["cloud.taramanji.com/source"] != "functions.blog" || labels["cloud.taramanji.com/deploy-env"] != "prod" || reconciled != 1 {
 		t.Fatalf("labels %v reconciled %d", labels, reconciled)
 	}
 	if s := status(t, ap, "functions.blog"); s.State != StateApplied || s.Revision != "r1" || s.Commit != "aaaaaaa" || len(s.History) != 1 {
@@ -120,7 +120,7 @@ func TestSync(t *testing.T) {
 	if err := d.Sync(ctx); err != nil {
 		t.Fatal(err)
 	}
-	if _, ok := ap.objects["Deployment/cloud-stg-fn-blog/blog"]; !ok {
+	if _, ok := ap.objects["Deployment/taramanji-cloud-fn-blog/blog"]; !ok {
 		t.Fatal("読めない YAML のときに、前の版を消してはいけない")
 	}
 	if s := status(t, ap, "functions.blog"); s.State != StateInvalid || !strings.Contains(s.Message, "前の版 r1") || len(s.History) != 2 {
@@ -133,7 +133,7 @@ func TestSync(t *testing.T) {
 	if err := d.Sync(ctx); err != nil {
 		t.Fatal(err)
 	}
-	img := ap.objects["Deployment/cloud-stg-fn-blog/blog"]["spec"].(map[string]any)["template"].(map[string]any)["spec"].(map[string]any)["containers"].([]any)[0].(map[string]any)["image"]
+	img := ap.objects["Deployment/taramanji-cloud-fn-blog/blog"]["spec"].(map[string]any)["template"].(map[string]any)["spec"].(map[string]any)["containers"].([]any)[0].(map[string]any)["image"]
 	if img != "ghcr.io/me/blog:v2" {
 		t.Fatalf("image %v", img)
 	}
@@ -157,22 +157,22 @@ func TestWaitsForNamespace(t *testing.T) {
 		gateway.KindFunctions: {{Name: "blog", YAML: functionYAML(t, "blog", "ghcr.io/me/blog:v1"), Revision: "r1"}},
 	}}
 	ap := &fakeApplier{objects: map[string]map[string]any{}, namespaces: map[string]bool{}}
-	d := New(Config{Source: src, Applier: ap, Env: "stg", Registry: "cloud-stg-apps", Reconcile: func(context.Context) error { return nil }})
+	d := New(Config{Source: src, Applier: ap, Env: "prod", Registry: "taramanji-cloud-apps", Reconcile: func(context.Context) error { return nil }})
 	if err := d.Sync(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	if _, ok := ap.objects["Deployment/cloud-stg-fn-blog/blog"]; ok {
+	if _, ok := ap.objects["Deployment/taramanji-cloud-fn-blog/blog"]; ok {
 		t.Fatal("namespace がないうちは入れない")
 	}
 	if s := status(t, ap, "functions.blog"); s.State != StateWaiting {
 		t.Fatalf("waiting: %+v", s)
 	}
 	// namespace ができたら、リポジトリが変わっていなくても入れる
-	ap.namespaces["cloud-stg-fn-blog"] = true
+	ap.namespaces["taramanji-cloud-fn-blog"] = true
 	if err := d.Sync(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	if _, ok := ap.objects["Deployment/cloud-stg-fn-blog/blog"]; !ok {
+	if _, ok := ap.objects["Deployment/taramanji-cloud-fn-blog/blog"]; !ok {
 		t.Fatal("namespace ができたら入れる")
 	}
 }

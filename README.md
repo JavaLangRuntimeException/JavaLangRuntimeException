@@ -57,9 +57,9 @@
 | `taramanji` / `taramanji-stg` / `taramanji-dev01`〜`03` | taramanji.com の本番 / stg / dev（PR ごと） |
 | `data` | Redis（taramanji.com のデータ） |
 | `gateway`・`envoy-gateway-system`・`cloudflared` | taramanji.com の入口 |
-| `cloud` / `cloud-stg` / `cloud-dev` | taramanji cloud の基盤（コンソール・API Gateway・ストレージ・データベース） |
-| `cloud-apps` など・`cloud-fn-<名前>` | taramanji cloud の定義と、関数ごとの namespace |
-| `cloud-gateway`・`cloud-cloudflared` | taramanji cloud の入口（taramanji.com とは別） |
+| `taramanji-cloud` / `taramanji-cloud-stg` / `taramanji-cloud-dev` | taramanji cloud の基盤（コンソール・API Gateway・ストレージ・データベース）の本番 / stg / dev |
+| `taramanji-cloud-apps`・`taramanji-cloud-fn-<名前>` | taramanji cloud のアプリの定義と、関数ごとの namespace（アプリは本番だけ） |
+| `taramanji-cloud-gateway`・`taramanji-cloud-cloudflared` | taramanji cloud の入口（taramanji.com とは別） |
 | `argocd`・`argo-rollouts`・`datadog` | 運用 |
 
 ### インフラ・使っている技術
@@ -75,7 +75,7 @@
 
 <img alt="CI / CD" src="docs/images/cicd.png" width="100%" />
 
-- PR → dev01〜03（cloud は cloud-dev）、main にマージ → stg、タグ（`v*`）→ 本番
+- PR → dev01〜03（cloud は taramanji-cloud-dev）、main にマージ → stg、タグ（`v*`）→ 本番
 - 本番はカナリア（Argo Rollouts）
   - taramanji.com: 10%（Promote 待ち）→ 25% → 50% → 100%。Datadog で 5xx 率と p95 を見て、悪ければ自動で元に戻す
   - taramanji cloud の基盤（cloud-api・cloud-gw・console）: 1 台（50%）で Promote 待ち。cloud-api は 5xx 率で自動で戻す
@@ -121,7 +121,7 @@ AWS のコンソールのように使える、自分専用の小さなクラウ�
 <img alt="taramanji cloud のしくみ" src="docs/images/cloud.png" width="100%" />
 
 - **切り離し**: トンネル・Gateway・Cloudflare Access のアプリを taramanji.com と分けている。関数などはコントローラーが YAML から入れる（Argo CD は使わない）。taramanji の Secret・セッション・Redis は使わない
-- **関数ごとの namespace**: 関数は 1 つずつ `cloud-fn-<名前>` で動く。namespace と囲い（Quota・NetworkPolicy・Pod Security・権限）はコントローラーが作り、YAML のリポジトリからは作れない
+- **関数ごとの namespace**: 関数は 1 つずつ `taramanji-cloud-fn-<名前>` で動く。namespace と囲い（Quota・NetworkPolicy・Pod Security・権限）はコントローラーが作り、YAML のリポジトリからは作れない
 - **接続先**: データベースとバケットのパスワード・トークンは、つないだ関数の namespace にだけ置く。git にもコンソールにも出ない
 - **使えるのは自分だけ**: コンソールも、公開した関数・CDN も Cloudflare Access の後ろ
 - **メモリ**: 関数の合計は本番 2.5 GiB まで（taramanji.com・gws の伸びしろを残す）。足りなくなったら taramanji より先に止まる
