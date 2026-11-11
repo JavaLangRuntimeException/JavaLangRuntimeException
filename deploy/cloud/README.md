@@ -166,6 +166,17 @@ S3 と CloudFront にあたるもの。
   超えるなら起こさず 503。コンソールの「容量」も同じ枠で数える
 - 環境の共有の namespace（`taramanji-cloud-apps` など）には、API・CDN の HTTPRoute と、登録・バケット・データベースの定義（ConfigMap）だけを置く。Pod は 0 個
 
+## 非公開のイメージ（GHCR・Docker Hub）
+
+関数のイメージは、公開のものに加えて GHCR と Docker Hub の非公開のものも使える（YAML には `image` を書くだけ）。
+
+- 認証情報は `deploy/cloud/secrets/registry-ghcr.env`・`registry-dockerhub.env`（`USERNAME=`・`TOKEN=`、git に入らない）に置き、`scripts/seal.sh prod` で SealedSecret `cloud-registry` にする
+  - GHCR: classic PAT で `read:packages` だけ（fine-grained PAT はパッケージに使えない）
+  - Docker Hub: Personal access token の Read-only
+- コントローラーが関数の namespace ごとに Secret `cloud-registry`（`kubernetes.io/dockerconfigjson`）を置き、default の ServiceAccount の `imagePullSecrets` にする。
+  使うのは kubelet だけで、関数の Pod には Kubernetes のトークンがないので Secret は読めない
+- 本番だけ（アプリは本番だけ）。トークンを変えたら seal.sh prod をやり直してコミットし、同期のあと cloud-ctl を再起動する（環境変数で読むため）。全部の関数の namespace の Secret が入れ替わる
+
 ## Argo CD の画面で関数を見る（見るだけ）
 
 関数は Argo CD を通さずにデプロイヤーが入れるが、Pod が動いているかは Argo CD の画面（いつもの画面）で見られる。

@@ -73,6 +73,28 @@ if [ "$ENV" = prod ]; then
   [ -f "$SRC/tunnel-cloud.json" ] || { echo "$SRC/tunnel-cloud.json がない（cloudflared tunnel create taramanji-cloud）" >&2; exit 1; }
   seal tunnel-credentials-cloud taramanji-cloud-cloudflared --from-file=credentials.json="$SRC/tunnel-cloud.json" \
     --from-literal=tunnel-id="$(python3 -c "import json,sys;print(json.load(open(sys.argv[1]))['TunnelID'])" "$SRC/tunnel-cloud.json")"
+
+  # 非公開のイメージを読む認証情報（関数の namespace に置き、kubelet だけが使う）。読み取り専用のトークンにする:
+  #   registry-ghcr.env       USERNAME=<GitHub のユーザー名> TOKEN=<classic PAT（read:packages だけ）>
+  #   registry-dockerhub.env  USERNAME=<Docker Hub のユーザー名> TOKEN=<Personal access token（Read-only）>
+  # どちらもなければ作らない（公開のイメージだけ使える）
+  if [ -f "$SRC/registry-ghcr.env" ] || [ -f "$SRC/registry-dockerhub.env" ]; then
+    DOCKERCONFIG="$(python3 - "$SRC" <<'PY'
+import base64, json, os, sys
+src, auths = sys.argv[1], {}
+for f, host in (("registry-ghcr.env", "ghcr.io"), ("registry-dockerhub.env", "https://index.docker.io/v1/")):
+    p = os.path.join(src, f)
+    if not os.path.exists(p):
+        continue
+    kv = dict(l.strip().split("=", 1) for l in open(p) if "=" in l and not l.startswith("#"))
+    if not kv.get("USERNAME") or not kv.get("TOKEN"):
+        sys.exit(f"{f} に USERNAME と TOKEN を書く")
+    auths[host] = {"auth": base64.b64encode(f"{kv['USERNAME']}:{kv['TOKEN']}".encode()).decode()}
+print(json.dumps({"auths": auths}, separators=(",", ":")))
+PY
+)"
+    seal cloud-registry "$NS" --from-literal=dockerconfigjson="$DOCKERCONFIG"
+  fi
 fi
 
 {

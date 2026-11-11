@@ -273,6 +273,44 @@ func TestFunctionNamespaces(t *testing.T) {
 	}
 }
 
+func TestPullSecret(t *testing.T) {
+	cluster := newCluster(registration("blog", "", ""))
+	ctl := newController(cluster, &fakeEngine{users: map[string]string{}}, &fakeEngine{users: map[string]string{}})
+	ctx := context.Background()
+	// 認証情報がなければ、Secret も imagePullSecrets も置かない
+	if err := ctl.Reconcile(ctx); err != nil {
+		t.Fatal(err)
+	}
+	sa := cluster.objects["taramanji-cloud-fn-blog/serviceaccounts/default"]
+	if _, ok := sa["imagePullSecrets"]; ok || sa["automountServiceAccountToken"] != false {
+		t.Fatalf("sa: %v", sa)
+	}
+	if _, ok := cluster.secrets["taramanji-cloud-fn-blog/"+PullSecretName]; ok {
+		t.Fatal("認証情報がないのに Secret がある")
+	}
+	// あれば、関数の namespace に置き、default の ServiceAccount から使う（トークンは持たせないまま）
+	cfg := `{"auths":{"ghcr.io":{"auth":"eDp5"}}}`
+	ctl.c.PullSecret = cfg
+	if err := ctl.Reconcile(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if got := cluster.data["taramanji-cloud-fn-blog/"+PullSecretName][gateway.DockerConfigKey]; got != cfg {
+		t.Fatalf("secret: %q", got)
+	}
+	sa = cluster.objects["taramanji-cloud-fn-blog/serviceaccounts/default"]
+	if ps, _ := sa["imagePullSecrets"].([]any); len(ps) != 1 || sa["automountServiceAccountToken"] != false {
+		t.Fatalf("sa: %v", sa)
+	}
+	// 外すと Secret も消える
+	ctl.c.PullSecret = ""
+	if err := ctl.Reconcile(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := cluster.secrets["taramanji-cloud-fn-blog/"+PullSecretName]; ok {
+		t.Fatal("外した認証情報の Secret が残っている")
+	}
+}
+
 func TestRegistrationValidation(t *testing.T) {
 	cluster := newCluster(cm("function-bad", map[string]string{service.LabelFunction: "bad"}, map[string]string{"cpuMillis": "99999", "memoryMiB": "256"}))
 	ctl := newController(cluster, &fakeEngine{users: map[string]string{}}, &fakeEngine{users: map[string]string{}})

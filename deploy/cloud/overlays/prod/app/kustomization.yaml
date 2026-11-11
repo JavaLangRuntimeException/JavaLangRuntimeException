@@ -50,6 +50,9 @@ patches:
                   # Argo CD の ApplicationSet（plugin ジェネレーター）からの問い合わせのトークン（argoview.yaml）
                   - name: ARGOCD_PLUGIN_TOKEN
                     valueFrom: { secretKeyRef: { name: cloud-api-env, key: ARGOCD_PLUGIN_TOKEN, optional: true } }
+                  # 非公開のイメージ（GHCR・Docker Hub）を読む認証情報（scripts/seal.sh。なければ公開のイメージだけ）
+                  - name: REGISTRY_DOCKERCONFIG
+                    valueFrom: { secretKeyRef: { name: cloud-registry, key: dockerconfigjson, optional: true } }
   - patch: |-
       apiVersion: apps/v1
       kind: Deployment

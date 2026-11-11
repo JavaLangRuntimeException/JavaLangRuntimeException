@@ -213,9 +213,13 @@ type ResourceCluster interface {
 	// Put は囲いのオブジェクト（resourcequotas・limitranges・networkpolicies・serviceaccounts・rolebindings）を置く
 	Put(ctx context.Context, ns, resource, name string, labels map[string]string, obj map[string]any) error
 	Secrets(ctx context.Context, ns, labelSelector string) ([]LabeledObject, error)
+	// PutSecret は Secret を置く。data のキーが DockerConfigKey だけなら、イメージを読むための Secret（kubernetes.io/dockerconfigjson）にする
 	PutSecret(ctx context.Context, ns, name string, labels, data map[string]string) error
 	DeleteSecret(ctx context.Context, ns, name string) error
 }
+
+// DockerConfigKey はイメージを読むための Secret のキー
+const DockerConfigKey = ".dockerconfigjson"
 
 // DatabaseEngine は共有の PostgreSQL / Redis から、データベース（とユーザー）を切り出す。何度呼んでも同じ結果になる
 type DatabaseEngine interface {
