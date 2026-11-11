@@ -110,7 +110,7 @@ func (h *ConsoleHandler) GetHostingOptions(ctx context.Context, req *connect.Req
 			out = append(out, consoleAlertPresetToPb(v))
 		}
 		return out
-	}(out.AlertPresets), NotifyChannels: out.NotifyChannels, MinCpuMillis: out.MinCpuMillis, MaxCpuMillis: out.MaxCpuMillis, MinMemory: out.MinMemory, MaxMemory: out.MaxMemory, StoreEnabled: out.StoreEnabled, AlertsEnabled: out.AlertsEnabled, Repository: out.Repository, Directory: out.Directory, IdleTimeoutSeconds: out.IdleTimeoutSeconds, HostSuffix: out.HostSuffix, ApiHostSuffix: out.ApiHostSuffix, CdnHostSuffix: out.CdnHostSuffix, StorageHostSuffix: out.StorageHostSuffix, CustomDomainZone: out.CustomDomainZone, InstanceFamilies: func(l []*usecase.InstanceFamily) []*cloudv1.InstanceFamily {
+	}(out.AlertPresets), NotifyChannels: out.NotifyChannels, MinCpuMillis: out.MinCpuMillis, MaxCpuMillis: out.MaxCpuMillis, MinMemory: out.MinMemory, MaxMemory: out.MaxMemory, StoreEnabled: out.StoreEnabled, AlertsEnabled: out.AlertsEnabled, Repository: out.Repository, Directory: out.Directory, IdleTimeoutSeconds: out.IdleTimeoutSeconds, HostSuffix: out.HostSuffix, ApiHostSuffix: out.ApiHostSuffix, CdnHostSuffix: out.CdnHostSuffix, StorageHostSuffix: out.StorageHostSuffix, CustomDomainZone: out.CustomDomainZone, CachePurgeEnabled: out.CachePurgeEnabled, InstanceFamilies: func(l []*usecase.InstanceFamily) []*cloudv1.InstanceFamily {
 		if l == nil {
 			return nil
 		}
@@ -283,7 +283,7 @@ func (h *ConsoleHandler) UpdateBucket(ctx context.Context, req *connect.Request[
 	if err != nil {
 		return nil, errs.ToConnect(ctx, err)
 	}
-	return connect.NewResponse(&cloudv1.UpdateBucketResponse{Bucket: consoleBucketToPb(out.Bucket), DnsProblem: out.DnsProblem}), nil
+	return connect.NewResponse(&cloudv1.UpdateBucketResponse{Bucket: consoleBucketToPb(out.Bucket), DnsProblem: out.DnsProblem, CacheProblem: out.CacheProblem}), nil
 }
 
 func (h *ConsoleHandler) DeleteBucket(ctx context.Context, req *connect.Request[cloudv1.DeleteBucketRequest]) (*connect.Response[cloudv1.DeleteBucketResponse], error) {
@@ -294,7 +294,7 @@ func (h *ConsoleHandler) DeleteBucket(ctx context.Context, req *connect.Request[
 	if err != nil {
 		return nil, errs.ToConnect(ctx, err)
 	}
-	return connect.NewResponse(&cloudv1.DeleteBucketResponse{DnsProblem: out.DnsProblem}), nil
+	return connect.NewResponse(&cloudv1.DeleteBucketResponse{DnsProblem: out.DnsProblem, CacheProblem: out.CacheProblem}), nil
 }
 
 func (h *ConsoleHandler) ListObjects(ctx context.Context, req *connect.Request[cloudv1.ListObjectsRequest]) (*connect.Response[cloudv1.ListObjectsResponse], error) {
@@ -318,13 +318,26 @@ func (h *ConsoleHandler) ListObjects(ctx context.Context, req *connect.Request[c
 }
 
 func (h *ConsoleHandler) DeleteObject(ctx context.Context, req *connect.Request[cloudv1.DeleteObjectRequest]) (*connect.Response[cloudv1.DeleteObjectResponse], error) {
-	if err := h.usecase.DeleteObject(ctx, usecase.DeleteObjectInput{
+	out, err := h.usecase.DeleteObject(ctx, usecase.DeleteObjectInput{
 		Bucket: req.Msg.GetBucket(),
 		Key:    req.Msg.GetKey(),
-	}); err != nil {
+	})
+	if err != nil {
 		return nil, errs.ToConnect(ctx, err)
 	}
-	return connect.NewResponse(&cloudv1.DeleteObjectResponse{}), nil
+	return connect.NewResponse(&cloudv1.DeleteObjectResponse{CacheProblem: out.CacheProblem}), nil
+}
+
+func (h *ConsoleHandler) PurgeCache(ctx context.Context, req *connect.Request[cloudv1.PurgeCacheRequest]) (*connect.Response[cloudv1.PurgeCacheResponse], error) {
+	out, err := h.usecase.PurgeCache(ctx, usecase.PurgeCacheInput{
+		Kind: req.Msg.GetKind(),
+		Name: req.Msg.GetName(),
+		Keys: req.Msg.GetKeys(),
+	})
+	if err != nil {
+		return nil, errs.ToConnect(ctx, err)
+	}
+	return connect.NewResponse(&cloudv1.PurgeCacheResponse{Hosts: out.Hosts, Problem: out.Problem}), nil
 }
 
 func (h *ConsoleHandler) ListDistributions(ctx context.Context, req *connect.Request[cloudv1.ListDistributionsRequest]) (*connect.Response[cloudv1.ListDistributionsResponse], error) {
@@ -363,7 +376,7 @@ func (h *ConsoleHandler) ApplyDistribution(ctx context.Context, req *connect.Req
 	if err != nil {
 		return nil, errs.ToConnect(ctx, err)
 	}
-	return connect.NewResponse(&cloudv1.ApplyDistributionResponse{Distribution: consoleDistributionToPb(out.Distribution), DnsProblem: out.DnsProblem}), nil
+	return connect.NewResponse(&cloudv1.ApplyDistributionResponse{Distribution: consoleDistributionToPb(out.Distribution), DnsProblem: out.DnsProblem, CacheProblem: out.CacheProblem}), nil
 }
 
 func (h *ConsoleHandler) DeleteDistribution(ctx context.Context, req *connect.Request[cloudv1.DeleteDistributionRequest]) (*connect.Response[cloudv1.DeleteDistributionResponse], error) {
@@ -374,7 +387,7 @@ func (h *ConsoleHandler) DeleteDistribution(ctx context.Context, req *connect.Re
 	if err != nil {
 		return nil, errs.ToConnect(ctx, err)
 	}
-	return connect.NewResponse(&cloudv1.DeleteDistributionResponse{DnsProblem: out.DnsProblem}), nil
+	return connect.NewResponse(&cloudv1.DeleteDistributionResponse{DnsProblem: out.DnsProblem, CacheProblem: out.CacheProblem}), nil
 }
 
 func (h *ConsoleHandler) ListDatabases(ctx context.Context, req *connect.Request[cloudv1.ListDatabasesRequest]) (*connect.Response[cloudv1.ListDatabasesResponse], error) {

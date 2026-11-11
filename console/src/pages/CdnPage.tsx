@@ -187,7 +187,7 @@ function Editor({
   // 一覧にない元（消された）も、選択肢に残して見えるようにする
   const choices = form.origin && !origins.includes(form.origin) ? [...origins, form.origin] : origins;
   const done = applyDistribution.data ?? deleteDistribution.data;
-  const warning = done ? dnsNote(opt.dnsEnabled, done.dnsProblem, host) : undefined;
+  const warning = done ? [dnsNote(opt.dnsEnabled, done.dnsProblem, host), done.cacheProblem].filter(Boolean).join(" ") || undefined : undefined;
 
   return (
     <ResourceEditor
@@ -203,12 +203,12 @@ function Editor({
       onSave={(yaml) =>
         applyDistribution.mutate(
           { spec: yaml === null ? distributionSpecOf(form) : { name: form.name.trim() }, yaml: yaml ?? "", revision: dist?.source?.revision ?? "" },
-          { onSuccess: (res) => !dnsNote(opt.dnsEnabled, res.dnsProblem, host) && onClose() },
+          { onSuccess: (res) => !(dnsNote(opt.dnsEnabled, res.dnsProblem, host) || res.cacheProblem) && onClose() },
         )
       }
       onDelete={() => {
         if (!dist?.spec || !window.confirm(`${dist.spec.name} を消します。https://${dist.host} は使えなくなります（元のバケット・API は残ります）。`)) return;
-        deleteDistribution.mutate({ name: dist.spec.name, revision: dist.source?.revision ?? "" }, { onSuccess: (res) => !res.dnsProblem && onClose() });
+        deleteDistribution.mutate({ name: dist.spec.name, revision: dist.source?.revision ?? "" }, { onSuccess: (res) => !(res.dnsProblem || res.cacheProblem) && onClose() });
       }}
       onClose={onClose}
       saving={applyDistribution.isPending || deleteDistribution.isPending}
@@ -274,7 +274,7 @@ function Editor({
       </fieldset>
 
       <fieldset>
-        <Legend info={<>応答に <code>Cache-Control: public, max-age=&lt;秒&gt;</code> を付けます。その間は Cloudflare のエッジが応答を持ち、元に取りに来ません。Cloudflare の既定では、画像・CSS・JS などの拡張子だけがキャッシュされ、HTML はされません。キャッシュの消去はまだできないので、同じ名前で中身を変えるファイルは短めにしてください。</>}>キャッシュの長さ（既定の元）</Legend>
+        <Legend info={<>応答に <code>Cache-Control: public, max-age=&lt;秒&gt;</code> を付けます。その間は Cloudflare のエッジが応答を持ち、元に取りに来ません。Cloudflare の既定では、画像・CSS・JS などの拡張子だけがキャッシュされ、HTML はされません。ファイルを置き直したとき・CDN を保存したときは、Cloudflare のキャッシュを自動で消します（ブラウザが持っている分は、この長さまで残ります）。</>}>キャッシュの長さ（既定の元）</Legend>
         <div className="flex flex-wrap items-center gap-2">
           {cachePresets.map((p) => (
             <button
@@ -338,6 +338,8 @@ function Editor({
       </fieldset>
 
       {!isNew && <AliasesField zone={opt.customDomainZone} aliases={form.aliases} onChange={(aliases) => set({ aliases })} />}
+
+      {!isNew && opt.cachePurgeEnabled && dist?.spec && <PurgeField name={dist.spec.name} />}
     </ResourceEditor>
   );
 }
@@ -473,6 +475,34 @@ function AliasesField({ zone, aliases, onChange }: { zone: string; aliases: stri
           <p className={`mt-1 text-xs ${error ? "text-bad" : "text-muted"}`}>{error ?? "足したあと「保存」を押すと反映されます（5 個まで）。"}</p>
         </>
       )}
+    </fieldset>
+  );
+}
+
+/** CDN のキャッシュを今すぐ消す（保存したとき・消したときは自動で消える） */
+function PurgeField({ name }: { name: string }) {
+  const { purgeCache } = useStorageMutations();
+  return (
+    <fieldset>
+      <Legend
+        info={
+          <>
+            この CDN のホスト名（独自ドメインも）の、Cloudflare のエッジに残っているキャッシュを全部消します。設定を保存したとき・CDN を消したとき・元のバケットのファイルを置き直したとき・消したときは、自動で消えます。
+            ブラウザが持っている分は消せないので、期限（キャッシュの長さ）まで古いものが見えることがあります。Cloudflare の無料プランでは、ホスト名ごとの消去は 1 分に 5 回までです。
+          </>
+        }
+      >
+        キャッシュ
+      </Legend>
+      <div className="flex flex-wrap items-center gap-2">
+        <button type="button" className="rounded border border-line-strong px-3 py-1.5 text-sm text-ink-2 hover:bg-surface-2 disabled:opacity-50" disabled={purgeCache.isPending} onClick={() => purgeCache.mutate({ kind: "cdn", name, keys: [] })}>
+          {purgeCache.isPending ? "消しています…" : "キャッシュを消す"}
+        </button>
+        {purgeCache.data && (
+          <span className={`text-sm ${purgeCache.data.problem ? "text-warn" : "text-ok"}`}>{purgeCache.data.problem || `消しました（${purgeCache.data.hosts.join("・")}）`}</span>
+        )}
+        {purgeCache.isError && <span className="text-sm text-bad">{purgeCache.error instanceof Error ? purgeCache.error.message : "消せませんでした"}</span>}
+      </div>
     </fieldset>
   );
 }

@@ -91,6 +91,9 @@ const (
 	// ConsoleServiceDeleteObjectProcedure is the fully-qualified name of the ConsoleService's
 	// DeleteObject RPC.
 	ConsoleServiceDeleteObjectProcedure = "/taramanji.cloud.v1.ConsoleService/DeleteObject"
+	// ConsoleServicePurgeCacheProcedure is the fully-qualified name of the ConsoleService's PurgeCache
+	// RPC.
+	ConsoleServicePurgeCacheProcedure = "/taramanji.cloud.v1.ConsoleService/PurgeCache"
 	// ConsoleServiceListDistributionsProcedure is the fully-qualified name of the ConsoleService's
 	// ListDistributions RPC.
 	ConsoleServiceListDistributionsProcedure = "/taramanji.cloud.v1.ConsoleService/ListDistributions"
@@ -154,6 +157,9 @@ type ConsoleServiceClient interface {
 	DeleteBucket(context.Context, *connect.Request[v1.DeleteBucketRequest]) (*connect.Response[v1.DeleteBucketResponse], error)
 	ListObjects(context.Context, *connect.Request[v1.ListObjectsRequest]) (*connect.Response[v1.ListObjectsResponse], error)
 	DeleteObject(context.Context, *connect.Request[v1.DeleteObjectRequest]) (*connect.Response[v1.DeleteObjectResponse], error)
+	// Cloudflare のエッジのキャッシュを消す（バケットなら、そのバケットを配っている公開の URL と CDN。CDN なら、その CDN のホスト名）。
+	// keys を渡すと、そのファイルの URL だけ消す（アップロードのあと）
+	PurgeCache(context.Context, *connect.Request[v1.PurgeCacheRequest]) (*connect.Response[v1.PurgeCacheResponse], error)
 	// CDN: 公開するホスト名（<名前>-cloud.taramanji.com）と、その元（バケットか関数）、キャッシュの長さ
 	ListDistributions(context.Context, *connect.Request[v1.ListDistributionsRequest]) (*connect.Response[v1.ListDistributionsResponse], error)
 	PreviewDistribution(context.Context, *connect.Request[v1.PreviewDistributionRequest]) (*connect.Response[v1.PreviewDistributionResponse], error)
@@ -304,6 +310,12 @@ func NewConsoleServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 			connect.WithSchema(consoleServiceMethods.ByName("DeleteObject")),
 			connect.WithClientOptions(opts...),
 		),
+		purgeCache: connect.NewClient[v1.PurgeCacheRequest, v1.PurgeCacheResponse](
+			httpClient,
+			baseURL+ConsoleServicePurgeCacheProcedure,
+			connect.WithSchema(consoleServiceMethods.ByName("PurgeCache")),
+			connect.WithClientOptions(opts...),
+		),
 		listDistributions: connect.NewClient[v1.ListDistributionsRequest, v1.ListDistributionsResponse](
 			httpClient,
 			baseURL+ConsoleServiceListDistributionsProcedure,
@@ -383,6 +395,7 @@ type consoleServiceClient struct {
 	deleteBucket        *connect.Client[v1.DeleteBucketRequest, v1.DeleteBucketResponse]
 	listObjects         *connect.Client[v1.ListObjectsRequest, v1.ListObjectsResponse]
 	deleteObject        *connect.Client[v1.DeleteObjectRequest, v1.DeleteObjectResponse]
+	purgeCache          *connect.Client[v1.PurgeCacheRequest, v1.PurgeCacheResponse]
 	listDistributions   *connect.Client[v1.ListDistributionsRequest, v1.ListDistributionsResponse]
 	previewDistribution *connect.Client[v1.PreviewDistributionRequest, v1.PreviewDistributionResponse]
 	applyDistribution   *connect.Client[v1.ApplyDistributionRequest, v1.ApplyDistributionResponse]
@@ -494,6 +507,11 @@ func (c *consoleServiceClient) DeleteObject(ctx context.Context, req *connect.Re
 	return c.deleteObject.CallUnary(ctx, req)
 }
 
+// PurgeCache calls taramanji.cloud.v1.ConsoleService.PurgeCache.
+func (c *consoleServiceClient) PurgeCache(ctx context.Context, req *connect.Request[v1.PurgeCacheRequest]) (*connect.Response[v1.PurgeCacheResponse], error) {
+	return c.purgeCache.CallUnary(ctx, req)
+}
+
 // ListDistributions calls taramanji.cloud.v1.ConsoleService.ListDistributions.
 func (c *consoleServiceClient) ListDistributions(ctx context.Context, req *connect.Request[v1.ListDistributionsRequest]) (*connect.Response[v1.ListDistributionsResponse], error) {
 	return c.listDistributions.CallUnary(ctx, req)
@@ -573,6 +591,9 @@ type ConsoleServiceHandler interface {
 	DeleteBucket(context.Context, *connect.Request[v1.DeleteBucketRequest]) (*connect.Response[v1.DeleteBucketResponse], error)
 	ListObjects(context.Context, *connect.Request[v1.ListObjectsRequest]) (*connect.Response[v1.ListObjectsResponse], error)
 	DeleteObject(context.Context, *connect.Request[v1.DeleteObjectRequest]) (*connect.Response[v1.DeleteObjectResponse], error)
+	// Cloudflare のエッジのキャッシュを消す（バケットなら、そのバケットを配っている公開の URL と CDN。CDN なら、その CDN のホスト名）。
+	// keys を渡すと、そのファイルの URL だけ消す（アップロードのあと）
+	PurgeCache(context.Context, *connect.Request[v1.PurgeCacheRequest]) (*connect.Response[v1.PurgeCacheResponse], error)
 	// CDN: 公開するホスト名（<名前>-cloud.taramanji.com）と、その元（バケットか関数）、キャッシュの長さ
 	ListDistributions(context.Context, *connect.Request[v1.ListDistributionsRequest]) (*connect.Response[v1.ListDistributionsResponse], error)
 	PreviewDistribution(context.Context, *connect.Request[v1.PreviewDistributionRequest]) (*connect.Response[v1.PreviewDistributionResponse], error)
@@ -719,6 +740,12 @@ func NewConsoleServiceHandler(svc ConsoleServiceHandler, opts ...connect.Handler
 		connect.WithSchema(consoleServiceMethods.ByName("DeleteObject")),
 		connect.WithHandlerOptions(opts...),
 	)
+	consoleServicePurgeCacheHandler := connect.NewUnaryHandler(
+		ConsoleServicePurgeCacheProcedure,
+		svc.PurgeCache,
+		connect.WithSchema(consoleServiceMethods.ByName("PurgeCache")),
+		connect.WithHandlerOptions(opts...),
+	)
 	consoleServiceListDistributionsHandler := connect.NewUnaryHandler(
 		ConsoleServiceListDistributionsProcedure,
 		svc.ListDistributions,
@@ -815,6 +842,8 @@ func NewConsoleServiceHandler(svc ConsoleServiceHandler, opts ...connect.Handler
 			consoleServiceListObjectsHandler.ServeHTTP(w, r)
 		case ConsoleServiceDeleteObjectProcedure:
 			consoleServiceDeleteObjectHandler.ServeHTTP(w, r)
+		case ConsoleServicePurgeCacheProcedure:
+			consoleServicePurgeCacheHandler.ServeHTTP(w, r)
 		case ConsoleServiceListDistributionsProcedure:
 			consoleServiceListDistributionsHandler.ServeHTTP(w, r)
 		case ConsoleServicePreviewDistributionProcedure:
@@ -920,6 +949,10 @@ func (UnimplementedConsoleServiceHandler) ListObjects(context.Context, *connect.
 
 func (UnimplementedConsoleServiceHandler) DeleteObject(context.Context, *connect.Request[v1.DeleteObjectRequest]) (*connect.Response[v1.DeleteObjectResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.cloud.v1.ConsoleService.DeleteObject is not implemented"))
+}
+
+func (UnimplementedConsoleServiceHandler) PurgeCache(context.Context, *connect.Request[v1.PurgeCacheRequest]) (*connect.Response[v1.PurgeCacheResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.cloud.v1.ConsoleService.PurgeCache is not implemented"))
 }
 
 func (UnimplementedConsoleServiceHandler) ListDistributions(context.Context, *connect.Request[v1.ListDistributionsRequest]) (*connect.Response[v1.ListDistributionsResponse], error) {

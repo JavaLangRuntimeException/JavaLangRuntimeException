@@ -47,6 +47,9 @@ if [ "$ENV" = prod ] && [ -f "$SRC/cloudflare.env" ] && [ -f "$SRC/tunnel-cloud.
   # CDN の独自ドメインを Cloudflare Access に登録するトークン（Account › Access: Apps and Policies › Edit）。cloudflare.env の CF_ACCESS_API_TOKEN
   ACCESS_TOKEN="$(get CF_ACCESS_API_TOKEN "$SRC/cloudflare.env" || true)"
   [ -z "$ACCESS_TOKEN" ] || args+=(--from-literal=CF_ACCESS_API_TOKEN="$ACCESS_TOKEN")
+  # キャッシュの消去のトークン（ゾーンの Cache Purge）。なければ CF_DNS_API_TOKEN を使う（その権限があるときだけ消せる）
+  PURGE_TOKEN="$(get CF_PURGE_API_TOKEN "$SRC/cloudflare.env" || true)"
+  [ -z "$PURGE_TOKEN" ] || args+=(--from-literal=CF_PURGE_API_TOKEN="$PURGE_TOKEN")
 fi
 # Argo CD の画面で関数の Pod を見るための、ApplicationSet（plugin ジェネレーター）とコントローラーのあいだのトークン（本番だけ）。
 # 1 回だけ作る。Argo CD 側の Secret（argocd namespace）も同じ値で作る

@@ -78,6 +78,16 @@ VM のメモリを増やしたら `overlays/prod/workloads` の枠を広げる�
 - **CORS**（API ごと）: `X-Cloud-Cors` に許すオリジンを空白区切りで set し、cloud-gw が `Access-Control-Allow-Origin` を返す（関数の値は使わない）。プリフライトは関数を起こさずに 204
 - 認証・CORS のヘッダーは、API 以外のルート（CDN・公開バケット）と、設定していない API では必ず remove する（利用者が付けてきても効かない）
 
+### キャッシュの消去（パージ）
+
+Cloudflare のエッジのキャッシュを、cloud-api が消す（`purge_cache`）。ブラウザが持っている分は消えない。
+
+- 自動: ファイルを置き直した・消した（その URL だけ。`<dir>/index.html` は `<dir>/` も、SPA の CDN はホスト名ごと）、バケットの公開をやめた・バケットを消した、CDN を保存した・消した（ホスト名ごと）
+- 手で: バケットの画面・CDN の編集画面の「キャッシュを消す」（RPC `PurgeCache`）
+- 消すのは taramanji cloud のホスト名（`-cloud.taramanji.com` で終わるものと、独自ドメイン）だけ。taramanji.com 本体のキャッシュには触れない
+- トークン: `CF_PURGE_API_TOKEN`（`cloudflare.env`。なければ `CF_DNS_API_TOKEN`）に、ゾーンの **Cache Purge** の権限が要る。起動のときに、何も持っていない URL を 1 つ消して確かめ、権限がなければ使わない（コンソールにボタンが出ない）
+- 無料プランの上限: ホスト名ごとは 1 分に 5 回（1 回に 100 個まで）、URL ごとは 1 秒に 800 個
+
 ### CDN の独自ドメイン（代替ドメイン名）
 
 CDN を作ったあとで `<ラベル>.taramanji.com` を足せる（CloudFront の代替ドメイン名）。CDN の HTTPRoute の hostnames に足すだけで、トンネルは全部のホスト名を cloud の Envoy に送る。
@@ -176,7 +186,7 @@ S3 と CloudFront にあたるもの。
   - バケットが元: パスをキーにして返す（GET・HEAD だけ）。`/` で終わるパスは `index.html`。SPA にすると、ファイルがないパスに `/index.html` を返す
   - 関数が元: 関数が `Cache-Control` を付けていない GET の 200 に、キャッシュの長さを付ける
   - キャッシュするのは Cloudflare のエッジ。応答に `Cache-Control: public, max-age=<秒>` を付ける。Cloudflare の既定では、
-    画像・CSS・JS などの拡張子だけがキャッシュされる（HTML もキャッシュするなら Cloudflare の Cache Rule が要る）。キャッシュの消去（パージ）はまだない
+    画像・CSS・JS などの拡張子だけがキャッシュされる（HTML もキャッシュするなら Cloudflare の Cache Rule が要る）。キャッシュの消去（パージ）は下の「キャッシュの消去」
 - **ホスト名**: API と CDN は同じ名前（＝同じホスト名）を使えない
 - **DNS**: API・CDN を作ると、cloud-api が Cloudflare に CNAME（`<ホスト名>` → `<トンネル ID>.cfargotunnel.com`、プロキシあり）を登録し、消すと削除する。
   扱うのは `-cloud.taramanji.com` で終わるホスト名だけ（DNS の登録は本番だけ）。消すのは自分が作った印（コメント）のあるレコードだけ。

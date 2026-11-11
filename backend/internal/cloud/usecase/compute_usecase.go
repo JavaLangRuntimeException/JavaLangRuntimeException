@@ -22,8 +22,8 @@ func (u *ConsoleUsecaseImpl) GetHostingOptions(_ context.Context, _ GetHostingOp
 		Repository: u.d.AppsRepository, Directory: u.d.Environment,
 		IdleTimeoutSeconds: int32(u.d.IdleTimeout.Seconds()), HostSuffix: u.d.APITarget.HostSuffix,
 		ApiHostSuffix: u.d.APITarget.Suffix(service.HostAPI), CdnHostSuffix: u.d.APITarget.Suffix(service.HostCDN), StorageHostSuffix: u.d.APITarget.Suffix(service.HostStorage),
-		CustomDomainZone: u.customDomainZone(),
-		StorageEnabled:   u.d.Objects != nil, DnsEnabled: u.d.DNS != nil, DatabasesEnabled: u.d.DatabasesEnabled,
+		CustomDomainZone: u.customDomainZone(), CachePurgeEnabled: u.d.Purger != nil,
+		StorageEnabled: u.d.Objects != nil, DnsEnabled: u.d.DNS != nil, DatabasesEnabled: u.d.DatabasesEnabled,
 	}
 	for _, t := range service.InstanceTypes {
 		out.InstanceTypes = append(out.InstanceTypes, &InstanceType{Name: t.Name, Family: service.FamilyOf(t.Name), Memory: t.MemoryBytes, CpuMillis: t.CPUMillis})
