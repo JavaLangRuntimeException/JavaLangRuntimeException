@@ -100,11 +100,20 @@ func main() {
 			log.Fatal(err)
 		}
 	}
+	// CDN の独自ドメインに使えるゾーン（本番だけ。taramanji.com）
+	aliasZone := env.Optional("CUSTOM_DOMAIN_ZONE", "")
 	// 公開ホスト名の DNS の自動登録（Cloudflare）。トークンがなければ手で登録する
 	var dns gateway.DNS
 	if token := env.Optional("CF_DNS_API_TOKEN", ""); token != "" {
 		if dns, err = infragw.NewCloudflareDNS(infragw.CloudflareDNSConfig{Token: token, ZoneID: env.Required("CF_ZONE_ID"),
-			TunnelID: env.Required("CF_TUNNEL_ID"), HostSuffix: hostSuffix}); err != nil {
+			TunnelID: env.Required("CF_TUNNEL_ID"), HostSuffix: hostSuffix, AliasZone: aliasZone}); err != nil {
+			log.Fatal(err)
+		}
+	}
+	// CDN の独自ドメインを Cloudflare Access で守る（Access: Apps and Policies の編集のトークン）。なければ独自ドメインは足せない
+	var access gateway.AccessHosts
+	if token := secretEnv("CF_ACCESS_API_TOKEN", false); token != "" && aliasZone != "" {
+		if access, err = infragw.NewCloudflareAccess(infragw.CloudflareAccessConfig{Token: token, AccountID: env.Required("CF_ACCOUNT_ID")}); err != nil {
 			log.Fatal(err)
 		}
 	}
@@ -121,12 +130,13 @@ func main() {
 		Monitors:       monitors,
 		AlertScope: service.AlertScope{Environment: cloudEnv, Cluster: cluster, Namespace: env.Required("APPS_NAMESPACE"),
 			APMEnv: env.Optional("DD_ENV", "prod"), InvokerService: gatewayServiceName},
-		APITarget: service.APITarget{HostSuffix: hostSuffix, InvokerNamespace: namespace},
+		APITarget: service.APITarget{HostSuffix: hostSuffix, InvokerNamespace: namespace, AliasZone: aliasZone},
 		Objects:   objects,
 		State:     kube,
 		// 共有の PostgreSQL / Redis とコントローラー（cloud-ctl）を、この環境に入れてあるか
 		DatabasesEnabled: env.Optional("DATABASES_ENABLED", "") == "true",
 		DNS:              dns,
+		Access:           access,
 		IdleTimeout:      idleTimeout(),
 		MetricsScope: service.MetricsScope{
 			Cluster:     cluster,
@@ -314,7 +324,7 @@ func runController() {
 		}
 		dep := deployer.New(deployer.Config{
 			Source: src, Applier: kube, Env: cloudEnv, Registry: registry,
-			Target:    service.APITarget{HostSuffix: env.Required("HOST_SUFFIX"), InvokerNamespace: namespace},
+			Target:    service.APITarget{HostSuffix: env.Required("HOST_SUFFIX"), InvokerNamespace: namespace, AliasZone: env.Optional("CUSTOM_DOMAIN_ZONE", "")},
 			Reconcile: ctl.Reconcile,
 			Log:       logger.L(),
 		})

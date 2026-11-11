@@ -222,6 +222,8 @@ export type DistributionForm = {
   cacheSeconds: string;
   spa: boolean;
   behaviors: BehaviorForm[];
+  /** 独自ドメイン（<ラベル>.taramanji.com）。CDN を作ったあとに足せる */
+  aliases: string[];
 };
 
 /** キャッシュの長さの選択肢（秒）。自由に入れることもできる */
@@ -237,7 +239,7 @@ export const cachePresets = [
 export const MAX_BEHAVIORS = 15;
 
 export function emptyDistributionForm(buckets: readonly string[]): DistributionForm {
-  return { name: "", originType: "bucket", origin: buckets[0] ?? "", cacheSeconds: "300", spa: false, behaviors: [] };
+  return { name: "", originType: "bucket", origin: buckets[0] ?? "", cacheSeconds: "300", spa: false, behaviors: [], aliases: [] };
 }
 
 /** 足すパスの最初の値: 関数があれば /api → 関数（キャッシュしない）。なければバケット */
@@ -249,7 +251,7 @@ export function emptyBehavior(buckets: readonly string[], functions: readonly st
 
 type OriginSpec = { originType: string; origin: string; cacheSeconds: number; spa: boolean };
 
-export function distributionFormOf(spec: OriginSpec & { name: string; behaviors?: (OriginSpec & { path: string })[] }): DistributionForm {
+export function distributionFormOf(spec: OriginSpec & { name: string; behaviors?: (OriginSpec & { path: string })[]; aliases?: readonly string[] }): DistributionForm {
   const type = (t: string) => (t === "function" ? "function" : "bucket");
   return {
     name: spec.name,
@@ -258,7 +260,16 @@ export function distributionFormOf(spec: OriginSpec & { name: string; behaviors?
     cacheSeconds: String(spec.cacheSeconds),
     spa: spec.spa,
     behaviors: (spec.behaviors ?? []).map((b) => ({ path: b.path, originType: type(b.originType), origin: b.origin, cacheSeconds: String(b.cacheSeconds), spa: b.spa })),
+    aliases: [...(spec.aliases ?? [])],
   };
+}
+
+/** 独自ドメインのラベル（<ラベル>.taramanji.com の <ラベル>）。予約した名前とホスト名の形はサーバーでも確かめる */
+export function aliasLabelError(label: string): string | undefined {
+  const l = label.trim().toLowerCase();
+  if (!NAME_RE.test(l)) return "英小文字で始め、英小文字・数字・ハイフンで 40 文字まで（. は使えません）";
+  if (l.startsWith("cloud") || l.includes("-cloud")) return "taramanji cloud のホスト名の形は使えません";
+  return undefined;
 }
 
 export function distributionSpecOf(form: DistributionForm) {
@@ -275,6 +286,7 @@ export function distributionSpecOf(form: DistributionForm) {
       cacheSeconds: Number(b.cacheSeconds) || 0,
       spa: b.originType === "bucket" && b.spa,
     })),
+    aliases: form.aliases,
   };
 }
 

@@ -32,6 +32,8 @@ type Deps struct {
 	Objects gateway.ObjectStore
 	// DNS は公開ホスト名の DNS の自動登録。nil なら手で登録する
 	DNS gateway.DNS
+	// Access は CDN の独自ドメインを Cloudflare Access で守る。nil なら独自ドメインは足せない（DNS も要る）
+	Access gateway.AccessHosts
 	// State はデータベースの状態（コントローラーが書く）を読む。nil なら状態は出さない
 	State gateway.ResourceState
 	// DatabasesEnabled は共有の PostgreSQL / Redis とコントローラーが動いているか（画面に出すだけ）

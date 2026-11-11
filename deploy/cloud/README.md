@@ -76,6 +76,18 @@ VM のメモリを増やしたら `overlays/prod/workloads` の枠を広げる�
 - **CORS**（API ごと）: `X-Cloud-Cors` に許すオリジンを空白区切りで set し、cloud-gw が `Access-Control-Allow-Origin` を返す（関数の値は使わない）。プリフライトは関数を起こさずに 204
 - 認証・CORS のヘッダーは、API 以外のルート（CDN・公開バケット）と、設定していない API では必ず remove する（利用者が付けてきても効かない）
 
+### CDN の独自ドメイン（代替ドメイン名）
+
+CDN を作ったあとで `<ラベル>.taramanji.com` を足せる（CloudFront の代替ドメイン名）。CDN の HTTPRoute の hostnames に足すだけで、トンネルは全部のホスト名を cloud の Envoy に送る。
+
+- **ログインあり**: `*-cdn-cloud` のワイルドカードでは守れないので、cloud-api が Access のアプリ `taramanji-cloud-domains` に登録する。
+  ログインの方法とポリシーは `taramanji-cloud-apps`（access.py が作る）と同じにする。cloud-api が触るのはこのアプリだけ
+- **順番**: 足すときは Access に登録 → YAML を保存 → DNS。Access に登録できなければ保存しない（ログインなしで出る瞬間を作らない）。外すときは DNS を消してから Access から外す
+- **使えない名前**: www・gws・stg・dev01〜03・rollouts・cloud・api などの予約した名前、`cloud` で始まる・`-cloud` を含む名前（taramanji cloud のホスト名の形）、2 階層。
+  DNS は、レコードがないか、自分が作った印のあるレコードのときだけ扱う（コンソールの `cloud.taramanji.com` のように、手でトンネルに向けたレコードも乗っ取らない）
+- **トークン**: `deploy/cloud/secrets/cloudflare.env` の `CF_ACCESS_API_TOKEN`（Account › Access: Apps and Policies › Edit だけ）を `seal.sh prod` で cloud-api-env に入れる。
+  なければ独自ドメインは足せない（コンソールに「この環境では使えません」と出る）
+
 ## 関数と API Gateway
 
 Lambda と API Gateway にあたるもの。リソースの正は、**アプリ専用のリポジトリ**（`JavaLangRuntimeException/taramanji-cloud-apps`）にある Kubernetes の YAML。

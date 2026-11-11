@@ -161,6 +161,7 @@ type GetHostingOptionsOutput struct {
 	ApiHostSuffix      string            `json:"api_host_suffix"`
 	CdnHostSuffix      string            `json:"cdn_host_suffix"`
 	StorageHostSuffix  string            `json:"storage_host_suffix"`
+	CustomDomainZone   string            `json:"custom_domain_zone"`
 	InstanceFamilies   []*InstanceFamily `json:"instance_families"`
 	StorageEnabled     bool              `json:"storage_enabled"`
 	DnsEnabled         bool              `json:"dns_enabled"`
@@ -372,6 +373,7 @@ type DistributionSpec struct {
 	CacheSeconds int32                   `json:"cache_seconds"`
 	Spa          bool                    `json:"spa"`
 	Behaviors    []*DistributionBehavior `json:"behaviors"`
+	Aliases      []string                `json:"aliases"`
 }
 
 type EnvVar struct {

@@ -229,6 +229,8 @@ message GetHostingOptionsResponse {
   string cdn_host_suffix = 20;
   // 公開バケット: <バケット> + これ。例: -storage-cloud.taramanji.com（ログインなし）
   string storage_host_suffix = 21;
+  // CDN の独自ドメインに使えるゾーン（taramanji.com）。空なら独自ドメインは使えない（Access と DNS のトークンがない環境）
+  string custom_domain_zone = 22;
   // 系統（画面で型をまとめて見せる順）
   repeated InstanceFamily instance_families = 18;
   // オブジェクトストレージが動いているか
@@ -519,6 +521,9 @@ message DistributionSpec {
   bool spa = 5;
   // パスごとの元（CloudFront の behavior）。ここにないパスは、上の元（既定、/）に送る。長いパスが先に当たる
   repeated DistributionBehavior behaviors = 6;
+  // 独自ドメイン（CloudFront の代替ドメイン名）。<ラベル>.taramanji.com だけ。CDN を作ったあとに足せる。
+  // 保存すると、Cloudflare Access に登録してから（ログインあり）DNS を作る
+  repeated string aliases = 7;
 }
 
 // DistributionBehavior は、パスの前方一致ごとの元。パスはそのまま元に渡る（取り除かない）

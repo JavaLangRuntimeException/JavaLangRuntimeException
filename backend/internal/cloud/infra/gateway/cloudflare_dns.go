@@ -32,6 +32,9 @@ type CloudflareDNSConfig struct {
 	TunnelID string
 	// HostSuffix で終わるホスト名だけを扱う（-cloud.taramanji.com など。taramanji.com 本体のレコードには触れない）
 	HostSuffix string
+	// AliasZone は CDN の独自ドメインのゾーン（"taramanji.com"）。<ラベル>.<ゾーン> も扱う。
+	// 独自ドメインは、自分が作った印のあるレコードか、レコードがないときだけ扱う（コンソールなど、手で作ったトンネル向けのレコードを乗っ取らない）
+	AliasZone string
 }
 
 type cloudflareDNS struct {
@@ -95,8 +98,18 @@ func (d *cloudflareDNS) do(ctx context.Context, method, path string, in, out any
 	}{Result: out})
 }
 
+// isAlias は host が独自ドメイン（<ラベル>.<ゾーン>）か
+func (d *cloudflareDNS) isAlias(host string) bool {
+	if d.c.AliasZone == "" {
+		return false
+	}
+	label, ok := strings.CutSuffix(host, "."+d.c.AliasZone)
+	return ok && label != "" && !strings.ContainsAny(label, "./*")
+}
+
 func (d *cloudflareDNS) find(ctx context.Context, host string) ([]dnsRecord, error) {
-	if !strings.HasSuffix(host, d.c.HostSuffix) || strings.ContainsAny(strings.TrimSuffix(host, d.c.HostSuffix), "./*") {
+	generated := strings.HasSuffix(host, d.c.HostSuffix) && !strings.ContainsAny(strings.TrimSuffix(host, d.c.HostSuffix), "./*")
+	if !generated && !d.isAlias(host) {
 		return nil, fmt.Errorf("%s は扱えるホスト名ではありません", host)
 	}
 	var records []dnsRecord
@@ -110,7 +123,8 @@ func (d *cloudflareDNS) Ensure(ctx context.Context, host string) error {
 		return err
 	}
 	for _, r := range records {
-		if r.Type == "CNAME" && r.Content == d.target() {
+		// 独自ドメインは、自分が作った印のあるものだけを「もうある」とみなす
+		if r.Type == "CNAME" && r.Content == d.target() && (r.Comment == dnsComment || !d.isAlias(host)) {
 			return nil
 		}
 		return fmt.Errorf("%s には既に別の DNS レコード（%s %s）があります", host, r.Type, r.Content)

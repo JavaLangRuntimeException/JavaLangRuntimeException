@@ -37,6 +37,9 @@ patches:
                   - { name: FUNCTION_MEMORY_CAP_MIB, value: "2560" }
                   - { name: FUNCTION_CPU_CAP_MILLIS, value: "4000" }
                   - { name: FUNCTION_POD_CAP, value: "30" }
+                  # CDN の独自ドメイン（<ラベル>.taramanji.com）。Access に登録するトークン CF_ACCESS_API_TOKEN は cloud-api-env（なければ使えない）
+                  - { name: CUSTOM_DOMAIN_ZONE, value: taramanji.com }
+                  - { name: CF_ACCOUNT_ID, value: f952fdc8cd122331a587b1ff4fdac99d }
   - patch: |-
       apiVersion: apps/v1
       kind: Deployment
@@ -47,6 +50,8 @@ patches:
             containers:
               - name: app
                 env:
+                  # CDN の独自ドメインを入れるとき、決まり（taramanji.com の 1 階層）を確かめるため
+                  - { name: CUSTOM_DOMAIN_ZONE, value: taramanji.com }
                   # Argo CD の ApplicationSet（plugin ジェネレーター）からの問い合わせのトークン（argoview.yaml）
                   - name: ARGOCD_PLUGIN_TOKEN
                     valueFrom: { secretKeyRef: { name: cloud-api-env, key: ARGOCD_PLUGIN_TOKEN, optional: true } }

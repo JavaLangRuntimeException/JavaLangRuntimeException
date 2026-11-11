@@ -110,7 +110,7 @@ func (h *ConsoleHandler) GetHostingOptions(ctx context.Context, req *connect.Req
 			out = append(out, consoleAlertPresetToPb(v))
 		}
 		return out
-	}(out.AlertPresets), NotifyChannels: out.NotifyChannels, MinCpuMillis: out.MinCpuMillis, MaxCpuMillis: out.MaxCpuMillis, MinMemory: out.MinMemory, MaxMemory: out.MaxMemory, StoreEnabled: out.StoreEnabled, AlertsEnabled: out.AlertsEnabled, Repository: out.Repository, Directory: out.Directory, IdleTimeoutSeconds: out.IdleTimeoutSeconds, HostSuffix: out.HostSuffix, ApiHostSuffix: out.ApiHostSuffix, CdnHostSuffix: out.CdnHostSuffix, StorageHostSuffix: out.StorageHostSuffix, InstanceFamilies: func(l []*usecase.InstanceFamily) []*cloudv1.InstanceFamily {
+	}(out.AlertPresets), NotifyChannels: out.NotifyChannels, MinCpuMillis: out.MinCpuMillis, MaxCpuMillis: out.MaxCpuMillis, MinMemory: out.MinMemory, MaxMemory: out.MaxMemory, StoreEnabled: out.StoreEnabled, AlertsEnabled: out.AlertsEnabled, Repository: out.Repository, Directory: out.Directory, IdleTimeoutSeconds: out.IdleTimeoutSeconds, HostSuffix: out.HostSuffix, ApiHostSuffix: out.ApiHostSuffix, CdnHostSuffix: out.CdnHostSuffix, StorageHostSuffix: out.StorageHostSuffix, CustomDomainZone: out.CustomDomainZone, InstanceFamilies: func(l []*usecase.InstanceFamily) []*cloudv1.InstanceFamily {
 		if l == nil {
 			return nil
 		}
@@ -1036,6 +1036,7 @@ func consolePbToDistributionSpec(p *cloudv1.DistributionSpec) *usecase.Distribut
 			}
 			return out
 		}(p.GetBehaviors()),
+		Aliases: p.GetAliases(),
 	}
 }
 
@@ -1059,6 +1060,7 @@ func consoleDistributionSpecToPb(u *usecase.DistributionSpec) *cloudv1.Distribut
 			}
 			return out
 		}(u.Behaviors),
+		Aliases: u.Aliases,
 	}
 }
 

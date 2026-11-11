@@ -256,6 +256,7 @@ CMD ["node", "server.js"]
       { id: "upload", label: "2. ファイルを置く" },
       { id: "cdn", label: "3. CDN を作る" },
       { id: "paths", label: "4. API を同じホスト名にまとめる" },
+      { id: "domain", label: "5. 独自ドメインを付ける" },
       { id: "cache", label: "キャッシュのしくみ" },
     ],
     body: () => (
@@ -317,6 +318,17 @@ CMD ["node", "server.js"]
             パスはそのまま元に渡ります。<C>/api/users</C> なら、関数にも <C>/api/users</C> が届きます（<C>/api</C> は取り除きません）。
           </li>
           <li>既定のほかに 15 個まで足せます。行ごとに、元・キャッシュの長さ・SPA を決められます。</li>
+        </UL>
+
+        <H2 id="domain">5. 独自ドメインを付ける</H2>
+        <P>
+          CDN を作ったあとで、<C>https://qa.taramanji.com</C> のような名前でも開けるようにできます（CloudFront の代替ドメイン名と同じ）。CDN の編集画面の「独自ドメイン」でラベル（例:{" "}
+          <C>qa</C>）を足して「保存」を押します。
+        </P>
+        <UL>
+          <li>保存すると、先に Cloudflare Access に登録してから DNS を作ります。<C>&lt;名前&gt;-cdn-cloud</C> と同じく、開くとログインが出ます。</li>
+          <li>使えるのは <C>&lt;ラベル&gt;.taramanji.com</C>（1 階層）だけです。www・gws・stg・cloud など、taramanji.com が使っている名前や、ほかの DNS レコードがある名前は使えません。</li>
+          <li>1 つの CDN に 5 個まで。同じ名前は、ほかの CDN では使えません。外すと DNS を消してから Access から外します。</li>
         </UL>
 
         <H2 id="cache">キャッシュのしくみ</H2>
