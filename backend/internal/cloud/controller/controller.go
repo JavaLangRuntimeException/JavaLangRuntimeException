@@ -329,14 +329,14 @@ type Guardrail struct {
 	Body     map[string]any
 }
 
+// PullSecretName は非公開のイメージを読むための Secret（関数の namespace ごと）
+const PullSecretName = "cloud-registry"
+
 // FunctionGuardrails は関数の namespace の囲い:
 //   - 量: 登録した CPU・メモリの 2 台分まで（入れ替えのあいだだけ 2 台になる）。コンテナ 1 つは登録した量まで
 //   - 順番: 優先度 cloud-workload のない Pod は作れない（メモリが足りなくなったら taramanji より先に止める）
 //   - 通信: 受けるのは API Gateway（cloud-gw）からだけ。出られるのは DNS・データベースとストレージ・インターネットだけ
 //   - 権限: Pod に Kubernetes のトークンを渡さない。API Gateway は台数だけ、コンソールの API は読むだけ
-// PullSecretName は非公開のイメージを読むための Secret（関数の namespace ごと）
-const PullSecretName = "cloud-registry"
-
 func FunctionGuardrails(reg service.Registration, consoleNS string, pullSecret bool) []Guardrail {
 	sa := map[string]any{"automountServiceAccountToken": false}
 	if pullSecret {
