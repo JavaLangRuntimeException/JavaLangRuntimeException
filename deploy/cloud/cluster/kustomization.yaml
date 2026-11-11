@@ -1,0 +1,8 @@
+# taramanji cloud のうち、クラスター全体のもの（PriorityClass・ノードを読む ClusterRole）。
+# cloud の AppProject には Namespace 以外のクラスター全体のものを書かせないので、ここだけは default プロジェクトの
+# Argo CD アプリ（gitops/apps/cloud-cluster.yaml）が同期する
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - priorityclass.yaml
+  - rbac.yaml

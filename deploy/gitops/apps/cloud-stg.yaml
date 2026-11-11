@@ -1,0 +1,21 @@
+# taramanji cloud の stg。main への push（と手動実行）で CI が版を書き換え、ここが同期する
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    argocd.argoproj.io/compare-options: ServerSideDiff=true
+  name: cloud-stg
+  namespace: argocd
+spec:
+  project: cloud
+  source:
+    repoURL: git@github.com:JavaLangRuntimeException/JavaLangRuntimeException.git
+    targetRevision: main
+    path: deploy/cloud/overlays/stg
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cloud-stg
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions:
+      - ServerSideApply=true

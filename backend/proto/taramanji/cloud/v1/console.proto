@@ -1,0 +1,267 @@
+syntax = "proto3";
+
+package taramanji.cloud.v1;
+
+// taramanji cloud のマネジメントコンソール（cloud.taramanji.com）。
+// 全 RPC が Cloudflare Access の JWT（管理者 1 人）を要する。taramanji.com のセッションは使わない
+service ConsoleService {
+  rpc GetOverview(GetOverviewRequest) returns (GetOverviewResponse) {}
+  // メトリクスは本番だけ（dev / stg は metrics_enabled = false で、呼ぶと failed_precondition）
+  rpc GetMetrics(GetMetricsRequest) returns (GetMetricsResponse) {}
+  // あとどのくらいアプリを置けるか（この環境の枠と、Mac mini 全体の空き）。全環境で使える（Datadog は使わない）
+  rpc GetCapacity(GetCapacityRequest) returns (GetCapacityResponse) {}
+
+  // ---- ホスティング（コンテナ）----
+  // アプリの正は、アプリ専用の git リポジトリにある Kubernetes の YAML（<環境>/<名前>.yaml）。
+  // コンソールはそこにコミットするだけで、クラスターには Argo CD が入れる（手で YAML を push しても同じ扱い）
+
+  // 選べるもの（インスタンスタイプ・用意した監視・通知先）と、この環境で使える機能
+  rpc GetHostingOptions(GetHostingOptionsRequest) returns (GetHostingOptionsResponse) {}
+  rpc ListApps(ListAppsRequest) returns (ListAppsResponse) {}
+  rpc GetApp(GetAppRequest) returns (GetAppResponse) {}
+  // フォームの定義を YAML にして返す（保存はしない。確かめるだけ）
+  rpc PreviewApp(PreviewAppRequest) returns (PreviewAppResponse) {}
+  // 作る・更新する。フォームの定義（spec）か、YAML そのもの（yaml）のどちらかを渡す
+  rpc ApplyApp(ApplyAppRequest) returns (ApplyAppResponse) {}
+  rpc DeleteApp(DeleteAppRequest) returns (DeleteAppResponse) {}
+  // リポジトリの YAML に合わせて、Datadog のモニターを作り直す（git に直接 push したあとに呼ぶ）
+  rpc SyncAlerts(SyncAlertsRequest) returns (SyncAlertsResponse) {}
+}
+
+// コンソール自身を動かしている部品（API・画面・Redis）の状態
+message Component {
+  string name = 1;
+  int32 ready = 2;
+  int32 desired = 3;
+  // イメージのタグ（sha-xxxxxxx / v1.2.3）
+  string version = 4;
+}
+
+message GetOverviewRequest {}
+
+message GetOverviewResponse {
+  // prod / stg / dev
+  string environment = 1;
+  // Cloudflare Access でログインした人
+  string email = 2;
+  bool metrics_enabled = 3;
+  repeated Component components = 4;
+  // バケットとアプリの URL の形（"https://<name>" + suffix）。例: "-storage.taramanji.com"
+  string storage_host_suffix = 5;
+  string hosting_host_suffix = 6;
+}
+
+// 1 本の時系列
+message Series {
+  // 例: requests / errors_5xx / latency_p95 / cpu / memory
+  string metric = 1;
+  // 系列の分け方の値（ホスト名・デプロイ名）。全体なら空
+  string group = 2;
+  // 表示の単位: req/s・%・ms・mcores・bytes
+  string unit = 3;
+  repeated int64 timestamps_ms = 4;
+  repeated double values = 5;
+}
+
+message GetMetricsRequest {
+  // 1h / 1d / 7d
+  string range = 1;
+}
+
+message GetMetricsResponse {
+  repeated Series series = 1;
+}
+
+message GetCapacityRequest {}
+
+// 使っている量と上限。メモリ・ストレージはバイト、CPU はミリコア、Pod などは個数
+message Amount {
+  int64 used = 1;
+  int64 limit = 2;
+}
+
+// この環境のアプリ用 namespace の枠（ResourceQuota）。アプリが予約できる合計で、taramanji.com の分は含まない
+message Quota {
+  string namespace = 1;
+  // アプリのメモリの予約（requests = limits にそろえてあるので、そのまま実際に使える上限）
+  Amount memory = 2;
+  // CPU の上限（limits）の合計
+  Amount cpu = 3;
+  Amount pods = 4;
+  // ディスク付きのインスタンス・関数などの PVC の容量の合計
+  Amount volume_storage = 5;
+}
+
+// Mac mini 全体（kind の 3 ノードは同じ VM のメモリを分け合う）。taramanji.com・gws・基盤も含めた実際の使用量
+message Machine {
+  int64 memory_total = 1;
+  int64 memory_used = 2;
+  // taramanji.com・gws の伸びしろとして、アプリに渡さずに残しておく量
+  int64 memory_reserved = 3;
+  int64 cpu_total_millis = 4;
+  int64 cpu_used_millis = 5;
+}
+
+// アプリの大きさ（1 つあたり）ごとの「あと何個置けるか」
+message SizeFit {
+  // インスタンスタイプの名前（t1.small / t1.medium / t1.large / t1.xlarge）
+  string name = 1;
+  int64 memory = 2;
+  int64 cpu_millis = 3;
+  int32 count = 4;
+  // 何が足りなくなって count で止まるか: quota_memory / quota_cpu / quota_pods / machine_memory
+  string limited_by = 5;
+}
+
+// アプリ用 namespace で動いている Pod ごとの実際の使用量（metrics-server）
+message PodUsage {
+  string name = 1;
+  int64 memory_used = 2;
+  int64 memory_limit = 3;
+  int64 cpu_used_millis = 4;
+}
+
+message GetCapacityResponse {
+  Quota quota = 1;
+  Machine machine = 2;
+  repeated SizeFit fits = 3;
+  repeated PodUsage pods = 4;
+}
+
+// インスタンスタイプ（EC2 と同じ「ファミリー + 世代 . サイズ」の名前）。選ぶと CPU とメモリが決まる
+message InstanceType {
+  // 例: t1.small
+  string name = 1;
+  // 例: t1
+  string family = 2;
+  int64 memory = 3;
+  int64 cpu_millis = 4;
+}
+
+// 用意してある監視（選ぶと Datadog のモニターになる）
+message AlertPreset {
+  // 例: cpu-high
+  string id = 1;
+  string label = 2;
+  string description = 3;
+}
+
+message GetHostingOptionsRequest {}
+
+message GetHostingOptionsResponse {
+  repeated InstanceType instance_types = 1;
+  repeated AlertPreset alert_presets = 2;
+  // mail（SES）/ discord。Datadog のモニターは必ず作られる
+  repeated string notify_channels = 3;
+  // 型を選んだあとに個別に決められる範囲
+  int64 min_cpu_millis = 4;
+  int64 max_cpu_millis = 5;
+  int64 min_memory = 6;
+  int64 max_memory = 7;
+  int32 max_replicas = 8;
+  // アプリ用のリポジトリがつながっているか（false なら一覧も作成もできない）
+  bool store_enabled = 9;
+  // 監視を Datadog に作れるか（本番だけ）。false でも YAML には残せる
+  bool alerts_enabled = 10;
+  // アプリの YAML を置いているリポジトリ（owner/name）とディレクトリ
+  string repository = 11;
+  string directory = 12;
+}
+
+message EnvVar {
+  string name = 1;
+  // 秘密は入れない（YAML は git に残る）
+  string value = 2;
+}
+
+// フォームで決められる範囲のアプリの定義
+message AppSpec {
+  string name = 1;
+  string image = 2;
+  int32 port = 3;
+  int32 replicas = 4;
+  string instance_type = 5;
+  // 0 ならインスタンスタイプの値
+  int64 cpu_millis = 6;
+  int64 memory = 7;
+  repeated EnvVar env = 8;
+  // AlertPreset の id
+  repeated string alerts = 9;
+  // mail / discord
+  repeated string notify = 10;
+}
+
+message App {
+  AppSpec spec = 1;
+  // リポジトリにある YAML（Deployment・Service・HTTPRoute）
+  string yaml = 2;
+  // YAML の版。更新・削除のときに渡す（読んだあとに変わっていたら aborted）
+  string revision = 3;
+  // フォームで編集できるか。false なら手で書き足した部分があるので YAML で編集する
+  bool form_editable = 4;
+  // インスタンスタイプの値から CPU・メモリを変えているか
+  bool custom_resources = 5;
+  // 公開 URL のホスト名
+  string host = 6;
+  // YAML を GitHub で見る URL
+  string source_url = 7;
+  // クラスターでの状態。deployed = false ならまだ Argo CD が入れていない
+  bool deployed = 8;
+  int32 ready = 9;
+  int32 desired = 10;
+  // YAML を読めなかった理由（手で push した YAML が壊れているとき。空なら問題なし）
+  string problem = 11;
+}
+
+message ListAppsRequest {}
+
+message ListAppsResponse {
+  repeated App apps = 1;
+}
+
+message GetAppRequest {
+  string name = 1;
+}
+
+message GetAppResponse {
+  App app = 1;
+}
+
+message PreviewAppRequest {
+  AppSpec spec = 1;
+}
+
+message PreviewAppResponse {
+  string yaml = 1;
+}
+
+message ApplyAppRequest {
+  // yaml が空なら spec から YAML を作る。yaml があればそれを確かめてそのまま置く（name は spec.name）
+  AppSpec spec = 1;
+  string yaml = 2;
+  // 新しく作るときは空。更新のときは読んだ版
+  string revision = 3;
+}
+
+message ApplyAppResponse {
+  App app = 1;
+  // 監視を Datadog に反映できなかった理由（YAML は保存済み。空なら問題なし）
+  string alerts_problem = 2;
+}
+
+message DeleteAppRequest {
+  string name = 1;
+  string revision = 2;
+}
+
+message DeleteAppResponse {
+  string alerts_problem = 1;
+}
+
+message SyncAlertsRequest {}
+
+message SyncAlertsResponse {
+  int32 created = 1;
+  int32 updated = 2;
+  int32 deleted = 3;
+}

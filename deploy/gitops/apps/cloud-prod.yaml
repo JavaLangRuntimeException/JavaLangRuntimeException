@@ -1,0 +1,21 @@
+# taramanji cloud の prod。タグ v* の push で CI が overlays/prod/app の版を書き換え、ここが同期する。namespace・cloud の Gateway・トンネルもこのアプリが持つ
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    argocd.argoproj.io/compare-options: ServerSideDiff=true
+  name: cloud-prod
+  namespace: argocd
+spec:
+  project: cloud
+  source:
+    repoURL: git@github.com:JavaLangRuntimeException/JavaLangRuntimeException.git
+    targetRevision: main
+    path: deploy/cloud/overlays/prod
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cloud
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions:
+      - ServerSideApply=true

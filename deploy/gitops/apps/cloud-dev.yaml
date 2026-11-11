@@ -1,0 +1,21 @@
+# taramanji cloud の dev。main への PR（と手動実行）で CI が版を書き換え、ここが同期する（cloud の dev は 1 つだけ）
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    argocd.argoproj.io/compare-options: ServerSideDiff=true
+  name: cloud-dev
+  namespace: argocd
+spec:
+  project: cloud
+  source:
+    repoURL: git@github.com:JavaLangRuntimeException/JavaLangRuntimeException.git
+    targetRevision: main
+    path: deploy/cloud/overlays/dev
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cloud-dev
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions:
+      - ServerSideApply=true

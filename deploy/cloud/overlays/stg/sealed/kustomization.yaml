@@ -1,0 +1,7 @@
+# scripts/seal.sh が作る（暗号化済み。復号できるのはクラスターの Sealed Secrets コントローラーだけ）
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - cloud-api-env.yaml
+  - cloud-data-admin.yaml
+  - cloud-storage-key.yaml

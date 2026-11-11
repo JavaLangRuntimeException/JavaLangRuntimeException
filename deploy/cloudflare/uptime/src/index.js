@@ -11,7 +11,7 @@ export default {
   },
   async fetch(req, env) {
     const url = new URL(req.url);
-    if (req.method === "POST" && url.pathname === "/datadog") return datadog(req, env);
+    if (req.method === "POST" && url.pathname === "/datadog") return datadog(req, env, url.searchParams.get("to"));
     return new Response("not found", { status: 404 });
   },
 };
@@ -69,22 +69,29 @@ async function checkOne(env, target, threshold, now) {
   }
 }
 
-// Datadog の webhook（本文はモニターの $EVENT_TITLE と $EVENT_MSG などを JSON にしたもの）
-async function datadog(req, env) {
+// Datadog の webhook（本文はモニターの $EVENT_TITLE と $EVENT_MSG などを JSON にしたもの）。
+// ?to=mail / ?to=discord が付いていれば、その送り先だけに送る（taramanji cloud のアプリごとの通知先）。なければ両方
+async function datadog(req, env, to) {
   if (!env.WEBHOOK_TOKEN || req.headers.get("X-Webhook-Token") !== env.WEBHOOK_TOKEN) {
     return new Response("forbidden", { status: 403 });
   }
   const body = await req.json().catch(() => ({}));
   const title = String(body.title || "Datadog のアラート").slice(0, 200);
   const text = [body.message, body.link && `Datadog: ${body.link}`].filter(Boolean).join("\n\n");
-  await notify(env, `【taramanji】${title}`, text || title);
+  if (to && !CHANNELS.includes(to)) return new Response("unknown channel", { status: 400 });
+  await notify(env, `【taramanji】${title}`, text || title, undefined, to);
   return new Response("ok");
 }
 
-// メールと Discord に送る。どちらかに届けば成功とする（失敗した側のために送り直すと、届いた側に同じ通知が重なる）
-export async function notify(env, subject, text, senders = { mail: sendMail, discord: sendDiscord }) {
-  const channels = [["mail", senders.mail]];
+const CHANNELS = ["mail", "discord"];
+
+// メールと Discord に送る。どちらかに届けば成功とする（失敗した側のために送り直すと、届いた側に同じ通知が重なる）。
+// only（"mail" / "discord"）があれば、その送り先だけに送る
+export async function notify(env, subject, text, senders = { mail: sendMail, discord: sendDiscord }, only = null) {
+  let channels = [["mail", senders.mail]];
   if (env.DISCORD_WEBHOOK_ALERT_URL) channels.push(["discord", senders.discord]);
+  if (only) channels = channels.filter(([name]) => name === only);
+  if (channels.length === 0) throw new Error(`${only} の送り先が設定されていない`);
   const results = await Promise.allSettled(channels.map(([, send]) => send(env, subject, text)));
   const failed = results.flatMap((r, i) => (r.status === "rejected" ? [`${channels[i][0]}: ${r.reason?.message || r.reason}`] : []));
   if (failed.length === channels.length) throw new Error(failed.join(" / "));

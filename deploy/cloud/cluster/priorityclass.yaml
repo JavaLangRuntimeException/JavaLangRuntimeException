@@ -1,0 +1,10 @@
+# taramanji cloud のアプリの優先度。taramanji.com・gws（既定の 0）より低い。
+# メモリが足りなくなったときは、こちらが先に追い出される。他の Pod を押しのけて入ることもしない（preemptionPolicy: Never）
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: cloud-workload
+value: -100
+preemptionPolicy: Never
+globalDefault: false
+description: taramanji cloud のアプリ（taramanji.com・gws より先に追い出される）

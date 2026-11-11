@@ -1,0 +1,11 @@
+# アプリ用 namespace（cloud-apps・cloud-<env>-apps）の枠と囲い。各環境の overlays/<env>/workloads が namespace と大きさを決める。
+# taramanji.com・gws に影響しないよう、ここで 3 つを縛る:
+#   - 量: ResourceQuota（メモリは requests = limits にそろえ、合計を Mac mini の空きに収まる大きさにする）
+#   - 順番: Pod はすべて PriorityClass cloud-workload（負の値）。メモリが足りなくなったら taramanji より先に追い出される
+#   - 通信: taramanji・data・Kubernetes API には届かない（NetworkPolicy）
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - quota.yaml
+  - networkpolicy.yaml
+  - rbac.yaml
