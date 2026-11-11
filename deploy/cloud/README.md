@@ -70,6 +70,8 @@ VM のメモリを増やしたら `overlays/prod/workloads` の枠を広げる�
 - CDN をブラウザ以外（curl・スクリプト）から呼ぶときは `cloudflared access curl https://<名前>-cdn-cloud.taramanji.com/`（最初にブラウザでログインする）
 - API Gateway（`-apigw-cloud`）はログインなしなので、Webhook も受けられる。その代わり誰でも呼べる。自分だけの API は CDN の「パスごとの元」で `/api` を関数に向ける
 - 公開バケット（`-storage-cloud`）は 1 ファイルずつの取得だけ（一覧・書き込みはできない）。5 分キャッシュ
+- **レート制限**: cloud-gw が利用者（`Cf-Connecting-Ip`）ごとに 1 秒 20 回・続けて 60 回まで（`GATEWAY_RATE_PER_SEC`・`GATEWAY_RATE_BURST`）。超えたら関数を起こさずに 429。
+  Pod ごとに数える（2 台なら最大で 2 倍）。Cloudflare の無料プランのレート制限はホスト名で絞れない（パスだけ）ので、cloud-gw で絞る
 - **API キー**（API ごと。認証を「API キー」にしたとき）: HTTPRoute が `X-Cloud-Auth: api_key` と `X-Cloud-Api-Keys: <名前>=<SHA-256>,...` を set し、
   cloud-gw が `x-api-key` のハッシュを比べる。違えば関数を起こさずに 401。通れば `X-Api-Key-Name` を関数に渡し、`x-api-key` は渡さない。
   キーそのものは作ったときに 1 回だけ返し、どこにも保存しない（YAML の注釈 `cloud.taramanji.com/api-keys` に名前・頭・ハッシュだけ）。キーは 160 ビットの乱数なので、ハッシュから戻せない
