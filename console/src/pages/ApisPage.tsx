@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router";
 import { consoleApi, useApis, useComputeMutations, useFunctions, useHostingOptions } from "@/api/console";
 import type { Api, GetHostingOptionsResponse } from "@/api/gen/taramanji/cloud/v1/console_pb";
-import { btn, btnPrimary, Field, input, Status } from "@/components/Form";
+import { btn, btnPrimary, Field, input, Legend, Status } from "@/components/Form";
 import { EmptyState, Mono, PageHeader, Panel, Skeleton } from "@/components/Page";
 import { QueryError } from "@/components/QueryError";
 import { ResourceEditor } from "@/components/ResourceEditor";
@@ -169,6 +169,7 @@ function Editor({ api, opt, functions, onClose }: { api: Api | null; opt: GetHos
     >
       <Field
         label="名前"
+        info={<>公開するホスト名の先頭です。<code>&lt;名前&gt;{opt.hostSuffix}</code> になり、DNS は作ったときに自動で登録されます。CDN と同じ名前は使えません（同じホスト名になるため）。</>}
         error={showErrors ? errors.name : undefined}
         hint={
           <>
@@ -184,7 +185,7 @@ function Editor({ api, opt, functions, onClose }: { api: Api | null; opt: GetHos
       </Field>
 
       <fieldset>
-        <legend className="mb-2 text-xs font-medium text-ink-2">ルート</legend>
+        <Legend info={<>パスの先頭（前方一致）ごとに、渡し先の関数を決めます。<code>/api</code> は <code>/api</code> と <code>/api/…</code> に当たり、<code>/apiv2</code> には当たりません。複数当たるときは、長いパスが先です。どれにも当たらないパスは 404 になるので、<code>/</code> を 1 つ入れておくと安全です。</>}>ルート</Legend>
         <div className="space-y-2">
           {form.routes.map((r, i) => (
             // 行に固有の ID がないので、並びの位置をキーにする（並べ替えはしない）

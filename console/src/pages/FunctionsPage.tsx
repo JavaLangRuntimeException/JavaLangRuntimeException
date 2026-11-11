@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { consoleApi, useBuckets, useComputeMutations, useDatabases, useFunctions, useHostingOptions } from "@/api/console";
 import { describeMutationError } from "@/api/errors";
 import type { Function as Fn, GetHostingOptionsResponse } from "@/api/gen/taramanji/cloud/v1/console_pb";
-import { btn, btnPrimary, Field, input, Status } from "@/components/Form";
+import { btn, btnPrimary, Field, input, Legend, Status } from "@/components/Form";
 import { EmptyState, Mono, PageHeader, Panel, Skeleton } from "@/components/Page";
 import { QueryError } from "@/components/QueryError";
 import { ResourceEditor } from "@/components/ResourceEditor";
@@ -239,14 +239,14 @@ function Editor({ fn, opt, onClose }: { fn: Fn | null; opt: GetHostingOptionsRes
       warning={alertsProblem ? `YAML は保存しましたが、監視を Datadog に反映できませんでした: ${alertsProblem}（一覧の「監視を同期」でやり直せます）` : undefined}
     >
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="名前" error={err("name")} hint="あとから変えられません">
+        <Field label="名前" error={err("name")} hint="あとから変えられません" info={<>関数の名前です。YAML のファイル名（<code>functions/&lt;名前&gt;.yaml</code>）と、Kubernetes の Deployment・Service の名前になります。英小文字で始め、英小文字・数字・ハイフンで 40 文字まで。公開する URL は API Gateway で別に決めます。</>}>
           <input className={input} value={form.name} disabled={!isNew} onChange={(e) => set({ name: e.target.value })} placeholder="blog" autoComplete="off" spellCheck={false} />
         </Field>
-        <Field label="ポート" error={err("port")} hint="コンテナが HTTP を受けるポート">
+        <Field label="ポート" error={err("port")} hint="コンテナが HTTP を受けるポート" info={<>コンテナの中のアプリが HTTP を待ち受けているポート番号です（Node の <code>listen(8080)</code> なら 8080）。API Gateway はこのポートにリクエストを渡します。HTTPS ではなく HTTP で受けてください（証明書は Cloudflare が持ちます）。</>}>
           <input className={input} inputMode="numeric" value={form.port} onChange={(e) => set({ port: e.target.value })} />
         </Field>
       </div>
-      <Field label="イメージ" error={err("image")} hint="公開されているイメージだけ使えます。起動が速いほど、最初のリクエストの待ち時間が短くなります">
+      <Field label="イメージ" error={err("image")} hint="公開されているイメージだけ使えます。起動が速いほど、最初のリクエストの待ち時間が短くなります" info={<>動かすコンテナイメージです（例: <code>ghcr.io/owner/app:v1</code>）。非公開のイメージはまだ使えません。タグを変えて保存すると、次に起きたときから新しい版で動きます。<code>latest</code> は版がわからなくなるので、版の付いたタグをおすすめします。</>}>
         <input className={`${input} font-mono text-[13px]`} value={form.image} onChange={(e) => set({ image: e.target.value })} placeholder="ghcr.io/owner/name:tag" autoComplete="off" spellCheck={false} />
       </Field>
 
@@ -275,7 +275,7 @@ function InstanceTypePicker({
   const current = types.find((t) => t.name === form.instanceType);
   return (
     <fieldset>
-      <legend className="mb-2 text-xs font-medium text-ink-2">インスタンスタイプ</legend>
+      <Legend info={<>関数 1 台あたりの CPU とメモリの組み合わせです。名前は EC2 と同じ「ファミリー + 世代 . サイズ」（<code>t1.small</code> など）。型を選ぶと下の CPU とメモリが入り、そのあと個別に変えられます。変えたものは一覧に「カスタム」と出ます。</>}>インスタンスタイプ</Legend>
       <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
         {types.map((t) => {
           const on = t.name === form.instanceType;
@@ -291,10 +291,10 @@ function InstanceTypePicker({
         })}
       </div>
       <div className="mt-3 grid gap-4 sm:grid-cols-2">
-        <Field label="CPU（ミリコア）" error={errors.cpuMillis} hint={`${limits.minCpu}〜${limits.maxCpu}。1000 で 1 CPU`}>
+        <Field label="CPU（ミリコア）" error={errors.cpuMillis} hint={`${limits.minCpu}〜${limits.maxCpu}。1000 で 1 CPU`} info={<>使える CPU の上限です。1000 ミリコアで CPU 1 つ分。上限まで使うと遅くなりますが、止まりはしません。予約（requests）と上限（limits）は同じ値になり、予約した分は必ず使えます。</>}>
           <input className={input} inputMode="numeric" value={form.cpuMillis} onChange={(e) => onChange({ ...form, cpuMillis: e.target.value })} />
         </Field>
-        <Field label="メモリ（MiB）" error={errors.memoryMib} hint={`${limits.minMemoryMib}〜${limits.maxMemoryMib}。超えると再起動されます`}>
+        <Field label="メモリ（MiB）" error={errors.memoryMib} hint={`${limits.minMemoryMib}〜${limits.maxMemoryMib}。超えると再起動されます`} info={<>使えるメモリの上限です。超えると関数は強制終了され（OOMKilled）、再起動されます。動いているあいだは、この量をこの環境の枠から予約します（0 台のときは予約しません）。残りは「容量」で見られます。</>}>
           <input className={input} inputMode="numeric" value={form.memoryMib} onChange={(e) => onChange({ ...form, memoryMib: e.target.value })} />
         </Field>
       </div>
@@ -318,7 +318,7 @@ function EnvEditor({ form, error, onChange }: { form: FunctionForm; error?: stri
   const update = (i: number, patch: Partial<{ name: string; value: string }>) => onChange({ env: form.env.map((e, j) => (j === i ? { ...e, ...patch } : e)) });
   return (
     <fieldset>
-      <legend className="mb-2 text-xs font-medium text-ink-2">環境変数</legend>
+      <Legend info={<>関数に渡す設定の値です。YAML に書かれて git に残るので、パスワードやトークンなどの秘密は入れないでください。データベースやバケットの接続先は、下の「つなぐ」で選ぶと自動で入ります。</>}>環境変数</Legend>
       <div className="space-y-2">
         {form.env.map((e, i) => (
           // 行に固有の ID がないので、並びの位置をキーにする（並べ替えはしない）
@@ -342,7 +342,7 @@ function EnvEditor({ form, error, onChange }: { form: FunctionForm; error?: stri
 function AlertPicker({ form, opt, onChange }: { form: FunctionForm; opt: GetHostingOptionsResponse; onChange: (p: Partial<FunctionForm>) => void }) {
   return (
     <fieldset>
-      <legend className="mb-2 text-xs font-medium text-ink-2">監視</legend>
+      <Legend info={<>選んだものが、本番では Datadog のモニターになり、条件を満たすと Datadog に出ます。stg・dev は Datadog で見ていないので、YAML に残るだけです。通知先（メール・Discord）は宛先をまだ用意していないので、空のままにしてください。</>}>監視</Legend>
       <ul className="divide-y divide-line rounded border border-line">
         {opt.alertPresets.map((p) => (
           <li key={p.id}>
@@ -380,7 +380,7 @@ function ConnectionPicker({ form, onChange }: { form: FunctionForm; onChange: (p
   const bucketRows = [...buckets.map((b) => b.name), ...form.buckets.filter((n) => !buckets.some((b) => b.name === n))];
   return (
     <fieldset>
-      <legend className="mb-2 text-xs font-medium text-ink-2">つなぐ</legend>
+      <Legend info={<>選んだデータベースとバケットの接続先（URL・ユーザー・パスワード・トークン）が、<code>DB_&lt;名前&gt;_URL</code>・<code>BUCKET_&lt;名前&gt;_URL</code> などの環境変数として関数に入ります。値は画面にも git にも出ません。つないでいるあいだは、そのデータベース・バケットを消せません。</>}>つなぐ</Legend>
       {dbRows.length === 0 && bucketRows.length === 0 ? (
         <p className="text-ink-2">
           データベースやバケットを作ると、ここでつなげます。接続先は環境変数として関数に入り、パスワードは画面にも git にも出ません。

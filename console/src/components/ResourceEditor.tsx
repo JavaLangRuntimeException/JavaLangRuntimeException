@@ -119,7 +119,7 @@ export function ResourceEditor({
         {mode === "form" ? (
           children
         ) : (
-          <Field label={yamlLabel} hint={yamlHint}>
+          <Field label={yamlLabel} hint={yamlHint} info={<>リポジトリに保存される YAML そのものです。ここで直して保存すると、その YAML がそのままコミットされます。フォームにない項目（ConfigMap など）を足すと、そのあとはフォームでは編集できなくなります。決まりは「ガイド › YAML で管理する」にあります。</>}>
             <textarea
               className={`${input} h-[28rem] font-mono text-[13px] leading-5`}
               value={yaml}

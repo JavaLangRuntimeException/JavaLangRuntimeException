@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useDatabaseMutations, useDatabases, useHostingOptions } from "@/api/console";
 import { describeMutationError } from "@/api/errors";
 import type { Database } from "@/api/gen/taramanji/cloud/v1/console_pb";
-import { btn, btnDanger, btnPrimary, Field, input, Status } from "@/components/Form";
+import { btn, btnDanger, btnPrimary, Field, input, Legend, Status } from "@/components/Form";
 import { EmptyState, Mono, PageHeader, Panel, Skeleton } from "@/components/Page";
 import { QueryError } from "@/components/QueryError";
 import { databaseStatus, engineLabel } from "@/lib/hosting";
@@ -118,7 +118,7 @@ function Create({ onClose }: { onClose: () => void }) {
         }}
       >
         <fieldset>
-          <legend className="mb-2 text-xs font-medium text-ink-2">エンジン</legend>
+          <Legend info={<>PostgreSQL は表と SQL のデータベースで、関数ごとに専用のデータベースとユーザーを作ります。Redis はキーと値の置き場で、共有の Redis の中で <code>&lt;名前&gt;:</code> で始まるキーだけを触れるユーザーを作ります。どちらも環境に 1 台ある共有のものから切り出すので、大きさは選びません。</>}>エンジン</Legend>
           <div className="grid gap-2 sm:grid-cols-2">
             {engines.map((e) => (
               <label key={e.id} className={`cursor-pointer rounded border px-3 py-2 ${engine === e.id ? "border-accent bg-accent-soft" : "border-line-strong hover:bg-surface-2"}`}>
@@ -130,7 +130,7 @@ function Create({ onClose }: { onClose: () => void }) {
           </div>
         </fieldset>
         <div className="max-w-sm">
-          <Field label="名前" hint="英小文字で始め、英小文字・数字・ハイフンで 40 文字まで。あとから変えられません">
+          <Field label="名前" hint="英小文字で始め、英小文字・数字・ハイフンで 40 文字まで。あとから変えられません" info={<>データベースの名前です。関数につなぐと、環境変数 <code>DB_&lt;名前&gt;_URL</code> などになります（ハイフンは <code>_</code>、英字は大文字）。PostgreSQL のデータベース名とユーザー名は、ハイフンを <code>_</code> にしたものです。</>}>
             <input className={input} value={name} onChange={(e) => setName(e.target.value)} placeholder="main" autoComplete="off" spellCheck={false} />
           </Field>
         </div>
