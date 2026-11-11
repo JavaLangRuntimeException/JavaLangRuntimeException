@@ -5,6 +5,7 @@ namespace: taramanji-cloud
 resources:
   - ../../../base
   - rollouts.yaml
+  - argoview.yaml
 
 # set-version.sh が書き換える（タグ v* の push で CI の deploy-prod ジョブ）。初回のリリースまでイメージはない
 images:
@@ -36,6 +37,19 @@ patches:
                   - { name: FUNCTION_MEMORY_CAP_MIB, value: "2560" }
                   - { name: FUNCTION_CPU_CAP_MILLIS, value: "4000" }
                   - { name: FUNCTION_POD_CAP, value: "30" }
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata: { name: cloud-ctl }
+      spec:
+        template:
+          spec:
+            containers:
+              - name: app
+                env:
+                  # Argo CD の ApplicationSet（plugin ジェネレーター）からの問い合わせのトークン（argoview.yaml）
+                  - name: ARGOCD_PLUGIN_TOKEN
+                    valueFrom: { secretKeyRef: { name: cloud-api-env, key: ARGOCD_PLUGIN_TOKEN, optional: true } }
   - patch: |-
       apiVersion: apps/v1
       kind: Deployment

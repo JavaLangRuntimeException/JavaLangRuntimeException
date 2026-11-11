@@ -1,0 +1,15 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: taramanji-cloud-functions-plugin
+  namespace: argocd
+spec:
+  encryptedData:
+    token: AgBWKqApD1z2ztwQqqKFceCk8s5+3E5NS4wMs4emzj5lt/zMQ4upHmUxUpFDRm2IxCSndw0T+OYUw3v6xChz7gyJn4bf2dgPZ9Vu5zvozaQPYvXjjTerR7zQ65NJPMp1bEwlYbYT7W1XAC7/GhMg4wVbTWOI0DYIpeRflXZIdQkScbU+uW+C43YyplNuV4QZyYd9Gw/2F43hfVj6Ifm2xY/WYT6g0XizVUeqB4e9hil7Reqk5hcY6VLheMOAnbV7zEwdRUhuffPzmk8WlTTEdnlmTQzApMyEcWethyvrjvQIAung8zREB7+7yLMg55h2iU/VWtYme8g23owzUDfgCKBDh6FdaYycXwXwbr4C2C4wMKE0zZJvZkEh3c8ghsZU4LddgWnveGhZfNqJZlVN38LY/pRmTUI7ThIz95xiQkeg0lw0AOzkSb+RJbxP+06yx28vxlVIX++62JUIRRwEXCslVBiy8932YPKg6UekcgSmEi/5M7XynWjm+oiwPPlAo33MyU72zaeJzYYsZp36Fk9uaQbKiIvwJU//PUxjW9YIO6DF4YQWG7yQsXOY9kdtSisluDUSmNp+1iHDdT8wIXDsVUcE9KDYwkPYeV0j53Xy0rNAxfhftjmIZ6zoq9JJV45zvpGKX3ud+1YnQ8vae9VgkSF0aEw7+LvUFyp/JSYX3KB9QfNY2ZTFLT6klIZuLfvs0Wf9mQ1NnjtpHReaQkvnvojP308lr4OAE4p5OA2eQwStL050NJJ78n4XrDSAyhbqdik1XfNT6iAQyDq1id1z7w==
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/part-of: argocd
+      name: taramanji-cloud-functions-plugin
+      namespace: argocd

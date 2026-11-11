@@ -104,6 +104,17 @@ func TestSync(t *testing.T) {
 	if labels["cloud.taramanji.com/source"] != "functions.blog" || labels["cloud.taramanji.com/deploy-env"] != "prod" || reconciled != 1 {
 		t.Fatalf("labels %v reconciled %d", labels, reconciled)
 	}
+	// Argo CD の画面（関数ごとの Application）で見られるように、関数の YAML のものには印が付く。API などには付けない
+	for k, want := range map[string]string{
+		"Deployment/taramanji-cloud-fn-blog/blog":      "taramanji-cloud-fn-blog:apps/Deployment:taramanji-cloud-fn-blog/blog",
+		"ConfigMap/taramanji-cloud-apps/function-blog": "taramanji-cloud-fn-blog:/ConfigMap:taramanji-cloud-apps/function-blog",
+		"HTTPRoute/taramanji-cloud-apps/shop":          "",
+	} {
+		ann, _ := ap.objects[k]["metadata"].(map[string]any)["annotations"].(map[string]any)
+		if got, _ := ann["argocd.argoproj.io/tracking-id"].(string); got != want {
+			t.Errorf("%s の印 %q, want %q", k, got, want)
+		}
+	}
 	if s := status(t, ap, "functions.blog"); s.State != StateApplied || s.Revision != "r1" || s.Commit != "aaaaaaa" || len(s.History) != 1 {
 		t.Fatalf("status %+v", s)
 	}

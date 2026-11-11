@@ -166,6 +166,17 @@ S3 と CloudFront にあたるもの。
   超えるなら起こさず 503。コンソールの「容量」も同じ枠で数える
 - 環境の共有の namespace（`taramanji-cloud-apps` など）には、API・CDN の HTTPRoute と、登録・バケット・データベースの定義（ConfigMap）だけを置く。Pod は 0 個
 
+## Argo CD の画面で関数を見る（見るだけ）
+
+関数は Argo CD を通さずにデプロイヤーが入れるが、Pod が動いているかは Argo CD の画面（いつもの画面）で見られる。
+
+- 関数ごとに Application `taramanji-cloud-fn-<名前>`（プロジェクト `taramanji-cloud-functions`）ができ、Deployment → ReplicaSet → Pod と、登録の ConfigMap・Service が並ぶ
+- 作るのは ApplicationSet `taramanji-cloud-functions`（`deploy/gitops/apps/taramanji-cloud-functions.yaml`）。関数の一覧は plugin ジェネレーターがコントローラー（cloud-ctl の `/api/v1/getparams.execute`。トークンと NetworkPolicy で Argo CD の ApplicationSet コントローラーだけ）に聞く
+- Argo CD は同期しない: 自動同期なし、手での Sync もプロジェクトの sync window で止めてある。カナリア・監視もしない
+- デプロイヤーは関数の YAML のものに `argocd.argoproj.io/tracking-id` を付ける（これがないと「同期していない」と出る）。台数（0 ⇄ 1）は比べない
+- 関数がまだ 1 台も起きていない（0 台）ときは Pod は出ないが、Deployment は Healthy
+- アプリは本番だけなので、本番だけ。トークンは `deploy/cloud/secrets/argocd-plugin-token`（`scripts/seal.sh prod` が作る）
+
 ## データベースと、関数へのつなぎ込み
 
 サーバーレスのデータベースにあたるもの。環境ごとに共有の PostgreSQL と Redis を 1 台ずつ動かし、そこからデータベースを切り出す（サイズは選ばない）。
