@@ -104,6 +104,28 @@ export function useDistributions(enabled: boolean) {
   });
 }
 
+const databasesKey = ["console", "databases"] as const;
+
+/** データベースの一覧（リポジトリの YAML + コントローラーが書いた状態）。作成中が使用可能に変わるのを見るので短めに読み直す */
+export function useDatabases(enabled: boolean) {
+  return useQuery({
+    queryKey: databasesKey,
+    queryFn: ({ signal }) => consoleApi.listDatabases({}, { signal }),
+    enabled,
+    staleTime: 10_000,
+    refetchInterval: 20_000,
+  });
+}
+
+export function useDatabaseMutations() {
+  const qc = useQueryClient();
+  const refresh = () => void qc.invalidateQueries({ queryKey: databasesKey });
+  return {
+    create: useMutation({ mutationFn: (req: { name: string; engine: string }) => consoleApi.createDatabase(req), onSuccess: refresh }),
+    remove: useMutation({ mutationFn: (req: { name: string; revision: string }) => consoleApi.deleteDatabase(req), onSuccess: refresh }),
+  };
+}
+
 /** オブジェクトを置く。Connect ではなく HTTP の PUT（同じオリジンなので Access の Cookie が付く） */
 export async function uploadObject(bucket: string, key: string, file: File): Promise<void> {
   const res = await fetch(objectUrl(bucket, key), { method: "PUT", body: file, headers: { "Content-Type": "application/octet-stream" } });
@@ -145,6 +167,8 @@ export function useComputeMutations() {
   const refresh = () => {
     void qc.invalidateQueries({ queryKey: functionsKey });
     void qc.invalidateQueries({ queryKey: apisKey });
+    void qc.invalidateQueries({ queryKey: ["console", "databases"] });
+    void qc.invalidateQueries({ queryKey: ["console", "buckets"] });
     void qc.invalidateQueries({ queryKey: ["console", "capacity"] });
   };
   return {

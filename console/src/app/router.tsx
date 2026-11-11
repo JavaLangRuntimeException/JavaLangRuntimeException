@@ -3,6 +3,7 @@ import { AppShell } from "@/components/AppShell";
 import { CapacityPage } from "@/pages/CapacityPage";
 import { ApisPage } from "@/pages/ApisPage";
 import { CdnPage } from "@/pages/CdnPage";
+import { DatabasesPage } from "@/pages/DatabasesPage";
 import { FunctionsPage } from "@/pages/FunctionsPage";
 import { MetricsPage } from "@/pages/MetricsPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
@@ -20,6 +21,7 @@ export const router = createBrowserRouter([
       { path: "functions", element: <FunctionsPage /> },
       { path: "apis", element: <ApisPage /> },
       { path: "cdn", element: <CdnPage /> },
+      { path: "databases", element: <DatabasesPage /> },
       { path: "*", element: <NotFoundPage /> },
     ],
   },

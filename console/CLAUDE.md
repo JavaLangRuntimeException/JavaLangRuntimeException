@@ -16,7 +16,7 @@ React 19 + Vite + TypeScript + React Router v8 + Tailwind CSS v4 + TanStack Quer
 - `src/app` 起動・ルーティング・QueryClient・全体の CSS
 - `src/api` Connect のクライアント、クエリのフック、エラーの判定
 - `src/components` 画面の部品（AppShell・Panel・LineChart など）
-- `src/pages` 画面（概要・容量・メトリクス・関数・API Gateway・ストレージ・CDN）
+- `src/pages` 画面（概要・容量・メトリクス・関数・API Gateway・ストレージ・CDN・データベース）
   - 関数（`FunctionsPage.tsx`）と API（`ApisPage.tsx`）は、フォームか YAML で編集する（`components/ResourceEditor.tsx`）。保存先はアプリ専用リポジトリの YAML で、クラスターには Argo CD が入れる（`deploy/cloud/README.md`）
 - `src/lib` 表示の整形・軸の計算・ナビの定義（純粋な関数はここに置いてテストする）
 

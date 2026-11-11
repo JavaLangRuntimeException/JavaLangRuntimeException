@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router";
-import { consoleApi, useComputeMutations, useFunctions, useHostingOptions } from "@/api/console";
+import { consoleApi, useBuckets, useComputeMutations, useDatabases, useFunctions, useHostingOptions } from "@/api/console";
 import { describeMutationError } from "@/api/errors";
 import type { Function as Fn, GetHostingOptionsResponse } from "@/api/gen/taramanji/cloud/v1/console_pb";
 import { btn, btnPrimary, Field, input, Status } from "@/components/Form";
@@ -11,6 +11,8 @@ import { formatCpu, num } from "@/lib/capacity";
 import { formatBytes } from "@/lib/format";
 import {
   emptyForm,
+  engineLabel,
+  envPrefix,
   formatIdle,
   formErrors,
   formOf,
@@ -250,6 +252,7 @@ function Editor({ fn, opt, onClose }: { fn: Fn | null; opt: GetHostingOptionsRes
 
       <InstanceTypePicker form={form} types={types} limits={limits} errors={{ cpuMillis: err("cpuMillis"), memoryMib: err("memoryMib") }} onChange={setForm} />
       <EnvEditor form={form} error={err("env")} onChange={set} />
+      <ConnectionPicker form={form} onChange={set} />
       <AlertPicker form={form} opt={opt} onChange={set} />
     </ResourceEditor>
   );
@@ -364,6 +367,54 @@ function AlertPicker({ form, opt, onChange }: { form: FunctionForm; opt: GetHost
         ))}
       </div>
       {!opt.alertsEnabled && <p className="mt-2 text-xs text-muted">この環境は Datadog で監視していないので、選んでも通知は飛びません（YAML には残ります）。</p>}
+    </fieldset>
+  );
+}
+
+/** つなぐデータベースとバケット。接続先（URL・パスワード・トークン）は、接頭辞の付いた環境変数として関数に入る */
+function ConnectionPicker({ form, onChange }: { form: FunctionForm; onChange: (p: Partial<FunctionForm>) => void }) {
+  const databases = useDatabases(true).data?.databases ?? [];
+  const buckets = useBuckets(true).data?.buckets ?? [];
+  // 一覧にないもの（消された）も、外せるように残す
+  const dbRows = [...databases.map((d) => ({ name: d.name, note: engineLabel(d.engine) })), ...form.databases.filter((n) => !databases.some((d) => d.name === n)).map((name) => ({ name, note: "見つかりません" }))];
+  const bucketRows = [...buckets.map((b) => b.name), ...form.buckets.filter((n) => !buckets.some((b) => b.name === n))];
+  return (
+    <fieldset>
+      <legend className="mb-2 text-xs font-medium text-ink-2">つなぐ</legend>
+      {dbRows.length === 0 && bucketRows.length === 0 ? (
+        <p className="text-ink-2">
+          データベースやバケットを作ると、ここでつなげます。接続先は環境変数として関数に入り、パスワードは画面にも git にも出ません。
+        </p>
+      ) : (
+        <ul className="divide-y divide-line rounded border border-line">
+          {dbRows.map((d) => (
+            <li key={`db-${d.name}`}>
+              <label className="flex cursor-pointer items-start gap-3 px-3 py-2 hover:bg-surface-2">
+                <input type="checkbox" className="mt-1" checked={form.databases.includes(d.name)} onChange={() => onChange({ databases: toggle(form.databases, d.name) })} />
+                <span>
+                  <span className="block font-medium text-ink">
+                    データベース {d.name} <span className="font-normal text-muted">（{d.note}）</span>
+                  </span>
+                  <span className="block font-mono text-xs text-muted">{envPrefix("database", d.name)}URL ほか</span>
+                </span>
+              </label>
+            </li>
+          ))}
+          {bucketRows.map((name) => (
+            <li key={`bucket-${name}`}>
+              <label className="flex cursor-pointer items-start gap-3 px-3 py-2 hover:bg-surface-2">
+                <input type="checkbox" className="mt-1" checked={form.buckets.includes(name)} onChange={() => onChange({ buckets: toggle(form.buckets, name) })} />
+                <span>
+                  <span className="block font-medium text-ink">バケット {name}</span>
+                  <span className="block font-mono text-xs text-muted">
+                    {envPrefix("bucket", name)}URL・{envPrefix("bucket", name)}TOKEN
+                  </span>
+                </span>
+              </label>
+            </li>
+          ))}
+        </ul>
+      )}
     </fieldset>
   );
 }

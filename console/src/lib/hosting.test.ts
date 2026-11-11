@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { databaseStatus, engineLabel, envPrefix } from "./hosting";
 import { cachePresets, crumbsOf, distributionFormErrors, distributionFormOf, distributionSpecOf, emptyDistributionForm, entriesOf, formatCache } from "./hosting";
 import { apiFormErrors, apiFormOf, apiSpecOf, emptyApiForm, emptyForm, formatIdle, formErrors, formOf, isCustom, specOf, statusOf, toggle, typeOptions, withInstanceType } from "./hosting";
 
@@ -25,10 +26,10 @@ describe("インスタンスタイプ", () => {
 
 describe("specOf / formOf", () => {
   it("フォームを API の形にして、読み戻せる", () => {
-    const form = { ...emptyForm(types), name: " blog ", image: "ghcr.io/me/blog:v1", env: [{ name: "MODE", value: "prod" }, { name: " ", value: "x" }], alerts: ["cpu-high"], notify: ["discord"] };
+    const form = { ...emptyForm(types), name: " blog ", image: "ghcr.io/me/blog:v1", env: [{ name: "MODE", value: "prod" }, { name: " ", value: "x" }], alerts: ["cpu-high"], notify: ["discord"], databases: ["main"], buckets: ["site"] };
     const spec = specOf(form);
     expect(spec).toMatchObject({ name: "blog", port: 8080, cpuMillis: 100n, memory: BigInt(128 * MIB), env: [{ name: "MODE", value: "prod" }] });
-    expect(formOf(spec)).toMatchObject({ name: "blog", cpuMillis: "100", memoryMib: "128", alerts: ["cpu-high"], notify: ["discord"] });
+    expect(formOf(spec)).toMatchObject({ name: "blog", cpuMillis: "100", memoryMib: "128", alerts: ["cpu-high"], notify: ["discord"], databases: ["main"], buckets: ["site"] });
   });
 });
 
@@ -119,5 +120,19 @@ describe("オブジェクトの一覧", () => {
   it("パンくず", () => {
     expect(crumbsOf("")).toEqual([]);
     expect(crumbsOf("assets/img/")).toEqual([{ name: "assets", prefix: "assets/" }, { name: "img", prefix: "assets/img/" }]);
+  });
+});
+
+describe("つなぎ込み", () => {
+  it("環境変数の接頭辞", () => {
+    expect(envPrefix("database", "main-db")).toBe("DB_MAIN_DB_");
+    expect(envPrefix("bucket", "site")).toBe("BUCKET_SITE_");
+    expect(engineLabel("postgres")).toBe("PostgreSQL");
+  });
+  it("データベースの状態", () => {
+    expect(databaseStatus({ ready: true, status: "ready", problem: "" }).label).toBe("使用可能");
+    expect(databaseStatus({ ready: false, status: "pending", problem: "" }).label).toBe("作成中");
+    expect(databaseStatus({ ready: false, status: "postgres に作れませんでした", problem: "" })).toEqual({ label: "エラー", level: "bad", detail: "postgres に作れませんでした" });
+    expect(databaseStatus({ ready: false, status: "", problem: "x" }).level).toBe("bad");
   });
 });
