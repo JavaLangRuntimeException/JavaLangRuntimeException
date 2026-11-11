@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"reflect"
 	"regexp"
 	"slices"
@@ -269,17 +270,73 @@ const (
 	portName      = "http"
 )
 
+// FunctionNamespace は関数ごとの namespace（本番 cloud-fn-<名前>、stg・dev は cloud-stg-fn-<名前>・cloud-dev-fn-<名前>）。
+// 関数どうしを namespace で分け、ほかの関数の Secret・Pod に触れられないようにする。namespace と囲い（Quota・NetworkPolicy など）は
+// コントローラーが作る（アプリ用のリポジトリからは作れない）
+func FunctionNamespace(env, name string) string {
+	if env == "prod" {
+		return "cloud-fn-" + name
+	}
+	return "cloud-" + env + "-fn-" + name
+}
+
+// FunctionRegistrationName は関数の登録（共有の namespace に置く ConfigMap）の名前。コントローラーはこれを見て namespace を作る
+func FunctionRegistrationName(name string) string { return "function-" + name }
+
+// 登録の ConfigMap のラベルと、data のキー
+const (
+	LabelFunction       = "cloud.taramanji.com/function"
+	RegistrationCPU     = "cpuMillis"
+	RegistrationMemory  = "memoryMiB"
+	RegistrationDBs     = "databases"
+	RegistrationBuckets = "buckets"
+)
+
+// Registration は登録の中身（コントローラーが namespace の囲いと接続先の Secret を作るのに使う）
+type Registration struct {
+	Name        string
+	CPUMillis   int64
+	MemoryBytes int64
+	Databases   []string
+	Buckets     []string
+}
+
+// RegistrationData は登録の ConfigMap の data
+func (s FunctionSpec) RegistrationData() map[string]string {
+	return map[string]string{
+		RegistrationCPU: strconv.FormatInt(s.CPUMillis, 10), RegistrationMemory: strconv.FormatInt(s.MemoryBytes/mib, 10),
+		RegistrationDBs: strings.Join(s.Databases, ","), RegistrationBuckets: strings.Join(s.Buckets, ","),
+	}
+}
+
+// ParseRegistration は登録の ConfigMap の data を読む（コントローラー用）。読めなければ ok = false
+func ParseRegistration(name string, data map[string]string) (Registration, bool) {
+	cpu, err1 := strconv.ParseInt(data[RegistrationCPU], 10, 64)
+	mem, err2 := strconv.ParseInt(data[RegistrationMemory], 10, 64)
+	if err1 != nil || err2 != nil || !ValidName(name) || cpu < MinCPUMillis || cpu > MaxCPUMillis || mem*mib < MinMemoryBytes || mem*mib > MaxMemoryBytes {
+		return Registration{}, false
+	}
+	r := Registration{Name: name, CPUMillis: cpu, MemoryBytes: mem * mib, Databases: splitList(data[RegistrationDBs]), Buckets: splitList(data[RegistrationBuckets])}
+	for _, n := range append(slices.Clone(r.Databases), r.Buckets...) {
+		if !ValidName(n) {
+			return Registration{}, false
+		}
+	}
+	return r, true
+}
+
 func cpuQuantity(millis int64) string { return strconv.FormatInt(millis, 10) + "m" }
 func memQuantity(bytes int64) string  { return strconv.FormatInt(bytes/mib, 10) + "Mi" }
 
-// RenderFunctionYAML は定義を Kubernetes の YAML（Deployment・Service）にする。
-// namespace は書かない（Argo CD がその環境のアプリ用 namespace に入れる）
-func RenderFunctionYAML(s FunctionSpec) (string, error) {
+// RenderFunctionYAML は定義を Kubernetes の YAML にする:
+//   - 登録の ConfigMap（namespace は書かない = 環境の共有の namespace に入る。コントローラーが見る）
+//   - Deployment・Service（関数の namespace ns に入る）
+func RenderFunctionYAML(s FunctionSpec, ns string) (string, error) {
 	labels := map[string]string{"app.kubernetes.io/name": s.Name, LabelApp: s.Name, LabelKind: KindFunction}
 
 	var d k8sDeployment
 	d.APIVersion, d.Kind = "apps/v1", "Deployment"
-	d.Metadata = objectMeta{Name: s.Name, Labels: map[string]string{"app.kubernetes.io/name": s.Name, LabelApp: s.Name, LabelKind: KindFunction, LabelInstanceType: s.InstanceType}}
+	d.Metadata = objectMeta{Name: s.Name, Namespace: ns, Labels: map[string]string{"app.kubernetes.io/name": s.Name, LabelApp: s.Name, LabelKind: KindFunction, LabelInstanceType: s.InstanceType}}
 	if len(s.Alerts) > 0 {
 		d.Metadata.Annotations = map[string]string{AnnotationAlerts: strings.Join(s.Alerts, ",")}
 		if len(s.Notify) > 0 {
@@ -312,14 +369,19 @@ func RenderFunctionYAML(s FunctionSpec) (string, error) {
 
 	var svc k8sService
 	svc.APIVersion, svc.Kind = "v1", "Service"
-	svc.Metadata = objectMeta{Name: s.Name, Labels: labels}
+	svc.Metadata = objectMeta{Name: s.Name, Namespace: ns, Labels: labels}
 	svc.Spec.Selector = map[string]string{LabelApp: s.Name}
 	svc.Spec.Ports = append(svc.Spec.Ports, struct {
 		Name       string `yaml:"name"`
 		Port       int32  `yaml:"port"`
 		TargetPort string `yaml:"targetPort"`
 	}{Name: portName, Port: 80, TargetPort: portName})
-	return encodeDocs(d, svc)
+
+	var reg k8sConfigMap
+	reg.APIVersion, reg.Kind = "v1", "ConfigMap"
+	reg.Metadata = objectMeta{Name: FunctionRegistrationName(s.Name), Labels: map[string]string{LabelKind: KindFunction, LabelFunction: s.Name}}
+	reg.Data = s.RegistrationData()
+	return encodeDocs(reg, d, svc)
 }
 
 func envFrom(prefix, secret string) k8sEnvFrom {
@@ -372,18 +434,26 @@ func splitDocs(src string) ([]map[string]any, error) {
 	}
 }
 
-// checkObjects は YAML の全オブジェクトが、置ける種類で、namespace を書かず、名前が name か「name-…」であることを確かめる
-func checkObjects(name string, docs []map[string]any, kinds map[string]bool, kindList string) error {
+// checkObjects は YAML の全オブジェクトが、置ける種類で、namespace の決まりに合い、名前が name か「name-…」であることを確かめる。
+// nsOf は（種類・名前）ごとに書くべき namespace を返す（"" なら書かない = 環境の共有の namespace）
+func checkObjects(name string, docs []map[string]any, kinds map[string]bool, kindList string, nsOf func(kind, objName string) string) error {
 	for _, doc := range docs {
 		kind, _ := doc["kind"].(string)
 		if !kinds[kind] {
 			return fieldErr("yaml", "%q は置けません（%s だけ）", kind, kindList)
 		}
 		meta, _ := doc["metadata"].(map[string]any)
-		if ns, ok := meta["namespace"]; ok && ns != "" {
-			return fieldErr("yaml", "metadata.namespace は書かないでください（この環境のアプリ用 namespace に入ります）")
-		}
 		objName, _ := meta["name"].(string)
+		ns, _ := meta["namespace"].(string)
+		if want := nsOf(kind, objName); ns != want {
+			if want == "" {
+				return fieldErr("yaml", "%s %q に metadata.namespace は書かないでください（この環境の共有の namespace に入ります）", kind, objName)
+			}
+			return fieldErr("yaml", "%s %q の metadata.namespace は %s にしてください（関数ごとの namespace）", kind, objName, want)
+		}
+		if kind == "ConfigMap" && objName == FunctionRegistrationName(name) {
+			continue
+		}
 		// ほかのリソースのものを上書きしないよう、名前はリソース名か「リソース名-…」に限る
 		if objName != name && !strings.HasPrefix(objName, name+"-") {
 			return fieldErr("yaml", "%s の名前 %q は %q か %q で始めてください", kind, objName, name, name+"-")
@@ -427,13 +497,37 @@ func decodeKind(src, kind string, out any) (int, error) {
 // ParseFunctionYAML は関数 1 つの YAML を確かめて、定義を読み取る。
 // 手で書いた YAML も受けるが、アプリ用 namespace の囲いを外すもの（別の namespace・許可していない種類・優先度なし）と、
 // API Gateway の邪魔になるもの（台数の指定）は通さない
-func ParseFunctionYAML(name, src string) (*ParsedFunction, error) {
+func ParseFunctionYAML(name, src, ns string) (*ParsedFunction, error) {
 	docs, err := parseDocs(src)
 	if err != nil {
 		return nil, err
 	}
-	if err := checkObjects(name, docs, functionKinds, "Deployment・Service・ConfigMap・PersistentVolumeClaim"); err != nil {
+	// 登録の ConfigMap だけが共有の namespace に入り、ほかは全部この関数の namespace に入る
+	nsOf := func(kind, objName string) string {
+		if kind == "ConfigMap" && objName == FunctionRegistrationName(name) {
+			return ""
+		}
+		return ns
+	}
+	if err := checkObjects(name, docs, functionKinds, "Deployment・Service・ConfigMap・PersistentVolumeClaim", nsOf); err != nil {
 		return nil, err
+	}
+	var reg *k8sConfigMap
+	for _, doc := range docs {
+		meta, _ := doc["metadata"].(map[string]any)
+		if doc["kind"] == "ConfigMap" && meta["name"] == FunctionRegistrationName(name) {
+			if reg != nil {
+				return nil, fieldErr("yaml", "登録の ConfigMap %s が 2 つあります", FunctionRegistrationName(name))
+			}
+			reg = &k8sConfigMap{}
+			b, _ := yaml.Marshal(doc)
+			if err := yaml.Unmarshal(b, reg); err != nil {
+				return nil, fieldErr("yaml", "登録の ConfigMap を読めません: %v", err)
+			}
+		}
+	}
+	if reg == nil {
+		return nil, fieldErr("yaml", "登録の ConfigMap %s がありません（コントローラーが関数の namespace を作るのに使います）", FunctionRegistrationName(name))
 	}
 	var d k8sDeployment
 	n, err := decodeKind(src, "Deployment", &d)
@@ -486,6 +580,10 @@ func ParseFunctionYAML(name, src string) (*ParsedFunction, error) {
 	spec.Alerts = splitList(d.Metadata.Annotations[AnnotationAlerts])
 	spec.Notify = splitList(d.Metadata.Annotations[AnnotationNotify])
 	spec = spec.Normalize()
+	// 登録は Deployment と同じ中身でなければならない（コントローラーは登録を見て、namespace の枠と接続先の Secret を作る）
+	if reg.Metadata.Labels[LabelFunction] != name || !maps.Equal(reg.Data, spec.RegistrationData()) {
+		return nil, fieldErr("yaml", "登録の ConfigMap（ラベル %s と data）が Deployment の CPU・メモリ・つなぐものと合っていません", LabelFunction)
+	}
 	for _, a := range spec.Alerts {
 		if _, ok := AlertPresetOf(a); !ok {
 			return nil, fieldErr("yaml", "注釈 %s の %q は用意された監視にありません", AnnotationAlerts, a)
@@ -500,7 +598,7 @@ func ParseFunctionYAML(name, src string) (*ParsedFunction, error) {
 	// フォームの定義から作り直した YAML と中身が同じなら、フォームで編集できる
 	editable := false
 	if spec.Validate() == nil {
-		if again, err := RenderFunctionYAML(spec); err == nil {
+		if again, err := RenderFunctionYAML(spec, ns); err == nil {
 			if want, err := splitDocs(again); err == nil {
 				editable = reflect.DeepEqual(docs, want)
 			}

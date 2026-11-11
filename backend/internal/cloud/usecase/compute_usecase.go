@@ -106,7 +106,7 @@ func (u *ConsoleUsecaseImpl) functionOf(f gateway.ResourceFile, w *gateway.Workl
 	if w != nil {
 		fn.Deployed, fn.Ready, fn.Desired = true, w.Ready, w.Desired
 	}
-	parsed, err := service.ParseFunctionYAML(f.Name, f.YAML)
+	parsed, err := service.ParseFunctionYAML(f.Name, f.YAML, u.functionNamespace(f.Name))
 	if err != nil {
 		fn.Source.Problem = err.Error()
 		return fn
@@ -186,7 +186,7 @@ func (u *ConsoleUsecaseImpl) PreviewFunction(_ context.Context, in PreviewFuncti
 	if err := spec.Validate(); err != nil {
 		return nil, invalid(err)
 	}
-	y, err := service.RenderFunctionYAML(spec)
+	y, err := service.RenderFunctionYAML(spec, u.functionNamespace(spec.Name))
 	if err != nil {
 		return nil, errs.NewInternalError(err)
 	}
@@ -208,11 +208,11 @@ func (u *ConsoleUsecaseImpl) ApplyFunction(ctx context.Context, in ApplyFunction
 		if err := spec.Validate(); err != nil {
 			return nil, invalid(err)
 		}
-		if y, err = service.RenderFunctionYAML(spec); err != nil {
+		if y, err = service.RenderFunctionYAML(spec, u.functionNamespace(spec.Name)); err != nil {
 			return nil, errs.NewInternalError(err)
 		}
 	} else {
-		parsed, err := service.ParseFunctionYAML(name, y)
+		parsed, err := service.ParseFunctionYAML(name, y, u.functionNamespace(name))
 		if err != nil {
 			return nil, invalid(err)
 		}
@@ -452,7 +452,7 @@ func (u *ConsoleUsecaseImpl) syncAlerts(ctx context.Context) (service.MonitorPla
 	}
 	specs := []service.FunctionSpec{}
 	for _, f := range files {
-		parsed, err := service.ParseFunctionYAML(f.Name, f.YAML)
+		parsed, err := service.ParseFunctionYAML(f.Name, f.YAML, u.functionNamespace(f.Name))
 		if err != nil {
 			// 読めない YAML が 1 つあるだけで、ほかの関数のモニターを消してしまわないよう、全体を止める
 			return plan, fmt.Errorf("%s の YAML を読めません: %w", f.Name, err)
@@ -480,4 +480,9 @@ func (u *ConsoleUsecaseImpl) syncAlerts(ctx context.Context) (service.MonitorPla
 		}
 	}
 	return plan, nil
+}
+
+// functionNamespace は関数ごとの namespace（この環境の）
+func (u *ConsoleUsecaseImpl) functionNamespace(name string) string {
+	return service.FunctionNamespace(u.d.Environment, name)
 }

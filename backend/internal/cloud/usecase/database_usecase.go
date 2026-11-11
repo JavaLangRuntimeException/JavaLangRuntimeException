@@ -19,7 +19,7 @@ func (u *ConsoleUsecaseImpl) functionSpecs(ctx context.Context) ([]service.Funct
 	}
 	out := []service.FunctionSpec{}
 	for _, f := range files {
-		if parsed, err := service.ParseFunctionYAML(f.Name, f.YAML); err == nil {
+		if parsed, err := service.ParseFunctionYAML(f.Name, f.YAML, u.functionNamespace(f.Name)); err == nil {
 			out = append(out, parsed.Spec)
 		}
 	}

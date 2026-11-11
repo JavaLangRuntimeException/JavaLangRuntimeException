@@ -26,7 +26,7 @@ type AlertScope struct {
 	Environment string
 	// Cluster は Datadog の kube_cluster_name
 	Cluster string
-	// Namespace はアプリ用 namespace
+	// Namespace は環境の共有の namespace（API・CDN の HTTPRoute があるところ）
 	Namespace string
 	// APMEnv・InvokerService は、関数の呼び出しを見る APM（API Gateway）の env と service
 	APMEnv         string
@@ -34,7 +34,7 @@ type AlertScope struct {
 }
 
 func (s AlertScope) containers(app string) string {
-	return fmt.Sprintf("kube_cluster_name:%s,kube_namespace:%s,kube_deployment:%s", s.Cluster, s.Namespace, app)
+	return fmt.Sprintf("kube_cluster_name:%s,kube_namespace:%s,kube_deployment:%s", s.Cluster, FunctionNamespace(s.Environment, app), app)
 }
 
 // AlertPresets は選べる監視（画面に出す順）

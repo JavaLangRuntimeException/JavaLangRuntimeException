@@ -64,6 +64,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	kube.WithFunctions(env.Required("CLOUD_ENV"), functionCaps())
 	reserveMiB, err := strconv.Atoi(env.Optional("CAPACITY_RESERVE_MIB", "2048"))
 	if err != nil || reserveMiB < 0 {
 		log.Fatal("CAPACITY_RESERVE_MIB must be a non-negative integer")
@@ -154,6 +155,8 @@ func runGateway() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	cloudEnv, caps := env.Required("CLOUD_ENV"), functionCaps()
+	kube.WithFunctions(cloudEnv, caps)
 	idle := idleTimeout()
 	// バケットを元にした CDN が読む、ストレージの読むだけのポート
 	storageURL, err := url.Parse(env.Optional("STORAGE_PUBLIC_URL", "http://cloud-storage:8081"))
@@ -163,9 +166,11 @@ func runGateway() {
 	inv := invoker.New(invoker.Config{
 		StorageURL: storageURL,
 		Scaler:     kube,
+		// 関数は自分の namespace（cloud-fn-<名前> など）の、関数と同じ名前の Service
 		Upstream: func(name string) *url.URL {
-			return &url.URL{Scheme: "http", Host: name + "." + appsNamespace + ".svc.cluster.local"}
+			return &url.URL{Scheme: "http", Host: name + "." + service.FunctionNamespace(cloudEnv, name) + ".svc.cluster.local"}
 		},
+		MemoryCap:        caps.MemoryBytes,
 		IdleTimeout:      idle,
 		ColdStartTimeout: 60 * time.Second,
 		Log:              logger.L(),
@@ -288,8 +293,11 @@ func runController() {
 			service.EnginePostgres: {Host: svc("cloud-postgres"), Port: 5432},
 			service.EngineRedis:    {Host: svc("cloud-redis"), Port: 6379},
 		},
-		StorageURL: "http://" + svc("cloud-storage") + ":8080",
-		Log:        logger.L(),
+		StorageURL:       "http://" + svc("cloud-storage") + ":8080",
+		Env:              env.Required("CLOUD_ENV"),
+		Registry:         env.Required("APPS_NAMESPACE"),
+		ConsoleNamespace: namespace,
+		Log:              logger.L(),
 	})
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -307,4 +315,17 @@ func secretEnv(key string, required bool) string {
 		log.Fatalf("%s is not set", key)
 	}
 	return v
+}
+
+// functionCaps は環境の関数の合計の枠（本番 2.5 GiB など）。関数は namespace ごとに分かれているので、
+// API Gateway が関数を起こすときにこの枠で確かめ、コンソールの「容量」もこの枠で数える
+func functionCaps() gateway.Resources {
+	num := func(key, def string) int64 {
+		v, err := strconv.ParseInt(env.Optional(key, def), 10, 64)
+		if err != nil || v < 0 {
+			log.Fatalf("%s must be a non-negative integer", key)
+		}
+		return v
+	}
+	return gateway.Resources{MemoryBytes: num("FUNCTION_MEMORY_CAP_MIB", "512") << 20, CPUMillis: num("FUNCTION_CPU_CAP_MILLIS", "1000"), Pods: num("FUNCTION_POD_CAP", "10")}
 }

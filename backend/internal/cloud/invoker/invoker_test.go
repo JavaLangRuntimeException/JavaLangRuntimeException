@@ -223,3 +223,20 @@ func TestFunctionThroughCDNGetsCacheControl(t *testing.T) {
 		t.Fatal("API ではキャッシュさせない")
 	}
 }
+
+func TestCapacity(t *testing.T) {
+	inv, sc, _ := setup(t)
+	const mib = int64(1) << 20
+	inv.c.MemoryCap = 512 * mib
+	sc.fns["blog"].MemoryBytes = 256 * mib
+	sc.fns["big"] = &gateway.FunctionState{Name: "big", Replicas: 1, Ready: 1, MemoryBytes: 300 * mib}
+	// 300 + 256 > 512 なので起こさない
+	if rec := call(inv, "blog"); rec.Code != http.StatusServiceUnavailable || sc.fns["blog"].Replicas != 0 {
+		t.Fatalf("枠を超えるなら起こさない: %d replicas=%d", rec.Code, sc.fns["blog"].Replicas)
+	}
+	// ほかが 0 台に戻れば起こせる
+	sc.fns["big"].Replicas = 0
+	if rec := call(inv, "blog"); rec.Code != 200 {
+		t.Fatalf("空いたら起こす: %d", rec.Code)
+	}
+}

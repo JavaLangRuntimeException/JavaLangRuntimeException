@@ -32,8 +32,10 @@ type Config struct {
 	IdleTimeout time.Duration
 	// ColdStartTimeout は起こしてから応答できるようになるまで待つ上限
 	ColdStartTimeout time.Duration
-	Clock            func() time.Time
-	Log              *slog.Logger
+	// MemoryCap は環境の関数のメモリの合計の枠（バイト）。起こすと超えるなら起こさない。0 なら確かめない
+	MemoryCap int64
+	Clock     func() time.Time
+	Log       *slog.Logger
 	// StorageURL はオブジェクトストレージの読むだけのポート（http://cloud-storage:8081）。nil ならバケットを元にした CDN は使えない
 	StorageURL *url.URL
 	// Transport はテストで差し替える
@@ -142,10 +144,17 @@ func (i *Invoker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	i.proxy(name, ttl).ServeHTTP(w, r)
 }
 
+// ErrCapacity は、起こすと環境の関数のメモリの合計の枠を超える
+var ErrCapacity = errors.New("not enough capacity to start the function")
+
 func (i *Invoker) fail(w http.ResponseWriter, name string, err error) {
 	switch {
 	case errors.Is(err, gateway.ErrFunctionNotFound):
 		http.Error(w, "function not found", http.StatusNotFound)
+	case errors.Is(err, ErrCapacity):
+		i.c.Log.Warn("capacity exceeded", "function", name)
+		w.Header().Set("Retry-After", "60")
+		http.Error(w, "not enough capacity to start the function (other functions are using the memory)", http.StatusServiceUnavailable)
 	case errors.Is(err, context.Canceled):
 		// 利用者が待たずに切った
 	default:
@@ -188,6 +197,9 @@ func (i *Invoker) doWake(name string, s *fnState) {
 			return err
 		}
 		if st.Replicas == 0 {
+			if err := i.checkCapacity(ctx, st); err != nil {
+				return err
+			}
 			i.c.Log.Info("cold start", "function", name)
 			if err := i.c.Scaler.Scale(ctx, name, 1); err != nil {
 				return err
@@ -377,4 +389,26 @@ func (i *Invoker) fetchObject(r *http.Request, bucket, key string) (*http.Respon
 		}
 	}
 	return i.c.Transport.RoundTrip(req)
+}
+
+// checkCapacity は、fn を 1 台起こしても、環境の関数のメモリの合計が枠に収まるかを確かめる。
+// 関数は namespace ごとに分かれていて ResourceQuota では合計を縛れないので、起こすときにここで縛る
+func (i *Invoker) checkCapacity(ctx context.Context, fn gateway.FunctionState) error {
+	if i.c.MemoryCap <= 0 {
+		return nil
+	}
+	running, err := i.c.Scaler.Running(ctx)
+	if err != nil {
+		return err
+	}
+	total := fn.MemoryBytes
+	for _, r := range running {
+		if r.Name != fn.Name {
+			total += r.MemoryBytes * int64(r.Replicas)
+		}
+	}
+	if total > i.c.MemoryCap {
+		return ErrCapacity
+	}
+	return nil
 }

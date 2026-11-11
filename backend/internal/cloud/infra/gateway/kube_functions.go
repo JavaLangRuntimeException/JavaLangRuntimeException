@@ -18,6 +18,15 @@ type functionDeployment struct {
 	} `json:"metadata"`
 	Spec struct {
 		Replicas *int32 `json:"replicas"`
+		Template struct {
+			Spec struct {
+				Containers []struct {
+					Resources struct {
+						Limits quantities `json:"limits"`
+					} `json:"resources"`
+				} `json:"containers"`
+			} `json:"spec"`
+		} `json:"template"`
 	} `json:"spec"`
 	Status struct {
 		ReadyReplicas int32 `json:"readyReplicas"`
@@ -32,11 +41,17 @@ func (d functionDeployment) state() gateway.FunctionState {
 	if t, err := time.Parse(time.RFC3339, d.Metadata.Annotations[service.AnnotationLastRequest]); err == nil {
 		s.LastRequest = t
 	}
+	for _, c := range d.Spec.Template.Spec.Containers {
+		if m, err := parseQuantity(c.Resources.Limits["memory"], 1); err == nil {
+			s.MemoryBytes += m
+		}
+	}
 	return s
 }
 
+// functionPath は関数の Deployment（関数ごとの namespace の中の、関数と同じ名前のもの）
 func (k *Kube) functionPath(name string) string {
-	return "/apis/apps/v1/namespaces/" + url.PathEscape(k.appsNamespace) + "/deployments/" + url.PathEscape(name)
+	return "/apis/apps/v1/namespaces/" + url.PathEscape(k.functionNamespace(name)) + "/deployments/" + url.PathEscape(name)
 }
 
 func (k *Kube) Function(ctx context.Context, name string) (gateway.FunctionState, error) {
@@ -51,14 +66,20 @@ func (k *Kube) Function(ctx context.Context, name string) (gateway.FunctionState
 }
 
 func (k *Kube) Running(ctx context.Context) ([]gateway.FunctionState, error) {
-	var list struct {
-		Items []functionDeployment `json:"items"`
-	}
-	if err := k.get(ctx, "/apis/apps/v1/namespaces/"+url.PathEscape(k.appsNamespace)+"/deployments", &list); err != nil {
+	fns, err := k.functionNamespaces(ctx)
+	if err != nil {
 		return nil, err
 	}
 	out := []gateway.FunctionState{}
-	for _, d := range list.Items {
+	for _, f := range fns {
+		var d functionDeployment
+		if err := k.get(ctx, k.functionPath(f.function), &d); err != nil {
+			if isNotFound(err) {
+				// namespace はあるが、Argo CD がまだ Deployment を入れていない
+				continue
+			}
+			return nil, err
+		}
 		if s := d.state(); s.Replicas > 0 {
 			out = append(out, s)
 		}
