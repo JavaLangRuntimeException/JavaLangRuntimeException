@@ -15,6 +15,7 @@ import (
 //	docker run -d --rm -p 55432:5432 -e POSTGRES_PASSWORD=admin postgres:17-alpine
 //	docker run -d --rm -p 56379:6379 redis:7-alpine redis-server --requirepass admin
 //	TEST_POSTGRES_DSN=postgres://postgres:admin@localhost:55432/postgres?sslmode=disable TEST_REDIS_ADDR=localhost:56379 go test ./internal/cloud/infra/gateway/ -run Engine
+//
 // テスト用の使い捨ての値（パスワードの形 = 16 進 32 文字であればよい）
 var testPassword = strings.Repeat("0123456789abcdef", 2)
 
