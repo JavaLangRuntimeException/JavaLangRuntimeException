@@ -42,7 +42,7 @@ export function FunctionsPage() {
   return (
     <>
       <PageHeader
-        title="関数"
+        title="Functions"
         description={
           opt
             ? `コンテナイメージを、リクエストが来たときだけ動かします。${formatIdle(opt.idleTimeoutSeconds)}来なければ 0 台に戻ります。外からは API Gateway を通して呼びます。`

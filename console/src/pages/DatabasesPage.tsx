@@ -25,7 +25,7 @@ export function DatabasesPage() {
   return (
     <>
       <PageHeader
-        title="データベース"
+        title="Databases"
         description="共有の PostgreSQL / Redis から、データベースを切り出します。サイズは選ばず、使った分だけ共有のメモリとディスクを使います。"
         actions={
           enabled &&

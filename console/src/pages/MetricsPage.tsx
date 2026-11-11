@@ -45,7 +45,7 @@ export function MetricsPage() {
 
   const header = (
     <PageHeader
-      title="メトリクス"
+      title="Metrics"
       description="リクエストと資源の使い方です。時刻は日本時間。"
       actions={enabled ? selector : undefined}
     />

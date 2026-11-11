@@ -20,7 +20,7 @@ function Badge({ kind }: { kind: Article["kind"] }) {
 function GuideIndex() {
   return (
     <>
-      <PageHeader title="ガイド" description="taramanji cloud のしくみと使い方です。はじめての方は「しくみ」から順に読んでください。" />
+      <PageHeader title="Guide" description="taramanji cloud のしくみと使い方です。はじめての方は「しくみ」から順に読んでください。" />
       <ol className="grid gap-4 md:grid-cols-2">
         {articles.map((a, i) => (
           <li key={a.slug}>
@@ -51,7 +51,7 @@ function ArticleView({ article }: { article: Article }) {
     <>
       <nav aria-label="ガイド" className="mb-2 text-[13px]">
         <Link to="/guide" className="text-accent hover:underline">
-          ガイドの一覧
+          Guide の一覧
         </Link>
       </nav>
       <PageHeader

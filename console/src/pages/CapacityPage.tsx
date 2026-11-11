@@ -17,7 +17,7 @@ import {
 import { formatBytes, formatDateTime } from "@/lib/format";
 
 const header = (
-  <PageHeader title="容量" description="この環境にあとどのくらいアプリを置けるかと、Mac mini 全体の空きです。" />
+  <PageHeader title="Capacity" description="この環境にあとどのくらいアプリを置けるかと、Mac mini 全体の空きです。" />
 );
 
 export function CapacityPage() {
