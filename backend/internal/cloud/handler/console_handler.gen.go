@@ -110,67 +110,106 @@ func (h *ConsoleHandler) GetHostingOptions(ctx context.Context, req *connect.Req
 			out = append(out, consoleAlertPresetToPb(v))
 		}
 		return out
-	}(out.AlertPresets), NotifyChannels: out.NotifyChannels, MinCpuMillis: out.MinCpuMillis, MaxCpuMillis: out.MaxCpuMillis, MinMemory: out.MinMemory, MaxMemory: out.MaxMemory, MaxReplicas: out.MaxReplicas, StoreEnabled: out.StoreEnabled, AlertsEnabled: out.AlertsEnabled, Repository: out.Repository, Directory: out.Directory}), nil
+	}(out.AlertPresets), NotifyChannels: out.NotifyChannels, MinCpuMillis: out.MinCpuMillis, MaxCpuMillis: out.MaxCpuMillis, MinMemory: out.MinMemory, MaxMemory: out.MaxMemory, StoreEnabled: out.StoreEnabled, AlertsEnabled: out.AlertsEnabled, Repository: out.Repository, Directory: out.Directory, IdleTimeoutSeconds: out.IdleTimeoutSeconds, HostSuffix: out.HostSuffix}), nil
 }
 
-func (h *ConsoleHandler) ListApps(ctx context.Context, req *connect.Request[cloudv1.ListAppsRequest]) (*connect.Response[cloudv1.ListAppsResponse], error) {
-	out, err := h.usecase.ListApps(ctx, usecase.ListAppsInput{})
+func (h *ConsoleHandler) ListFunctions(ctx context.Context, req *connect.Request[cloudv1.ListFunctionsRequest]) (*connect.Response[cloudv1.ListFunctionsResponse], error) {
+	out, err := h.usecase.ListFunctions(ctx, usecase.ListFunctionsInput{})
 	if err != nil {
 		return nil, errs.ToConnect(ctx, err)
 	}
-	return connect.NewResponse(&cloudv1.ListAppsResponse{Apps: func(l []*usecase.App) []*cloudv1.App {
+	return connect.NewResponse(&cloudv1.ListFunctionsResponse{Functions: func(l []*usecase.Function) []*cloudv1.Function {
 		if l == nil {
 			return nil
 		}
-		out := make([]*cloudv1.App, 0, len(l))
+		out := make([]*cloudv1.Function, 0, len(l))
 		for _, v := range l {
-			out = append(out, consoleAppToPb(v))
+			out = append(out, consoleFunctionToPb(v))
 		}
 		return out
-	}(out.Apps)}), nil
+	}(out.Functions)}), nil
 }
 
-func (h *ConsoleHandler) GetApp(ctx context.Context, req *connect.Request[cloudv1.GetAppRequest]) (*connect.Response[cloudv1.GetAppResponse], error) {
-	out, err := h.usecase.GetApp(ctx, usecase.GetAppInput{
-		Name: req.Msg.GetName(),
+func (h *ConsoleHandler) PreviewFunction(ctx context.Context, req *connect.Request[cloudv1.PreviewFunctionRequest]) (*connect.Response[cloudv1.PreviewFunctionResponse], error) {
+	out, err := h.usecase.PreviewFunction(ctx, usecase.PreviewFunctionInput{
+		Spec: consolePbToFunctionSpec(req.Msg.GetSpec()),
 	})
 	if err != nil {
 		return nil, errs.ToConnect(ctx, err)
 	}
-	return connect.NewResponse(&cloudv1.GetAppResponse{App: consoleAppToPb(out.App)}), nil
+	return connect.NewResponse(&cloudv1.PreviewFunctionResponse{Yaml: out.Yaml}), nil
 }
 
-func (h *ConsoleHandler) PreviewApp(ctx context.Context, req *connect.Request[cloudv1.PreviewAppRequest]) (*connect.Response[cloudv1.PreviewAppResponse], error) {
-	out, err := h.usecase.PreviewApp(ctx, usecase.PreviewAppInput{
-		Spec: consolePbToAppSpec(req.Msg.GetSpec()),
-	})
-	if err != nil {
-		return nil, errs.ToConnect(ctx, err)
-	}
-	return connect.NewResponse(&cloudv1.PreviewAppResponse{Yaml: out.Yaml}), nil
-}
-
-func (h *ConsoleHandler) ApplyApp(ctx context.Context, req *connect.Request[cloudv1.ApplyAppRequest]) (*connect.Response[cloudv1.ApplyAppResponse], error) {
-	out, err := h.usecase.ApplyApp(ctx, usecase.ApplyAppInput{
-		Spec:     consolePbToAppSpec(req.Msg.GetSpec()),
+func (h *ConsoleHandler) ApplyFunction(ctx context.Context, req *connect.Request[cloudv1.ApplyFunctionRequest]) (*connect.Response[cloudv1.ApplyFunctionResponse], error) {
+	out, err := h.usecase.ApplyFunction(ctx, usecase.ApplyFunctionInput{
+		Spec:     consolePbToFunctionSpec(req.Msg.GetSpec()),
 		Yaml:     req.Msg.GetYaml(),
 		Revision: req.Msg.GetRevision(),
 	})
 	if err != nil {
 		return nil, errs.ToConnect(ctx, err)
 	}
-	return connect.NewResponse(&cloudv1.ApplyAppResponse{App: consoleAppToPb(out.App), AlertsProblem: out.AlertsProblem}), nil
+	return connect.NewResponse(&cloudv1.ApplyFunctionResponse{Function: consoleFunctionToPb(out.Function), AlertsProblem: out.AlertsProblem}), nil
 }
 
-func (h *ConsoleHandler) DeleteApp(ctx context.Context, req *connect.Request[cloudv1.DeleteAppRequest]) (*connect.Response[cloudv1.DeleteAppResponse], error) {
-	out, err := h.usecase.DeleteApp(ctx, usecase.DeleteAppInput{
+func (h *ConsoleHandler) DeleteFunction(ctx context.Context, req *connect.Request[cloudv1.DeleteFunctionRequest]) (*connect.Response[cloudv1.DeleteFunctionResponse], error) {
+	out, err := h.usecase.DeleteFunction(ctx, usecase.DeleteFunctionInput{
 		Name:     req.Msg.GetName(),
 		Revision: req.Msg.GetRevision(),
 	})
 	if err != nil {
 		return nil, errs.ToConnect(ctx, err)
 	}
-	return connect.NewResponse(&cloudv1.DeleteAppResponse{AlertsProblem: out.AlertsProblem}), nil
+	return connect.NewResponse(&cloudv1.DeleteFunctionResponse{AlertsProblem: out.AlertsProblem}), nil
+}
+
+func (h *ConsoleHandler) ListApis(ctx context.Context, req *connect.Request[cloudv1.ListApisRequest]) (*connect.Response[cloudv1.ListApisResponse], error) {
+	out, err := h.usecase.ListApis(ctx, usecase.ListApisInput{})
+	if err != nil {
+		return nil, errs.ToConnect(ctx, err)
+	}
+	return connect.NewResponse(&cloudv1.ListApisResponse{Apis: func(l []*usecase.Api) []*cloudv1.Api {
+		if l == nil {
+			return nil
+		}
+		out := make([]*cloudv1.Api, 0, len(l))
+		for _, v := range l {
+			out = append(out, consoleApiToPb(v))
+		}
+		return out
+	}(out.Apis)}), nil
+}
+
+func (h *ConsoleHandler) PreviewApi(ctx context.Context, req *connect.Request[cloudv1.PreviewApiRequest]) (*connect.Response[cloudv1.PreviewApiResponse], error) {
+	out, err := h.usecase.PreviewApi(ctx, usecase.PreviewApiInput{
+		Spec: consolePbToApiSpec(req.Msg.GetSpec()),
+	})
+	if err != nil {
+		return nil, errs.ToConnect(ctx, err)
+	}
+	return connect.NewResponse(&cloudv1.PreviewApiResponse{Yaml: out.Yaml}), nil
+}
+
+func (h *ConsoleHandler) ApplyApi(ctx context.Context, req *connect.Request[cloudv1.ApplyApiRequest]) (*connect.Response[cloudv1.ApplyApiResponse], error) {
+	out, err := h.usecase.ApplyApi(ctx, usecase.ApplyApiInput{
+		Spec:     consolePbToApiSpec(req.Msg.GetSpec()),
+		Yaml:     req.Msg.GetYaml(),
+		Revision: req.Msg.GetRevision(),
+	})
+	if err != nil {
+		return nil, errs.ToConnect(ctx, err)
+	}
+	return connect.NewResponse(&cloudv1.ApplyApiResponse{Api: consoleApiToPb(out.API)}), nil
+}
+
+func (h *ConsoleHandler) DeleteApi(ctx context.Context, req *connect.Request[cloudv1.DeleteApiRequest]) (*connect.Response[cloudv1.DeleteApiResponse], error) {
+	if err := h.usecase.DeleteApi(ctx, usecase.DeleteApiInput{
+		Name:     req.Msg.GetName(),
+		Revision: req.Msg.GetRevision(),
+	}); err != nil {
+		return nil, errs.ToConnect(ctx, err)
+	}
+	return connect.NewResponse(&cloudv1.DeleteApiResponse{}), nil
 }
 
 func (h *ConsoleHandler) SyncAlerts(ctx context.Context, req *connect.Request[cloudv1.SyncAlertsRequest]) (*connect.Response[cloudv1.SyncAlertsResponse], error) {
@@ -419,15 +458,14 @@ func consoleEnvVarToPb(u *usecase.EnvVar) *cloudv1.EnvVar {
 	}
 }
 
-func consolePbToAppSpec(p *cloudv1.AppSpec) *usecase.AppSpec {
+func consolePbToFunctionSpec(p *cloudv1.FunctionSpec) *usecase.FunctionSpec {
 	if p == nil {
 		return nil
 	}
-	return &usecase.AppSpec{
+	return &usecase.FunctionSpec{
 		Name:         p.GetName(),
 		Image:        p.GetImage(),
 		Port:         p.GetPort(),
-		Replicas:     p.GetReplicas(),
 		InstanceType: p.GetInstanceType(),
 		CpuMillis:    p.GetCpuMillis(),
 		Memory:       p.GetMemory(),
@@ -446,15 +484,14 @@ func consolePbToAppSpec(p *cloudv1.AppSpec) *usecase.AppSpec {
 	}
 }
 
-func consoleAppSpecToPb(u *usecase.AppSpec) *cloudv1.AppSpec {
+func consoleFunctionSpecToPb(u *usecase.FunctionSpec) *cloudv1.FunctionSpec {
 	if u == nil {
 		return nil
 	}
-	return &cloudv1.AppSpec{
+	return &cloudv1.FunctionSpec{
 		Name:         u.Name,
 		Image:        u.Image,
 		Port:         u.Port,
-		Replicas:     u.Replicas,
 		InstanceType: u.InstanceType,
 		CpuMillis:    u.CpuMillis,
 		Memory:       u.Memory,
@@ -473,40 +510,138 @@ func consoleAppSpecToPb(u *usecase.AppSpec) *cloudv1.AppSpec {
 	}
 }
 
-func consolePbToApp(p *cloudv1.App) *usecase.App {
+func consolePbToSource(p *cloudv1.Source) *usecase.Source {
 	if p == nil {
 		return nil
 	}
-	return &usecase.App{
-		Spec:            consolePbToAppSpec(p.GetSpec()),
-		Yaml:            p.GetYaml(),
-		Revision:        p.GetRevision(),
-		FormEditable:    p.GetFormEditable(),
-		CustomResources: p.GetCustomResources(),
-		Host:            p.GetHost(),
-		SourceURL:       p.GetSourceUrl(),
-		Deployed:        p.GetDeployed(),
-		Ready:           p.GetReady(),
-		Desired:         p.GetDesired(),
-		Problem:         p.GetProblem(),
+	return &usecase.Source{
+		Yaml:         p.GetYaml(),
+		Revision:     p.GetRevision(),
+		FormEditable: p.GetFormEditable(),
+		URL:          p.GetUrl(),
+		Problem:      p.GetProblem(),
 	}
 }
 
-func consoleAppToPb(u *usecase.App) *cloudv1.App {
+func consoleSourceToPb(u *usecase.Source) *cloudv1.Source {
 	if u == nil {
 		return nil
 	}
-	return &cloudv1.App{
-		Spec:            consoleAppSpecToPb(u.Spec),
-		Yaml:            u.Yaml,
-		Revision:        u.Revision,
-		FormEditable:    u.FormEditable,
+	return &cloudv1.Source{
+		Yaml:         u.Yaml,
+		Revision:     u.Revision,
+		FormEditable: u.FormEditable,
+		Url:          u.URL,
+		Problem:      u.Problem,
+	}
+}
+
+func consolePbToFunction(p *cloudv1.Function) *usecase.Function {
+	if p == nil {
+		return nil
+	}
+	return &usecase.Function{
+		Spec:            consolePbToFunctionSpec(p.GetSpec()),
+		Source:          consolePbToSource(p.GetSource()),
+		CustomResources: p.GetCustomResources(),
+		Deployed:        p.GetDeployed(),
+		Ready:           p.GetReady(),
+		Desired:         p.GetDesired(),
+		Apis:            p.GetApis(),
+	}
+}
+
+func consoleFunctionToPb(u *usecase.Function) *cloudv1.Function {
+	if u == nil {
+		return nil
+	}
+	return &cloudv1.Function{
+		Spec:            consoleFunctionSpecToPb(u.Spec),
+		Source:          consoleSourceToPb(u.Source),
 		CustomResources: u.CustomResources,
-		Host:            u.Host,
-		SourceUrl:       u.SourceURL,
 		Deployed:        u.Deployed,
 		Ready:           u.Ready,
 		Desired:         u.Desired,
-		Problem:         u.Problem,
+		Apis:            u.Apis,
+	}
+}
+
+func consolePbToApiRoute(p *cloudv1.ApiRoute) *usecase.ApiRoute {
+	if p == nil {
+		return nil
+	}
+	return &usecase.ApiRoute{
+		Path:     p.GetPath(),
+		Function: p.GetFunction(),
+	}
+}
+
+func consoleApiRouteToPb(u *usecase.ApiRoute) *cloudv1.ApiRoute {
+	if u == nil {
+		return nil
+	}
+	return &cloudv1.ApiRoute{
+		Path:     u.Path,
+		Function: u.Function,
+	}
+}
+
+func consolePbToApiSpec(p *cloudv1.ApiSpec) *usecase.ApiSpec {
+	if p == nil {
+		return nil
+	}
+	return &usecase.ApiSpec{
+		Name: p.GetName(),
+		Routes: func(l []*cloudv1.ApiRoute) []*usecase.ApiRoute {
+			if l == nil {
+				return nil
+			}
+			out := make([]*usecase.ApiRoute, 0, len(l))
+			for _, v := range l {
+				out = append(out, consolePbToApiRoute(v))
+			}
+			return out
+		}(p.GetRoutes()),
+	}
+}
+
+func consoleApiSpecToPb(u *usecase.ApiSpec) *cloudv1.ApiSpec {
+	if u == nil {
+		return nil
+	}
+	return &cloudv1.ApiSpec{
+		Name: u.Name,
+		Routes: func(l []*usecase.ApiRoute) []*cloudv1.ApiRoute {
+			if l == nil {
+				return nil
+			}
+			out := make([]*cloudv1.ApiRoute, 0, len(l))
+			for _, v := range l {
+				out = append(out, consoleApiRouteToPb(v))
+			}
+			return out
+		}(u.Routes),
+	}
+}
+
+func consolePbToApi(p *cloudv1.Api) *usecase.Api {
+	if p == nil {
+		return nil
+	}
+	return &usecase.Api{
+		Spec:   consolePbToApiSpec(p.GetSpec()),
+		Source: consolePbToSource(p.GetSource()),
+		Host:   p.GetHost(),
+	}
+}
+
+func consoleApiToPb(u *usecase.Api) *cloudv1.Api {
+	if u == nil {
+		return nil
+	}
+	return &cloudv1.Api{
+		Spec:   consoleApiSpecToPb(u.Spec),
+		Source: consoleSourceToPb(u.Source),
+		Host:   u.Host,
 	}
 }

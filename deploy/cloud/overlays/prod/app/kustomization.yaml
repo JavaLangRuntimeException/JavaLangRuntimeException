@@ -38,6 +38,11 @@ replacements:
       - select: { kind: Deployment, name: cloud-api }
         fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
         options: { create: true }
+  - source: { kind: Deployment, name: cloud-gw, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
+    targets:
+      - select: { kind: Deployment, name: cloud-gw }
+        fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
+        options: { create: true }
   - source: { kind: Deployment, name: console, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
     targets:
       - select: { kind: Deployment, name: console }

@@ -16,14 +16,21 @@ import (
 
 // アプリの Deployment に付けるラベル・注釈。YAML を手で書くときも同じものを付ければ、コンソールが同じように読む
 const (
-	LabelApp          = "cloud.taramanji.com/app"
+	LabelApp = "cloud.taramanji.com/app"
+	// LabelKind はリソースの種類（function / api）
+	LabelKind         = "cloud.taramanji.com/kind"
+	KindFunction      = "function"
+	KindAPI           = "api"
 	LabelInstanceType = "cloud.taramanji.com/instance-type"
 	// 用意した監視（AlertPresets の ID）と通知先（NotifyChannels）。どちらもカンマ区切り
 	AnnotationAlerts = "cloud.taramanji.com/alerts"
 	AnnotationNotify = "cloud.taramanji.com/notify"
+	// API Gateway が書く、最後にリクエストを受けた時刻（RFC 3339）。しばらく来なければ 0 台に戻す目安にする
+	AnnotationLastRequest = "cloud.taramanji.com/last-request"
+	// 関数を呼ぶとき、Envoy（HTTPRoute の RequestHeaderModifier）が API Gateway に渡す関数名
+	HeaderFunction = "X-Cloud-Function"
 	// アプリ用 namespace は、この優先度が付いていない Pod を作れない（ResourceQuota require-cloud-priority）
 	PriorityClass = "cloud-workload"
-	MaxReplicas   = int32(3)
 	// 1 つのアプリの YAML の上限（GitHub の Contents API は 1 MB までだが、手で読める大きさに抑える）
 	MaxYAMLBytes = 64 << 10
 )
@@ -37,7 +44,7 @@ const (
 var NotifyChannels = []string{NotifyMail, NotifyDiscord}
 
 var (
-	// 名前は URL（<名前>-hosting.taramanji.com）とファイル名になる。DNS のラベルで、長さは接尾辞の分を空けておく
+	// 名前は URL（<名前>-cloud.taramanji.com）とファイル名になる。DNS のラベルで、長さは接尾辞の分を空けておく
 	appNameRe = regexp.MustCompile(`^[a-z]([a-z0-9-]{0,38}[a-z0-9])?$`)
 	envNameRe = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
 	// イメージは「レジストリ/名前:タグ」か「…@sha256:…」。空白・制御文字・引用符は入れない
@@ -50,13 +57,13 @@ type EnvVar struct {
 	Value string
 }
 
-// AppSpec はコンソールのフォームで決められる範囲のアプリ（コンテナ）の定義。
-// これを Kubernetes の YAML（Deployment・Service・HTTPRoute）にして、アプリ用のリポジトリに置く
-type AppSpec struct {
-	Name     string
-	Image    string
-	Port     int32
-	Replicas int32
+// FunctionSpec はコンソールのフォームで決められる範囲の関数の定義。
+// 関数はコンテナイメージを、リクエストが来たときだけ動かす（台数は API Gateway が 0 と 1 を行き来させる）。
+// これを Kubernetes の YAML（Deployment・Service）にして、アプリ用のリポジトリに置く。外からは API（HTTPRoute）を通してだけ届く
+type FunctionSpec struct {
+	Name  string
+	Image string
+	Port  int32
 	// InstanceType は t1.small など。CPUMillis・MemoryBytes が 0 なら型の値を使う
 	InstanceType string
 	CPUMillis    int64
@@ -78,11 +85,11 @@ func fieldErr(field, format string, a ...any) error {
 	return &FieldError{Field: field, Message: fmt.Sprintf(format, a...)}
 }
 
-// ValidAppName は URL とファイル名に使える名前か
-func ValidAppName(name string) bool { return appNameRe.MatchString(name) }
+// ValidName は URL とファイル名に使える名前か
+func ValidName(name string) bool { return appNameRe.MatchString(name) }
 
 // Normalize は型の値で CPU・メモリを埋め、監視と通知先を決まった順に並べる
-func (s AppSpec) Normalize() AppSpec {
+func (s FunctionSpec) Normalize() FunctionSpec {
 	if t, ok := InstanceTypeOf(s.InstanceType); ok {
 		if s.CPUMillis == 0 {
 			s.CPUMillis = t.CPUMillis
@@ -113,8 +120,8 @@ func ordered(values, known []string) []string {
 }
 
 // Validate は Normalize 済みの定義を確かめる
-func (s AppSpec) Validate() error {
-	if !ValidAppName(s.Name) {
+func (s FunctionSpec) Validate() error {
+	if !ValidName(s.Name) {
 		return fieldErr("name", "名前は英小文字で始め、英小文字・数字・ハイフンで 40 文字までにしてください")
 	}
 	if !imageRe.MatchString(s.Image) {
@@ -122,9 +129,6 @@ func (s AppSpec) Validate() error {
 	}
 	if s.Port < 1 || s.Port > 65535 {
 		return fieldErr("port", "ポートは 1〜65535 です")
-	}
-	if s.Replicas < 0 || s.Replicas > MaxReplicas {
-		return fieldErr("replicas", "台数は 0〜%d です", MaxReplicas)
 	}
 	if _, ok := InstanceTypeOf(s.InstanceType); !ok {
 		return fieldErr("instance_type", "インスタンスタイプ %q はありません", s.InstanceType)
@@ -156,7 +160,7 @@ func (s AppSpec) Validate() error {
 }
 
 // Custom は型の値から CPU・メモリを変えているか
-func (s AppSpec) Custom() bool {
+func (s FunctionSpec) Custom() bool {
 	t, ok := InstanceTypeOf(s.InstanceType)
 	return ok && (t.CPUMillis != s.CPUMillis || t.MemoryBytes != s.MemoryBytes)
 }
@@ -201,7 +205,8 @@ type k8sDeployment struct {
 	typeMeta `yaml:",inline"`
 	Metadata objectMeta `yaml:"metadata"`
 	Spec     struct {
-		Replicas *int32 `yaml:"replicas"`
+		// 台数は書かない（API Gateway が決める。書くと Argo CD が書いた値に戻してしまう）
+		Replicas *int32 `yaml:"replicas,omitempty"`
 		Selector struct {
 			MatchLabels map[string]string `yaml:"matchLabels"`
 		} `yaml:"selector"`
@@ -237,55 +242,28 @@ type k8sService struct {
 	} `yaml:"spec"`
 }
 
-type k8sHTTPRoute struct {
-	typeMeta `yaml:",inline"`
-	Metadata objectMeta `yaml:"metadata"`
-	Spec     struct {
-		ParentRefs []struct {
-			Name        string `yaml:"name"`
-			Namespace   string `yaml:"namespace"`
-			SectionName string `yaml:"sectionName"`
-		} `yaml:"parentRefs"`
-		Hostnames []string `yaml:"hostnames"`
-		Rules     []struct {
-			BackendRefs []struct {
-				Name string `yaml:"name"`
-				Port int32  `yaml:"port"`
-			} `yaml:"backendRefs"`
-		} `yaml:"rules"`
-	} `yaml:"spec"`
-}
-
-// cloud の Gateway（deploy/cloud/platform/gateway.yaml）
 const (
-	gatewayName      = "cloud"
-	gatewayNamespace = "cloud-gateway"
-	gatewayListener  = "http"
-	containerName    = "app"
-	portName         = "http"
+	containerName = "app"
+	portName      = "http"
 )
-
-// HostOf はアプリの公開ホスト名（<名前> + "-hosting.taramanji.com" など）
-func HostOf(name, hostSuffix string) string { return name + hostSuffix }
 
 func cpuQuantity(millis int64) string { return strconv.FormatInt(millis, 10) + "m" }
 func memQuantity(bytes int64) string  { return strconv.FormatInt(bytes/mib, 10) + "Mi" }
 
-// RenderYAML は定義を Kubernetes の YAML（Deployment・Service・HTTPRoute）にする。
+// RenderFunctionYAML は定義を Kubernetes の YAML（Deployment・Service）にする。
 // namespace は書かない（Argo CD がその環境のアプリ用 namespace に入れる）
-func RenderYAML(s AppSpec, hostSuffix string) (string, error) {
-	labels := map[string]string{"app.kubernetes.io/name": s.Name, LabelApp: s.Name}
+func RenderFunctionYAML(s FunctionSpec) (string, error) {
+	labels := map[string]string{"app.kubernetes.io/name": s.Name, LabelApp: s.Name, LabelKind: KindFunction}
 
 	var d k8sDeployment
 	d.APIVersion, d.Kind = "apps/v1", "Deployment"
-	d.Metadata = objectMeta{Name: s.Name, Labels: map[string]string{"app.kubernetes.io/name": s.Name, LabelApp: s.Name, LabelInstanceType: s.InstanceType}}
+	d.Metadata = objectMeta{Name: s.Name, Labels: map[string]string{"app.kubernetes.io/name": s.Name, LabelApp: s.Name, LabelKind: KindFunction, LabelInstanceType: s.InstanceType}}
 	if len(s.Alerts) > 0 {
 		d.Metadata.Annotations = map[string]string{AnnotationAlerts: strings.Join(s.Alerts, ",")}
 		if len(s.Notify) > 0 {
 			d.Metadata.Annotations[AnnotationNotify] = strings.Join(s.Notify, ",")
 		}
 	}
-	d.Spec.Replicas = &s.Replicas
 	d.Spec.Selector.MatchLabels = map[string]string{LabelApp: s.Name}
 	d.Spec.Template.Metadata.Labels = labels
 	d.Spec.Template.Spec.PriorityClassName = PriorityClass
@@ -312,30 +290,14 @@ func RenderYAML(s AppSpec, hostSuffix string) (string, error) {
 		Port       int32  `yaml:"port"`
 		TargetPort string `yaml:"targetPort"`
 	}{Name: portName, Port: 80, TargetPort: portName})
+	return encodeDocs(d, svc)
+}
 
-	var r k8sHTTPRoute
-	r.APIVersion, r.Kind = "gateway.networking.k8s.io/v1", "HTTPRoute"
-	r.Metadata = objectMeta{Name: s.Name, Labels: labels}
-	r.Spec.ParentRefs = append(r.Spec.ParentRefs, struct {
-		Name        string `yaml:"name"`
-		Namespace   string `yaml:"namespace"`
-		SectionName string `yaml:"sectionName"`
-	}{Name: gatewayName, Namespace: gatewayNamespace, SectionName: gatewayListener})
-	r.Spec.Hostnames = []string{HostOf(s.Name, hostSuffix)}
-	r.Spec.Rules = append(r.Spec.Rules, struct {
-		BackendRefs []struct {
-			Name string `yaml:"name"`
-			Port int32  `yaml:"port"`
-		} `yaml:"backendRefs"`
-	}{BackendRefs: []struct {
-		Name string `yaml:"name"`
-		Port int32  `yaml:"port"`
-	}{{Name: s.Name, Port: 80}}})
-
+func encodeDocs(docs ...any) (string, error) {
 	var buf bytes.Buffer
 	enc := yaml.NewEncoder(&buf)
 	enc.SetIndent(2)
-	for _, doc := range []any{d, svc, r} {
+	for _, doc := range docs {
 		if err := enc.Encode(doc); err != nil {
 			return "", err
 		}
@@ -346,12 +308,12 @@ func RenderYAML(s AppSpec, hostSuffix string) (string, error) {
 	return buf.String(), nil
 }
 
-// アプリ用 namespace に置ける種類（Argo CD の AppProject cloud-apps の許可と同じ）
-var allowedKinds = map[string]bool{"Deployment": true, "Service": true, "HTTPRoute": true, "ConfigMap": true, "PersistentVolumeClaim": true}
+// 関数の YAML に置ける種類（HTTPRoute は API の YAML に書く）
+var functionKinds = map[string]bool{"Deployment": true, "Service": true, "ConfigMap": true, "PersistentVolumeClaim": true}
 
-// ParsedApp は YAML から読み取ったアプリ
-type ParsedApp struct {
-	Spec AppSpec
+// ParsedFunction は YAML から読み取ったアプリ
+type ParsedFunction struct {
+	Spec FunctionSpec
 	// FormEditable は、この YAML がフォームの定義だけで作り直せるか。
 	// false なら手で書き足した部分がある（フォームで保存すると消えるので、YAML のまま編集する）
 	FormEditable bool
@@ -375,10 +337,27 @@ func splitDocs(src string) ([]map[string]any, error) {
 	}
 }
 
-// ParseYAML はアプリ 1 つの YAML を確かめて、定義を読み取る。
-// 手で書いた YAML も受けるが、アプリ用 namespace の囲いを外すもの（別の namespace・許可していない種類・
-// よそのホスト名・優先度なし）は通さない
-func ParseYAML(name, src, hostSuffix string) (*ParsedApp, error) {
+// checkObjects は YAML の全オブジェクトが、置ける種類で、namespace を書かず、名前が name か「name-…」であることを確かめる
+func checkObjects(name string, docs []map[string]any, kinds map[string]bool, kindList string) error {
+	for _, doc := range docs {
+		kind, _ := doc["kind"].(string)
+		if !kinds[kind] {
+			return fieldErr("yaml", "%q は置けません（%s だけ）", kind, kindList)
+		}
+		meta, _ := doc["metadata"].(map[string]any)
+		if ns, ok := meta["namespace"]; ok && ns != "" {
+			return fieldErr("yaml", "metadata.namespace は書かないでください（この環境のアプリ用 namespace に入ります）")
+		}
+		objName, _ := meta["name"].(string)
+		// ほかのリソースのものを上書きしないよう、名前はリソース名か「リソース名-…」に限る
+		if objName != name && !strings.HasPrefix(objName, name+"-") {
+			return fieldErr("yaml", "%s の名前 %q は %q か %q で始めてください", kind, objName, name, name+"-")
+		}
+	}
+	return nil
+}
+
+func parseDocs(src string) ([]map[string]any, error) {
 	if len(src) > MaxYAMLBytes {
 		return nil, fieldErr("yaml", "YAML が大きすぎます（%d KB まで）", MaxYAMLBytes>>10)
 	}
@@ -386,65 +365,54 @@ func ParseYAML(name, src, hostSuffix string) (*ParsedApp, error) {
 	if err != nil {
 		return nil, fieldErr("yaml", "YAML として読めません: %v", err)
 	}
-	var deployments int
-	for _, doc := range docs {
-		kind, _ := doc["kind"].(string)
-		if !allowedKinds[kind] {
-			return nil, fieldErr("yaml", "%q は置けません（Deployment・Service・HTTPRoute・ConfigMap・PersistentVolumeClaim だけ）", kind)
-		}
-		meta, _ := doc["metadata"].(map[string]any)
-		if ns, ok := meta["namespace"]; ok && ns != "" {
-			return nil, fieldErr("yaml", "metadata.namespace は書かないでください（この環境のアプリ用 namespace に入ります）")
-		}
-		objName, _ := meta["name"].(string)
-		// ほかのアプリのものを上書きしないよう、名前はアプリ名か「アプリ名-…」に限る
-		if objName != name && !strings.HasPrefix(objName, name+"-") {
-			return nil, fieldErr("yaml", "%s の名前 %q は %q か %q で始めてください", kind, objName, name, name+"-")
-		}
-		if kind == "Deployment" {
-			deployments++
-		}
-	}
-	if deployments != 1 {
-		return nil, fieldErr("yaml", "Deployment は 1 つだけ書いてください（%d 個あります）", deployments)
-	}
+	return docs, nil
+}
 
-	var d k8sDeployment
-	var route *k8sHTTPRoute
+// decodeKind は YAML の中の kind のオブジェクトを out に読む。見つけた数を返す
+func decodeKind(src, kind string, out any) (int, error) {
+	n := 0
 	dec := yaml.NewDecoder(strings.NewReader(src))
 	for {
 		var node yaml.Node
 		if err := dec.Decode(&node); err != nil {
-			break
+			return n, nil
 		}
 		var tm typeMeta
-		if node.Decode(&tm) != nil {
+		if node.Decode(&tm) != nil || tm.Kind != kind {
 			continue
 		}
-		switch tm.Kind {
-		case "Deployment":
-			if err := node.Decode(&d); err != nil {
-				return nil, fieldErr("yaml", "Deployment を読めません: %v", err)
+		if n++; n == 1 {
+			if err := node.Decode(out); err != nil {
+				return n, fieldErr("yaml", "%s を読めません: %v", kind, err)
 			}
-		case "HTTPRoute":
-			var r k8sHTTPRoute
-			if err := node.Decode(&r); err != nil {
-				return nil, fieldErr("yaml", "HTTPRoute を読めません: %v", err)
-			}
-			for _, h := range r.Spec.Hostnames {
-				if h != HostOf(name, hostSuffix) {
-					return nil, fieldErr("yaml", "HTTPRoute のホスト名は %s だけにしてください", HostOf(name, hostSuffix))
-				}
-			}
-			if len(r.Spec.Hostnames) == 0 {
-				return nil, fieldErr("yaml", "HTTPRoute に hostnames（%s）を書いてください", HostOf(name, hostSuffix))
-			}
-			route = &r
 		}
 	}
-	_ = route
+}
+
+// ParseFunctionYAML は関数 1 つの YAML を確かめて、定義を読み取る。
+// 手で書いた YAML も受けるが、アプリ用 namespace の囲いを外すもの（別の namespace・許可していない種類・優先度なし）と、
+// API Gateway の邪魔になるもの（台数の指定）は通さない
+func ParseFunctionYAML(name, src string) (*ParsedFunction, error) {
+	docs, err := parseDocs(src)
+	if err != nil {
+		return nil, err
+	}
+	if err := checkObjects(name, docs, functionKinds, "Deployment・Service・ConfigMap・PersistentVolumeClaim"); err != nil {
+		return nil, err
+	}
+	var d k8sDeployment
+	n, err := decodeKind(src, "Deployment", &d)
+	if err != nil {
+		return nil, err
+	}
+	if n != 1 {
+		return nil, fieldErr("yaml", "Deployment は 1 つだけ書いてください（%d 個あります）", n)
+	}
 	if d.Metadata.Name != name {
 		return nil, fieldErr("yaml", "Deployment の名前は %q にしてください", name)
+	}
+	if d.Spec.Replicas != nil {
+		return nil, fieldErr("yaml", "spec.replicas は書かないでください（台数は API Gateway が決めます）")
 	}
 	if d.Spec.Template.Spec.PriorityClassName != PriorityClass {
 		return nil, fieldErr("yaml", "Pod に priorityClassName: %s を付けてください（ないと作れません）", PriorityClass)
@@ -454,10 +422,7 @@ func ParseYAML(name, src, hostSuffix string) (*ParsedApp, error) {
 	}
 
 	c := d.Spec.Template.Spec.Containers[0]
-	spec := AppSpec{Name: name, Image: c.Image, Replicas: 1, InstanceType: d.Metadata.Labels[LabelInstanceType]}
-	if d.Spec.Replicas != nil {
-		spec.Replicas = *d.Spec.Replicas
-	}
+	spec := FunctionSpec{Name: name, Image: c.Image, InstanceType: d.Metadata.Labels[LabelInstanceType]}
 	if len(c.Ports) > 0 {
 		spec.Port = c.Ports[0].ContainerPort
 	}
@@ -490,13 +455,13 @@ func ParseYAML(name, src, hostSuffix string) (*ParsedApp, error) {
 	// フォームの定義から作り直した YAML と中身が同じなら、フォームで編集できる
 	editable := false
 	if spec.Validate() == nil {
-		if again, err := RenderYAML(spec, hostSuffix); err == nil {
+		if again, err := RenderFunctionYAML(spec); err == nil {
 			if want, err := splitDocs(again); err == nil {
 				editable = reflect.DeepEqual(docs, want)
 			}
 		}
 	}
-	return &ParsedApp{Spec: spec, FormEditable: editable}, nil
+	return &ParsedFunction{Spec: spec, FormEditable: editable}, nil
 }
 
 func splitList(s string) []string {

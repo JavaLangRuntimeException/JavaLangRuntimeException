@@ -9,7 +9,7 @@ import (
 	"github.com/javalangruntimeexception/taramanji/backend/internal/cloud/domain/gateway"
 )
 
-// AlertPreset は用意してある監視。アプリごとに選ぶと、Datadog のモニターになる
+// AlertPreset は用意してある監視。関数ごとに選ぶと、Datadog のモニターになる
 type AlertPreset struct {
 	ID          string
 	Label       string
@@ -28,8 +28,9 @@ type AlertScope struct {
 	Cluster string
 	// Namespace はアプリ用 namespace
 	Namespace string
-	// Gateway は cloud の Gateway の Envoy に付けた gateway タグの値
-	Gateway string
+	// APMEnv・InvokerService は、関数の呼び出しを見る APM（API Gateway）の env と service
+	APMEnv         string
+	InvokerService string
 }
 
 func (s AlertScope) containers(app string) string {
@@ -53,18 +54,12 @@ var AlertPresets = []AlertPreset{
 		query: func(s AlertScope, app string) string {
 			return fmt.Sprintf("change(sum(last_15m),last_15m):sum:kubernetes_state.container.restarts{%s} > 3", s.containers(app))
 		}},
-	{ID: "unavailable", Label: "停止", Description: "動いている Pod が 10 分続けて 0",
-		message: "動いている Pod が 0 です。",
+	{ID: "errors", Label: "エラーの増加", Description: "10 分の呼び出しのうち、5xx（関数のエラー・起動の失敗）が 5% を超えた",
+		message: "呼び出しの {{value}}% が 5xx です。",
 		query: func(s AlertScope, app string) string {
-			return fmt.Sprintf("min(last_10m):sum:kubernetes_state.deployment.replicas_available{%s} < 1", s.containers(app))
-		}},
-	{ID: "http-5xx", Label: "5xx の増加", Description: "10 分のリクエストのうち 5xx が 5% を超えた",
-		message: "リクエストの 5xx が {{value}}% です。",
-		query: func(s AlertScope, app string) string {
-			// Envoy の上流クラスター名は httproute/<namespace>/<HTTPRoute 名>/rule/<n>
-			route := fmt.Sprintf("gateway:%s,envoy_cluster_name:httproute/%s/%s/*", s.Gateway, s.Namespace, app)
-			rq := "sum:envoy.cluster.upstream_rq.count"
-			return fmt.Sprintf("sum(last_10m):100 * %[1]s{%[2]s,envoy_response_code_class:5}.as_count() / %[1]s{%[2]s}.as_count() > 5", rq, route)
+			// API Gateway（cloud-gw）の APM。リソース名は関数名
+			apm := fmt.Sprintf("env:%s,service:%s,resource_name:%s", s.APMEnv, s.InvokerService, app)
+			return fmt.Sprintf("sum(last_10m):100 * sum:trace.http.server.request.errors{%[1]s}.as_count() / sum:trace.http.server.request.hits{%[1]s}.as_count() > 5", apm)
 		}},
 }
 
@@ -107,7 +102,7 @@ func ManagedMonitorTags(s AlertScope) []string {
 }
 
 // DesiredMonitors はアプリの定義から、あるべき Datadog のモニターを作る
-func DesiredMonitors(s AlertScope, apps []AppSpec) []gateway.Monitor {
+func DesiredMonitors(s AlertScope, apps []FunctionSpec) []gateway.Monitor {
 	out := []gateway.Monitor{}
 	for _, app := range apps {
 		handles := []string{}

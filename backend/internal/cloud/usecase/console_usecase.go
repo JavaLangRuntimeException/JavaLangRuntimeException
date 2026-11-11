@@ -15,10 +15,8 @@ import (
 
 type Deps struct {
 	// Environment は prod / stg / dev
-	Environment       string
-	StorageHostSuffix string
-	HostingHostSuffix string
-	Cluster           gateway.Cluster
+	Environment string
+	Cluster     gateway.Cluster
 	// Metrics は本番だけ。nil ならメトリクスは出さない（dev / stg は集めていない）
 	Metrics      gateway.Metrics
 	MetricsScope service.MetricsScope
@@ -26,8 +24,12 @@ type Deps struct {
 	Capacity gateway.Capacity
 	// MemoryReserve は taramanji.com・gws の伸びしろとして、アプリに渡さずに残すメモリ（バイト）
 	MemoryReserve int64
-	// Apps はアプリの YAML の置き場（アプリ専用の git リポジトリ）。nil ならホスティングは使えない
-	Apps gateway.AppStore
+	// Apps はリソース（関数・API）の YAML の置き場（アプリ専用の git リポジトリ）。nil なら関数と API は使えない
+	Apps gateway.ResourceStore
+	// APITarget は公開ホスト名の接尾辞と、API Gateway のいる namespace
+	APITarget service.APITarget
+	// IdleTimeout は関数を 0 台に戻すまでの時間（画面に出すだけ。実際に戻すのは API Gateway）
+	IdleTimeout time.Duration
 	// AppsRepository は画面に出すリポジトリ名（owner/name）
 	AppsRepository string
 	// Monitors は Datadog のモニター（本番だけ）。nil なら監視は YAML に残すだけ
@@ -53,7 +55,7 @@ func (u *ConsoleUsecaseImpl) GetOverview(ctx context.Context, _ GetOverviewInput
 		return nil, errs.NewInternalError(err)
 	}
 	out := &GetOverviewOutput{Environment: u.d.Environment, Email: cfaccess.EmailFrom(ctx), MetricsEnabled: u.d.Metrics != nil,
-		Components: []*Component{}, StorageHostSuffix: u.d.StorageHostSuffix, HostingHostSuffix: u.d.HostingHostSuffix}
+		Components: []*Component{}, StorageHostSuffix: u.d.APITarget.HostSuffix, HostingHostSuffix: u.d.APITarget.HostSuffix}
 	for _, w := range ws {
 		out.Components = append(out.Components, &Component{Name: w.Name, Ready: w.Ready, Desired: w.Desired, Version: service.Version(w.Image)})
 	}

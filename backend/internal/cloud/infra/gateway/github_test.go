@@ -20,7 +20,7 @@ func fakeGitHub(t *testing.T, files map[string]string) *httptest.Server {
 		if r.Header.Get("Authorization") != "Bearer tok" {
 			t.Errorf("token がない: %s", r.URL.Path)
 		}
-		name := strings.TrimPrefix(r.URL.Path, "/repos/me/apps/contents/prod")
+		name := strings.TrimPrefix(r.URL.Path, "/repos/me/apps/contents/prod/functions")
 		name = strings.TrimPrefix(name, "/")
 		var in struct{ Content, SHA, Branch string }
 		_ = json.NewDecoder(r.Body).Decode(&in)
@@ -61,42 +61,42 @@ func fakeGitHub(t *testing.T, files map[string]string) *httptest.Server {
 	}))
 }
 
-func TestGitHubAppStore(t *testing.T) {
+func TestGitHubResourceStore(t *testing.T) {
 	files := map[string]string{}
 	srv := fakeGitHub(t, files)
 	defer srv.Close()
-	store, err := NewGitHubAppStore(GitHubConfig{API: srv.URL, Repo: "me/apps", Branch: "main", Dir: "prod", Token: "tok"})
+	store, err := NewGitHubResourceStore(GitHubConfig{API: srv.URL, Repo: "me/apps", Branch: "main", Dir: "prod", Token: "tok"})
 	if err != nil {
 		t.Fatal(err)
 	}
 	ctx := context.Background()
-	if list, err := store.List(ctx); err != nil || len(list) != 0 {
+	if list, err := store.List(ctx, gateway.KindFunctions); err != nil || len(list) != 0 {
 		t.Fatalf("ディレクトリがなければ空: %v %v", list, err)
 	}
-	if _, err := store.Get(ctx, "blog"); !errors.Is(err, gateway.ErrAppNotFound) {
+	if _, err := store.Get(ctx, gateway.KindFunctions, "blog"); !errors.Is(err, gateway.ErrResourceNotFound) {
 		t.Fatalf("not found: %v", err)
 	}
-	rev, err := store.Put(ctx, "blog", "a: 1\n", "", "create")
+	rev, err := store.Put(ctx, gateway.KindFunctions, "blog", "a: 1\n", "", "create")
 	if err != nil || rev == "" || files["blog.yaml"] != "a: 1\n" {
 		t.Fatalf("put: %q %v", rev, err)
 	}
-	if _, err := store.Put(ctx, "blog", "a: 2\n", "stale", "update"); !errors.Is(err, gateway.ErrAppConflict) {
+	if _, err := store.Put(ctx, gateway.KindFunctions, "blog", "a: 2\n", "stale", "update"); !errors.Is(err, gateway.ErrResourceConflict) {
 		t.Fatalf("古い版: %v", err)
 	}
-	list, err := store.List(ctx)
+	list, err := store.List(ctx, gateway.KindFunctions)
 	if err != nil || len(list) != 1 || list[0].Name != "blog" || list[0].YAML != "a: 1\n" || list[0].Revision != rev {
 		t.Fatalf("list（.yaml 以外は飛ばす）: %+v %v", list, err)
 	}
-	if err := store.Delete(ctx, "blog", "stale", "delete"); !errors.Is(err, gateway.ErrAppConflict) {
+	if err := store.Delete(ctx, gateway.KindFunctions, "blog", "stale", "delete"); !errors.Is(err, gateway.ErrResourceConflict) {
 		t.Fatalf("古い版では消せない: %v", err)
 	}
-	if err := store.Delete(ctx, "blog", rev, "delete"); err != nil || len(files) != 0 {
+	if err := store.Delete(ctx, gateway.KindFunctions, "blog", rev, "delete"); err != nil || len(files) != 0 {
 		t.Fatalf("delete: %v", err)
 	}
-	if got := store.URL("blog"); got != "https://github.com/me/apps/blob/main/prod/blog.yaml" {
+	if got := store.URL(gateway.KindFunctions, "blog"); got != "https://github.com/me/apps/blob/main/prod/functions/blog.yaml" {
 		t.Fatal(got)
 	}
-	if _, err := NewGitHubAppStore(GitHubConfig{Repo: "../x", Branch: "main", Dir: "prod", Token: "tok"}); err == nil {
+	if _, err := NewGitHubResourceStore(GitHubConfig{Repo: "../x", Branch: "main", Dir: "prod", Token: "tok"}); err == nil {
 		t.Fatal("リポジトリ名を確かめる")
 	}
 }

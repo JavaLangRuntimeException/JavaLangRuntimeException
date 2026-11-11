@@ -31,8 +31,24 @@ patches:
                   - { name: CLOUD_ENV, value: stg }
                   - { name: APPS_NAMESPACE, value: cloud-stg-apps }
                   - { name: CONSOLE_ORIGIN, value: "https://cloud-stg.taramanji.com" }
-                  - { name: STORAGE_HOST_SUFFIX, value: "-storage-stg.taramanji.com" }
-                  - { name: HOSTING_HOST_SUFFIX, value: "-hosting-stg.taramanji.com" }
+                  - { name: HOST_SUFFIX, value: "-cloud-stg.taramanji.com" }
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata: { name: cloud-gw }
+      spec:
+        template:
+          spec:
+            containers:
+              - name: app
+                env:
+                  - { name: APP_ENV, value: staging }
+                  - { name: APPS_NAMESPACE, value: cloud-stg-apps }
+  - target: { kind: ReferenceGrant, name: apis-to-cloud-gw }
+    patch: |-
+      - op: replace
+        path: /spec/from/0/namespace
+        value: cloud-stg-apps
   - target: { kind: HTTPRoute, name: console }
     patch: |-
       - op: replace
@@ -43,6 +59,11 @@ replacements:
   - source: { kind: Deployment, name: cloud-api, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
     targets:
       - select: { kind: Deployment, name: cloud-api }
+        fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
+        options: { create: true }
+  - source: { kind: Deployment, name: cloud-gw, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
+    targets:
+      - select: { kind: Deployment, name: cloud-gw }
         fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
         options: { create: true }
   - source: { kind: Deployment, name: console, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }

@@ -16,23 +16,36 @@ type GetCapacityInput struct{}
 
 type GetHostingOptionsInput struct{}
 
-type ListAppsInput struct{}
+type ListFunctionsInput struct{}
 
-type GetAppInput struct {
-	Name string
+type PreviewFunctionInput struct {
+	Spec *FunctionSpec
 }
 
-type PreviewAppInput struct {
-	Spec *AppSpec
-}
-
-type ApplyAppInput struct {
-	Spec     *AppSpec
+type ApplyFunctionInput struct {
+	Spec     *FunctionSpec
 	Yaml     string
 	Revision string
 }
 
-type DeleteAppInput struct {
+type DeleteFunctionInput struct {
+	Name     string
+	Revision string
+}
+
+type ListApisInput struct{}
+
+type PreviewApiInput struct {
+	Spec *ApiSpec
+}
+
+type ApplyApiInput struct {
+	Spec     *ApiSpec
+	Yaml     string
+	Revision string
+}
+
+type DeleteApiInput struct {
 	Name     string
 	Revision string
 }
@@ -60,39 +73,48 @@ type GetCapacityOutput struct {
 }
 
 type GetHostingOptionsOutput struct {
-	InstanceTypes  []*InstanceType `json:"instance_types"`
-	AlertPresets   []*AlertPreset  `json:"alert_presets"`
-	NotifyChannels []string        `json:"notify_channels"`
-	MinCpuMillis   int64           `json:"min_cpu_millis"`
-	MaxCpuMillis   int64           `json:"max_cpu_millis"`
-	MinMemory      int64           `json:"min_memory"`
-	MaxMemory      int64           `json:"max_memory"`
-	MaxReplicas    int32           `json:"max_replicas"`
-	StoreEnabled   bool            `json:"store_enabled"`
-	AlertsEnabled  bool            `json:"alerts_enabled"`
-	Repository     string          `json:"repository"`
-	Directory      string          `json:"directory"`
+	InstanceTypes      []*InstanceType `json:"instance_types"`
+	AlertPresets       []*AlertPreset  `json:"alert_presets"`
+	NotifyChannels     []string        `json:"notify_channels"`
+	MinCpuMillis       int64           `json:"min_cpu_millis"`
+	MaxCpuMillis       int64           `json:"max_cpu_millis"`
+	MinMemory          int64           `json:"min_memory"`
+	MaxMemory          int64           `json:"max_memory"`
+	StoreEnabled       bool            `json:"store_enabled"`
+	AlertsEnabled      bool            `json:"alerts_enabled"`
+	Repository         string          `json:"repository"`
+	Directory          string          `json:"directory"`
+	IdleTimeoutSeconds int32           `json:"idle_timeout_seconds"`
+	HostSuffix         string          `json:"host_suffix"`
 }
 
-type ListAppsOutput struct {
-	Apps []*App `json:"apps"`
+type ListFunctionsOutput struct {
+	Functions []*Function `json:"functions"`
 }
 
-type GetAppOutput struct {
-	App *App `json:"app"`
-}
-
-type PreviewAppOutput struct {
+type PreviewFunctionOutput struct {
 	Yaml string `json:"yaml"`
 }
 
-type ApplyAppOutput struct {
-	App           *App   `json:"app"`
+type ApplyFunctionOutput struct {
+	Function      *Function `json:"function"`
+	AlertsProblem string    `json:"alerts_problem"`
+}
+
+type DeleteFunctionOutput struct {
 	AlertsProblem string `json:"alerts_problem"`
 }
 
-type DeleteAppOutput struct {
-	AlertsProblem string `json:"alerts_problem"`
+type ListApisOutput struct {
+	Apis []*Api `json:"apis"`
+}
+
+type PreviewApiOutput struct {
+	Yaml string `json:"yaml"`
+}
+
+type ApplyApiOutput struct {
+	API *Api `json:"api"`
 }
 
 type SyncAlertsOutput struct {
@@ -112,31 +134,20 @@ type Amount struct {
 	Limit int64 `json:"limit"`
 }
 
-type App struct {
-	Spec            *AppSpec `json:"spec"`
-	Yaml            string   `json:"yaml"`
-	Revision        string   `json:"revision"`
-	FormEditable    bool     `json:"form_editable"`
-	CustomResources bool     `json:"custom_resources"`
-	Host            string   `json:"host"`
-	SourceURL       string   `json:"source_url"`
-	Deployed        bool     `json:"deployed"`
-	Ready           int32    `json:"ready"`
-	Desired         int32    `json:"desired"`
-	Problem         string   `json:"problem"`
+type Api struct {
+	Spec   *ApiSpec `json:"spec"`
+	Source *Source  `json:"source"`
+	Host   string   `json:"host"`
 }
 
-type AppSpec struct {
-	Name         string    `json:"name"`
-	Image        string    `json:"image"`
-	Port         int32     `json:"port"`
-	Replicas     int32     `json:"replicas"`
-	InstanceType string    `json:"instance_type"`
-	CpuMillis    int64     `json:"cpu_millis"`
-	Memory       int64     `json:"memory"`
-	Env          []*EnvVar `json:"env"`
-	Alerts       []string  `json:"alerts"`
-	Notify       []string  `json:"notify"`
+type ApiRoute struct {
+	Path     string `json:"path"`
+	Function string `json:"function"`
+}
+
+type ApiSpec struct {
+	Name   string      `json:"name"`
+	Routes []*ApiRoute `json:"routes"`
 }
 
 type Component struct {
@@ -149,6 +160,28 @@ type Component struct {
 type EnvVar struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
+}
+
+type Function struct {
+	Spec            *FunctionSpec `json:"spec"`
+	Source          *Source       `json:"source"`
+	CustomResources bool          `json:"custom_resources"`
+	Deployed        bool          `json:"deployed"`
+	Ready           int32         `json:"ready"`
+	Desired         int32         `json:"desired"`
+	Apis            []string      `json:"apis"`
+}
+
+type FunctionSpec struct {
+	Name         string    `json:"name"`
+	Image        string    `json:"image"`
+	Port         int32     `json:"port"`
+	InstanceType string    `json:"instance_type"`
+	CpuMillis    int64     `json:"cpu_millis"`
+	Memory       int64     `json:"memory"`
+	Env          []*EnvVar `json:"env"`
+	Alerts       []string  `json:"alerts"`
+	Notify       []string  `json:"notify"`
 }
 
 type InstanceType struct {
@@ -197,6 +230,14 @@ type SizeFit struct {
 	LimitedBy string `json:"limited_by"`
 }
 
+type Source struct {
+	Yaml         string `json:"yaml"`
+	Revision     string `json:"revision"`
+	FormEditable bool   `json:"form_editable"`
+	URL          string `json:"url"`
+	Problem      string `json:"problem"`
+}
+
 // ConsoleUsecase は ConsoleService の rpc 1 本につき 1 メソッドを持つ interface。
 // 実装クラス（<Name>UsecaseImpl）はこの interface を実装する手書き層。
 // 戻り値はすべて pkg/dto の DTO 型 / Output 型でクライアント JSON シリアライズ表現を一元管理する。
@@ -205,10 +246,13 @@ type ConsoleUsecase interface {
 	GetMetrics(ctx context.Context, input GetMetricsInput) (*GetMetricsOutput, error)
 	GetCapacity(ctx context.Context, input GetCapacityInput) (*GetCapacityOutput, error)
 	GetHostingOptions(ctx context.Context, input GetHostingOptionsInput) (*GetHostingOptionsOutput, error)
-	ListApps(ctx context.Context, input ListAppsInput) (*ListAppsOutput, error)
-	GetApp(ctx context.Context, input GetAppInput) (*GetAppOutput, error)
-	PreviewApp(ctx context.Context, input PreviewAppInput) (*PreviewAppOutput, error)
-	ApplyApp(ctx context.Context, input ApplyAppInput) (*ApplyAppOutput, error)
-	DeleteApp(ctx context.Context, input DeleteAppInput) (*DeleteAppOutput, error)
+	ListFunctions(ctx context.Context, input ListFunctionsInput) (*ListFunctionsOutput, error)
+	PreviewFunction(ctx context.Context, input PreviewFunctionInput) (*PreviewFunctionOutput, error)
+	ApplyFunction(ctx context.Context, input ApplyFunctionInput) (*ApplyFunctionOutput, error)
+	DeleteFunction(ctx context.Context, input DeleteFunctionInput) (*DeleteFunctionOutput, error)
+	ListApis(ctx context.Context, input ListApisInput) (*ListApisOutput, error)
+	PreviewApi(ctx context.Context, input PreviewApiInput) (*PreviewApiOutput, error)
+	ApplyApi(ctx context.Context, input ApplyApiInput) (*ApplyApiOutput, error)
+	DeleteApi(ctx context.Context, input DeleteApiInput) error
 	SyncAlerts(ctx context.Context, input SyncAlertsInput) (*SyncAlertsOutput, error)
 }

@@ -75,8 +75,14 @@ type Capacity interface {
 	Nodes(ctx context.Context) ([]NodeStatus, error)
 }
 
-// AppFile はアプリ用のリポジトリにある、アプリ 1 つの YAML
-type AppFile struct {
+// リソースの種類（リポジトリのディレクトリ名: <環境>/<種類>/<名前>.yaml）
+const (
+	KindFunctions = "functions"
+	KindAPIs      = "apis"
+)
+
+// ResourceFile はアプリ用のリポジトリにある、リソース（関数・API）1 つの YAML
+type ResourceFile struct {
 	Name string
 	YAML string
 	// Revision はファイルの版（git の blob の SHA）。更新・削除のとき、読んだあとに誰かが変えていないかを確かめる
@@ -84,22 +90,22 @@ type AppFile struct {
 }
 
 var (
-	// ErrAppNotFound は YAML がない
-	ErrAppNotFound = errors.New("app not found")
-	// ErrAppConflict は読んだあとに誰か（別の画面・git push）が変えた
-	ErrAppConflict = errors.New("app was changed by someone else")
+	// ErrResourceNotFound は YAML がない
+	ErrResourceNotFound = errors.New("app not found")
+	// ErrResourceConflict は読んだあとに誰か（別の画面・git push）が変えた
+	ErrResourceConflict = errors.New("app was changed by someone else")
 )
 
-// AppStore はアプリの YAML の置き場（アプリ専用の git リポジトリ。Argo CD がそこからクラスターに入れる）。
+// ResourceStore はリソース（関数・API）の YAML の置き場（アプリ専用の git リポジトリ。Argo CD がそこからクラスターに入れる）。
 // コンソールはクラスターに直接は書かない
-type AppStore interface {
-	List(ctx context.Context) ([]AppFile, error)
-	Get(ctx context.Context, name string) (AppFile, error)
+type ResourceStore interface {
+	List(ctx context.Context, kind string) ([]ResourceFile, error)
+	Get(ctx context.Context, kind, name string) (ResourceFile, error)
 	// Put は revision が空なら新しく作り、あればその版からの更新。新しい版を返す
-	Put(ctx context.Context, name, yaml, revision, message string) (string, error)
-	Delete(ctx context.Context, name, revision, message string) error
+	Put(ctx context.Context, kind, name, yaml, revision, message string) (string, error)
+	Delete(ctx context.Context, kind, name, revision, message string) error
 	// URL は YAML を人が見るページ（GitHub）
-	URL(name string) string
+	URL(kind, name string) string
 }
 
 // Monitor は Datadog のモニター 1 つ（ID は Datadog が振る。作るときは 0）
@@ -118,4 +124,26 @@ type Monitors interface {
 	Create(ctx context.Context, m Monitor) error
 	Update(ctx context.Context, m Monitor) error
 	Delete(ctx context.Context, id int64) error
+}
+
+// FunctionState は関数（アプリ用 namespace の Deployment）の今の台数
+type FunctionState struct {
+	Name     string
+	Replicas int32
+	Ready    int32
+	// LastRequest は最後にリクエストを受けた時刻（どの API Gateway の Pod が受けたものでも）。まだなければゼロ値
+	LastRequest time.Time
+}
+
+// ErrFunctionNotFound は関数（Deployment）がない
+var ErrFunctionNotFound = errors.New("function not found")
+
+// FunctionScaler は API Gateway が関数を起こす・寝かせるための Kubernetes API。
+// 触れるのは台数（scale）と、最後のリクエストの時刻の注釈だけ
+type FunctionScaler interface {
+	Function(ctx context.Context, name string) (FunctionState, error)
+	// Running は 1 台以上で動いている関数
+	Running(ctx context.Context) ([]FunctionState, error)
+	Scale(ctx context.Context, name string, replicas int32) error
+	Touch(ctx context.Context, name string, at time.Time) error
 }

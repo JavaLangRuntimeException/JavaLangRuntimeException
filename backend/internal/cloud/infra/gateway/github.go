@@ -37,8 +37,8 @@ type github struct {
 	c    GitHubConfig
 }
 
-// NewGitHubAppStore は GitHub の Contents API で <Dir>/<アプリ名>.yaml を読み書きする
-func NewGitHubAppStore(c GitHubConfig) (gateway.AppStore, error) {
+// NewGitHubResourceStore は GitHub の Contents API で <Dir>/<種類>/<名前>.yaml を読み書きする
+func NewGitHubResourceStore(c GitHubConfig) (gateway.ResourceStore, error) {
 	if !repoRe.MatchString(c.Repo) {
 		return nil, fmt.Errorf("APPS_REPO must be owner/name")
 	}
@@ -53,12 +53,16 @@ func NewGitHubAppStore(c GitHubConfig) (gateway.AppStore, error) {
 
 const yamlExt = ".yaml"
 
-func (g *github) path(name string) string {
-	return "/repos/" + g.c.Repo + "/contents/" + url.PathEscape(g.c.Dir) + "/" + url.PathEscape(name+yamlExt)
+func (g *github) dir(kind string) string {
+	return url.PathEscape(g.c.Dir) + "/" + url.PathEscape(kind)
 }
 
-func (g *github) URL(name string) string {
-	return "https://github.com/" + g.c.Repo + "/blob/" + url.PathEscape(g.c.Branch) + "/" + url.PathEscape(g.c.Dir) + "/" + url.PathEscape(name+yamlExt)
+func (g *github) path(kind, name string) string {
+	return "/repos/" + g.c.Repo + "/contents/" + g.dir(kind) + "/" + url.PathEscape(name+yamlExt)
+}
+
+func (g *github) URL(kind, name string) string {
+	return "https://github.com/" + g.c.Repo + "/blob/" + url.PathEscape(g.c.Branch) + "/" + g.dir(kind) + "/" + url.PathEscape(name+yamlExt)
 }
 
 // do は status と本文を返す。本文は 2xx のとき out に入れる
@@ -107,24 +111,24 @@ type contentEntry struct {
 	Encoding string `json:"encoding"`
 }
 
-func (g *github) List(ctx context.Context) ([]gateway.AppFile, error) {
+func (g *github) List(ctx context.Context, kind string) ([]gateway.ResourceFile, error) {
 	var entries []contentEntry
-	status, err := g.do(ctx, http.MethodGet, "/repos/"+g.c.Repo+"/contents/"+url.PathEscape(g.c.Dir)+"?ref="+url.QueryEscape(g.c.Branch), nil, &entries)
+	status, err := g.do(ctx, http.MethodGet, "/repos/"+g.c.Repo+"/contents/"+g.dir(kind)+"?ref="+url.QueryEscape(g.c.Branch), nil, &entries)
 	if status == http.StatusNotFound {
-		// まだ 1 つもアプリがない（ディレクトリがない）
-		return []gateway.AppFile{}, nil
+		// まだ 1 つもない（ディレクトリがない）
+		return []gateway.ResourceFile{}, nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	out := []gateway.AppFile{}
+	out := []gateway.ResourceFile{}
 	for _, e := range entries {
 		name, ok := strings.CutSuffix(e.Name, yamlExt)
 		if e.Type != "file" || !ok {
 			continue
 		}
-		// 一覧には中身が入らないので、1 つずつ読む（アプリは多くても Pod の枠の 30 個まで）
-		f, err := g.Get(ctx, name)
+		// 一覧には中身が入らないので、1 つずつ読む（多くても Pod の枠の 30 個ほど）
+		f, err := g.Get(ctx, kind, name)
 		if err != nil {
 			return nil, err
 		}
@@ -133,26 +137,26 @@ func (g *github) List(ctx context.Context) ([]gateway.AppFile, error) {
 	return out, nil
 }
 
-func (g *github) Get(ctx context.Context, name string) (gateway.AppFile, error) {
+func (g *github) Get(ctx context.Context, kind, name string) (gateway.ResourceFile, error) {
 	var e contentEntry
-	status, err := g.do(ctx, http.MethodGet, g.path(name)+"?ref="+url.QueryEscape(g.c.Branch), nil, &e)
+	status, err := g.do(ctx, http.MethodGet, g.path(kind, name)+"?ref="+url.QueryEscape(g.c.Branch), nil, &e)
 	if status == http.StatusNotFound {
-		return gateway.AppFile{}, gateway.ErrAppNotFound
+		return gateway.ResourceFile{}, gateway.ErrResourceNotFound
 	}
 	if err != nil {
-		return gateway.AppFile{}, err
+		return gateway.ResourceFile{}, err
 	}
 	if e.Encoding != "base64" {
-		return gateway.AppFile{}, fmt.Errorf("github: unexpected encoding %q for %s", e.Encoding, name)
+		return gateway.ResourceFile{}, fmt.Errorf("github: unexpected encoding %q for %s", e.Encoding, name)
 	}
 	raw, err := base64.StdEncoding.DecodeString(strings.ReplaceAll(e.Content, "\n", ""))
 	if err != nil {
-		return gateway.AppFile{}, err
+		return gateway.ResourceFile{}, err
 	}
-	return gateway.AppFile{Name: name, YAML: string(raw), Revision: e.SHA}, nil
+	return gateway.ResourceFile{Name: name, YAML: string(raw), Revision: e.SHA}, nil
 }
 
-func (g *github) Put(ctx context.Context, name, yaml, revision, message string) (string, error) {
+func (g *github) Put(ctx context.Context, kind, name, yaml, revision, message string) (string, error) {
 	in := map[string]string{"message": message, "branch": g.c.Branch, "content": base64.StdEncoding.EncodeToString([]byte(yaml))}
 	if revision != "" {
 		in["sha"] = revision
@@ -162,10 +166,10 @@ func (g *github) Put(ctx context.Context, name, yaml, revision, message string) 
 			SHA string `json:"sha"`
 		} `json:"content"`
 	}
-	status, err := g.do(ctx, http.MethodPut, g.path(name), in, &out)
+	status, err := g.do(ctx, http.MethodPut, g.path(kind, name), in, &out)
 	// 409: 版が古い。422: sha なしで既にあるファイルを作ろうとした
 	if status == http.StatusConflict || status == http.StatusUnprocessableEntity {
-		return "", gateway.ErrAppConflict
+		return "", gateway.ErrResourceConflict
 	}
 	if err != nil {
 		return "", err
@@ -173,14 +177,14 @@ func (g *github) Put(ctx context.Context, name, yaml, revision, message string) 
 	return out.Content.SHA, nil
 }
 
-func (g *github) Delete(ctx context.Context, name, revision, message string) error {
+func (g *github) Delete(ctx context.Context, kind, name, revision, message string) error {
 	in := map[string]string{"message": message, "branch": g.c.Branch, "sha": revision}
-	status, err := g.do(ctx, http.MethodDelete, g.path(name), in, nil)
+	status, err := g.do(ctx, http.MethodDelete, g.path(kind, name), in, nil)
 	switch status {
 	case http.StatusNotFound:
-		return gateway.ErrAppNotFound
+		return gateway.ErrResourceNotFound
 	case http.StatusConflict, http.StatusUnprocessableEntity:
-		return gateway.ErrAppConflict
+		return gateway.ErrResourceConflict
 	}
 	return err
 }

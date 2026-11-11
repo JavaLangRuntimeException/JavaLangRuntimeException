@@ -39,7 +39,7 @@ func (f *fakeMetrics) Query(_ context.Context, q string, from, _ time.Time) ([]g
 var now = time.Date(2026, 10, 22, 12, 0, 0, 0, time.UTC)
 
 func newUC(m gateway.Metrics) *ConsoleUsecaseImpl {
-	d := Deps{Environment: "prod", StorageHostSuffix: "-storage.taramanji.com", HostingHostSuffix: "-hosting.taramanji.com",
+	d := Deps{Environment: "prod", APITarget: service.APITarget{HostSuffix: "-cloud.taramanji.com", InvokerNamespace: "cloud"},
 		Cluster: fakeCluster{
 			{Name: "console", Ready: 2, Desired: 2, Image: "ghcr.io/javalangruntimeexception/taramanji-console:v0.3.0"},
 			{Name: "cloud-api", Ready: 1, Desired: 2, Image: "ghcr.io/javalangruntimeexception/taramanji-cloud:sha-abc1234"},

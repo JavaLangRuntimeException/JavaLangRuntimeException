@@ -1,0 +1,118 @@
+# API Gateway（cloud-gw）: 関数を呼び出すデータプレーン。cloud-api と同じイメージを CLOUD_MODE=gateway で動かす。
+# API（アプリ用 namespace の HTTPRoute）が X-Cloud-Function を付けてここに送り、ここが関数（Deployment）を起こして渡す。
+# リクエストがしばらく来ない関数は 0 台に戻す。利用者の認証はしない（公開する API をそのまま通す）
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cloud-gw
+automountServiceAccountToken: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloud-gw
+  labels:
+    app.kubernetes.io/name: cloud-gw
+    app.kubernetes.io/part-of: taramanji-cloud
+spec:
+  replicas: 1
+  revisionHistoryLimit: 5
+  strategy:
+    rollingUpdate: { maxSurge: 1, maxUnavailable: 0 }
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cloud-gw
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cloud-gw
+        app.kubernetes.io/part-of: taramanji-cloud
+        tags.datadoghq.com/env: prod
+        tags.datadoghq.com/service: cloud-gw
+      annotations:
+        ad.datadoghq.com/app.logs: '[{"source":"go","service":"cloud-gw"}]'
+    spec:
+      serviceAccountName: cloud-gw
+      automountServiceAccountToken: true
+      enableServiceLinks: false
+      # 関数の起動を待っているリクエスト（最長 60 秒）を、止めるときに切らない
+      terminationGracePeriodSeconds: 75
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: app
+          image: taramanji/cloud
+          ports:
+            - { name: http, containerPort: 8080 }
+          env:
+            - { name: CLOUD_MODE, value: gateway }
+            - { name: APP_ENV, value: prod }
+            - { name: PORT, value: ":8080" }
+            - name: POD_NAMESPACE
+              valueFrom: { fieldRef: { fieldPath: metadata.namespace } }
+            - name: DD_AGENT_HOST
+              valueFrom: { fieldRef: { fieldPath: status.hostIP } }
+            - name: DD_ENV
+              valueFrom: { fieldRef: { fieldPath: "metadata.labels['tags.datadoghq.com/env']" } }
+            - name: DD_SERVICE
+              valueFrom: { fieldRef: { fieldPath: "metadata.labels['tags.datadoghq.com/service']" } }
+            - name: DD_VERSION
+              valueFrom: { fieldRef: { fieldPath: "metadata.labels['tags.datadoghq.com/version']" } }
+            - { name: DD_LOGS_INJECTION, value: "true" }
+            - { name: DD_TRACE_SPAN_ATTRIBUTE_SCHEMA, value: v1 }
+            - name: GOMEMLIMIT
+              valueFrom: { resourceFieldRef: { resource: limits.memory } }
+            - { name: APPS_NAMESPACE, value: cloud-apps }
+            # リクエストが来なくなってから関数を 0 台に戻すまで（cloud-api にも同じ値を渡して画面に出す）
+            - { name: FUNCTION_IDLE_TIMEOUT, value: 5m }
+          startupProbe:
+            httpGet: { path: /readyz, port: http }
+            periodSeconds: 2
+            failureThreshold: 30
+          readinessProbe:
+            httpGet: { path: /readyz, port: http }
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /healthz, port: http }
+            periodSeconds: 10
+            failureThreshold: 3
+          resources:
+            requests: { cpu: 10m, memory: 24Mi }
+            limits: { memory: 128Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloud-gw
+  labels:
+    app.kubernetes.io/name: cloud-gw
+spec:
+  selector:
+    app.kubernetes.io/name: cloud-gw
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
+---
+# アプリ用 namespace の HTTPRoute（API）が、この namespace の cloud-gw に送れるようにする。
+# 送れるのは cloud-gw だけ（cloud-api・console には向けられない）
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
+metadata:
+  name: apis-to-cloud-gw
+spec:
+  from:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      namespace: cloud-apps
+  to:
+    - group: ""
+      kind: Service
+      name: cloud-gw

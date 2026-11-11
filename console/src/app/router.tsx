@@ -1,7 +1,8 @@
-import { createBrowserRouter, Navigate } from "react-router";
+import { createBrowserRouter } from "react-router";
 import { AppShell } from "@/components/AppShell";
 import { CapacityPage } from "@/pages/CapacityPage";
-import { HostingPage } from "@/pages/HostingPage";
+import { ApisPage } from "@/pages/ApisPage";
+import { FunctionsPage } from "@/pages/FunctionsPage";
 import { MetricsPage } from "@/pages/MetricsPage";
 import { NotFoundPage } from "@/pages/NotFoundPage";
 import { OverviewPage } from "@/pages/OverviewPage";
@@ -15,8 +16,8 @@ export const router = createBrowserRouter([
       { path: "capacity", element: <CapacityPage /> },
       { path: "metrics", element: <MetricsPage /> },
       { path: "storage", element: <StoragePage /> },
-      { path: "hosting", element: <Navigate to="/hosting/containers" replace /> },
-      { path: "hosting/:kind", element: <HostingPage /> },
+      { path: "functions", element: <FunctionsPage /> },
+      { path: "apis", element: <ApisPage /> },
       { path: "*", element: <NotFoundPage /> },
     ],
   },
