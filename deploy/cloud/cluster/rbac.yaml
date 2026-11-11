@@ -20,11 +20,11 @@ roleRef:
   kind: ClusterRole
   name: cloud-api-nodes
 subjects:
-  - { kind: ServiceAccount, name: cloud-api, namespace: cloud }
-  - { kind: ServiceAccount, name: cloud-api, namespace: cloud-stg }
-  - { kind: ServiceAccount, name: cloud-api, namespace: cloud-dev }
+  - { kind: ServiceAccount, name: cloud-api, namespace: taramanji-cloud }
+  - { kind: ServiceAccount, name: cloud-api, namespace: taramanji-cloud-stg }
+  - { kind: ServiceAccount, name: cloud-api, namespace: taramanji-cloud-dev }
 ---
-# 関数ごとの namespace（cloud-fn-<名前> など）を見つけるために、namespace の一覧を読む（cloud-api・cloud-gw）。
+# 関数ごとの namespace（taramanji-cloud-fn-<名前> など）を見つけるために、namespace の一覧を読む（cloud-api・cloud-gw）。
 # 中のものに触れる権限は、コントローラーが namespace ごとに RoleBinding で渡す
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -44,12 +44,12 @@ roleRef:
   kind: ClusterRole
   name: cloud-namespace-reader
 subjects:
-  - { kind: ServiceAccount, name: cloud-api, namespace: cloud }
-  - { kind: ServiceAccount, name: cloud-api, namespace: cloud-stg }
-  - { kind: ServiceAccount, name: cloud-api, namespace: cloud-dev }
-  - { kind: ServiceAccount, name: cloud-gw, namespace: cloud }
-  - { kind: ServiceAccount, name: cloud-gw, namespace: cloud-stg }
-  - { kind: ServiceAccount, name: cloud-gw, namespace: cloud-dev }
+  - { kind: ServiceAccount, name: cloud-api, namespace: taramanji-cloud }
+  - { kind: ServiceAccount, name: cloud-api, namespace: taramanji-cloud-stg }
+  - { kind: ServiceAccount, name: cloud-api, namespace: taramanji-cloud-dev }
+  - { kind: ServiceAccount, name: cloud-gw, namespace: taramanji-cloud }
+  - { kind: ServiceAccount, name: cloud-gw, namespace: taramanji-cloud-stg }
+  - { kind: ServiceAccount, name: cloud-gw, namespace: taramanji-cloud-dev }
 ---
 # 関数の namespace の中で、API Gateway（cloud-gw）が関数を起こす・寝かせる（台数と、最後のリクエストの時刻の注釈だけ）。
 # ClusterRole だが、使うのはコントローラーが関数の namespace ごとに作る RoleBinding から（クラスター全体には渡さない）
@@ -84,7 +84,7 @@ rules:
 # コントローラー（cloud-ctl）: 関数ごとの namespace と、その囲い・接続先の Secret を作る・消す。
 # デプロイヤー（同じ Pod）: アプリ用のリポジトリの YAML（Deployment・Service・ConfigMap・PVC・HTTPRoute）を入れる・消す（Argo CD は使わない）。
 # 入れる前に、種類・namespace・名前の決まりをコードで確かめる
-# 触るのは自分が作った（ラベル managed-by=cloud-ctl の）、名前の決まり（cloud-fn-<名前> など）に合うものだけ（コードで確かめる）。
+# 触るのは自分が作った（ラベル managed-by=cloud-ctl の）、名前の決まり（taramanji-cloud-fn-<名前> など）に合うものだけ（コードで確かめる）。
 # RoleBinding で渡せるのは、上の 2 つの ClusterRole だけ（bind の resourceNames）
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
@@ -126,6 +126,6 @@ roleRef:
   kind: ClusterRole
   name: cloud-ctl
 subjects:
-  - { kind: ServiceAccount, name: cloud-ctl, namespace: cloud }
-  - { kind: ServiceAccount, name: cloud-ctl, namespace: cloud-stg }
-  - { kind: ServiceAccount, name: cloud-ctl, namespace: cloud-dev }
+  - { kind: ServiceAccount, name: cloud-ctl, namespace: taramanji-cloud }
+  - { kind: ServiceAccount, name: cloud-ctl, namespace: taramanji-cloud-stg }
+  - { kind: ServiceAccount, name: cloud-ctl, namespace: taramanji-cloud-dev }

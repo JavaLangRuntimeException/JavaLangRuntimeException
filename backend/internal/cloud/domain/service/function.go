@@ -270,14 +270,14 @@ const (
 	portName      = "http"
 )
 
-// FunctionNamespace は関数ごとの namespace（本番 cloud-fn-<名前>、stg・dev は cloud-stg-fn-<名前>・cloud-dev-fn-<名前>）。
+// FunctionNamespace は関数ごとの namespace（本番 taramanji-cloud-fn-<名前>、stg・dev は taramanji-cloud-stg-fn-<名前>・taramanji-cloud-dev-fn-<名前>）。
 // 関数どうしを namespace で分け、ほかの関数の Secret・Pod に触れられないようにする。namespace と囲い（Quota・NetworkPolicy など）は
 // コントローラーが作る（アプリ用のリポジトリからは作れない）
 func FunctionNamespace(env, name string) string {
 	if env == "prod" {
-		return "cloud-fn-" + name
+		return "taramanji-cloud-fn-" + name
 	}
-	return "cloud-" + env + "-fn-" + name
+	return "taramanji-cloud-" + env + "-fn-" + name
 }
 
 // FunctionRegistrationName は関数の登録（共有の namespace に置く ConfigMap）の名前。コントローラーはこれを見て namespace を作る

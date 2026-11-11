@@ -37,6 +37,10 @@ func (u *ConsoleUsecaseImpl) GetHostingOptions(_ context.Context, _ GetHostingOp
 
 func (u *ConsoleUsecaseImpl) store() (gateway.ResourceStore, error) {
 	if u.d.Apps == nil {
+		// アプリは本番だけ（stg・dev にはアプリ用のリポジトリを渡さない）
+		if u.d.Environment != "prod" {
+			return nil, errs.New(errs.ErrorTypeBadRequest, "アプリ（関数・API・CDN・バケット・データベース）は本番（cloud.taramanji.com）だけで作れます。stg・dev には置きません").WithCode("store_disabled")
+		}
 		return nil, errs.New(errs.ErrorTypeBadRequest, "リソースの YAML を置くリポジトリがつながっていません").WithCode("store_disabled")
 	}
 	return u.d.Apps, nil

@@ -44,7 +44,7 @@ type Config struct {
 	MasterKey []byte
 	// Env は環境（prod / stg / dev）。関数の namespace の名前に使う
 	Env string
-	// Registry は環境の共有の namespace（cloud-apps など）。関数の namespace に、どの環境のものかの印として付ける
+	// Registry は環境の共有の namespace（taramanji-cloud-apps など）。関数の namespace に、どの環境のものかの印として付ける
 	Registry string
 	// ConsoleNamespace はコンソール・API Gateway・ストレージ・データベースがいる namespace（cloud など）
 	ConsoleNamespace string

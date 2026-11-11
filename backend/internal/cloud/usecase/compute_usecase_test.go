@@ -103,11 +103,11 @@ func newComputeUC() (*ConsoleUsecaseImpl, *fakeStore, *fakeMonitors) {
 	store := &fakeStore{files: map[string]gateway.ResourceFile{}}
 	mon := &fakeMonitors{items: map[int64]gateway.Monitor{}}
 	uc := NewConsoleUsecase(Deps{Environment: "prod",
-		APITarget:   service.APITarget{HostSuffix: "-cloud.taramanji.com", InvokerNamespace: "cloud"},
+		APITarget:   service.APITarget{HostSuffix: "-cloud.taramanji.com", InvokerNamespace: "taramanji-cloud"},
 		IdleTimeout: 5 * time.Minute,
 		Capacity:    &fakeCapacity{workloads: []gateway.Workload{{Name: "blog", Ready: 0, Desired: 0}}},
 		Apps:        store, AppsRepository: "me/apps", Monitors: mon,
-		AlertScope: service.AlertScope{Environment: "prod", Cluster: "taramanji-kind", Namespace: "cloud-apps", APMEnv: "prod", InvokerService: "cloud-gw"}})
+		AlertScope: service.AlertScope{Environment: "prod", Cluster: "taramanji-kind", Namespace: "taramanji-cloud-apps", APMEnv: "prod", InvokerService: "cloud-gw"}})
 	return uc, store, mon
 }
 
@@ -168,7 +168,7 @@ func TestFunctionLifecycle(t *testing.T) {
 	}
 
 	// YAML をそのまま渡す。手で足した ConfigMap があるので、フォームでは編集できない
-	y := updated.Function.Source.Yaml + "---\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: blog-config\n  namespace: cloud-fn-blog\n"
+	y := updated.Function.Source.Yaml + "---\napiVersion: v1\nkind: ConfigMap\nmetadata:\n  name: blog-config\n  namespace: taramanji-cloud-fn-blog\n"
 	byYAML, err := uc.ApplyFunction(ctx, ApplyFunctionInput{Spec: &FunctionSpec{Name: "blog"}, Yaml: y, Revision: updated.Function.Source.Revision})
 	if err != nil || byYAML.Function.Source.FormEditable || byYAML.Function.Source.Yaml != y {
 		t.Fatalf("yaml: %+v %v", byYAML, err)

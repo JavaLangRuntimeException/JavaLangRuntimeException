@@ -65,7 +65,7 @@ spec:
             - { name: DD_TRACE_SPAN_ATTRIBUTE_SCHEMA, value: v1 }
             - name: GOMEMLIMIT
               valueFrom: { resourceFieldRef: { resource: limits.memory } }
-            - { name: APPS_NAMESPACE, value: cloud-apps }
+            - { name: APPS_NAMESPACE, value: taramanji-cloud-apps }
             - { name: CLOUD_ENV, value: prod }
             # 環境の関数のメモリの合計の枠。起こすと超えるなら起こさない（関数は namespace ごとに分かれているので、ここで縛る）
             - { name: FUNCTION_MEMORY_CAP_MIB, value: "512" }
@@ -114,7 +114,7 @@ spec:
   from:
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
-      namespace: cloud-apps
+      namespace: taramanji-cloud-apps
   to:
     - group: ""
       kind: Service

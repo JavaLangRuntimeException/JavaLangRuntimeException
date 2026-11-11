@@ -53,7 +53,7 @@ func Key(kind, name string) string { return service.DeployKey(kind, name) }
 type Config struct {
 	Source  gateway.ResourceSource
 	Applier gateway.Applier
-	// Env は環境（prod / stg / dev）、Registry は環境の共有の namespace（cloud-apps など）
+	// Env は環境（prod / stg / dev）、Registry は環境の共有の namespace（taramanji-cloud-apps など）
 	Env      string
 	Registry string
 	Target   service.APITarget

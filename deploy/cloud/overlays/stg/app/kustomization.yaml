@@ -1,10 +1,14 @@
-# taramanji cloud の stg（cloud-stg.taramanji.com、namespace: cloud-stg）。main への push（と手動実行）で CI が版を書き換え、Argo CD の cloud-stg が同期する。
-# 本番との違い: 1 台ずつ・メトリクスなし（Datadog はこの namespace を集めない）・バケットとアプリの URL に -stg が付く
+# taramanji cloud の stg（cloud-stg.taramanji.com、namespace: taramanji-cloud-stg）。taramanji の stg と同じ使い方:
+#   main への push（と手動実行）で CI が版を書き換え、Argo CD の taramanji-cloud-stg が同期する（いつも動かしておく）
+# 本番との違い: 1 台ずつ・カナリアなし・メトリクスなし（Datadog はこの namespace を集めない）・アプリ（関数など）なし
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: cloud-stg
+namespace: taramanji-cloud-stg
 resources:
   - ../../../base
+components:
+  # 1 台ずつ・カナリアなし（Rollout）・アプリなし
+  - ../../../components/nonprod
 
 # set-version.sh が書き換える（CI の deploy-stg ジョブ）
 images:
@@ -29,7 +33,7 @@ patches:
                 env:
                   - { name: APP_ENV, value: staging }
                   - { name: CLOUD_ENV, value: stg }
-                  - { name: APPS_NAMESPACE, value: cloud-stg-apps }
+                  - { name: APPS_NAMESPACE, value: taramanji-cloud-stg }
                   - { name: CONSOLE_ORIGIN, value: "https://cloud-stg.taramanji.com" }
                   - { name: HOST_SUFFIX, value: "-cloud-stg.taramanji.com" }
   - patch: |-
@@ -44,7 +48,7 @@ patches:
                 env:
                   - { name: CLOUD_ENV, value: stg }
                   - { name: APP_ENV, value: staging }
-                  - { name: APPS_NAMESPACE, value: cloud-stg-apps }
+                  - { name: APPS_NAMESPACE, value: taramanji-cloud-stg }
   - patch: |-
       apiVersion: apps/v1
       kind: StatefulSet
@@ -56,7 +60,7 @@ patches:
               - name: app
                 env:
                   - { name: APP_ENV, value: staging }
-                  - { name: APPS_NAMESPACE, value: cloud-stg-apps }
+                  - { name: APPS_NAMESPACE, value: taramanji-cloud-stg }
   - patch: |-
       apiVersion: apps/v1
       kind: Deployment
@@ -70,22 +74,17 @@ patches:
                   - { name: CLOUD_ENV, value: stg }
                   - { name: HOST_SUFFIX, value: "-cloud-stg.taramanji.com" }
                   - { name: APP_ENV, value: staging }
-                  - { name: APPS_NAMESPACE, value: cloud-stg-apps }
+                  - { name: APPS_NAMESPACE, value: taramanji-cloud-stg }
   - target: { kind: NetworkPolicy, name: to-cloud-storage }
     patch: |-
       - op: replace
         path: /spec/ingress/2/from/0/namespaceSelector/matchLabels/cloud.taramanji.com~1registry
-        value: cloud-stg-apps
+        value: taramanji-cloud-stg
   - target: { kind: NetworkPolicy, name: to-cloud-data }
     patch: |-
       - op: replace
         path: /spec/ingress/0/from/1/namespaceSelector/matchLabels/cloud.taramanji.com~1registry
-        value: cloud-stg-apps
-  - target: { kind: ReferenceGrant, name: apis-to-cloud-gw }
-    patch: |-
-      - op: replace
-        path: /spec/from/0/namespace
-        value: cloud-stg-apps
+        value: taramanji-cloud-stg
   - target: { kind: HTTPRoute, name: console }
     patch: |-
       - op: replace

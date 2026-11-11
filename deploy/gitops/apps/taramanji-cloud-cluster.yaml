@@ -1,9 +1,9 @@
 # taramanji cloud のクラスター全体のもの（PriorityClass cloud-workload・ノードを読む ClusterRole）。
-# cloud プロジェクトには Namespace 以外のクラスター全体のものを書かせないので、これだけ default プロジェクトで同期する
+# taramanji-cloud プロジェクトには Namespace 以外のクラスター全体のものを書かせないので、これだけ default プロジェクトで同期する
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: cloud-cluster
+  name: taramanji-cloud-cluster
   namespace: argocd
 spec:
   project: default

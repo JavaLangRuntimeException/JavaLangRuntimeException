@@ -5,27 +5,31 @@ taramanji.com・gws.taramanji.com と同じクラスター（kind）で動くが
 
 | 環境 | コンソール | 名前空間 | メトリクス |
 |---|---|---|---|
-| prod | https://cloud.taramanji.com | `cloud` | あり（Datadog） |
-| stg | https://cloud-stg.taramanji.com | `cloud-stg` | なし |
-| dev | https://cloud-dev.taramanji.com | `cloud-dev` | なし |
+| prod | https://cloud.taramanji.com | `taramanji-cloud` | あり（Datadog） |
+| stg | https://cloud-stg.taramanji.com | `taramanji-cloud-stg` | なし |
+| dev | https://cloud-dev.taramanji.com | `taramanji-cloud-dev` | なし |
 
-公開する URL は 1 階層のサブドメイン（Universal SSL がそのまま使える）: `<名前>-cloud.taramanji.com`（stg・dev は `-cloud-stg`・`-cloud-dev`）。
+公開する URL は 1 階層のサブドメイン（Universal SSL がそのまま使える）: `<名前>-cloud.taramanji.com`。
+
+**アプリ（関数・API・CDN・バケット・データベース）は本番だけ**。stg・dev には基盤（コンソール・cloud-api・cloud-gw・コントローラー・ストレージ・PostgreSQL・Redis）だけを置き、基盤そのものを試すのに使う（アプリ用のリポジトリを渡さないので、コンソールからアプリは作れず、デプロイヤーも動かない。`components/nonprod`）。
+
+Argo CD の使い方は taramanji の stg・dev と同じ: stg（`taramanji-cloud-stg`）は main を出していつも動かし、dev（`taramanji-cloud-dev`）は PR を出すと 1 台にして、その PR を閉じると 0 台に戻す（`dev-park`）。stg・dev は Rollout（カナリアなし、1 台ずつ入れ替え）で、Rollouts の画面に本番と同じように出る。
 
 ## taramanji.com から切り離しているところ
 
-- **入口**: 専用のトンネル（`taramanji-cloud`、名前空間 `cloud-cloudflared`）→ 専用の Gateway（`cloud-gateway/cloud`、Envoy の Pod も別）。
+- **入口**: 専用のトンネル（`taramanji-cloud`、名前空間 `taramanji-cloud-cloudflared`）→ 専用の Gateway（`taramanji-cloud-gateway/cloud`、Envoy の Pod も別）。
   cloudflared の送信先は NetworkPolicy で cloud の Envoy とクラスターの外だけに絞り、taramanji の Gateway の Envoy からは
   cloud の Pod に届かない（`from-cloud-gateway`）。逆に taramanji のサービス（`from-gateway`）も taramanji の Envoy からしか受けない
 - **ログイン**: Cloudflare Access の専用アプリ（`taramanji-cloud`）。API（cloud-api）は `Cf-Access-Jwt-Assertion` の署名・
   `iss`・`aud`（このアプリの Audience タグ）・メールアドレスを毎回確かめる（`backend/pkg/util/cfaccess`）。
   taramanji.com のセッション（`AUTH_SECRET`）や Redis は使わない
 - **Secret**: taramanji の Secret は使わず、`deploy/cloud/secrets/`（git に入らない）から SealedSecret を作る
-- **Argo CD**: 専用の AppProject（`cloud`）。同期できる名前空間は cloud の 5 つだけ、クラスター全体のリソースは Namespace だけ
+- **Argo CD**: 専用の AppProject（`taramanji-cloud`）。同期できる名前空間は taramanji-cloud の 6 つだけ、クラスター全体のリソースは Namespace だけ
 - **権限**: cloud-api の ServiceAccount は読むだけ（リソースはリポジトリにコミットするだけで、入れるのはデプロイヤー）（自分の名前空間の Deployment・StatefulSet、アプリ用名前空間の枠と Pod、ノードの容量と使用量）
 
 ## アプリの容量（taramanji.com・gws に影響させない）
 
-関数は環境ごとのアプリ用名前空間（`cloud-apps`・`cloud-stg-apps`・`cloud-dev-apps`）に置き、`workloads/` で次の 3 つを縛る。
+関数は本番のアプリ用名前空間（`taramanji-cloud-apps`）に登録し、`workloads/` で次の 3 つを縛る。
 
 | | 縛り方 |
 |---|---|
@@ -38,10 +42,8 @@ taramanji.com・gws.taramanji.com と同じクラスター（kind）で動くが
 | 環境 | メモリ | CPU（limits） | Pod | ディスク |
 |---|---|---|---|---|
 | prod | 2.5 GiB | 4 | 30 | 50 GiB |
-| stg | 512 MiB | 1 | 10 | 10 GiB |
-| dev | 512 MiB | 1 | 10 | 10 GiB |
 
-合わせて 3.5 GiB をアプリに渡し、2 GiB を taramanji.com・gws の伸びしろに残す（cloud-api の `CAPACITY_RESERVE_MIB`）。
+2.5 GiB をアプリに渡し、2 GiB を taramanji.com・gws の伸びしろに残す（cloud-api の `CAPACITY_RESERVE_MIB`）。
 VM のメモリを増やしたら `overlays/prod/workloads` の枠を広げる。
 
 コンソールの「容量」は、この枠の残りと Mac mini 全体の実際の空き（予約分を除く）の、先に尽きる方で「S / M / L / XL のアプリがあと何個置けるか」を出す。
@@ -67,7 +69,7 @@ Lambda と API Gateway にあたるもの。リソースの正は、**アプリ�
 | リソース | YAML の場所 | 中身 |
 |---|---|---|
 | 関数 | `<環境>/functions/<名前>.yaml` | 登録の ConfigMap と、関数ごとの namespace に入る Deployment・Service。コンテナイメージを、リクエストが来たときだけ動かす |
-| API | `<環境>/apis/<名前>.yaml` | HTTPRoute 1 つ。`<名前>-cloud.taramanji.com`（stg・dev は `-cloud-stg`・`-cloud-dev`）のパスごとに、渡し先の関数を決める |
+| API | `<環境>/apis/<名前>.yaml` | HTTPRoute 1 つ。`<名前>-cloud.taramanji.com`のパスごとに、渡し先の関数を決める |
 
 - コンソール（関数・API Gateway）のフォームか YAML で作る・変える・消すと、cloud-api がそのファイルをコミットする。クラスターには書かない
 - **デプロイヤー**（cloud-ctl の中で動く）が 15 秒ごとにリポジトリを見て、変わっていたら入れる（関数は関数ごとの namespace、ほかは環境の共有の namespace）。**Argo CD は使わない**。YAML を手で書いて push しても同じ
@@ -87,7 +89,7 @@ API Gateway（`cloud-gw`。cloud-api と同じイメージを `CLOUD_MODE=gatewa
 - 関数の同時実行は 1 台まで（負荷に合わせて台数を増やすことは、まだしない）
 
 リポジトリを分けているのは、コンソールのトークンが漏れても taramanji.com のマニフェスト（このリポジトリ）を書き換えられないようにするため。
-プロジェクト `cloud-apps` は、入れ先を環境の共有の namespace と関数ごとの namespace（`cloud-fn-*` など）に、種類を Deployment・Service・ConfigMap・PersistentVolumeClaim・HTTPRoute に限る。
+プロジェクト `taramanji-cloud-apps` は、入れ先を環境の共有の namespace と関数ごとの namespace（`taramanji-cloud-fn-*` など）に、種類を Deployment・Service・ConfigMap・PersistentVolumeClaim・HTTPRoute に限る。
 
 **インスタンスタイプ**（EC2 と同じ「系統 + 世代 . サイズ」。汎用 `t1`・コンピューティング最適化 `c1`・メモリ最適化 `r1`。`backend/internal/cloud/domain/service/instancetype.go`）:
 
@@ -119,7 +121,6 @@ metadata:
 本番では cloud-api がこれを Datadog のモニター（タグ `managed-by:taramanji-cloud`）にする。Datadog には必ず出て、
 `mail` は SES のメール、`discord` は Discord に飛ぶ（Datadog の Webhook `taramanji-cloud-mail`・`taramanji-cloud-discord` →
 Cloudflare Worker `taramanji-uptime`）。コンソールで保存・削除したときにそろえる。YAML を手で push したときは、コンソールの「監視を同期」を押す。
-stg・dev は Datadog で監視していないので、注釈は残るが通知は飛ばない。
 
 まだないもの: 自分で決める秘密の環境変数・非公開イメージは扱えない（データベースとバケットの接続先は「つなぐ」で入る）。
 
@@ -145,12 +146,12 @@ S3 と CloudFront にあたるもの。
     画像・CSS・JS などの拡張子だけがキャッシュされる（HTML もキャッシュするなら Cloudflare の Cache Rule が要る）。キャッシュの消去（パージ）はまだない
 - **ホスト名**: API と CDN は同じ名前（＝同じホスト名）を使えない
 - **DNS**: API・CDN を作ると、cloud-api が Cloudflare に CNAME（`<ホスト名>` → `<トンネル ID>.cfargotunnel.com`、プロキシあり）を登録し、消すと削除する。
-  扱うのは `-cloud.taramanji.com`（stg・dev は `-cloud-stg`・`-cloud-dev`）で終わるホスト名だけ。消すのは自分が作った印（コメント）のあるレコードだけ。
+  扱うのは `-cloud.taramanji.com` で終わるホスト名だけ（DNS の登録は本番だけ）。消すのは自分が作った印（コメント）のあるレコードだけ。
   トークンがなければ登録せず、コンソールに手で実行するコマンドを出す
 
 ## 関数ごとの namespace（囲い）
 
-関数は 1 つずつ別の namespace で動く（本番 `cloud-fn-<名前>`、stg・dev は `cloud-stg-fn-<名前>`・`cloud-dev-fn-<名前>`）。
+関数は 1 つずつ別の namespace で動く（`taramanji-cloud-fn-<名前>`。アプリは本番だけ）。
 
 - 関数の YAML は、**登録**の ConfigMap `function-<名前>`（環境の共有の namespace。CPU・メモリ・つなぐもの）と、関数の namespace に入る Deployment・Service
 - コントローラー（cloud-ctl）が登録を見て、namespace と囲いを作る。**アプリ用のリポジトリからは作れない**（デプロイヤーは Deployment・Service・ConfigMap・PVC・HTTPRoute しか入れない）
@@ -161,9 +162,9 @@ S3 と CloudFront にあたるもの。
   - default の ServiceAccount はトークンを持たない。cloud-gw は台数だけ、cloud-api は読むだけ（RoleBinding を namespace ごとに作る）
   - つないだデータベース・バケットの接続先の Secret は、その関数の namespace にだけ置く
 - 登録が消えたら、namespace ごと消す（自分が作った、この環境の、名前の決まりに合うものだけ）
-- 環境の関数のメモリの合計（本番 2.5 GiB、stg・dev 512 MiB）は、API Gateway が関数を起こすときに確かめる（`FUNCTION_MEMORY_CAP_MIB`）。
+- 関数のメモリの合計（本番 2.5 GiB）は、API Gateway が関数を起こすときに確かめる（`FUNCTION_MEMORY_CAP_MIB`）。
   超えるなら起こさず 503。コンソールの「容量」も同じ枠で数える
-- 環境の共有の namespace（`cloud-apps` など）には、API・CDN の HTTPRoute と、登録・バケット・データベースの定義（ConfigMap）だけを置く。Pod は 0 個
+- 環境の共有の namespace（`taramanji-cloud-apps` など）には、API・CDN の HTTPRoute と、登録・バケット・データベースの定義（ConfigMap）だけを置く。Pod は 0 個
 
 ## データベースと、関数へのつなぎ込み
 
@@ -195,7 +196,7 @@ S3 と CloudFront にあたるもの。
 ```
 deploy/cloud/
   platform/        全環境で 1 つ（prod の Application が持つ）: 名前空間・Gateway（cloud）・トンネル（cloudflared）
-  cluster/         クラスター全体のもの（PriorityClass・ノードを読む ClusterRole）。cloud-cluster アプリ（default プロジェクト）が持つ
+  cluster/         クラスター全体のもの（PriorityClass・ノードを読む ClusterRole）。taramanji-cloud-cluster アプリ（default プロジェクト）が持つ
   base/            1 環境ぶん: cloud-api・cloud-gw（Go、backend/cmd/cloud）・console（console/ の画面）・HTTPRoute・NetworkPolicy
   workloads/       1 環境ぶんのアプリ用名前空間の枠と囲い（ResourceQuota・LimitRange・NetworkPolicy）
   overlays/
@@ -226,7 +227,7 @@ deploy/cloud/
 3. **Datadog**（prod のメトリクス用。なくてもコンソールはメトリクスなしで動く）
    - API キーを `deploy/cloud/secrets/datadog-api-key` に置く
    - アプリケーションキーは、スコープを `metrics_read` と `timeseries_query` だけにして作り、`deploy/cloud/secrets/datadog-app-key` に置く
-   - `deploy/k8s/observability/datadog-values.yaml` を変えたので、Agent を入れ直す（cloud-dev・cloud-stg を監視から外し、cloud・cloud-apps のログを送る）
+   - `deploy/k8s/observability/datadog-values.yaml` を変えたので、Agent を入れ直す（taramanji-cloud-dev・taramanji-cloud-stg を監視から外し、taramanji-cloud・taramanji-cloud-apps のログを送る）
 
 4. **SealedSecret** を作ってコミットする
 
@@ -256,16 +257,16 @@ deploy/cloud/
 
 本番の cloud-api・cloud-gw・console は、taramanji のサービスと同じく Argo Rollouts のカナリアで入れ替える（`overlays/prod/app/rollouts.yaml`）。
 
-- `v*` のタグで新しい版が来ると、2 台のうち 1 台だけを新しい版にして止まる。rollouts.taramanji.com の画面で namespace を `cloud` にして Promote すると、全部入れ替わる
+- `v*` のタグで新しい版が来ると、2 台のうち 1 台だけを新しい版にして止まる。rollouts.taramanji.com の画面で namespace を `taramanji-cloud` にして Promote すると、全部入れ替わる
 - cloud-api は、その間ずっと Datadog で新しい版の 5xx 率を見て、5% を超えたら自動で元に戻す（AnalysisTemplate `cloud-canary-health`）
 - cloud-gw は関数の応答（関数自身の 5xx・起動待ち）をそのまま返すので自動判定はしない。console は APM がないので手動の判定だけ
 - 振り分けは Pod の数の比（HTTPRoute の重みは使わない）
-- cloud-ctl（1 台・Recreate）、cloud-storage・cloud-postgres・cloud-redis（StatefulSet）、関数（cloud-fn-*）はカナリアにしない
-- stg・dev はカナリアにしない（今までどおり、すぐ入れ替わる）
+- cloud-ctl（1 台・Recreate）、cloud-storage・cloud-postgres・cloud-redis（StatefulSet）、関数（taramanji-cloud-fn-*）はカナリアにしない
+- stg・dev はカナリアにしない（Rollout で 1 台ずつ入れ替えるだけ。taramanji の stg・dev と同じ。`components/nonprod`）
 
 ## CI / CD
 
 - build: `backend/` の Go の変更で `cloud`、`console/` の変更で `console` のイメージを作る（`deploy/k8s/scripts/changed-services.py`）
-- cd: PR → cloud-dev（dev は 1 つだけ。taramanji の dev01〜03 は選ばない）、main → cloud-stg、タグ → cloud（prod）。
+- cd: PR → taramanji-cloud-dev（dev は 1 つだけ。1 台にして出し、PR を閉じると 0 台に戻す）、main → taramanji-cloud-stg、タグ → taramanji-cloud（prod）。
   版を書き換えるのは `deploy/k8s/scripts/set-version.sh`（cloud・console は `deploy/cloud/overlays/` を書き換える）
 - lint: 3 環境のマニフェストを kubeconform で確かめ、console の生成コード・型・lint を見る。test: console の vitest

@@ -4,7 +4,7 @@ apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: EnvoyProxy
 metadata:
   name: cloud
-  namespace: cloud-gateway
+  namespace: taramanji-cloud-gateway
 spec:
   provider:
     type: Kubernetes
@@ -33,9 +33,9 @@ spec:
           resources:
             requests: { cpu: 20m, memory: 64Mi }
             limits: { memory: 256Mi }
-      # cloudflared（cloud-cloudflared）の転送先に書く名前
+      # cloudflared（taramanji-cloud-cloudflared）の転送先に書く名前
       envoyService:
-        name: cloud-gateway
+        name: taramanji-cloud-gateway
         type: ClusterIP
       envoyPDB:
         minAvailable: 1
@@ -69,7 +69,7 @@ apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
   name: cloud
-  namespace: cloud-gateway
+  namespace: taramanji-cloud-gateway
 spec:
   gatewayClassName: eg
   infrastructure:
@@ -92,7 +92,7 @@ apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: ClientTrafficPolicy
 metadata:
   name: cloud
-  namespace: cloud-gateway
+  namespace: taramanji-cloud-gateway
 spec:
   targetRefs:
     - group: gateway.networking.k8s.io

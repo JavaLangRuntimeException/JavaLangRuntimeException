@@ -167,7 +167,7 @@ func runGateway() {
 	inv := invoker.New(invoker.Config{
 		StorageURL: storageURL,
 		Scaler:     kube,
-		// 関数は自分の namespace（cloud-fn-<名前> など）の、関数と同じ名前の Service
+		// 関数は自分の namespace（taramanji-cloud-fn-<名前> など）の、関数と同じ名前の Service
 		Upstream: func(name string) *url.URL {
 			return &url.URL{Scheme: "http", Host: name + "." + service.FunctionNamespace(cloudEnv, name) + ".svc.cluster.local"}
 		},
