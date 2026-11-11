@@ -252,6 +252,17 @@ deploy/cloud/
 7. **リリース**: main にマージすると build が `taramanji-cloud`・`taramanji-console` を作り、cd が stg に出す。
    本番は今までどおり `v*` のタグで出る（それまで prod のイメージは `unreleased` で、Pod は起動しない）。
 
+## カナリア（本番）
+
+本番の cloud-api・cloud-gw・console は、taramanji のサービスと同じく Argo Rollouts のカナリアで入れ替える（`overlays/prod/app/rollouts.yaml`）。
+
+- `v*` のタグで新しい版が来ると、2 台のうち 1 台だけを新しい版にして止まる。rollouts.taramanji.com の画面で namespace を `cloud` にして Promote すると、全部入れ替わる
+- cloud-api は、その間ずっと Datadog で新しい版の 5xx 率を見て、5% を超えたら自動で元に戻す（AnalysisTemplate `cloud-canary-health`）
+- cloud-gw は関数の応答（関数自身の 5xx・起動待ち）をそのまま返すので自動判定はしない。console は APM がないので手動の判定だけ
+- 振り分けは Pod の数の比（HTTPRoute の重みは使わない）
+- cloud-ctl（1 台・Recreate）、cloud-storage・cloud-postgres・cloud-redis（StatefulSet）、関数（cloud-fn-*）はカナリアにしない
+- stg・dev はカナリアにしない（今までどおり、すぐ入れ替わる）
+
 ## CI / CD
 
 - build: `backend/` の Go の変更で `cloud`、`console/` の変更で `console` のイメージを作る（`deploy/k8s/scripts/changed-services.py`）

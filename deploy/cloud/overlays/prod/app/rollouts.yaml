@@ -1,0 +1,116 @@
+# 本番の cloud の基盤のカナリア（Argo Rollouts）。Deployment はそのまま（workloadRef）で、Pod の入れ替えを Rollout が行う。
+#   新しい版を 1 台（2 台のうち 1 台 = 50%）だけ出して止まり、rollouts.taramanji.com（namespace: cloud）で Promote すると全部入れ替える。
+#   cloud-api は、その間ずっと Datadog で新しい版の 5xx 率を見て、悪ければ自動で元に戻す（cloud-canary-health）。
+#   cloud-gw は関数の応答（関数自身の 5xx・起動待ち）をそのまま返すので自動判定はせず、console は APM がないので手動の判定だけにする。
+# 関数（cloud-fn-*）はカナリアにしない（いつも 0〜1 台で、利用者が自分で入れ替える）。
+# トラフィックの振り分けは Pod の数の比（cloud-gw は API・CDN の HTTPRoute から名前で呼ばれるので、重みでは分けない）。
+# version の値は kustomization.yaml の replacements が、そのサービスのイメージのタグで置き換える
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: cloud-api
+  labels:
+    app.kubernetes.io/name: cloud-api
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cloud-api
+  workloadRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: cloud-api
+    scaleDown: progressively
+  strategy:
+    canary:
+      maxSurge: 1
+      maxUnavailable: 0
+      analysis:
+        templates:
+          - templateName: cloud-canary-health
+        startingStep: 1
+        args:
+          - name: service
+            value: cloud-api
+          - name: version
+            value: from-image-tag
+      steps:
+        - setWeight: 50
+        - pause: {}               # 1 台で止まり、Promote されるまで待つ（その間も Datadog の判定は続く）
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: cloud-gw
+  labels:
+    app.kubernetes.io/name: cloud-gw
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cloud-gw
+  workloadRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: cloud-gw
+    scaleDown: progressively
+  strategy:
+    canary:
+      maxSurge: 1
+      maxUnavailable: 0
+      steps:
+        - setWeight: 50
+        - pause: {}
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: console
+  labels:
+    app.kubernetes.io/name: console
+spec:
+  replicas: 2
+  revisionHistoryLimit: 5
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: console
+  workloadRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: console
+    scaleDown: progressively
+  strategy:
+    canary:
+      maxSurge: 1
+      maxUnavailable: 0
+      steps:
+        - setWeight: 50
+        - pause: {}
+---
+# cloud-api のカナリアの判定。新しい版の 5xx 率が 5% を超えたら戻す。
+# p95 は見ない（メトリクスの画面は Datadog の問い合わせを待つので、ふだんから数秒かかる）
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: cloud-canary-health
+spec:
+  args:
+    - name: service
+    - name: version
+  metrics:
+    - name: error-rate
+      interval: 1m
+      count: 15
+      failureLimit: 2
+      successCondition: default(result, 0) < 0.05
+      provider:
+        datadog:
+          apiVersion: v2
+          interval: 5m
+          queries:
+            errors: sum:trace.http.server.request.errors{env:prod,service:{{args.service}},version:{{args.version}}}.as_count()
+            hits: sum:trace.http.server.request.hits{env:prod,service:{{args.service}},version:{{args.version}}}.as_count()
+          formula: "default_zero(errors) / (default_zero(hits) + 0.000001)"
