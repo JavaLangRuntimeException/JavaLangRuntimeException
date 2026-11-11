@@ -12,7 +12,7 @@ images:
   - { name: taramanji/console, newName: ghcr.io/javalangruntimeexception/taramanji-console, newTag: unreleased }
 
 patches:
-  - target: { kind: Deployment|StatefulSet }
+  - target: { kind: Deployment|StatefulSet, labelSelector: "app.kubernetes.io/name notin (cloud-postgres,cloud-redis)" }
     patch: |-
       - op: replace
         path: /spec/template/metadata/labels/tags.datadoghq.com~1env
@@ -56,6 +56,28 @@ patches:
                 env:
                   - { name: APP_ENV, value: staging }
                   - { name: APPS_NAMESPACE, value: cloud-stg-apps }
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata: { name: cloud-ctl }
+      spec:
+        template:
+          spec:
+            containers:
+              - name: app
+                env:
+                  - { name: APP_ENV, value: staging }
+                  - { name: APPS_NAMESPACE, value: cloud-stg-apps }
+  - target: { kind: NetworkPolicy, name: to-cloud-storage }
+    patch: |-
+      - op: replace
+        path: /spec/ingress/2/from/0/namespaceSelector/matchLabels/kubernetes.io~1metadata.name
+        value: cloud-stg-apps
+  - target: { kind: NetworkPolicy, name: to-cloud-data }
+    patch: |-
+      - op: replace
+        path: /spec/ingress/0/from/1/namespaceSelector/matchLabels/kubernetes.io~1metadata.name
+        value: cloud-stg-apps
   - target: { kind: ReferenceGrant, name: apis-to-cloud-gw }
     patch: |-
       - op: replace
@@ -81,6 +103,11 @@ replacements:
   - source: { kind: StatefulSet, name: cloud-storage, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
     targets:
       - select: { kind: StatefulSet, name: cloud-storage }
+        fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
+        options: { create: true }
+  - source: { kind: Deployment, name: cloud-ctl, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
+    targets:
+      - select: { kind: Deployment, name: cloud-ctl }
         fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
         options: { create: true }
   - source: { kind: Deployment, name: console, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }

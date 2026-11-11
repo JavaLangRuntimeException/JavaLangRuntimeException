@@ -91,6 +91,8 @@ spec:
             # 公開するホスト名は <名前> + これ（1 階層にして、Cloudflare の無料の証明書の範囲に収める）
             - { name: HOST_SUFFIX, value: "-cloud.taramanji.com" }
             - { name: FUNCTION_IDLE_TIMEOUT, value: 5m }
+            # 共有の PostgreSQL / Redis とコントローラー（data.yaml）を入れてある
+            - { name: DATABASES_ENABLED, value: "true" }
             # オブジェクトストレージの管理用のトークンを導くキー。なければバケットの中身は扱えない
             - name: STORAGE_MASTER_KEY
               valueFrom: { secretKeyRef: { name: cloud-storage-key, key: STORAGE_MASTER_KEY, optional: true } }

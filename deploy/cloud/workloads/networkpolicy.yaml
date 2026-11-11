@@ -1,6 +1,6 @@
 # アプリ用 namespace の通信。受けるのは、この環境の API Gateway（cloud-gw）と同じ namespace のアプリだけ。
 # 関数は API（HTTPRoute）→ cloud-gw を通ってだけ呼ばれる（Envoy から直接は届かない）。
-# 出られるのは DNS・同じ namespace・クラスターの外（インターネット）だけで、taramanji・data（Redis）・Kubernetes API・
+# 出られるのは DNS・同じ namespace・つないだデータベースとストレージ・クラスターの外（インターネット）だけで、taramanji・data（Redis）・Kubernetes API・
 # Mac mini の LAN には届かない
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -32,6 +32,16 @@ spec:
         - { port: 53, protocol: TCP }
     - to:
         - podSelector: {}
+    # つないだデータベース（PostgreSQL・Redis）とバケット（ストレージ）。overlays が、この環境のコンソールの namespace に書き換える
+    - to:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: cloud } }
+          podSelector:
+            matchExpressions:
+              - { key: app.kubernetes.io/name, operator: In, values: [cloud-postgres, cloud-redis, cloud-storage] }
+      ports:
+        - { port: 5432 }
+        - { port: 6379 }
+        - { port: 8080 }
     - to:
         - ipBlock:
             cidr: 0.0.0.0/0

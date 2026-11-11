@@ -52,6 +52,13 @@ KEY="$SRC/storage-master-key-$ENV"
 [ -f "$KEY" ] || (umask 077 && openssl rand -hex 32 > "$KEY")
 seal cloud-storage-key "$NS" --from-file=STORAGE_MASTER_KEY="$KEY"
 
+# 共有の PostgreSQL / Redis の管理者のパスワード（コントローラーだけが使う）。環境ごとに 1 回だけ作り、変えない
+# （PostgreSQL は最初の起動のときの値を覚えるので、あとから変えても反映されない）
+for k in postgres redis; do
+  [ -f "$SRC/$k-admin-password-$ENV" ] || (umask 077 && openssl rand -hex 24 > "$SRC/$k-admin-password-$ENV")
+done
+seal cloud-data-admin "$NS" --from-file=POSTGRES_ADMIN_PASSWORD="$SRC/postgres-admin-password-$ENV" --from-file=REDIS_ADMIN_PASSWORD="$SRC/redis-admin-password-$ENV"
+
 if [ "$ENV" = prod ]; then
   [ -f "$SRC/tunnel-cloud.json" ] || { echo "$SRC/tunnel-cloud.json がない（cloudflared tunnel create taramanji-cloud）" >&2; exit 1; }
   seal tunnel-credentials-cloud cloud-cloudflared --from-file=credentials.json="$SRC/tunnel-cloud.json" \

@@ -5,6 +5,7 @@ resources:
   - api.yaml
   - gw.yaml
   - storage.yaml
+  - data.yaml
   - console.yaml
   - route.yaml
   - networkpolicy.yaml

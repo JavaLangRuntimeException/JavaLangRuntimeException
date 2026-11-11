@@ -12,7 +12,7 @@ images:
 
 patches:
   # 2 台にして、片方の入れ替え中・ノードの drain 中も止めない
-  - target: { kind: Deployment }
+  - target: { kind: Deployment, labelSelector: "app.kubernetes.io/name!=cloud-ctl" }
     patch: |-
       - op: replace
         path: /spec/replicas
@@ -39,6 +39,12 @@ patches:
         path: /spec/volumeClaimTemplates/0/spec/resources/requests/storage
         value: 20Gi
 
+  - target: { kind: StatefulSet, name: cloud-postgres }
+    patch: |-
+      - op: replace
+        path: /spec/volumeClaimTemplates/0/spec/resources/requests/storage
+        value: 10Gi
+
 replacements:
   - source: { kind: Deployment, name: cloud-api, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
     targets:
@@ -53,6 +59,11 @@ replacements:
   - source: { kind: StatefulSet, name: cloud-storage, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
     targets:
       - select: { kind: StatefulSet, name: cloud-storage }
+        fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
+        options: { create: true }
+  - source: { kind: Deployment, name: cloud-ctl, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
+    targets:
+      - select: { kind: Deployment, name: cloud-ctl }
         fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
         options: { create: true }
   - source: { kind: Deployment, name: console, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }

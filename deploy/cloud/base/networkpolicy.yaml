@@ -47,3 +47,27 @@ spec:
         - podSelector: { matchLabels: { app.kubernetes.io/name: cloud-gw } }
       ports:
         - { port: 8081 }
+    # バケットをつないだ関数（アプリ用 namespace。overlays が環境ごとの namespace に書き換える）。トークンが要る
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: cloud-apps } }
+      ports:
+        - { port: 8080 }
+---
+# 共有の PostgreSQL / Redis: コントローラー（cloud-ctl）と、データベースをつないだ関数（アプリ用 namespace）からだけ。
+# 関数は自分のユーザーとパスワードでしか入れない
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: to-cloud-data
+spec:
+  podSelector:
+    matchExpressions:
+      - { key: app.kubernetes.io/name, operator: In, values: [cloud-postgres, cloud-redis] }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: { matchLabels: { app.kubernetes.io/name: cloud-ctl } }
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: cloud-apps } }
+      ports:
+        - { port: 5432 }
+        - { port: 6379 }
