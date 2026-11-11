@@ -57,6 +57,10 @@ service ConsoleService {
   // どの関数にもつながれていないデータベースだけ消せる。中身は残る（ログインだけ止める）
   rpc DeleteDatabase(DeleteDatabaseRequest) returns (DeleteDatabaseResponse) {}
 
+  // ---- デプロイの様子 ----
+  // コントローラー（デプロイヤー）が、リポジトリの YAML をクラスターに入れた結果と履歴（Argo CD は使わない）
+  rpc ListDeployments(ListDeploymentsRequest) returns (ListDeploymentsResponse) {}
+
   // リポジトリの YAML に合わせて、Datadog のモニターを作り直す（git に直接 push したあとに呼ぶ）
   rpc SyncAlerts(SyncAlertsRequest) returns (SyncAlertsResponse) {}
 }
@@ -519,3 +523,34 @@ message DeleteDatabaseRequest {
 }
 
 message DeleteDatabaseResponse {}
+
+message DeploymentEvent {
+  int64 at_ms = 1;
+  string commit = 2;
+  string revision = 3;
+  // applied / waiting / invalid / failed / deleted
+  string state = 4;
+  string message = 5;
+}
+
+// 1 つのリソース（関数・API・CDN・バケット・データベース）のデプロイの様子
+message Deployment {
+  // functions / apis / cdn / buckets / databases
+  string kind = 1;
+  string name = 2;
+  string state = 3;
+  string message = 4;
+  // 反映した YAML の版（git の blob の SHA の先頭）と、そのときのコミット
+  string revision = 5;
+  string commit = 6;
+  int64 at_ms = 7;
+  repeated DeploymentEvent history = 8;
+}
+
+message ListDeploymentsRequest {}
+
+message ListDeploymentsResponse {
+  repeated Deployment deployments = 1;
+  // デプロイヤーが動いているか（リポジトリのトークンがないと動かない）
+  bool enabled = 2;
+}

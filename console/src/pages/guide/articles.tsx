@@ -76,7 +76,7 @@ export const articles: Article[] = [
         <H2 id="yaml">設定は YAML で残る</H2>
         <P>
           コンソールで作ったものは、すべて Kubernetes の YAML として、リポジトリ <C>JavaLangRuntimeException/taramanji-cloud-apps</C> にコミットされます。
-          クラスターに入れるのは Argo CD で、コンソールはクラスターを直接は書き換えません。
+          クラスターに入れるのはコントローラー（デプロイヤー）で、15 秒ごとにリポジトリを見て入れます。Argo CD は使いません。入れた結果は各画面の「デプロイ」と、Console Home の「デプロイ」で見られます。
         </P>
         <UL>
           <li>変更の履歴が git に残り、いつでも前の版に戻せます。</li>
@@ -415,7 +415,7 @@ const { objects } = await (await fetch(\`\${base}?prefix=uploads/\`, { headers: 
         <H2 id="where">置き場</H2>
         <P>
           リポジトリ <C>JavaLangRuntimeException/taramanji-cloud-apps</C> の、環境ごとのディレクトリに置かれます。<C>main</C> に push すると、
-          1〜3 分で Argo CD がクラスターに入れます。
+          15 秒ほどでコントローラーがクラスターに入れます。決まりに合わない YAML は入れず、前の版のまま動かして、理由を「デプロイ」に出します。
         </P>
         <Table
           rows={[

@@ -120,7 +120,7 @@ AWS のコンソールのように使える、自分専用の小さなクラウ�
 
 <img alt="taramanji cloud のしくみ" src="docs/images/cloud.png" width="100%" />
 
-- **切り離し**: トンネル・Gateway・Cloudflare Access のアプリ・Argo CD の AppProject を taramanji.com と分けている。taramanji の Secret・セッション・Redis は使わない
+- **切り離し**: トンネル・Gateway・Cloudflare Access のアプリを taramanji.com と分けている。関数などはコントローラーが YAML から入れる（Argo CD は使わない）。taramanji の Secret・セッション・Redis は使わない
 - **関数ごとの namespace**: 関数は 1 つずつ `cloud-fn-<名前>` で動く。namespace と囲い（Quota・NetworkPolicy・Pod Security・権限）はコントローラーが作り、YAML のリポジトリからは作れない
 - **接続先**: データベースとバケットのパスワード・トークンは、つないだ関数の namespace にだけ置く。git にもコンソールにも出ない
 - **使えるのは自分だけ**: コンソールも、公開した関数・CDN も Cloudflare Access の後ろ

@@ -4113,6 +4113,275 @@ func (*DeleteDatabaseResponse) Descriptor() ([]byte, []int) {
 	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{71}
 }
 
+type DeploymentEvent struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	AtMs     int64                  `protobuf:"varint,1,opt,name=at_ms,json=atMs,proto3" json:"at_ms,omitempty"`
+	Commit   string                 `protobuf:"bytes,2,opt,name=commit,proto3" json:"commit,omitempty"`
+	Revision string                 `protobuf:"bytes,3,opt,name=revision,proto3" json:"revision,omitempty"`
+	// applied / waiting / invalid / failed / deleted
+	State         string `protobuf:"bytes,4,opt,name=state,proto3" json:"state,omitempty"`
+	Message       string `protobuf:"bytes,5,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DeploymentEvent) Reset() {
+	*x = DeploymentEvent{}
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[72]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DeploymentEvent) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DeploymentEvent) ProtoMessage() {}
+
+func (x *DeploymentEvent) ProtoReflect() protoreflect.Message {
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[72]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DeploymentEvent.ProtoReflect.Descriptor instead.
+func (*DeploymentEvent) Descriptor() ([]byte, []int) {
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{72}
+}
+
+func (x *DeploymentEvent) GetAtMs() int64 {
+	if x != nil {
+		return x.AtMs
+	}
+	return 0
+}
+
+func (x *DeploymentEvent) GetCommit() string {
+	if x != nil {
+		return x.Commit
+	}
+	return ""
+}
+
+func (x *DeploymentEvent) GetRevision() string {
+	if x != nil {
+		return x.Revision
+	}
+	return ""
+}
+
+func (x *DeploymentEvent) GetState() string {
+	if x != nil {
+		return x.State
+	}
+	return ""
+}
+
+func (x *DeploymentEvent) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+// 1 つのリソース（関数・API・CDN・バケット・データベース）のデプロイの様子
+type Deployment struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// functions / apis / cdn / buckets / databases
+	Kind    string `protobuf:"bytes,1,opt,name=kind,proto3" json:"kind,omitempty"`
+	Name    string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	State   string `protobuf:"bytes,3,opt,name=state,proto3" json:"state,omitempty"`
+	Message string `protobuf:"bytes,4,opt,name=message,proto3" json:"message,omitempty"`
+	// 反映した YAML の版（git の blob の SHA の先頭）と、そのときのコミット
+	Revision      string             `protobuf:"bytes,5,opt,name=revision,proto3" json:"revision,omitempty"`
+	Commit        string             `protobuf:"bytes,6,opt,name=commit,proto3" json:"commit,omitempty"`
+	AtMs          int64              `protobuf:"varint,7,opt,name=at_ms,json=atMs,proto3" json:"at_ms,omitempty"`
+	History       []*DeploymentEvent `protobuf:"bytes,8,rep,name=history,proto3" json:"history,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Deployment) Reset() {
+	*x = Deployment{}
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[73]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Deployment) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Deployment) ProtoMessage() {}
+
+func (x *Deployment) ProtoReflect() protoreflect.Message {
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[73]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Deployment.ProtoReflect.Descriptor instead.
+func (*Deployment) Descriptor() ([]byte, []int) {
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{73}
+}
+
+func (x *Deployment) GetKind() string {
+	if x != nil {
+		return x.Kind
+	}
+	return ""
+}
+
+func (x *Deployment) GetName() string {
+	if x != nil {
+		return x.Name
+	}
+	return ""
+}
+
+func (x *Deployment) GetState() string {
+	if x != nil {
+		return x.State
+	}
+	return ""
+}
+
+func (x *Deployment) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *Deployment) GetRevision() string {
+	if x != nil {
+		return x.Revision
+	}
+	return ""
+}
+
+func (x *Deployment) GetCommit() string {
+	if x != nil {
+		return x.Commit
+	}
+	return ""
+}
+
+func (x *Deployment) GetAtMs() int64 {
+	if x != nil {
+		return x.AtMs
+	}
+	return 0
+}
+
+func (x *Deployment) GetHistory() []*DeploymentEvent {
+	if x != nil {
+		return x.History
+	}
+	return nil
+}
+
+type ListDeploymentsRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListDeploymentsRequest) Reset() {
+	*x = ListDeploymentsRequest{}
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[74]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListDeploymentsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListDeploymentsRequest) ProtoMessage() {}
+
+func (x *ListDeploymentsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[74]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListDeploymentsRequest.ProtoReflect.Descriptor instead.
+func (*ListDeploymentsRequest) Descriptor() ([]byte, []int) {
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{74}
+}
+
+type ListDeploymentsResponse struct {
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Deployments []*Deployment          `protobuf:"bytes,1,rep,name=deployments,proto3" json:"deployments,omitempty"`
+	// デプロイヤーが動いているか（リポジトリのトークンがないと動かない）
+	Enabled       bool `protobuf:"varint,2,opt,name=enabled,proto3" json:"enabled,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ListDeploymentsResponse) Reset() {
+	*x = ListDeploymentsResponse{}
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[75]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ListDeploymentsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ListDeploymentsResponse) ProtoMessage() {}
+
+func (x *ListDeploymentsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_taramanji_cloud_v1_console_proto_msgTypes[75]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ListDeploymentsResponse.ProtoReflect.Descriptor instead.
+func (*ListDeploymentsResponse) Descriptor() ([]byte, []int) {
+	return file_taramanji_cloud_v1_console_proto_rawDescGZIP(), []int{75}
+}
+
+func (x *ListDeploymentsResponse) GetDeployments() []*Deployment {
+	if x != nil {
+		return x.Deployments
+	}
+	return nil
+}
+
+func (x *ListDeploymentsResponse) GetEnabled() bool {
+	if x != nil {
+		return x.Enabled
+	}
+	return false
+}
+
 var File_taramanji_cloud_v1_console_proto protoreflect.FileDescriptor
 
 const file_taramanji_cloud_v1_console_proto_rawDesc = "" +
@@ -4389,7 +4658,27 @@ const file_taramanji_cloud_v1_console_proto_rawDesc = "" +
 	"\x15DeleteDatabaseRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1a\n" +
 	"\brevision\x18\x02 \x01(\tR\brevision\"\x18\n" +
-	"\x16DeleteDatabaseResponse2\xa6\x14\n" +
+	"\x16DeleteDatabaseResponse\"\x8a\x01\n" +
+	"\x0fDeploymentEvent\x12\x13\n" +
+	"\x05at_ms\x18\x01 \x01(\x03R\x04atMs\x12\x16\n" +
+	"\x06commit\x18\x02 \x01(\tR\x06commit\x12\x1a\n" +
+	"\brevision\x18\x03 \x01(\tR\brevision\x12\x14\n" +
+	"\x05state\x18\x04 \x01(\tR\x05state\x12\x18\n" +
+	"\amessage\x18\x05 \x01(\tR\amessage\"\xec\x01\n" +
+	"\n" +
+	"Deployment\x12\x12\n" +
+	"\x04kind\x18\x01 \x01(\tR\x04kind\x12\x12\n" +
+	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
+	"\x05state\x18\x03 \x01(\tR\x05state\x12\x18\n" +
+	"\amessage\x18\x04 \x01(\tR\amessage\x12\x1a\n" +
+	"\brevision\x18\x05 \x01(\tR\brevision\x12\x16\n" +
+	"\x06commit\x18\x06 \x01(\tR\x06commit\x12\x13\n" +
+	"\x05at_ms\x18\a \x01(\x03R\x04atMs\x12=\n" +
+	"\ahistory\x18\b \x03(\v2#.taramanji.cloud.v1.DeploymentEventR\ahistory\"\x18\n" +
+	"\x16ListDeploymentsRequest\"u\n" +
+	"\x17ListDeploymentsResponse\x12@\n" +
+	"\vdeployments\x18\x01 \x03(\v2\x1e.taramanji.cloud.v1.DeploymentR\vdeployments\x12\x18\n" +
+	"\aenabled\x18\x02 \x01(\bR\aenabled2\x94\x15\n" +
 	"\x0eConsoleService\x12`\n" +
 	"\vGetOverview\x12&.taramanji.cloud.v1.GetOverviewRequest\x1a'.taramanji.cloud.v1.GetOverviewResponse\"\x00\x12]\n" +
 	"\n" +
@@ -4416,7 +4705,8 @@ const file_taramanji_cloud_v1_console_proto_rawDesc = "" +
 	"\x12DeleteDistribution\x12-.taramanji.cloud.v1.DeleteDistributionRequest\x1a..taramanji.cloud.v1.DeleteDistributionResponse\"\x00\x12f\n" +
 	"\rListDatabases\x12(.taramanji.cloud.v1.ListDatabasesRequest\x1a).taramanji.cloud.v1.ListDatabasesResponse\"\x00\x12i\n" +
 	"\x0eCreateDatabase\x12).taramanji.cloud.v1.CreateDatabaseRequest\x1a*.taramanji.cloud.v1.CreateDatabaseResponse\"\x00\x12i\n" +
-	"\x0eDeleteDatabase\x12).taramanji.cloud.v1.DeleteDatabaseRequest\x1a*.taramanji.cloud.v1.DeleteDatabaseResponse\"\x00\x12]\n" +
+	"\x0eDeleteDatabase\x12).taramanji.cloud.v1.DeleteDatabaseRequest\x1a*.taramanji.cloud.v1.DeleteDatabaseResponse\"\x00\x12l\n" +
+	"\x0fListDeployments\x12*.taramanji.cloud.v1.ListDeploymentsRequest\x1a+.taramanji.cloud.v1.ListDeploymentsResponse\"\x00\x12]\n" +
 	"\n" +
 	"SyncAlerts\x12%.taramanji.cloud.v1.SyncAlertsRequest\x1a&.taramanji.cloud.v1.SyncAlertsResponse\"\x00B\xe6\x01\n" +
 	"\x16com.taramanji.cloud.v1B\fConsoleProtoP\x01ZTgithub.com/javalangruntimeexception/taramanji/backend/gen/taramanji/cloud/v1;cloudv1\xa2\x02\x03TCX\xaa\x02\x12Taramanji.Cloud.V1\xca\x02\x12Taramanji\\Cloud\\V1\xe2\x02\x1eTaramanji\\Cloud\\V1\\GPBMetadata\xea\x02\x14Taramanji::Cloud::V1b\x06proto3"
@@ -4433,7 +4723,7 @@ func file_taramanji_cloud_v1_console_proto_rawDescGZIP() []byte {
 	return file_taramanji_cloud_v1_console_proto_rawDescData
 }
 
-var file_taramanji_cloud_v1_console_proto_msgTypes = make([]protoimpl.MessageInfo, 72)
+var file_taramanji_cloud_v1_console_proto_msgTypes = make([]protoimpl.MessageInfo, 76)
 var file_taramanji_cloud_v1_console_proto_goTypes = []any{
 	(*Component)(nil),                   // 0: taramanji.cloud.v1.Component
 	(*GetOverviewRequest)(nil),          // 1: taramanji.cloud.v1.GetOverviewRequest
@@ -4507,6 +4797,10 @@ var file_taramanji_cloud_v1_console_proto_goTypes = []any{
 	(*CreateDatabaseResponse)(nil),      // 69: taramanji.cloud.v1.CreateDatabaseResponse
 	(*DeleteDatabaseRequest)(nil),       // 70: taramanji.cloud.v1.DeleteDatabaseRequest
 	(*DeleteDatabaseResponse)(nil),      // 71: taramanji.cloud.v1.DeleteDatabaseResponse
+	(*DeploymentEvent)(nil),             // 72: taramanji.cloud.v1.DeploymentEvent
+	(*Deployment)(nil),                  // 73: taramanji.cloud.v1.Deployment
+	(*ListDeploymentsRequest)(nil),      // 74: taramanji.cloud.v1.ListDeploymentsRequest
+	(*ListDeploymentsResponse)(nil),     // 75: taramanji.cloud.v1.ListDeploymentsResponse
 }
 var file_taramanji_cloud_v1_console_proto_depIdxs = []int32{
 	0,  // 0: taramanji.cloud.v1.GetOverviewResponse.components:type_name -> taramanji.cloud.v1.Component
@@ -4549,61 +4843,65 @@ var file_taramanji_cloud_v1_console_proto_depIdxs = []int32{
 	19, // 37: taramanji.cloud.v1.Database.source:type_name -> taramanji.cloud.v1.Source
 	65, // 38: taramanji.cloud.v1.ListDatabasesResponse.databases:type_name -> taramanji.cloud.v1.Database
 	65, // 39: taramanji.cloud.v1.CreateDatabaseResponse.database:type_name -> taramanji.cloud.v1.Database
-	1,  // 40: taramanji.cloud.v1.ConsoleService.GetOverview:input_type -> taramanji.cloud.v1.GetOverviewRequest
-	4,  // 41: taramanji.cloud.v1.ConsoleService.GetMetrics:input_type -> taramanji.cloud.v1.GetMetricsRequest
-	6,  // 42: taramanji.cloud.v1.ConsoleService.GetCapacity:input_type -> taramanji.cloud.v1.GetCapacityRequest
-	15, // 43: taramanji.cloud.v1.ConsoleService.GetHostingOptions:input_type -> taramanji.cloud.v1.GetHostingOptionsRequest
-	22, // 44: taramanji.cloud.v1.ConsoleService.ListFunctions:input_type -> taramanji.cloud.v1.ListFunctionsRequest
-	24, // 45: taramanji.cloud.v1.ConsoleService.PreviewFunction:input_type -> taramanji.cloud.v1.PreviewFunctionRequest
-	26, // 46: taramanji.cloud.v1.ConsoleService.ApplyFunction:input_type -> taramanji.cloud.v1.ApplyFunctionRequest
-	28, // 47: taramanji.cloud.v1.ConsoleService.DeleteFunction:input_type -> taramanji.cloud.v1.DeleteFunctionRequest
-	33, // 48: taramanji.cloud.v1.ConsoleService.ListApis:input_type -> taramanji.cloud.v1.ListApisRequest
-	35, // 49: taramanji.cloud.v1.ConsoleService.PreviewApi:input_type -> taramanji.cloud.v1.PreviewApiRequest
-	37, // 50: taramanji.cloud.v1.ConsoleService.ApplyApi:input_type -> taramanji.cloud.v1.ApplyApiRequest
-	39, // 51: taramanji.cloud.v1.ConsoleService.DeleteApi:input_type -> taramanji.cloud.v1.DeleteApiRequest
-	44, // 52: taramanji.cloud.v1.ConsoleService.ListBuckets:input_type -> taramanji.cloud.v1.ListBucketsRequest
-	46, // 53: taramanji.cloud.v1.ConsoleService.CreateBucket:input_type -> taramanji.cloud.v1.CreateBucketRequest
-	48, // 54: taramanji.cloud.v1.ConsoleService.DeleteBucket:input_type -> taramanji.cloud.v1.DeleteBucketRequest
-	51, // 55: taramanji.cloud.v1.ConsoleService.ListObjects:input_type -> taramanji.cloud.v1.ListObjectsRequest
-	53, // 56: taramanji.cloud.v1.ConsoleService.DeleteObject:input_type -> taramanji.cloud.v1.DeleteObjectRequest
-	57, // 57: taramanji.cloud.v1.ConsoleService.ListDistributions:input_type -> taramanji.cloud.v1.ListDistributionsRequest
-	59, // 58: taramanji.cloud.v1.ConsoleService.PreviewDistribution:input_type -> taramanji.cloud.v1.PreviewDistributionRequest
-	61, // 59: taramanji.cloud.v1.ConsoleService.ApplyDistribution:input_type -> taramanji.cloud.v1.ApplyDistributionRequest
-	63, // 60: taramanji.cloud.v1.ConsoleService.DeleteDistribution:input_type -> taramanji.cloud.v1.DeleteDistributionRequest
-	66, // 61: taramanji.cloud.v1.ConsoleService.ListDatabases:input_type -> taramanji.cloud.v1.ListDatabasesRequest
-	68, // 62: taramanji.cloud.v1.ConsoleService.CreateDatabase:input_type -> taramanji.cloud.v1.CreateDatabaseRequest
-	70, // 63: taramanji.cloud.v1.ConsoleService.DeleteDatabase:input_type -> taramanji.cloud.v1.DeleteDatabaseRequest
-	41, // 64: taramanji.cloud.v1.ConsoleService.SyncAlerts:input_type -> taramanji.cloud.v1.SyncAlertsRequest
-	2,  // 65: taramanji.cloud.v1.ConsoleService.GetOverview:output_type -> taramanji.cloud.v1.GetOverviewResponse
-	5,  // 66: taramanji.cloud.v1.ConsoleService.GetMetrics:output_type -> taramanji.cloud.v1.GetMetricsResponse
-	12, // 67: taramanji.cloud.v1.ConsoleService.GetCapacity:output_type -> taramanji.cloud.v1.GetCapacityResponse
-	17, // 68: taramanji.cloud.v1.ConsoleService.GetHostingOptions:output_type -> taramanji.cloud.v1.GetHostingOptionsResponse
-	23, // 69: taramanji.cloud.v1.ConsoleService.ListFunctions:output_type -> taramanji.cloud.v1.ListFunctionsResponse
-	25, // 70: taramanji.cloud.v1.ConsoleService.PreviewFunction:output_type -> taramanji.cloud.v1.PreviewFunctionResponse
-	27, // 71: taramanji.cloud.v1.ConsoleService.ApplyFunction:output_type -> taramanji.cloud.v1.ApplyFunctionResponse
-	29, // 72: taramanji.cloud.v1.ConsoleService.DeleteFunction:output_type -> taramanji.cloud.v1.DeleteFunctionResponse
-	34, // 73: taramanji.cloud.v1.ConsoleService.ListApis:output_type -> taramanji.cloud.v1.ListApisResponse
-	36, // 74: taramanji.cloud.v1.ConsoleService.PreviewApi:output_type -> taramanji.cloud.v1.PreviewApiResponse
-	38, // 75: taramanji.cloud.v1.ConsoleService.ApplyApi:output_type -> taramanji.cloud.v1.ApplyApiResponse
-	40, // 76: taramanji.cloud.v1.ConsoleService.DeleteApi:output_type -> taramanji.cloud.v1.DeleteApiResponse
-	45, // 77: taramanji.cloud.v1.ConsoleService.ListBuckets:output_type -> taramanji.cloud.v1.ListBucketsResponse
-	47, // 78: taramanji.cloud.v1.ConsoleService.CreateBucket:output_type -> taramanji.cloud.v1.CreateBucketResponse
-	49, // 79: taramanji.cloud.v1.ConsoleService.DeleteBucket:output_type -> taramanji.cloud.v1.DeleteBucketResponse
-	52, // 80: taramanji.cloud.v1.ConsoleService.ListObjects:output_type -> taramanji.cloud.v1.ListObjectsResponse
-	54, // 81: taramanji.cloud.v1.ConsoleService.DeleteObject:output_type -> taramanji.cloud.v1.DeleteObjectResponse
-	58, // 82: taramanji.cloud.v1.ConsoleService.ListDistributions:output_type -> taramanji.cloud.v1.ListDistributionsResponse
-	60, // 83: taramanji.cloud.v1.ConsoleService.PreviewDistribution:output_type -> taramanji.cloud.v1.PreviewDistributionResponse
-	62, // 84: taramanji.cloud.v1.ConsoleService.ApplyDistribution:output_type -> taramanji.cloud.v1.ApplyDistributionResponse
-	64, // 85: taramanji.cloud.v1.ConsoleService.DeleteDistribution:output_type -> taramanji.cloud.v1.DeleteDistributionResponse
-	67, // 86: taramanji.cloud.v1.ConsoleService.ListDatabases:output_type -> taramanji.cloud.v1.ListDatabasesResponse
-	69, // 87: taramanji.cloud.v1.ConsoleService.CreateDatabase:output_type -> taramanji.cloud.v1.CreateDatabaseResponse
-	71, // 88: taramanji.cloud.v1.ConsoleService.DeleteDatabase:output_type -> taramanji.cloud.v1.DeleteDatabaseResponse
-	42, // 89: taramanji.cloud.v1.ConsoleService.SyncAlerts:output_type -> taramanji.cloud.v1.SyncAlertsResponse
-	65, // [65:90] is the sub-list for method output_type
-	40, // [40:65] is the sub-list for method input_type
-	40, // [40:40] is the sub-list for extension type_name
-	40, // [40:40] is the sub-list for extension extendee
-	0,  // [0:40] is the sub-list for field type_name
+	72, // 40: taramanji.cloud.v1.Deployment.history:type_name -> taramanji.cloud.v1.DeploymentEvent
+	73, // 41: taramanji.cloud.v1.ListDeploymentsResponse.deployments:type_name -> taramanji.cloud.v1.Deployment
+	1,  // 42: taramanji.cloud.v1.ConsoleService.GetOverview:input_type -> taramanji.cloud.v1.GetOverviewRequest
+	4,  // 43: taramanji.cloud.v1.ConsoleService.GetMetrics:input_type -> taramanji.cloud.v1.GetMetricsRequest
+	6,  // 44: taramanji.cloud.v1.ConsoleService.GetCapacity:input_type -> taramanji.cloud.v1.GetCapacityRequest
+	15, // 45: taramanji.cloud.v1.ConsoleService.GetHostingOptions:input_type -> taramanji.cloud.v1.GetHostingOptionsRequest
+	22, // 46: taramanji.cloud.v1.ConsoleService.ListFunctions:input_type -> taramanji.cloud.v1.ListFunctionsRequest
+	24, // 47: taramanji.cloud.v1.ConsoleService.PreviewFunction:input_type -> taramanji.cloud.v1.PreviewFunctionRequest
+	26, // 48: taramanji.cloud.v1.ConsoleService.ApplyFunction:input_type -> taramanji.cloud.v1.ApplyFunctionRequest
+	28, // 49: taramanji.cloud.v1.ConsoleService.DeleteFunction:input_type -> taramanji.cloud.v1.DeleteFunctionRequest
+	33, // 50: taramanji.cloud.v1.ConsoleService.ListApis:input_type -> taramanji.cloud.v1.ListApisRequest
+	35, // 51: taramanji.cloud.v1.ConsoleService.PreviewApi:input_type -> taramanji.cloud.v1.PreviewApiRequest
+	37, // 52: taramanji.cloud.v1.ConsoleService.ApplyApi:input_type -> taramanji.cloud.v1.ApplyApiRequest
+	39, // 53: taramanji.cloud.v1.ConsoleService.DeleteApi:input_type -> taramanji.cloud.v1.DeleteApiRequest
+	44, // 54: taramanji.cloud.v1.ConsoleService.ListBuckets:input_type -> taramanji.cloud.v1.ListBucketsRequest
+	46, // 55: taramanji.cloud.v1.ConsoleService.CreateBucket:input_type -> taramanji.cloud.v1.CreateBucketRequest
+	48, // 56: taramanji.cloud.v1.ConsoleService.DeleteBucket:input_type -> taramanji.cloud.v1.DeleteBucketRequest
+	51, // 57: taramanji.cloud.v1.ConsoleService.ListObjects:input_type -> taramanji.cloud.v1.ListObjectsRequest
+	53, // 58: taramanji.cloud.v1.ConsoleService.DeleteObject:input_type -> taramanji.cloud.v1.DeleteObjectRequest
+	57, // 59: taramanji.cloud.v1.ConsoleService.ListDistributions:input_type -> taramanji.cloud.v1.ListDistributionsRequest
+	59, // 60: taramanji.cloud.v1.ConsoleService.PreviewDistribution:input_type -> taramanji.cloud.v1.PreviewDistributionRequest
+	61, // 61: taramanji.cloud.v1.ConsoleService.ApplyDistribution:input_type -> taramanji.cloud.v1.ApplyDistributionRequest
+	63, // 62: taramanji.cloud.v1.ConsoleService.DeleteDistribution:input_type -> taramanji.cloud.v1.DeleteDistributionRequest
+	66, // 63: taramanji.cloud.v1.ConsoleService.ListDatabases:input_type -> taramanji.cloud.v1.ListDatabasesRequest
+	68, // 64: taramanji.cloud.v1.ConsoleService.CreateDatabase:input_type -> taramanji.cloud.v1.CreateDatabaseRequest
+	70, // 65: taramanji.cloud.v1.ConsoleService.DeleteDatabase:input_type -> taramanji.cloud.v1.DeleteDatabaseRequest
+	74, // 66: taramanji.cloud.v1.ConsoleService.ListDeployments:input_type -> taramanji.cloud.v1.ListDeploymentsRequest
+	41, // 67: taramanji.cloud.v1.ConsoleService.SyncAlerts:input_type -> taramanji.cloud.v1.SyncAlertsRequest
+	2,  // 68: taramanji.cloud.v1.ConsoleService.GetOverview:output_type -> taramanji.cloud.v1.GetOverviewResponse
+	5,  // 69: taramanji.cloud.v1.ConsoleService.GetMetrics:output_type -> taramanji.cloud.v1.GetMetricsResponse
+	12, // 70: taramanji.cloud.v1.ConsoleService.GetCapacity:output_type -> taramanji.cloud.v1.GetCapacityResponse
+	17, // 71: taramanji.cloud.v1.ConsoleService.GetHostingOptions:output_type -> taramanji.cloud.v1.GetHostingOptionsResponse
+	23, // 72: taramanji.cloud.v1.ConsoleService.ListFunctions:output_type -> taramanji.cloud.v1.ListFunctionsResponse
+	25, // 73: taramanji.cloud.v1.ConsoleService.PreviewFunction:output_type -> taramanji.cloud.v1.PreviewFunctionResponse
+	27, // 74: taramanji.cloud.v1.ConsoleService.ApplyFunction:output_type -> taramanji.cloud.v1.ApplyFunctionResponse
+	29, // 75: taramanji.cloud.v1.ConsoleService.DeleteFunction:output_type -> taramanji.cloud.v1.DeleteFunctionResponse
+	34, // 76: taramanji.cloud.v1.ConsoleService.ListApis:output_type -> taramanji.cloud.v1.ListApisResponse
+	36, // 77: taramanji.cloud.v1.ConsoleService.PreviewApi:output_type -> taramanji.cloud.v1.PreviewApiResponse
+	38, // 78: taramanji.cloud.v1.ConsoleService.ApplyApi:output_type -> taramanji.cloud.v1.ApplyApiResponse
+	40, // 79: taramanji.cloud.v1.ConsoleService.DeleteApi:output_type -> taramanji.cloud.v1.DeleteApiResponse
+	45, // 80: taramanji.cloud.v1.ConsoleService.ListBuckets:output_type -> taramanji.cloud.v1.ListBucketsResponse
+	47, // 81: taramanji.cloud.v1.ConsoleService.CreateBucket:output_type -> taramanji.cloud.v1.CreateBucketResponse
+	49, // 82: taramanji.cloud.v1.ConsoleService.DeleteBucket:output_type -> taramanji.cloud.v1.DeleteBucketResponse
+	52, // 83: taramanji.cloud.v1.ConsoleService.ListObjects:output_type -> taramanji.cloud.v1.ListObjectsResponse
+	54, // 84: taramanji.cloud.v1.ConsoleService.DeleteObject:output_type -> taramanji.cloud.v1.DeleteObjectResponse
+	58, // 85: taramanji.cloud.v1.ConsoleService.ListDistributions:output_type -> taramanji.cloud.v1.ListDistributionsResponse
+	60, // 86: taramanji.cloud.v1.ConsoleService.PreviewDistribution:output_type -> taramanji.cloud.v1.PreviewDistributionResponse
+	62, // 87: taramanji.cloud.v1.ConsoleService.ApplyDistribution:output_type -> taramanji.cloud.v1.ApplyDistributionResponse
+	64, // 88: taramanji.cloud.v1.ConsoleService.DeleteDistribution:output_type -> taramanji.cloud.v1.DeleteDistributionResponse
+	67, // 89: taramanji.cloud.v1.ConsoleService.ListDatabases:output_type -> taramanji.cloud.v1.ListDatabasesResponse
+	69, // 90: taramanji.cloud.v1.ConsoleService.CreateDatabase:output_type -> taramanji.cloud.v1.CreateDatabaseResponse
+	71, // 91: taramanji.cloud.v1.ConsoleService.DeleteDatabase:output_type -> taramanji.cloud.v1.DeleteDatabaseResponse
+	75, // 92: taramanji.cloud.v1.ConsoleService.ListDeployments:output_type -> taramanji.cloud.v1.ListDeploymentsResponse
+	42, // 93: taramanji.cloud.v1.ConsoleService.SyncAlerts:output_type -> taramanji.cloud.v1.SyncAlertsResponse
+	68, // [68:94] is the sub-list for method output_type
+	42, // [42:68] is the sub-list for method input_type
+	42, // [42:42] is the sub-list for extension type_name
+	42, // [42:42] is the sub-list for extension extendee
+	0,  // [0:42] is the sub-list for field type_name
 }
 
 func init() { file_taramanji_cloud_v1_console_proto_init() }
@@ -4617,7 +4915,7 @@ func file_taramanji_cloud_v1_console_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_taramanji_cloud_v1_console_proto_rawDesc), len(file_taramanji_cloud_v1_console_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   72,
+			NumMessages:   76,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

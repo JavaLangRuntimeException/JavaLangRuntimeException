@@ -98,10 +98,10 @@
       本番の基盤は Argo Rollouts のカナリアで入れ替える。
     </div>
     <div class="group gitops">
-      <div class="glabel"><img src="icons/argo.svg" alt="" />設定は YAML で残る（GitOps）</div>
+      <div class="glabel"><img src="icons/github.svg" alt="" />設定は YAML で残る（Argo CD は使わない）</div>
       <div class="flow">
         <div class="card" id="repo"><img class="logo" src="icons/github.svg" alt="" /><div><div class="name">taramanji-cloud-apps</div><div class="sub">&lt;環境&gt;/&lt;種類&gt;/&lt;名前&gt;.yaml</div></div></div>
-        <div class="card" id="argo"><img class="logo" src="icons/argo.svg" alt="" /><div><div class="name">Argo CD</div><div class="sub">AppProject cloud-apps</div></div></div>
+        <div class="card" id="argo"><img class="logo" src="icons/k8s.svg" alt="" /><div><div class="name">デプロイヤー</div><div class="sub">cloud-ctl。15 秒ごとに入れる</div></div></div>
       </div>
     </div>
   </div>
@@ -116,7 +116,7 @@
     { from: "fn1:right", to: "pg:left", route: "hvh", dashed: true },
     { from: "fn2:right", to: "storage:left", route: "hvh", dashed: true },
     { from: "repo:right", to: "argo:left", route: "h" },
-    { from: "argo:top", to: "fns:bottom", route: "vhv", label: "同期" },
+    { from: "argo:top", to: "fns:bottom", route: "vhv", label: "入れる" },
   ];
 </script>
 <script src="_arrows.js"></script>

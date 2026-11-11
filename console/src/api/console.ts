@@ -126,6 +126,16 @@ export function useDatabaseMutations() {
   };
 }
 
+/** デプロイの様子（コントローラーがリポジトリの YAML を入れた結果と履歴）。保存のあと 15 秒ほどで変わるので短めに読み直す */
+export function useDeployments() {
+  return useQuery({
+    queryKey: ["console", "deployments"],
+    queryFn: ({ signal }) => consoleApi.listDeployments({}, { signal }),
+    staleTime: 5_000,
+    refetchInterval: 10_000,
+  });
+}
+
 /** オブジェクトを置く。Connect ではなく HTTP の PUT（同じオリジンなので Access の Cookie が付く） */
 export async function uploadObject(bucket: string, key: string, file: File): Promise<void> {
   const res = await fetch(objectUrl(bucket, key), { method: "PUT", body: file, headers: { "Content-Type": "application/octet-stream" } });

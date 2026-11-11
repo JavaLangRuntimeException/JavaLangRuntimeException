@@ -6,6 +6,7 @@ import type { Function as Fn, GetHostingOptionsResponse } from "@/api/gen/tarama
 import { btn, btnPrimary, Field, input, Legend, Status } from "@/components/Form";
 import { EmptyState, Mono, PageHeader, Panel, Skeleton } from "@/components/Page";
 import { QueryError } from "@/components/QueryError";
+import { DeployBadge, DeployHistory } from "@/components/Deploy";
 import { ResourceEditor } from "@/components/ResourceEditor";
 import { formatCpu, num } from "@/lib/capacity";
 import { formatBytes } from "@/lib/format";
@@ -64,7 +65,10 @@ export function FunctionsPage() {
       ) : !options.data.storeEnabled ? (
         <StoreDisabled repository={options.data.repository} />
       ) : editing !== undefined ? (
-        <Editor key={editing?.spec?.name ?? ""} fn={editing} opt={options.data} onClose={() => setEditing(undefined)} />
+        <div className="space-y-4">
+          <Editor key={editing?.spec?.name ?? ""} fn={editing} opt={options.data} onClose={() => setEditing(undefined)} />
+          {editing?.spec && <DeployHistory kind="functions" name={editing.spec.name} revision={editing.source?.revision} />}
+        </div>
       ) : (
         <div className="space-y-4">
           <Panel title="関数">
@@ -110,6 +114,7 @@ function FunctionTable({ functions, onOpen }: { functions: Fn[]; onOpen: (fn: Fn
           <tr>
             <th className="px-4 py-2 font-semibold">名前</th>
             <th className="px-4 py-2 font-semibold">状態</th>
+            <th className="px-4 py-2 font-semibold">デプロイ</th>
             <th className="px-4 py-2 font-semibold">インスタンスタイプ</th>
             <th className="px-4 py-2 font-semibold">監視</th>
             <th className="px-4 py-2 font-semibold">API</th>
@@ -129,6 +134,9 @@ function FunctionTable({ functions, onOpen }: { functions: Fn[]; onOpen: (fn: Fn
                 </td>
                 <td className="px-4 py-2.5">
                   <Status level={st.level} label={st.label} />
+                </td>
+                <td className="px-4 py-2.5">
+                  <DeployBadge kind="functions" name={spec?.name ?? ""} revision={fn.source?.revision} />
                 </td>
                 <td className="px-4 py-2.5">
                   {problem ? (
@@ -170,7 +178,7 @@ function SourcePanel({ opt }: { opt: GetHostingOptionsResponse }) {
       <div className="space-y-2 px-4 py-3 text-ink-2">
         <p>
           関数の定義は、リポジトリ <Mono>{opt.repository}</Mono> の <Mono>{opt.directory}/functions/&lt;名前&gt;.yaml</Mono> にある Kubernetes の YAML
-          です。ここで保存するとコミットされ、Argo CD がクラスターに入れます。YAML を手で書いて push しても同じように扱います。
+          です。ここで保存するとコミットされ、15 秒ほどでコントローラーがクラスターに入れます（Argo CD は使いません）。YAML を手で書いて push しても同じように扱います。
         </p>
         {opt.alertsEnabled ? (
           <div className="flex flex-wrap items-center gap-3">

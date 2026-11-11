@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
@@ -444,5 +445,18 @@ func TestDatabasesAndConnections(t *testing.T) {
 	}
 	if err := uc.DeleteDatabase(ctx, DeleteDatabaseInput{Name: "cache", Revision: store.files["databases/cache"].Revision}); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestListDeployments(t *testing.T) {
+	uc, _, _ := newComputeUC()
+	at := time.Date(2026, 11, 11, 1, 2, 3, 0, time.UTC)
+	b, _ := json.Marshal(service.DeployStatus{Kind: "functions", Name: "blog", State: "applied", Revision: "abc1234", Commit: "def5678", At: at,
+		History: []service.DeployEvent{{At: at, State: "applied", Revision: "abc1234"}}})
+	uc.d.State = fakeState{{Name: service.DeployStatusConfigMap, Labels: map[string]string{service.LabelDeployStatus: "true"},
+		Data: map[string]string{"functions.blog": string(b), "broken": "{"}}}
+	out, err := uc.ListDeployments(context.Background(), ListDeploymentsInput{})
+	if err != nil || !out.Enabled || len(out.Deployments) != 1 || out.Deployments[0].Name != "blog" || out.Deployments[0].AtMs != at.UnixMilli() || len(out.Deployments[0].History) != 1 {
+		t.Fatalf("%+v %v", out, err)
 	}
 }

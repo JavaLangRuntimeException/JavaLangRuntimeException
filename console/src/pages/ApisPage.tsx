@@ -5,6 +5,7 @@ import type { Api, GetHostingOptionsResponse } from "@/api/gen/taramanji/cloud/v
 import { btn, btnPrimary, Field, input, Legend, Status } from "@/components/Form";
 import { EmptyState, Mono, PageHeader, Panel, Skeleton } from "@/components/Page";
 import { QueryError } from "@/components/QueryError";
+import { DeployBadge, DeployHistory } from "@/components/Deploy";
 import { ResourceEditor } from "@/components/ResourceEditor";
 import { apiFormErrors, apiFormOf, apiSpecOf, emptyApiForm, type ApiForm } from "@/lib/hosting";
 import { dnsNote } from "@/pages/CdnPage";
@@ -49,7 +50,10 @@ export function ApisPage() {
       ) : !options.data.storeEnabled ? (
         <StoreDisabled repository={options.data.repository} />
       ) : editing !== undefined ? (
-        <Editor key={editing?.spec?.name ?? ""} api={editing} opt={options.data} functions={functionNames} onClose={() => setEditing(undefined)} />
+        <div className="space-y-4">
+          <Editor key={editing?.spec?.name ?? ""} api={editing} opt={options.data} functions={functionNames} onClose={() => setEditing(undefined)} />
+          {editing?.spec && <DeployHistory kind="apis" name={editing.spec.name} revision={editing.source?.revision} />}
+        </div>
       ) : (
         <Panel title="API">
           {apis.isPending ? (
@@ -91,6 +95,7 @@ function ApiTable({ apis, onOpen }: { apis: Api[]; onOpen: (api: Api) => void })
           <tr>
             <th className="px-4 py-2 font-semibold">名前</th>
             <th className="px-4 py-2 font-semibold">URL</th>
+            <th className="px-4 py-2 font-semibold">デプロイ</th>
             <th className="px-4 py-2 font-semibold">ルート</th>
           </tr>
         </thead>
@@ -106,6 +111,9 @@ function ApiTable({ apis, onOpen }: { apis: Api[]; onOpen: (api: Api) => void })
                 <a href={`https://${api.host}`} target="_blank" rel="noreferrer" className="font-mono text-[13px] text-accent hover:underline">
                   {api.host}
                 </a>
+              </td>
+              <td className="px-4 py-2.5">
+                <DeployBadge kind="apis" name={api.spec?.name ?? ""} revision={api.source?.revision} />
               </td>
               <td className="px-4 py-2.5">
                 {api.source?.problem ? (

@@ -21,7 +21,7 @@ taramanji.com・gws.taramanji.com と同じクラスター（kind）で動くが
   taramanji.com のセッション（`AUTH_SECRET`）や Redis は使わない
 - **Secret**: taramanji の Secret は使わず、`deploy/cloud/secrets/`（git に入らない）から SealedSecret を作る
 - **Argo CD**: 専用の AppProject（`cloud`）。同期できる名前空間は cloud の 5 つだけ、クラスター全体のリソースは Namespace だけ
-- **権限**: cloud-api の ServiceAccount は読むだけ（自分の名前空間の Deployment・StatefulSet、アプリ用名前空間の枠と Pod、ノードの容量と使用量）
+- **権限**: cloud-api の ServiceAccount は読むだけ（リソースはリポジトリにコミットするだけで、入れるのはデプロイヤー）（自分の名前空間の Deployment・StatefulSet、アプリ用名前空間の枠と Pod、ノードの容量と使用量）
 
 ## アプリの容量（taramanji.com・gws に影響させない）
 
@@ -70,7 +70,11 @@ Lambda と API Gateway にあたるもの。リソースの正は、**アプリ�
 | API | `<環境>/apis/<名前>.yaml` | HTTPRoute 1 つ。`<名前>-cloud.taramanji.com`（stg・dev は `-cloud-stg`・`-cloud-dev`）のパスごとに、渡し先の関数を決める |
 
 - コンソール（関数・API Gateway）のフォームか YAML で作る・変える・消すと、cloud-api がそのファイルをコミットする。クラスターには書かない
-- Argo CD の `cloud-apps-<環境>`（プロジェクト `cloud-apps`）が、そのディレクトリを入れる（関数は関数ごとの namespace、ほかは環境の共有の namespace）。YAML を手で書いて push しても同じ
+- **デプロイヤー**（cloud-ctl の中で動く）が 15 秒ごとにリポジトリを見て、変わっていたら入れる（関数は関数ごとの namespace、ほかは環境の共有の namespace）。**Argo CD は使わない**。YAML を手で書いて push しても同じ
+  - 入れる前に、コンソールと同じ決まり（種類・namespace・名前・登録とのずれ）で確かめる。合わない YAML は入れず、前の版のまま動かす
+  - server-side apply で入れる（関数の台数には触れない）。リポジトリから消えたものは、クラスターからも消す（自分が入れた、この環境のものだけ）
+  - 結果（反映した版・コミット・時刻・状態・直近 10 件の履歴）を、共有の namespace の ConfigMap `cloud-deployments` に書く。コンソールの各画面と「Console Home」の「デプロイ」に出る
+  - 5 分ごとに、変わっていなくても入れ直す（手で消された・書き換えられたものを戻す）
 - 手で書き足した YAML は、フォームでは編集できない（保存すると消えるため）
 - API の名前（＝ホスト名）は、同じ環境の中で重複できない（ファイル名が同じになるので、2 つ目は作れない）
 
@@ -78,7 +82,7 @@ Lambda と API Gateway にあたるもの。リソースの正は、**アプリ�
 API Gateway（`cloud-gw`。cloud-api と同じイメージを `CLOUD_MODE=gateway` で動かす）→ 関数。
 
 - 関数が 0 台なら、cloud-gw が 1 台にして、応答できるようになるまでリクエストを待たせる（最長 60 秒）
-- 5 分（`FUNCTION_IDLE_TIMEOUT`）リクエストが来なければ、cloud-gw が 0 台に戻す。台数は YAML に書かない（Argo CD は台数を戻さない）
+- 5 分（`FUNCTION_IDLE_TIMEOUT`）リクエストが来なければ、cloud-gw が 0 台に戻す。台数は YAML に書かない（デプロイヤーは台数に触れない）
 - 関数は cloud-gw からしか受けない（NetworkPolicy）。`X-Cloud-Function` は HTTPRoute が上書きするので、利用者は渡し先を偽れない
 - 関数の同時実行は 1 台まで（負荷に合わせて台数を増やすことは、まだしない）
 
@@ -149,7 +153,7 @@ S3 と CloudFront にあたるもの。
 関数は 1 つずつ別の namespace で動く（本番 `cloud-fn-<名前>`、stg・dev は `cloud-stg-fn-<名前>`・`cloud-dev-fn-<名前>`）。
 
 - 関数の YAML は、**登録**の ConfigMap `function-<名前>`（環境の共有の namespace。CPU・メモリ・つなぐもの）と、関数の namespace に入る Deployment・Service
-- コントローラー（cloud-ctl）が登録を見て、namespace と囲いを作る。**アプリ用のリポジトリからは作れない**（AppProject `cloud-apps` は Namespace を作れない）
+- コントローラー（cloud-ctl）が登録を見て、namespace と囲いを作る。**アプリ用のリポジトリからは作れない**（デプロイヤーは Deployment・Service・ConfigMap・PVC・HTTPRoute しか入れない）
   - Pod Security: baseline（特権コンテナ・hostPath 不可）
   - ResourceQuota: 登録した CPU・メモリの 2 台分（入れ替えのあいだだけ 2 台）、NodePort・LoadBalancer は 0。優先度 `cloud-workload` のない Pod は作れない
   - LimitRange: コンテナ 1 つは登録した量まで
@@ -240,18 +244,8 @@ deploy/cloud/
    - どれも 4 の `seal.sh` で SealedSecret になる。`cloud-storage-key`・`cloud-data-admin` がないと、cloud-storage・cloud-postgres・cloud-redis・cloud-ctl の Pod は起動しない
 
 6. **アプリ用のリポジトリ**（関数と API を使うとき。なくてもコンソールのほかの画面は動く）
-   - GitHub に private の `JavaLangRuntimeException/taramanji-cloud-apps` を作り、`prod/`・`stg/`・`dev/` に空のファイル（`.gitkeep`）を置く（Argo CD は空のディレクトリを読めない）
-   - Argo CD が読む鍵（済み。クラスターを作り直したときだけ）: Deploy key を作って読み取りだけで登録し、SealedSecret にする
-     ```sh
-     ssh-keygen -t ed25519 -N "" -C argocd-cloud-apps -f deploy/cloud/secrets/apps-repo-deploy-key
-     gh api repos/JavaLangRuntimeException/taramanji-cloud-apps/keys -f title=argocd -f key="$(cat deploy/cloud/secrets/apps-repo-deploy-key.pub)" -F read_only=true
-     kubectl create secret generic repo-taramanji-cloud-apps -n argocd --dry-run=client -o json \
-       --from-literal=type=git --from-literal=url=git@github.com:JavaLangRuntimeException/taramanji-cloud-apps.git \
-       --from-file=sshPrivateKey=deploy/cloud/secrets/apps-repo-deploy-key \
-       | jq '.metadata.labels["argocd.argoproj.io/secret-type"]="repository"' \
-       | kubeseal --controller-namespace kube-system --format yaml > deploy/gitops/sealed/repo-taramanji-cloud-apps.yaml
-     ```
-   - コンソールが書くトークン: そのリポジトリだけ・Contents の Read and write だけの fine-grained PAT を `deploy/cloud/secrets/apps-repo-token` に置き、4 の `seal.sh` を実行し直す
+   - GitHub に private の `JavaLangRuntimeException/taramanji-cloud-apps` を作り、`prod/`・`stg/`・`dev/` に空のファイル（`.gitkeep`）を置く
+   - トークン（コンソールが書き、デプロイヤーが読む）: そのリポジトリだけ・Contents の Read and write だけの fine-grained PAT を `deploy/cloud/secrets/apps-repo-token` に置き、4 の `seal.sh` を実行し直す
    - 監視を使うなら、Datadog のアプリケーションキーのスコープに `monitors_read`・`monitors_write` を足し、
      `python3 deploy/cloudflare/uptime/datadog-webhook.py <Worker の URL> <トークンのファイル>` で Webhook を作り、Worker を `npx wrangler deploy` し直す
 

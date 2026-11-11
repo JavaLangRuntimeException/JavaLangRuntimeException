@@ -224,3 +224,38 @@ type DatabaseEngine interface {
 	// Disable はログインを止める。中身は消さない（同じ名前で作り直すと、また使える）
 	Disable(ctx context.Context, name string) error
 }
+
+// ResourceSource は、リソースの YAML の元（アプリ用のリポジトリ）を読むだけの口（デプロイヤーが使う）
+type ResourceSource interface {
+	// Head はブランチの今のコミット（変わっていなければ、入れ直さなくてよい）
+	Head(ctx context.Context) (string, error)
+	List(ctx context.Context, kind string) ([]ResourceFile, error)
+}
+
+// ManagedObject はデプロイヤーが入れた Kubernetes のオブジェクト（消すときに使う）
+type ManagedObject struct {
+	Kind      string
+	Namespace string
+	Name      string
+	// Source は元の YAML（「種類.名前」。functions.blog など）
+	Source string
+}
+
+// Applier はデプロイヤーが Kubernetes にオブジェクトを入れる・消す口。
+// 扱う種類は Deployment・Service・ConfigMap・PersistentVolumeClaim・HTTPRoute だけ
+type Applier interface {
+	// Apply は server-side apply で入れる（obj は metadata.namespace 付きの 1 オブジェクト）
+	Apply(ctx context.Context, obj map[string]any) error
+	// Managed は、この環境でデプロイヤーが入れたオブジェクト（ラベルで探す）
+	Managed(ctx context.Context, env string) ([]ManagedObject, error)
+	Delete(ctx context.Context, o ManagedObject) error
+	NamespaceExists(ctx context.Context, ns string) (bool, error)
+	// PutConfigMap は共有の namespace の ConfigMap を丸ごと置き換える（デプロイの様子を書く）
+	PutConfigMap(ctx context.Context, name string, labels, data map[string]string) error
+}
+
+// ResourceRepo は置き場（コンソールが書く）と元（デプロイヤーが読む）の両方
+type ResourceRepo interface {
+	ResourceStore
+	ResourceSource
+}

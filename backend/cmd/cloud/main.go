@@ -15,6 +15,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/javalangruntimeexception/taramanji/backend/internal/cloud/controller"
+	"github.com/javalangruntimeexception/taramanji/backend/internal/cloud/deployer"
 	"github.com/javalangruntimeexception/taramanji/backend/internal/cloud/di"
 	"github.com/javalangruntimeexception/taramanji/backend/internal/cloud/domain/gateway"
 	"github.com/javalangruntimeexception/taramanji/backend/internal/cloud/domain/service"
@@ -301,7 +302,31 @@ func runController() {
 	})
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	go ctl.Run(ctx, 20*time.Second)
+	cloudEnv, registry := env.Required("CLOUD_ENV"), env.Required("APPS_NAMESPACE")
+	// デプロイヤー: アプリ用のリポジトリの YAML を、Argo CD を使わずに入れる。トークンがなければ、コントローラーだけ動かす
+	if token, repo := secretEnv("APPS_REPO_TOKEN", false), env.Optional("APPS_REPO", ""); token != "" && repo != "" {
+		src, err := infragw.NewGitHubResourceStore(infragw.GitHubConfig{Repo: repo, Branch: env.Optional("APPS_REPO_BRANCH", "main"), Dir: cloudEnv, Token: token})
+		if err != nil {
+			log.Fatal(err)
+		}
+		dep := deployer.New(deployer.Config{
+			Source: src, Applier: kube, Env: cloudEnv, Registry: registry,
+			Target:    service.APITarget{HostSuffix: env.Required("HOST_SUFFIX"), InvokerNamespace: namespace},
+			Reconcile: ctl.Reconcile,
+			Log:       logger.L(),
+		})
+		// 前の様子（再起動の前に書いたもの）を読み戻して、履歴を続ける
+		if cms, err := kube.ConfigMaps(ctx, service.LabelDeployStatus); err == nil {
+			for _, cm := range cms {
+				if cm.Name == service.DeployStatusConfigMap {
+					dep.LoadStatuses(cm.Data)
+				}
+			}
+		}
+		go dep.Run(ctx, 15*time.Second)
+	} else {
+		go ctl.Run(ctx, 20*time.Second)
+	}
 	if err := server.Run(controllerServiceName, func(*http.ServeMux) {}); err != nil {
 		log.Fatal(err)
 	}

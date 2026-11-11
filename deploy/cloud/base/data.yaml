@@ -209,6 +209,11 @@ spec:
             - { name: CLOUD_MODE, value: controller }
             # 環境（関数ごとの namespace の名前 cloud-fn-<名前> などに使う）
             - { name: CLOUD_ENV, value: prod }
+            # デプロイヤー: アプリ用のリポジトリの YAML を読んで入れる（Argo CD は使わない）。トークンがなければコントローラーだけ動く
+            - { name: APPS_REPO, value: "JavaLangRuntimeException/taramanji-cloud-apps" }
+            - name: APPS_REPO_TOKEN
+              valueFrom: { secretKeyRef: { name: cloud-api-env, key: APPS_REPO_TOKEN, optional: true } }
+            - { name: HOST_SUFFIX, value: "-cloud.taramanji.com" }
             - { name: APP_ENV, value: prod }
             - { name: PORT, value: ":8080" }
             - name: POD_NAMESPACE

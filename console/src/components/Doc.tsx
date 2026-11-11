@@ -143,7 +143,7 @@ export function ArchitectureDiagram() {
         {node(470, 188, 130, "データベース", "PostgreSQL / Redis")}
         {node(620, 188, 130, "ストレージ", "バケット（読み書き）")}
         {node(8, 188, 200, "コンソール", "cloud.taramanji.com")}
-        {node(236, 188, 206, "YAML のリポジトリ → Argo CD", "taramanji-cloud-apps")}
+        {node(236, 188, 206, "YAML のリポジトリ → コントローラー", "taramanji-cloud-apps")}
         {arrow(108, 43, 124, 43)}
         {arrow(252, 43, 268, 43)}
         {arrow(388, 43, 404, 43)}
