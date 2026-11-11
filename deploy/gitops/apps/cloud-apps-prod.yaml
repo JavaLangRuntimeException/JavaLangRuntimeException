@@ -17,7 +17,8 @@ spec:
     server: https://kubernetes.default.svc
     namespace: cloud-apps
   syncPolicy:
-    automated: { prune: true, selfHeal: true }
+    # 最後の 1 つを消したとき（YAML が 0 個）も、クラスターから消す（既定では空への同期をしない）
+    automated: { prune: true, selfHeal: true, allowEmpty: true }
   # 関数の台数は API Gateway（cloud-gw）が 0 と 1 を行き来させる。Argo CD は戻さない
   ignoreDifferences:
     - group: apps
