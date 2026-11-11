@@ -207,7 +207,7 @@ spec:
             - { name: http, containerPort: 8080 }
           env:
             - { name: CLOUD_MODE, value: controller }
-            # 環境（関数ごとの namespace の名前 cloud-fn-<名前> などに使う）
+            # 環境（関数ごとの namespace の名前 taramanji-cloud-fn-<名前> などに使う）
             - { name: CLOUD_ENV, value: prod }
             # デプロイヤー: アプリ用のリポジトリの YAML を読んで入れる（Argo CD は使わない）。トークンがなければコントローラーだけ動く
             - { name: APPS_REPO, value: "JavaLangRuntimeException/taramanji-cloud-apps" }
@@ -229,7 +229,7 @@ spec:
             - { name: DD_LOGS_INJECTION, value: "true" }
             - name: GOMEMLIMIT
               valueFrom: { resourceFieldRef: { resource: limits.memory } }
-            - { name: APPS_NAMESPACE, value: cloud-apps }
+            - { name: APPS_NAMESPACE, value: taramanji-cloud-apps }
             - name: STORAGE_MASTER_KEY
               valueFrom: { secretKeyRef: { name: cloud-storage-key, key: STORAGE_MASTER_KEY } }
           envFrom:

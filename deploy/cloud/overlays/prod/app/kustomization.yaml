@@ -1,7 +1,7 @@
 # 本番のコンソール（namespace: cloud）。メトリクス（Datadog）を出すのは本番だけ
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-namespace: cloud
+namespace: taramanji-cloud
 resources:
   - ../../../base
   - rollouts.yaml
@@ -31,7 +31,7 @@ patches:
               - name: app
                 env:
                   # コンソールのメトリクスで見る namespace（コンソール自身とアプリ用）
-                  - { name: METRICS_NAMESPACES, value: "cloud,cloud-apps,cloud-fn-*" }
+                  - { name: METRICS_NAMESPACES, value: "taramanji-cloud,taramanji-cloud-apps,taramanji-cloud-fn-*" }
                   # 本番の関数の合計の枠（Mac mini のメモリから、taramanji.com・gws の伸びしろを残した分）
                   - { name: FUNCTION_MEMORY_CAP_MIB, value: "2560" }
                   - { name: FUNCTION_CPU_CAP_MILLIS, value: "4000" }

@@ -2,7 +2,7 @@
 #   新しい版を 1 台（2 台のうち 1 台 = 50%）だけ出して止まり、rollouts.taramanji.com（namespace: cloud）で Promote すると全部入れ替える。
 #   cloud-api は、その間ずっと Datadog で新しい版の 5xx 率を見て、悪ければ自動で元に戻す（cloud-canary-health）。
 #   cloud-gw は関数の応答（関数自身の 5xx・起動待ち）をそのまま返すので自動判定はせず、console は APM がないので手動の判定だけにする。
-# 関数（cloud-fn-*）はカナリアにしない（いつも 0〜1 台で、利用者が自分で入れ替える）。
+# 関数（taramanji-cloud-fn-*）はカナリアにしない（いつも 0〜1 台で、利用者が自分で入れ替える）。
 # トラフィックの振り分けは Pod の数の比（cloud-gw は API・CDN の HTTPRoute から名前で呼ばれるので、重みでは分けない）。
 # version の値は kustomization.yaml の replacements が、そのサービスのイメージのタグで置き換える
 ---

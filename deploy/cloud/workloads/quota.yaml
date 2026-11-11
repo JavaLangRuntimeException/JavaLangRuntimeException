@@ -1,5 +1,5 @@
-# 環境の共有の namespace（cloud-apps など）の囲い。ここには API・CDN の HTTPRoute と、関数の登録・バケット・データベースの定義
-# （ConfigMap）だけを置き、Pod は動かせない。関数はコントローラーが作る関数ごとの namespace（cloud-fn-<名前> など）で動く
+# 環境の共有の namespace（taramanji-cloud-apps など）の囲い。ここには API・CDN の HTTPRoute と、関数の登録・バケット・データベースの定義
+# （ConfigMap）だけを置き、Pod は動かせない。関数はコントローラーが作る関数ごとの namespace（taramanji-cloud-fn-<名前> など）で動く
 apiVersion: v1
 kind: ResourceQuota
 metadata:

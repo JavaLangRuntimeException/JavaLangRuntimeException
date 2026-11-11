@@ -227,7 +227,7 @@ function Editor({ fn, opt, onClose }: { fn: Fn | null; opt: GetHostingOptionsRes
       title={isNew ? "関数を作る" : (fn.spec?.name ?? "")}
       source={fn?.source ?? null}
       yamlLabel="Kubernetes の YAML（登録・Deployment・Service）"
-      yamlHint="登録の ConfigMap（function-<名前>）と、関数の namespace（cloud-fn-<名前> など）に入る Deployment・Service。spec.replicas は書きません。Pod には priorityClassName: cloud-workload が必要です。"
+      yamlHint="登録の ConfigMap（function-<名前>）と、関数の namespace（taramanji-cloud-fn-<名前> など）に入る Deployment・Service。spec.replicas は書きません。Pod には priorityClassName: cloud-workload が必要です。"
       formValid={() => {
         setShowErrors(true);
         return Object.keys(errors).length === 0;
@@ -249,7 +249,7 @@ function Editor({ fn, opt, onClose }: { fn: Fn | null; opt: GetHostingOptionsRes
       warning={alertsProblem ? `YAML は保存しましたが、監視を Datadog に反映できませんでした: ${alertsProblem}（一覧の「監視を同期」でやり直せます）` : undefined}
     >
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="名前" error={err("name")} hint="あとから変えられません" info={<>関数の名前です。YAML のファイル名（<code>functions/&lt;名前&gt;.yaml</code>）、Kubernetes の Deployment・Service の名前、関数ごとの namespace（<code>cloud-fn-&lt;名前&gt;</code>）になります。英小文字で始め、英小文字・数字・ハイフンで 40 文字まで。公開する URL は API Gateway で別に決めます。</>}>
+        <Field label="名前" error={err("name")} hint="あとから変えられません" info={<>関数の名前です。YAML のファイル名（<code>functions/&lt;名前&gt;.yaml</code>）、Kubernetes の Deployment・Service の名前、関数ごとの namespace（<code>taramanji-cloud-fn-&lt;名前&gt;</code>）になります。英小文字で始め、英小文字・数字・ハイフンで 40 文字まで。公開する URL は API Gateway で別に決めます。</>}>
           <input className={input} value={form.name} disabled={!isNew} onChange={(e) => set({ name: e.target.value })} placeholder="blog" autoComplete="off" spellCheck={false} />
         </Field>
         <Field label="ポート" error={err("port")} hint="コンテナが HTTP を受けるポート" info={<>コンテナの中のアプリが HTTP を待ち受けているポート番号です（Node の <code>listen(8080)</code> なら 8080）。API Gateway はこのポートにリクエストを渡します。HTTPS ではなく HTTP で受けてください（証明書は Cloudflare が持ちます）。</>}>
@@ -371,7 +371,7 @@ function EnvEditor({ form, error, onChange }: { form: FunctionForm; error?: stri
 function AlertPicker({ form, opt, onChange }: { form: FunctionForm; opt: GetHostingOptionsResponse; onChange: (p: Partial<FunctionForm>) => void }) {
   return (
     <fieldset>
-      <Legend info={<>選んだものが、本番では Datadog のモニターになり、条件を満たすと Datadog に出ます。stg・dev は Datadog で見ていないので、YAML に残るだけです。通知先（メール・Discord）は宛先をまだ用意していないので、空のままにしてください。</>}>監視</Legend>
+      <Legend info={<>選んだものが、本番では Datadog のモニターになり、条件を満たすと Datadog に出ます。通知先（メール・Discord）は宛先をまだ用意していないので、空のままにしてください。</>}>監視</Legend>
       <ul className="divide-y divide-line rounded border border-line">
         {opt.alertPresets.map((p) => (
           <li key={p.id}>

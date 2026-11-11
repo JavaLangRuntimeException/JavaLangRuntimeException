@@ -75,7 +75,7 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: cloudflared-egress
-  namespace: cloud-cloudflared
+  namespace: taramanji-cloud-cloudflared
 spec:
   podSelector: {}
   policyTypes: [Egress]
@@ -92,7 +92,7 @@ spec:
           podSelector:
             matchLabels:
               gateway.envoyproxy.io/owning-gateway-name: cloud
-              gateway.envoyproxy.io/owning-gateway-namespace: cloud-gateway
+              gateway.envoyproxy.io/owning-gateway-namespace: taramanji-cloud-gateway
       ports:
         - { port: 10080, protocol: TCP }
     # Cloudflare のエッジ（トンネルは 7844 番の QUIC / HTTP2、API・更新確認は 443 番）。クラスター内の範囲は除く

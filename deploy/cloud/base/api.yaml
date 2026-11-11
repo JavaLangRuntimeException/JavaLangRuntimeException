@@ -86,7 +86,7 @@ spec:
             # 環境ごとに overlays で書き換える
             - { name: CLOUD_ENV, value: prod }
             # この環境のアプリ用 namespace（容量の枠を読む）
-            - { name: APPS_NAMESPACE, value: cloud-apps }
+            - { name: APPS_NAMESPACE, value: taramanji-cloud-apps }
             # 環境の関数の合計の枠（コンソールの「容量」で数える。API Gateway の FUNCTION_MEMORY_CAP_MIB と同じ値にする）
             - { name: FUNCTION_MEMORY_CAP_MIB, value: "512" }
             - { name: FUNCTION_CPU_CAP_MILLIS, value: "1000" }

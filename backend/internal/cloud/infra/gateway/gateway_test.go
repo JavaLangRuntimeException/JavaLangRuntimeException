@@ -15,9 +15,9 @@ func TestKubeWorkloads(t *testing.T) {
 	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		auth, query = r.Header.Get("Authorization"), r.URL.RawQuery
 		switch r.URL.Path {
-		case "/apis/apps/v1/namespaces/cloud/deployments":
+		case "/apis/apps/v1/namespaces/taramanji-cloud/deployments":
 			_, _ = w.Write([]byte(`{"items":[{"metadata":{"name":"cloud-api"},"spec":{"replicas":2,"template":{"spec":{"containers":[{"image":"ghcr.io/x/taramanji-cloud:sha-1"}]}}},"status":{"readyReplicas":1}}]}`))
-		case "/apis/apps/v1/namespaces/cloud/statefulsets":
+		case "/apis/apps/v1/namespaces/taramanji-cloud/statefulsets":
 			_, _ = w.Write([]byte(`{"items":[{"metadata":{"name":"redis"},"spec":{"template":{"spec":{"containers":[{"image":"redis:8"}]}}},"status":{}}]}`))
 		default:
 			http.Error(w, `{"message":"forbidden"}`, http.StatusForbidden)
@@ -26,7 +26,7 @@ func TestKubeWorkloads(t *testing.T) {
 	defer srv.Close()
 	token := filepath.Join(t.TempDir(), "token")
 	_ = os.WriteFile(token, []byte("tok\n"), 0o600)
-	k := &Kube{http: srv.Client(), base: srv.URL, namespace: "cloud", tokenPath: token}
+	k := &Kube{http: srv.Client(), base: srv.URL, namespace: "taramanji-cloud", tokenPath: token}
 	ws, err := k.Workloads(context.Background())
 	if err != nil {
 		t.Fatal(err)

@@ -56,22 +56,22 @@ func testKube(t *testing.T, routes map[string]string) *Kube {
 	t.Cleanup(srv.Close)
 	token := filepath.Join(t.TempDir(), "token")
 	_ = os.WriteFile(token, []byte("tok"), 0o600)
-	return &Kube{http: srv.Client(), base: srv.URL, namespace: "cloud", appsNamespace: "cloud-apps", tokenPath: token}
+	return &Kube{http: srv.Client(), base: srv.URL, namespace: "taramanji-cloud", appsNamespace: "taramanji-cloud-apps", tokenPath: token}
 }
 
 func TestKubeCapacity(t *testing.T) {
 	k := testKube(t, map[string]string{
 		// 関数ごとの namespace（コントローラーが作ったもの）。名前の決まりに合わないものは見ない
 		"/api/v1/namespaces": `{"items":[
-			{"metadata":{"name":"cloud-fn-web","labels":{"cloud.taramanji.com/function":"web"}}},
+			{"metadata":{"name":"taramanji-cloud-fn-web","labels":{"cloud.taramanji.com/function":"web"}}},
 			{"metadata":{"name":"hand-made","labels":{"cloud.taramanji.com/function":"x"}}}]}`,
-		"/api/v1/namespaces/cloud-fn-web/pods": `{"items":[
+		"/api/v1/namespaces/taramanji-cloud-fn-web/pods": `{"items":[
 			{"metadata":{"name":"web-1"},"spec":{"containers":[{"resources":{"limits":{"memory":"256Mi","cpu":"250m"}}}]},"status":{"phase":"Running"}},
 			{"metadata":{"name":"job-1"},"spec":{"containers":[{"resources":{"limits":{"memory":"128Mi"}}}]},"status":{"phase":"Succeeded"}}]}`,
-		"/apis/metrics.k8s.io/v1beta1/namespaces/cloud-fn-web/pods": `{"items":[
+		"/apis/metrics.k8s.io/v1beta1/namespaces/taramanji-cloud-fn-web/pods": `{"items":[
 			{"metadata":{"name":"web-1"},"containers":[{"usage":{"memory":"100Mi","cpu":"12345678n"}}]}]}`,
-		"/apis/apps/v1/namespaces/cloud-fn-web/deployments":     `{"items":[{"metadata":{"name":"web"},"spec":{"replicas":1},"status":{"readyReplicas":1}}]}`,
-		"/apis/apps/v1/namespaces/cloud-fn-web/deployments/web": `{"metadata":{"name":"web"},"spec":{"replicas":1,"template":{"spec":{"containers":[{"resources":{"limits":{"memory":"256Mi"}}}]}}},"status":{"readyReplicas":1}}`,
+		"/apis/apps/v1/namespaces/taramanji-cloud-fn-web/deployments":     `{"items":[{"metadata":{"name":"web"},"spec":{"replicas":1},"status":{"readyReplicas":1}}]}`,
+		"/apis/apps/v1/namespaces/taramanji-cloud-fn-web/deployments/web": `{"metadata":{"name":"web"},"spec":{"replicas":1,"template":{"spec":{"containers":[{"resources":{"limits":{"memory":"256Mi"}}}]}}},"status":{"readyReplicas":1}}`,
 		"/api/v1/nodes": `{"items":[
 			{"metadata":{"name":"n1"},"status":{"capacity":{"memory":"12304172Ki","cpu":"10"}}},
 			{"metadata":{"name":"n2"},"status":{"capacity":{"memory":"12304172Ki","cpu":"10"}}}]}`,
