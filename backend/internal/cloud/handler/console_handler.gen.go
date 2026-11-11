@@ -222,6 +222,30 @@ func (h *ConsoleHandler) DeleteApi(ctx context.Context, req *connect.Request[clo
 	return connect.NewResponse(&cloudv1.DeleteApiResponse{DnsProblem: out.DnsProblem}), nil
 }
 
+func (h *ConsoleHandler) CreateApiKey(ctx context.Context, req *connect.Request[cloudv1.CreateApiKeyRequest]) (*connect.Response[cloudv1.CreateApiKeyResponse], error) {
+	out, err := h.usecase.CreateApiKey(ctx, usecase.CreateApiKeyInput{
+		API:      req.Msg.GetApi(),
+		Name:     req.Msg.GetName(),
+		Revision: req.Msg.GetRevision(),
+	})
+	if err != nil {
+		return nil, errs.ToConnect(ctx, err)
+	}
+	return connect.NewResponse(&cloudv1.CreateApiKeyResponse{Api: consoleApiToPb(out.API), Key: out.Key}), nil
+}
+
+func (h *ConsoleHandler) DeleteApiKey(ctx context.Context, req *connect.Request[cloudv1.DeleteApiKeyRequest]) (*connect.Response[cloudv1.DeleteApiKeyResponse], error) {
+	out, err := h.usecase.DeleteApiKey(ctx, usecase.DeleteApiKeyInput{
+		API:      req.Msg.GetApi(),
+		Name:     req.Msg.GetName(),
+		Revision: req.Msg.GetRevision(),
+	})
+	if err != nil {
+		return nil, errs.ToConnect(ctx, err)
+	}
+	return connect.NewResponse(&cloudv1.DeleteApiKeyResponse{Api: consoleApiToPb(out.API)}), nil
+}
+
 func (h *ConsoleHandler) ListBuckets(ctx context.Context, req *connect.Request[cloudv1.ListBucketsRequest]) (*connect.Response[cloudv1.ListBucketsResponse], error) {
 	out, err := h.usecase.ListBuckets(ctx, usecase.ListBucketsInput{})
 	if err != nil {
@@ -808,6 +832,26 @@ func consoleApiRouteToPb(u *usecase.ApiRoute) *cloudv1.ApiRoute {
 	}
 }
 
+func consolePbToApiKey(p *cloudv1.ApiKey) *usecase.ApiKey {
+	if p == nil {
+		return nil
+	}
+	return &usecase.ApiKey{
+		Name:   p.GetName(),
+		Prefix: p.GetPrefix(),
+	}
+}
+
+func consoleApiKeyToPb(u *usecase.ApiKey) *cloudv1.ApiKey {
+	if u == nil {
+		return nil
+	}
+	return &cloudv1.ApiKey{
+		Name:   u.Name,
+		Prefix: u.Prefix,
+	}
+}
+
 func consolePbToApiSpec(p *cloudv1.ApiSpec) *usecase.ApiSpec {
 	if p == nil {
 		return nil
@@ -824,6 +868,18 @@ func consolePbToApiSpec(p *cloudv1.ApiSpec) *usecase.ApiSpec {
 			}
 			return out
 		}(p.GetRoutes()),
+		Auth:        p.GetAuth(),
+		CorsOrigins: p.GetCorsOrigins(),
+		Keys: func(l []*cloudv1.ApiKey) []*usecase.ApiKey {
+			if l == nil {
+				return nil
+			}
+			out := make([]*usecase.ApiKey, 0, len(l))
+			for _, v := range l {
+				out = append(out, consolePbToApiKey(v))
+			}
+			return out
+		}(p.GetKeys()),
 	}
 }
 
@@ -843,6 +899,18 @@ func consoleApiSpecToPb(u *usecase.ApiSpec) *cloudv1.ApiSpec {
 			}
 			return out
 		}(u.Routes),
+		Auth:        u.Auth,
+		CorsOrigins: u.CorsOrigins,
+		Keys: func(l []*usecase.ApiKey) []*cloudv1.ApiKey {
+			if l == nil {
+				return nil
+			}
+			out := make([]*cloudv1.ApiKey, 0, len(l))
+			for _, v := range l {
+				out = append(out, consoleApiKeyToPb(v))
+			}
+			return out
+		}(u.Keys),
 	}
 }
 

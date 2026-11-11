@@ -70,6 +70,11 @@ VM のメモリを増やしたら `overlays/prod/workloads` の枠を広げる�
 - CDN をブラウザ以外（curl・スクリプト）から呼ぶときは `cloudflared access curl https://<名前>-cdn-cloud.taramanji.com/`（最初にブラウザでログインする）
 - API Gateway（`-apigw-cloud`）はログインなしなので、Webhook も受けられる。その代わり誰でも呼べる。自分だけの API は CDN の「パスごとの元」で `/api` を関数に向ける
 - 公開バケット（`-storage-cloud`）は 1 ファイルずつの取得だけ（一覧・書き込みはできない）。5 分キャッシュ
+- **API キー**（API ごと。認証を「API キー」にしたとき）: HTTPRoute が `X-Cloud-Auth: api_key` と `X-Cloud-Api-Keys: <名前>=<SHA-256>,...` を set し、
+  cloud-gw が `x-api-key` のハッシュを比べる。違えば関数を起こさずに 401。通れば `X-Api-Key-Name` を関数に渡し、`x-api-key` は渡さない。
+  キーそのものは作ったときに 1 回だけ返し、どこにも保存しない（YAML の注釈 `cloud.taramanji.com/api-keys` に名前・頭・ハッシュだけ）。キーは 160 ビットの乱数なので、ハッシュから戻せない
+- **CORS**（API ごと）: `X-Cloud-Cors` に許すオリジンを空白区切りで set し、cloud-gw が `Access-Control-Allow-Origin` を返す（関数の値は使わない）。プリフライトは関数を起こさずに 204
+- 認証・CORS のヘッダーは、API 以外のルート（CDN・公開バケット）と、設定していない API では必ず remove する（利用者が付けてきても効かない）
 
 ## 関数と API Gateway
 

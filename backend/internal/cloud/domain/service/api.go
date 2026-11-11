@@ -1,6 +1,11 @@
 package service
 
 import (
+	"crypto/rand"
+	"crypto/sha256"
+	"crypto/subtle"
+	"encoding/hex"
+	"encoding/json"
 	"reflect"
 	"regexp"
 	"sort"
@@ -35,6 +40,78 @@ type APIRoute struct {
 type APISpec struct {
 	Name   string
 	Routes []APIRoute
+	// Auth は認証（AuthNone / AuthAPIKey）。API キーなら、API Gateway が x-api-key を確かめてから関数を起こす
+	Auth string
+	// Keys は API キー（ハッシュだけを持つ。キーそのものは作ったときに 1 回だけ見せる）
+	Keys []APIKey
+	// CORSOrigins はブラウザから呼んでよいオリジン（https://x-storage-cloud.taramanji.com など。* はどこからでも）。
+	// 空なら API Gateway は CORS に答えない（関数が自分で答える）
+	CORSOrigins []string
+}
+
+// API の認証
+const (
+	AuthNone   = "none"
+	AuthAPIKey = "api_key"
+	// MaxAPIKeys は 1 つの API に作れるキーの数（入れ替えのあいだ 2 つ以上を並べられるように）
+	MaxAPIKeys = 5
+	// MaxCORSOrigins は許すオリジンの数
+	MaxCORSOrigins = 10
+	// APIKeyPrefix は API キーの頭（見分けやすくするため。GitHub の ghp_ などと同じ）
+	APIKeyPrefix = "tck_"
+	// AnnotationAPIKeys は API キーの名前・頭・ハッシュ（JSON）。HTTPRoute の注釈に置く（ハッシュなので git に残してよい）
+	AnnotationAPIKeys = "cloud.taramanji.com/api-keys"
+)
+
+// APIKey は API キー 1 つ。Hash はキー全体の SHA-256（16 進）。Prefix は画面で見分けるための頭（tck_ と 8 文字）
+type APIKey struct {
+	Name   string `json:"name"`
+	Prefix string `json:"prefix"`
+	Hash   string `json:"hash"`
+}
+
+var (
+	keyHashRe   = regexp.MustCompile(`^[0-9a-f]{64}$`)
+	keyPrefixRe = regexp.MustCompile(`^tck_[0-9a-f]{8}$`)
+	originRe    = regexp.MustCompile(`^https?://[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*(:[0-9]{1,5})?$`)
+)
+
+// NewAPIKey は新しい API キーを作る（160 ビットの乱数）。返したキーは保存しない（ハッシュだけを YAML に残す）
+func NewAPIKey(name string) (key string, meta APIKey, err error) {
+	b := make([]byte, 20)
+	if _, err := rand.Read(b); err != nil {
+		return "", APIKey{}, err
+	}
+	key = APIKeyPrefix + hex.EncodeToString(b)
+	return key, APIKey{Name: name, Prefix: key[:len(APIKeyPrefix)+8], Hash: HashAPIKey(key)}, nil
+}
+
+// HashAPIKey は API キーの SHA-256（16 進）。キーは 160 ビットの乱数なので、ハッシュから戻すことはできない
+func HashAPIKey(key string) string {
+	sum := sha256.Sum256([]byte(key))
+	return hex.EncodeToString(sum[:])
+}
+
+// MatchAPIKey は key が、ヘッダー X-Cloud-Api-Keys（"<名前>=<ハッシュ>,..."）のどれかに当たるかを調べ、当たったキーの名前を返す
+func MatchAPIKey(header, key string) (string, bool) {
+	if key == "" {
+		return "", false
+	}
+	got := []byte(HashAPIKey(key))
+	name, found := "", false
+	for _, entry := range strings.Split(header, ",") {
+		n, h, ok := strings.Cut(strings.TrimSpace(entry), "=")
+		// 全部を比べる（どこで当たったかで時間が変わらないように）
+		if ok && subtle.ConstantTimeCompare(got, []byte(h)) == 1 {
+			name, found = n, true
+		}
+	}
+	return name, found
+}
+
+// NormalizeOrigin はオリジンを小文字にし、末尾の / を落とす
+func NormalizeOrigin(o string) string {
+	return strings.TrimRight(strings.ToLower(strings.TrimSpace(o)), "/")
 }
 
 // HostOf は公開ホスト名（<名前> + 接尾辞）
@@ -70,6 +147,20 @@ func (s APISpec) Normalize() APISpec {
 		return routes[i].Path < routes[j].Path
 	})
 	s.Routes = routes
+	if s.Auth == "" {
+		s.Auth = AuthNone
+	}
+	origins := []string{}
+	for _, o := range s.CORSOrigins {
+		if o = NormalizeOrigin(o); o != "" && !containsString(origins, o) {
+			origins = append(origins, o)
+		}
+	}
+	sort.Strings(origins)
+	s.CORSOrigins = origins
+	keys := append([]APIKey{}, s.Keys...)
+	sort.SliceStable(keys, func(i, j int) bool { return keys[i].Name < keys[j].Name })
+	s.Keys = keys
 	return s
 }
 
@@ -91,6 +182,33 @@ func (s APISpec) Validate() error {
 		seen[r.Path] = true
 		if !ValidName(r.Function) {
 			return fieldErr("routes", "パス %q の渡し先の関数を選んでください", r.Path)
+		}
+	}
+	if s.Auth != AuthNone && s.Auth != AuthAPIKey {
+		return fieldErr("auth", "認証は「なし」か「API キー」です")
+	}
+	if len(s.Keys) > MaxAPIKeys {
+		return fieldErr("keys", "API キーは %d 個までです", MaxAPIKeys)
+	}
+	names := map[string]bool{}
+	for _, k := range s.Keys {
+		if !ValidName(k.Name) {
+			return fieldErr("keys", "API キーの名前は英小文字で始め、英小文字・数字・ハイフンで 40 文字までにしてください")
+		}
+		if names[k.Name] {
+			return fieldErr("keys", "API キーの名前 %q が重複しています", k.Name)
+		}
+		names[k.Name] = true
+		if !keyHashRe.MatchString(k.Hash) || !keyPrefixRe.MatchString(k.Prefix) {
+			return fieldErr("keys", "API キー %q のハッシュか頭が正しくありません", k.Name)
+		}
+	}
+	if len(s.CORSOrigins) > MaxCORSOrigins {
+		return fieldErr("cors_origins", "CORS で許すオリジンは %d 個までです", MaxCORSOrigins)
+	}
+	for _, o := range s.CORSOrigins {
+		if o != "*" && !originRe.MatchString(o) {
+			return fieldErr("cors_origins", "オリジン %q は https://example.com の形（パスなし）か * にしてください", o)
 		}
 	}
 	return nil
@@ -181,6 +299,14 @@ func RenderAPIYAML(s APISpec, t APITarget) (string, error) {
 	var r k8sHTTPRoute
 	r.APIVersion, r.Kind = "gateway.networking.k8s.io/v1", "HTTPRoute"
 	r.Metadata = objectMeta{Name: s.Name, Labels: map[string]string{"app.kubernetes.io/name": s.Name, LabelKind: KindAPI}}
+	if len(s.Keys) > 0 {
+		b, err := json.Marshal(s.Keys)
+		if err != nil {
+			return "", err
+		}
+		r.Metadata.Annotations = map[string]string{AnnotationAPIKeys: string(b)}
+	}
+	set, remove := apiHeaders(s)
 	r.Spec.ParentRefs = append(r.Spec.ParentRefs, struct {
 		Name        string `yaml:"name"`
 		Namespace   string `yaml:"namespace"`
@@ -194,15 +320,41 @@ func RenderAPIYAML(s APISpec, t APITarget) (string, error) {
 		rule.Matches = []routeMatch{m}
 		// set は利用者が付けてきた同じ名前のヘッダーを上書きするので、渡し先は偽れない
 		f := routeFilter{Type: "RequestHeaderModifier"}
-		f.RequestHeaderModifier.Set = []headerValue{{Name: HeaderFunction, Value: route.Function}}
+		f.RequestHeaderModifier.Set = append([]headerValue{{Name: HeaderFunction, Value: route.Function}}, set...)
 		// CDN 用のヘッダーを利用者が付けてきても、API ではバケットを読ませない・キャッシュの長さを決めさせない。
 		// 認証・CORS のヘッダーも、設定していなければ消す（利用者が付けてきた値を使わせない）
-		f.RequestHeaderModifier.Remove = append([]string{HeaderBucket, HeaderCacheTTL, HeaderSPA}, apiOnlyHeaders...)
+		f.RequestHeaderModifier.Remove = append([]string{HeaderBucket, HeaderCacheTTL, HeaderSPA}, remove...)
 		rule.Filters = []routeFilter{f}
 		rule.BackendRefs = []backendRef{{Name: InvokerService, Namespace: t.InvokerNamespace, Port: InvokerPort}}
 		r.Spec.Rules = append(r.Spec.Rules, rule)
 	}
 	return encodeDocs(r)
+}
+
+// apiHeaders は、認証・CORS の設定を API Gateway に伝えるヘッダー（set）と、設定していないので消すヘッダー（remove）
+//   - X-Cloud-Auth: api_key（API キーのときだけ）
+//   - X-Cloud-Api-Keys: <名前>=<ハッシュ>,...（キーがなければ "-"。どのキーも当たらない）
+//   - X-Cloud-Cors: 許すオリジンを空白で区切ったもの
+func apiHeaders(s APISpec) (set []headerValue, remove []string) {
+	if s.Auth == AuthAPIKey {
+		entries := []string{}
+		for _, k := range s.Keys {
+			entries = append(entries, k.Name+"="+k.Hash)
+		}
+		value := strings.Join(entries, ",")
+		if value == "" {
+			value = "-"
+		}
+		set = append(set, headerValue{Name: HeaderAuth, Value: AuthAPIKey}, headerValue{Name: HeaderAPIKeys, Value: value})
+	} else {
+		remove = append(remove, HeaderAuth, HeaderAPIKeys)
+	}
+	if len(s.CORSOrigins) > 0 {
+		set = append(set, headerValue{Name: HeaderCORS, Value: strings.Join(s.CORSOrigins, " ")})
+	} else {
+		remove = append(remove, HeaderCORS)
+	}
+	return set, remove
 }
 
 // ParsedAPI は YAML から読み取った API
@@ -238,19 +390,37 @@ func ParseAPIYAML(name, src string, t APITarget) (*ParsedAPI, error) {
 	if len(r.Spec.ParentRefs) != 1 || r.Spec.ParentRefs[0].Name != gatewayName || r.Spec.ParentRefs[0].Namespace != gatewayNamespace {
 		return nil, fieldErr("yaml", "parentRefs は %s/%s だけにしてください", gatewayNamespace, gatewayName)
 	}
-	spec := APISpec{Name: name}
+	spec := APISpec{Name: name, Auth: AuthNone}
+	if raw := r.Metadata.Annotations[AnnotationAPIKeys]; raw != "" {
+		if err := json.Unmarshal([]byte(raw), &spec.Keys); err != nil {
+			return nil, fieldErr("yaml", "注釈 %s は API キーの JSON の配列にしてください", AnnotationAPIKeys)
+		}
+	}
+	// 認証・CORS はどのルートも同じ（1 つ目のルートで決め、ほかが違えば通さない）
+	var ruleAuth, ruleKeys, ruleCORS []string
 	for _, rule := range r.Spec.Rules {
 		if len(rule.BackendRefs) != 1 || rule.BackendRefs[0].Name != InvokerService || rule.BackendRefs[0].Namespace != t.InvokerNamespace || rule.BackendRefs[0].Port != InvokerPort {
 			return nil, fieldErr("yaml", "backendRefs は API Gateway（%s/%s:%d）だけにしてください", t.InvokerNamespace, InvokerService, InvokerPort)
 		}
-		fn := ""
+		fn, auth, keys, cors := "", "", "", ""
 		for _, f := range rule.Filters {
 			for _, h := range f.RequestHeaderModifier.Set {
-				if f.Type == "RequestHeaderModifier" && strings.EqualFold(h.Name, HeaderFunction) {
+				if f.Type != "RequestHeaderModifier" {
+					continue
+				}
+				switch {
+				case strings.EqualFold(h.Name, HeaderFunction):
 					fn = h.Value
+				case strings.EqualFold(h.Name, HeaderAuth):
+					auth = h.Value
+				case strings.EqualFold(h.Name, HeaderAPIKeys):
+					keys = h.Value
+				case strings.EqualFold(h.Name, HeaderCORS):
+					cors = h.Value
 				}
 			}
 		}
+		ruleAuth, ruleKeys, ruleCORS = append(ruleAuth, auth), append(ruleKeys, keys), append(ruleCORS, cors)
 		if !ValidName(fn) {
 			return nil, fieldErr("yaml", "各ルールに RequestHeaderModifier で %s（渡し先の関数名）を set してください", HeaderFunction)
 		}
@@ -260,6 +430,33 @@ func ParseAPIYAML(name, src string, t APITarget) (*ParsedAPI, error) {
 		for _, m := range rule.Matches {
 			spec.Routes = append(spec.Routes, APIRoute{Path: m.Path.Value, Function: fn})
 		}
+	}
+	for i := 1; i < len(ruleAuth); i++ {
+		if ruleAuth[i] != ruleAuth[0] || ruleKeys[i] != ruleKeys[0] || ruleCORS[i] != ruleCORS[0] {
+			return nil, fieldErr("yaml", "%s・%s・%s は、どのルートにも同じ値を set してください", HeaderAuth, HeaderAPIKeys, HeaderCORS)
+		}
+	}
+	if len(ruleAuth) > 0 {
+		switch ruleAuth[0] {
+		case "":
+		case AuthAPIKey:
+			spec.Auth = AuthAPIKey
+			// ヘッダーのキー（API Gateway が確かめるもの）と、注釈のキー（画面に出すもの）がそろっていること
+			want := []string{}
+			for _, k := range spec.Keys {
+				want = append(want, k.Name+"="+k.Hash)
+			}
+			got := ruleKeys[0]
+			if got == "-" {
+				got = ""
+			}
+			if strings.Join(want, ",") != got && !sameSet(want, strings.Split(got, ",")) {
+				return nil, fieldErr("yaml", "%s と注釈 %s の API キーがそろっていません", HeaderAPIKeys, AnnotationAPIKeys)
+			}
+		default:
+			return nil, fieldErr("yaml", "%s は %s だけにしてください", HeaderAuth, AuthAPIKey)
+		}
+		spec.CORSOrigins = strings.Fields(ruleCORS[0])
 	}
 	spec = spec.Normalize()
 	if err := spec.Validate(); err != nil {
@@ -276,3 +473,14 @@ func ParseAPIYAML(name, src string, t APITarget) (*ParsedAPI, error) {
 
 // noNamespace は、namespace を書かない（環境の共有の namespace に入る）リソースの決まり
 func noNamespace(string, string) string { return "" }
+
+// sameSet は a と b が、並びを除いて同じか
+func sameSet(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	x, y := append([]string{}, a...), append([]string{}, b...)
+	sort.Strings(x)
+	sort.Strings(y)
+	return reflect.DeepEqual(x, y)
+}

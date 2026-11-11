@@ -50,6 +50,18 @@ type DeleteApiInput struct {
 	Revision string
 }
 
+type CreateApiKeyInput struct {
+	API      string
+	Name     string
+	Revision string
+}
+
+type DeleteApiKeyInput struct {
+	API      string
+	Name     string
+	Revision string
+}
+
 type ListBucketsInput struct{}
 
 type CreateBucketInput struct {
@@ -189,6 +201,15 @@ type DeleteApiOutput struct {
 	DnsProblem string `json:"dns_problem"`
 }
 
+type CreateApiKeyOutput struct {
+	API *Api   `json:"api"`
+	Key string `json:"key"`
+}
+
+type DeleteApiKeyOutput struct {
+	API *Api `json:"api"`
+}
+
 type ListBucketsOutput struct {
 	Buckets []*Bucket `json:"buckets"`
 }
@@ -265,14 +286,22 @@ type Api struct {
 	Host   string   `json:"host"`
 }
 
+type ApiKey struct {
+	Name   string `json:"name"`
+	Prefix string `json:"prefix"`
+}
+
 type ApiRoute struct {
 	Path     string `json:"path"`
 	Function string `json:"function"`
 }
 
 type ApiSpec struct {
-	Name   string      `json:"name"`
-	Routes []*ApiRoute `json:"routes"`
+	Name        string      `json:"name"`
+	Routes      []*ApiRoute `json:"routes"`
+	Auth        string      `json:"auth"`
+	CorsOrigins []string    `json:"cors_origins"`
+	Keys        []*ApiKey   `json:"keys"`
 }
 
 type Bucket struct {
@@ -456,6 +485,8 @@ type ConsoleUsecase interface {
 	PreviewApi(ctx context.Context, input PreviewApiInput) (*PreviewApiOutput, error)
 	ApplyApi(ctx context.Context, input ApplyApiInput) (*ApplyApiOutput, error)
 	DeleteApi(ctx context.Context, input DeleteApiInput) (*DeleteApiOutput, error)
+	CreateApiKey(ctx context.Context, input CreateApiKeyInput) (*CreateApiKeyOutput, error)
+	DeleteApiKey(ctx context.Context, input DeleteApiKeyInput) (*DeleteApiKeyOutput, error)
 	ListBuckets(ctx context.Context, input ListBucketsInput) (*ListBucketsOutput, error)
 	CreateBucket(ctx context.Context, input CreateBucketInput) (*CreateBucketOutput, error)
 	UpdateBucket(ctx context.Context, input UpdateBucketInput) (*UpdateBucketOutput, error)

@@ -280,7 +280,8 @@ func apiSpecOf(s *ApiSpec) service.APISpec {
 	if s == nil {
 		return service.APISpec{}
 	}
-	out := service.APISpec{Name: s.Name}
+	// キー（keys）はここでは受け取らない。作る・消すは CreateApiKey・DeleteApiKey で、保存のときは今のキーを残す
+	out := service.APISpec{Name: s.Name, Auth: s.Auth, CORSOrigins: s.CorsOrigins}
 	for _, r := range s.Routes {
 		if r != nil {
 			out.Routes = append(out.Routes, service.APIRoute{Path: r.Path, Function: r.Function})
@@ -299,6 +300,10 @@ func (u *ConsoleUsecaseImpl) apiOf(f gateway.ResourceFile) *Api {
 	}
 	for _, r := range parsed.Spec.Routes {
 		api.Spec.Routes = append(api.Spec.Routes, &ApiRoute{Path: r.Path, Function: r.Function})
+	}
+	api.Spec.Auth, api.Spec.CorsOrigins, api.Spec.Keys = parsed.Spec.Auth, parsed.Spec.CORSOrigins, []*ApiKey{}
+	for _, k := range parsed.Spec.Keys {
+		api.Spec.Keys = append(api.Spec.Keys, &ApiKey{Name: k.Name, Prefix: k.Prefix})
 	}
 	api.Source.FormEditable = parsed.FormEditable
 	return api
@@ -345,6 +350,14 @@ func (u *ConsoleUsecaseImpl) ApplyApi(ctx context.Context, in ApplyApiInput) (*A
 	var spec service.APISpec
 	if y == "" {
 		spec = apiSpecOf(in.Spec)
+		// 今のキーを残す（フォームはキーを送らない）
+		if in.Revision != "" {
+			if cur, err := store.Get(ctx, gateway.KindAPIs, name); err == nil {
+				if parsed, err := service.ParseAPIYAML(name, cur.YAML, u.d.APITarget); err == nil {
+					spec.Keys = parsed.Spec.Keys
+				}
+			}
+		}
 		if err := spec.Validate(); err != nil {
 			return nil, invalid(err)
 		}
@@ -390,6 +403,94 @@ func (u *ConsoleUsecaseImpl) DeleteApi(ctx context.Context, in DeleteApiInput) (
 		return nil, storeErr(err)
 	}
 	return &DeleteApiOutput{DnsProblem: u.removeDNS(ctx, u.d.APITarget.Host(service.HostAPI, in.Name))}, nil
+}
+
+// ---- API キー ----
+
+// editableAPI は API キーを足す・消すために、今の API を読む。手で直した YAML は、作り直すと消えてしまうので扱わない
+func (u *ConsoleUsecaseImpl) editableAPI(ctx context.Context, store gateway.ResourceStore, name string) (service.APISpec, error) {
+	if !service.ValidName(name) {
+		return service.APISpec{}, storeErr(gateway.ErrResourceNotFound)
+	}
+	cur, err := store.Get(ctx, gateway.KindAPIs, name)
+	if err != nil {
+		return service.APISpec{}, storeErr(err)
+	}
+	parsed, err := service.ParseAPIYAML(name, cur.YAML, u.d.APITarget)
+	if err != nil {
+		return service.APISpec{}, invalid(err)
+	}
+	if !parsed.FormEditable {
+		return service.APISpec{}, errs.New(errs.ErrorTypeBadRequest, "YAML を手で直している API なので、キーは YAML に書いてください（注釈 "+service.AnnotationAPIKeys+" と "+service.HeaderAPIKeys+"）").WithCode("not_form_editable")
+	}
+	return parsed.Spec, nil
+}
+
+func (u *ConsoleUsecaseImpl) saveAPI(ctx context.Context, store gateway.ResourceStore, spec service.APISpec, revision, what string) (*Api, error) {
+	if err := spec.Validate(); err != nil {
+		return nil, invalid(err)
+	}
+	y, err := service.RenderAPIYAML(spec, u.d.APITarget)
+	if err != nil {
+		return nil, errs.NewInternalError(err)
+	}
+	rev, err := store.Put(ctx, gateway.KindAPIs, spec.Name, y, revision, u.commitMessage(ctx, "update", "api", spec.Name+" "+what))
+	if err != nil {
+		return nil, storeErr(err)
+	}
+	return u.apiOf(gateway.ResourceFile{Name: spec.Name, YAML: y, Revision: rev}), nil
+}
+
+// CreateApiKey は API キーを作り、ハッシュだけを YAML に足す。キーそのものは返り値で 1 回だけ渡す
+func (u *ConsoleUsecaseImpl) CreateApiKey(ctx context.Context, in CreateApiKeyInput) (*CreateApiKeyOutput, error) {
+	store, err := u.store()
+	if err != nil {
+		return nil, err
+	}
+	spec, err := u.editableAPI(ctx, store, in.API)
+	if err != nil {
+		return nil, err
+	}
+	if !service.ValidName(in.Name) {
+		return nil, errs.NewValidationError("name", "キーの名前は英小文字で始め、英小文字・数字・ハイフンで 40 文字までにしてください").WithCode("invalid")
+	}
+	if slices.ContainsFunc(spec.Keys, func(k service.APIKey) bool { return k.Name == in.Name }) {
+		return nil, errs.NewValidationError("name", fmt.Sprintf("キー %q はもうあります", in.Name)).WithCode("invalid")
+	}
+	if len(spec.Keys) >= service.MaxAPIKeys {
+		return nil, errs.NewValidationError("name", fmt.Sprintf("キーは %d 個までです。使っていないキーを消してください", service.MaxAPIKeys)).WithCode("invalid")
+	}
+	key, meta, err := service.NewAPIKey(in.Name)
+	if err != nil {
+		return nil, errs.NewInternalError(err)
+	}
+	spec.Keys = append(spec.Keys, meta)
+	api, err := u.saveAPI(ctx, store, spec.Normalize(), in.Revision, "(key "+in.Name+" を作る)")
+	if err != nil {
+		return nil, err
+	}
+	return &CreateApiKeyOutput{API: api, Key: key}, nil
+}
+
+func (u *ConsoleUsecaseImpl) DeleteApiKey(ctx context.Context, in DeleteApiKeyInput) (*DeleteApiKeyOutput, error) {
+	store, err := u.store()
+	if err != nil {
+		return nil, err
+	}
+	spec, err := u.editableAPI(ctx, store, in.API)
+	if err != nil {
+		return nil, err
+	}
+	keys := slices.DeleteFunc(slices.Clone(spec.Keys), func(k service.APIKey) bool { return k.Name == in.Name })
+	if len(keys) == len(spec.Keys) {
+		return nil, errs.New(errs.ErrorTypeNotFound, fmt.Sprintf("キー %q はありません", in.Name)).WithCode("not_found")
+	}
+	spec.Keys = keys
+	api, err := u.saveAPI(ctx, store, spec, in.Revision, "(key "+in.Name+" を消す)")
+	if err != nil {
+		return nil, err
+	}
+	return &DeleteApiKeyOutput{API: api}, nil
 }
 
 // ---- ホスト名（<名前>-<サービス>-cloud.taramanji.com）----
