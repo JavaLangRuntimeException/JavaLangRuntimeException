@@ -61,7 +61,7 @@ export function DeployHistory({ kind, name, revision }: { kind: string; name: st
         </ul>
       )}
       <p className="border-t border-line px-4 py-2 text-xs text-muted">
-        コントローラーが 15 秒ごとにリポジトリを見て、変わっていたらクラスターに入れます（Argo CD は使いません）。決まりに合わない YAML は入れず、前の版のまま動かします。
+        コントローラーが 15 秒ごとにリポジトリを見て、変わっていたらクラスターに入れます（Argo CD では入れません。Argo CD の画面では Pod の様子だけ見られます）。決まりに合わない YAML は入れず、前の版のまま動かします。
       </p>
     </Panel>
   );

@@ -178,7 +178,7 @@ function SourcePanel({ opt }: { opt: GetHostingOptionsResponse }) {
       <div className="space-y-2 px-4 py-3 text-ink-2">
         <p>
           関数の定義は、リポジトリ <Mono>{opt.repository}</Mono> の <Mono>{opt.directory}/functions/&lt;名前&gt;.yaml</Mono> にある Kubernetes の YAML
-          です。ここで保存するとコミットされ、15 秒ほどでコントローラーがクラスターに入れます（Argo CD は使いません）。YAML を手で書いて push しても同じように扱います。
+          です。ここで保存するとコミットされ、15 秒ほどでコントローラーがクラスターに入れます（Argo CD では入れません。Argo CD の画面では、関数ごとに Pod の様子だけ見られます）。YAML を手で書いて push しても同じように扱います。
         </p>
         {opt.alertsEnabled ? (
           <div className="flex flex-wrap items-center gap-3">

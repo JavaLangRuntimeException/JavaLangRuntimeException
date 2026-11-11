@@ -76,7 +76,7 @@ export const articles: Article[] = [
         <H2 id="yaml">設定は YAML で残る</H2>
         <P>
           コンソールで作ったものは、すべて Kubernetes の YAML として、リポジトリ <C>JavaLangRuntimeException/taramanji-cloud-apps</C> にコミットされます。
-          クラスターに入れるのはコントローラー（デプロイヤー）で、15 秒ごとにリポジトリを見て入れます。Argo CD は使いません。入れた結果は各画面の「デプロイ」と、Console Home の「デプロイ」で見られます。
+          クラスターに入れるのはコントローラー（デプロイヤー）で、15 秒ごとにリポジトリを見て入れます。Argo CD では入れませんが、Argo CD の画面では関数ごとの Pod が動いているかを見られます（<C>taramanji-cloud-fn-&lt;名前&gt;</C>。見るだけ）。入れた結果は各画面の「デプロイ」と、Console Home の「デプロイ」で見られます。
         </P>
         <UL>
           <li>変更の履歴が git に残り、いつでも前の版に戻せます。</li>
