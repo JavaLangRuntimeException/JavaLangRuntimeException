@@ -15,6 +15,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"path"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -96,7 +97,10 @@ func (i *Invoker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ttl, _ := strconv.Atoi(r.Header.Get(service.HeaderCacheTTL))
 	spa := r.Header.Get(service.HeaderSPA) == "true"
 	bucket := r.Header.Get(service.HeaderBucket)
-	for _, h := range []string{service.HeaderCacheTTL, service.HeaderSPA, service.HeaderBucket} {
+	// 認証・CORS は API の HTTPRoute が付ける（ほかの HTTPRoute は消す）
+	auth, keys := r.Header.Get(service.HeaderAuth), r.Header.Get(service.HeaderAPIKeys)
+	cors := strings.Fields(r.Header.Get(service.HeaderCORS))
+	for _, h := range []string{service.HeaderCacheTTL, service.HeaderSPA, service.HeaderBucket, service.HeaderAuth, service.HeaderAPIKeys, service.HeaderCORS, HeaderKeyName} {
 		r.Header.Del(h)
 	}
 	if bucket != "" {
@@ -109,6 +113,31 @@ func (i *Invoker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "no function is routed for this request", http.StatusNotFound)
 		return
 	}
+	// CORS: 許したオリジンにだけ答える。プリフライト（OPTIONS）は関数を起こさずに返す
+	if len(cors) > 0 {
+		w.Header().Add("Vary", "Origin")
+		allow := corsAllow(cors, r.Header.Get("Origin"))
+		if allow != "" {
+			w.Header().Set("Access-Control-Allow-Origin", allow)
+		}
+		if r.Method == http.MethodOptions && r.Header.Get("Access-Control-Request-Method") != "" {
+			preflight(w, r, allow)
+			return
+		}
+	}
+	// API キー: 当たらなければ関数を起こさずに 401。当たったら、キーの名前を関数に渡す（キーそのものは渡さない）
+	if auth == service.AuthAPIKey {
+		keyName, ok := service.MatchAPIKey(keys, r.Header.Get(HeaderAPIKey))
+		if !ok {
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			w.WriteHeader(http.StatusUnauthorized)
+			_, _ = io.WriteString(w, `{"message":"API キーがないか、違います。x-api-key ヘッダーで送ってください"}`+"\n")
+			return
+		}
+		r.Header.Del(HeaderAPIKey)
+		r.Header.Set(HeaderKeyName, keyName)
+	}
+
 	now := i.c.Clock()
 	i.mu.Lock()
 	s := i.state(name)
@@ -141,7 +170,49 @@ func (i *Invoker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	r.Header.Del(service.HeaderFunction)
-	i.proxy(name, ttl).ServeHTTP(w, r)
+	i.proxy(name, ttl, len(cors) > 0).ServeHTTP(w, r)
+}
+
+// API キーのヘッダー（利用者が送る）と、当たったキーの名前（関数に渡す）
+const (
+	HeaderAPIKey  = "X-Api-Key"
+	HeaderKeyName = "X-Api-Key-Name"
+)
+
+// corsAllow は Origin が許したオリジンなら、Access-Control-Allow-Origin に入れる値を返す（* を許していれば *）
+func corsAllow(allowed []string, origin string) string {
+	if origin == "" {
+		return ""
+	}
+	o := service.NormalizeOrigin(origin)
+	for _, a := range allowed {
+		if a == "*" {
+			return "*"
+		}
+		if a == o {
+			return origin
+		}
+	}
+	return ""
+}
+
+var requestHeadersRe = regexp.MustCompile(`^[A-Za-z0-9!#$%&'*+.^_|~,\- ]*$`)
+
+// preflight は CORS のプリフライトに答える（関数は起こさない）。許していないオリジンには 403
+func preflight(w http.ResponseWriter, r *http.Request, allow string) {
+	if allow == "" {
+		http.Error(w, "origin is not allowed", http.StatusForbidden)
+		return
+	}
+	h := w.Header()
+	h.Set("Access-Control-Allow-Methods", "GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS")
+	if req := r.Header.Get("Access-Control-Request-Headers"); req != "" && len(req) <= 1024 && requestHeadersRe.MatchString(req) {
+		h.Set("Access-Control-Allow-Headers", req)
+	}
+	h.Set("Access-Control-Max-Age", "600")
+	h.Add("Vary", "Access-Control-Request-Method")
+	h.Add("Vary", "Access-Control-Request-Headers")
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // ErrCapacity は、起こすと環境の関数のメモリの合計の枠を超える
@@ -224,13 +295,17 @@ func (i *Invoker) doWake(name string, s *fnState) {
 	i.mu.Unlock()
 }
 
-func (i *Invoker) proxy(name string, ttl int) *httputil.ReverseProxy {
+func (i *Invoker) proxy(name string, ttl int, corsManaged bool) *httputil.ReverseProxy {
 	target := i.c.Upstream(name)
 	return &httputil.ReverseProxy{
 		// CDN を通した関数: 関数が自分で決めていなければ、GET の 200 にキャッシュの長さを付ける
 		ModifyResponse: func(res *http.Response) error {
 			if ttl > 0 && res.Request.Method == http.MethodGet && res.StatusCode == http.StatusOK && res.Header.Get("Cache-Control") == "" {
 				res.Header.Set("Cache-Control", cacheControl(ttl))
+			}
+			// CORS を API Gateway が受け持つときは、関数の Access-Control-Allow-Origin を使わない（2 つ付くとブラウザが弾く）
+			if corsManaged {
+				res.Header.Del("Access-Control-Allow-Origin")
 			}
 			return nil
 		},

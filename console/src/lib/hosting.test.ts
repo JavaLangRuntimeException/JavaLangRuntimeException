@@ -60,22 +60,35 @@ describe("statusOf / toggle", () => {
 
 describe("API のフォーム", () => {
   it("全部のパスを最初の関数に渡すところから始める", () => {
-    expect(emptyApiForm(["blog", "api"])).toEqual({ name: "", routes: [{ path: "/", function: "blog" }] });
+    expect(emptyApiForm(["blog", "api"])).toEqual({ name: "", routes: [{ path: "/", function: "blog" }], auth: "none", corsOrigins: "" });
     expect(emptyApiForm([]).routes[0].function).toBe("");
   });
   it("API の形にして、読み戻せる", () => {
-    const form = { name: " shop ", routes: [{ path: " /api ", function: "api" }] };
-    expect(apiSpecOf(form)).toEqual({ name: "shop", routes: [{ path: "/api", function: "api" }] });
-    expect(apiFormOf(apiSpecOf(form))).toEqual({ name: "shop", routes: [{ path: "/api", function: "api" }] });
+    const form = { name: " shop ", routes: [{ path: " /api ", function: "api" }], auth: "api_key" as const, corsOrigins: "https://Front-storage-cloud.taramanji.com/\n\nhttp://localhost:5173, https://front-storage-cloud.taramanji.com" };
+    expect(apiSpecOf(form)).toEqual({
+      name: "shop",
+      routes: [{ path: "/api", function: "api" }],
+      auth: "api_key",
+      corsOrigins: ["https://front-storage-cloud.taramanji.com", "http://localhost:5173"],
+    });
+    expect(apiFormOf(apiSpecOf(form))).toEqual({
+      name: "shop",
+      routes: [{ path: "/api", function: "api" }],
+      auth: "api_key",
+      corsOrigins: "https://front-storage-cloud.taramanji.com\nhttp://localhost:5173",
+    });
   });
   it("間違いを返す", () => {
-    const ok = { name: "shop", routes: [{ path: "/", function: "blog" }] };
+    const ok = { name: "shop", routes: [{ path: "/", function: "blog" }], auth: "none" as const, corsOrigins: "*" };
     expect(apiFormErrors(ok)).toEqual({});
     expect(apiFormErrors({ ...ok, name: "Shop" }).name).toBeDefined();
     expect(apiFormErrors({ ...ok, routes: [] }).routes).toBeDefined();
     expect(apiFormErrors({ ...ok, routes: [{ path: "api", function: "blog" }] }).routes).toBeDefined();
     expect(apiFormErrors({ ...ok, routes: [{ path: "/a", function: "blog" }, { path: "/a/", function: "blog" }] }).routes).toBe("同じパスが 2 つあります");
     expect(apiFormErrors({ ...ok, routes: [{ path: "/", function: "" }] }).routes).toBeDefined();
+    expect(apiFormErrors({ ...ok, corsOrigins: "https://a.example.com/path" }).corsOrigins).toContain("https://a.example.com/path");
+    expect(apiFormErrors({ ...ok, corsOrigins: "a.example.com" }).corsOrigins).toBeDefined();
+    expect(apiFormErrors({ ...ok, corsOrigins: "http://localhost:5173\nhttps://a.example.com" })).toEqual({});
   });
   it("待機までの時間", () => {
     expect(formatIdle(300)).toBe("5 分");

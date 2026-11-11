@@ -31,6 +31,9 @@ service ConsoleService {
   rpc PreviewApi(PreviewApiRequest) returns (PreviewApiResponse) {}
   rpc ApplyApi(ApplyApiRequest) returns (ApplyApiResponse) {}
   rpc DeleteApi(DeleteApiRequest) returns (DeleteApiResponse) {}
+  // API キー: 作るとキーを 1 回だけ返す（YAML にはハッシュだけを残す）
+  rpc CreateApiKey(CreateApiKeyRequest) returns (CreateApiKeyResponse) {}
+  rpc DeleteApiKey(DeleteApiKeyRequest) returns (DeleteApiKeyResponse) {}
 
   // ---- オブジェクトストレージと CDN ----
 
@@ -338,6 +341,19 @@ message ApiSpec {
   // ホスト名の先頭（<名前>-apigw-cloud.taramanji.com）。CDN と合わせて、環境の中で重複できない
   string name = 1;
   repeated ApiRoute routes = 2;
+  // 認証: none（だれでも）/ api_key（x-api-key ヘッダーのキーを API Gateway が確かめる）
+  string auth = 3;
+  // ブラウザから呼んでよいオリジン（https://x-storage-cloud.taramanji.com など。* はどこからでも）。空なら CORS は関数まかせ
+  repeated string cors_origins = 4;
+  // API キー（見るだけ。作る・消すは CreateApiKey・DeleteApiKey。保存のときは今のキーをそのまま残す）
+  repeated ApiKey keys = 5;
+}
+
+// API キー（キーそのものは持たない）
+message ApiKey {
+  string name = 1;
+  // 見分けるための頭（tck_ と 8 文字）
+  string prefix = 2;
 }
 
 message Api {
@@ -381,6 +397,29 @@ message DeleteApiRequest {
 message DeleteApiResponse {
   // DNS を消せなかった理由（YAML は消した。空なら問題なし）
   string dns_problem = 1;
+}
+
+message CreateApiKeyRequest {
+  string api = 1;
+  // キーの名前（呼ぶ側の名前。関数には X-Api-Key-Name で渡る）
+  string name = 2;
+  string revision = 3;
+}
+
+message CreateApiKeyResponse {
+  Api api = 1;
+  // キーそのもの。ここで 1 回だけ返す（どこにも保存しない）
+  string key = 2;
+}
+
+message DeleteApiKeyRequest {
+  string api = 1;
+  string name = 2;
+  string revision = 3;
+}
+
+message DeleteApiKeyResponse {
+  Api api = 1;
 }
 
 message SyncAlertsRequest {}

@@ -152,20 +152,41 @@ export function notifyLabel(channel: string): string {
 
 export type RouteRow = { path: string; function: string };
 
-export type ApiForm = { name: string; routes: RouteRow[] };
+/** 認証: none（だれでも）/ api_key（x-api-key を API Gateway が確かめる） */
+export type ApiAuth = "none" | "api_key";
+
+/** corsOrigins は 1 行に 1 つ（https://x-storage-cloud.taramanji.com・http://localhost:5173・*） */
+export type ApiForm = { name: string; routes: RouteRow[]; auth: ApiAuth; corsOrigins: string };
 
 /** 新しく作るときは、全部のパス（/）を 1 つの関数に渡すところから始める */
 export function emptyApiForm(functions: readonly string[]): ApiForm {
-  return { name: "", routes: [{ path: "/", function: functions[0] ?? "" }] };
+  return { name: "", routes: [{ path: "/", function: functions[0] ?? "" }], auth: "none", corsOrigins: "" };
 }
 
-export function apiFormOf(spec: { name: string; routes: readonly { path: string; function: string }[] }): ApiForm {
-  return { name: spec.name, routes: spec.routes.map((r) => ({ path: r.path, function: r.function })) };
+export function apiFormOf(spec: { name: string; routes: readonly { path: string; function: string }[]; auth?: string; corsOrigins?: readonly string[] }): ApiForm {
+  return {
+    name: spec.name,
+    routes: spec.routes.map((r) => ({ path: r.path, function: r.function })),
+    auth: spec.auth === "api_key" ? "api_key" : "none",
+    corsOrigins: (spec.corsOrigins ?? []).join("\n"),
+  };
 }
 
 export function apiSpecOf(form: ApiForm) {
-  return { name: form.name.trim(), routes: form.routes.map((r) => ({ path: r.path.trim(), function: r.function })) };
+  return { name: form.name.trim(), routes: form.routes.map((r) => ({ path: r.path.trim(), function: r.function })), auth: form.auth, corsOrigins: originsOf(form.corsOrigins) };
 }
+
+/** 1 行に 1 つのオリジンを、小文字・末尾の / なし・重複なしにする */
+export function originsOf(text: string): string[] {
+  const out: string[] = [];
+  for (const line of text.split(/[\s,]+/)) {
+    const o = line.trim().toLowerCase().replace(/\/+$/, "");
+    if (o !== "" && !out.includes(o)) out.push(o);
+  }
+  return out;
+}
+
+const ORIGIN_RE = /^https?:\/\/[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*(:[0-9]{1,5})?$/;
 
 const PATH_RE = /^\/[A-Za-z0-9._~/-]*$/;
 
@@ -177,6 +198,10 @@ export function apiFormErrors(form: ApiForm): Partial<Record<keyof ApiForm, stri
   else if (paths.some((p) => !PATH_RE.test(p) || p.includes("//") || p.includes(".."))) e.routes = "パスは / で始め、英数字と . _ ~ - / にしてください";
   else if (new Set(paths).size !== paths.length) e.routes = "同じパスが 2 つあります";
   else if (form.routes.some((r) => r.function === "")) e.routes = "渡し先の関数を選んでください";
+  const origins = originsOf(form.corsOrigins);
+  const bad = origins.find((o) => o !== "*" && !ORIGIN_RE.test(o));
+  if (bad !== undefined) e.corsOrigins = `${bad} は https://example.com の形（パスなし）か * にしてください`;
+  else if (origins.length > 10) e.corsOrigins = "10 個までです";
   return e;
 }
 

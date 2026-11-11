@@ -134,6 +134,7 @@ export const articles: Article[] = [
       { id: "function", label: "2. 関数を作る" },
       { id: "api", label: "3. API で公開する" },
       { id: "call", label: "4. 呼んでみる" },
+      { id: "auth", label: "5. API キーと CORS" },
       { id: "cold", label: "0 台からの起動について" },
     ],
     body: () => (
@@ -209,6 +210,29 @@ CMD ["node", "server.js"]
           API Gateway はログインなしなので、GitHub や Stripe などの Webhook も受けられます。その代わり、インターネットの誰からでも呼ばれます。
           自分だけが使う関数なら、CDN の「パスごとの元」で <C>/api</C> を関数に向けて、ログインの後ろに置いてください（<To to="/guide/static-site">静的なサイトをバケットと CDN で配る</To>）。
         </Note>
+
+        <H2 id="auth">5. API キーと CORS</H2>
+        <P>API Gateway は誰でも呼べます。呼べる人を絞るときは、API の画面の「認証」を「API キー」にします（AWS の API Gateway の API キーと同じ考え方）。</P>
+        <Steps>
+          <li>API の画面で「認証」を「API キー」にして保存します。</li>
+          <li>
+            下の「API キー」で名前（例: <C>ci</C>）を入れて「キーを作る」を押します。<C>tck_</C> で始まるキーが 1 回だけ出るので、コピーします（あとから見ることはできません）。
+          </li>
+          <li>呼ぶときに、ヘッダー <C>x-api-key</C> でキーを送ります。</li>
+        </Steps>
+        <Code lang="sh">{`curl -H "x-api-key: tck_..." https://hello-apigw-cloud.taramanji.com/`}</Code>
+        <UL>
+          <li>キーが違う・ないときは、API Gateway が関数を起こさずに 401 を返します。</li>
+          <li>
+            通ったときは、キーの名前が <C>X-Api-Key-Name</C> で関数に届きます（キーそのものは届きません）。YAML にはキーのハッシュだけが残ります。
+          </li>
+          <li>キーは 5 個まで。入れ替えるときは、新しいキーを作って呼ぶ側を変えてから、古いキーを消します。</li>
+          <li>ブラウザの JavaScript に書いたキーは誰でも見られます。ブラウザから呼ぶ API の利用者の確認は、関数側（ログインなど）で行ってください。</li>
+        </UL>
+        <P>
+          ほかのホスト名の画面（公開バケットの <C>https://site-storage-cloud.taramanji.com</C> など）からブラウザで呼ぶときは、「CORS」に画面のオリジンを書きます。
+          API Gateway が <C>Access-Control-Allow-Origin</C> を返し、プリフライト（<C>OPTIONS</C>）にも関数を起こさずに答えます。
+        </P>
 
         <H2 id="cold">0 台からの起動について</H2>
         <UL>

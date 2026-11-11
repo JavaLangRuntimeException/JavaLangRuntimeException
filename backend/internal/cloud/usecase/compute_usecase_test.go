@@ -291,6 +291,56 @@ func (f *fakeObjects) Delete(_ context.Context, bucket, key string) error {
 
 func (f *fakeObjects) Proxy(http.ResponseWriter, *http.Request, string, string) {}
 
+// API キーと CORS: キーそのものは作ったときに 1 回だけ返り、YAML にはハッシュだけ。フォームで保存してもキーは残る
+func TestAPIKeysAndCORS(t *testing.T) {
+	uc, store, _ := newComputeUC()
+	uc.d.DNS = &fakeDNS{hosts: map[string]bool{}}
+	ctx := context.Background()
+	if _, err := uc.ApplyFunction(ctx, ApplyFunctionInput{Spec: blogSpec()}); err != nil {
+		t.Fatal(err)
+	}
+	made, err := uc.ApplyApi(ctx, ApplyApiInput{Spec: &ApiSpec{Name: "shop", Routes: []*ApiRoute{{Path: "/", Function: "blog"}}, Auth: "api_key",
+		CorsOrigins: []string{"https://front-storage-cloud.taramanji.com/"}}})
+	if err != nil || made.API.Spec.Auth != "api_key" || len(made.API.Spec.CorsOrigins) != 1 || made.API.Spec.CorsOrigins[0] != "https://front-storage-cloud.taramanji.com" {
+		t.Fatalf("api: %+v %v", made, err)
+	}
+	k, err := uc.CreateApiKey(ctx, CreateApiKeyInput{API: "shop", Name: "ci", Revision: made.API.Source.Revision})
+	if err != nil || !strings.HasPrefix(k.Key, "tck_") || len(k.API.Spec.Keys) != 1 || k.API.Spec.Keys[0].Name != "ci" || k.API.Spec.Keys[0].Prefix != k.Key[:12] {
+		t.Fatalf("key: %+v %v", k, err)
+	}
+	y := store.files["apis/shop"].YAML
+	if strings.Contains(y, k.Key) || !strings.Contains(y, service.HashAPIKey(k.Key)) {
+		t.Fatalf("YAML にはハッシュだけ:\n%s", y)
+	}
+	// 同じ名前・古い版では作れない
+	if _, err := uc.CreateApiKey(ctx, CreateApiKeyInput{API: "shop", Name: "ci", Revision: k.API.Source.Revision}); code(err) != "invalid" {
+		t.Fatalf("同じ名前: %v", err)
+	}
+	if _, err := uc.CreateApiKey(ctx, CreateApiKeyInput{API: "shop", Name: "web", Revision: made.API.Source.Revision}); err == nil {
+		t.Fatal("古い版で作れてしまう")
+	}
+	// フォームで保存し直しても（キーは送らない）、キーは残る
+	saved, err := uc.ApplyApi(ctx, ApplyApiInput{Spec: &ApiSpec{Name: "shop", Routes: []*ApiRoute{{Path: "/", Function: "blog"}}, Auth: "api_key"}, Revision: k.API.Source.Revision})
+	if err != nil || len(saved.API.Spec.Keys) != 1 || len(saved.API.Spec.CorsOrigins) != 0 || !strings.Contains(store.files["apis/shop"].YAML, service.HashAPIKey(k.Key)) {
+		t.Fatalf("保存し直し: %+v %v", saved, err)
+	}
+	del, err := uc.DeleteApiKey(ctx, DeleteApiKeyInput{API: "shop", Name: "ci", Revision: saved.API.Source.Revision})
+	if err != nil || len(del.API.Spec.Keys) != 0 || strings.Contains(store.files["apis/shop"].YAML, service.HashAPIKey(k.Key)) {
+		t.Fatalf("delete: %+v %v", del, err)
+	}
+	if _, err := uc.DeleteApiKey(ctx, DeleteApiKeyInput{API: "shop", Name: "ci", Revision: del.API.Source.Revision}); code(err) != "not_found" {
+		t.Fatalf("ないキー: %v", err)
+	}
+	// 手で直した YAML の API には、コンソールからキーを作らない（作り直すと手で直したところが消えるため）
+	hand := strings.Replace(store.files["apis/shop"].YAML, "    app.kubernetes.io/name: shop", "    app.kubernetes.io/name: shop\n    team: me", 1)
+	f := store.files["apis/shop"]
+	f.YAML = hand
+	store.files["apis/shop"] = f
+	if _, err := uc.CreateApiKey(ctx, CreateApiKeyInput{API: "shop", Name: "x", Revision: f.Revision}); code(err) != "not_form_editable" {
+		t.Fatalf("手で直した YAML: %v", err)
+	}
+}
+
 // 公開バケット: オンにすると <バケット>-storage-cloud.taramanji.com の HTTPRoute と DNS ができ、オフ・削除で消える
 func TestPublicBucket(t *testing.T) {
 	uc, store, _ := newComputeUC()

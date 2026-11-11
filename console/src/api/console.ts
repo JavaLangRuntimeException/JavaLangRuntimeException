@@ -187,6 +187,8 @@ export function useComputeMutations() {
     deleteFunction: useMutation({ mutationFn: (req: Parameters<typeof consoleApi.deleteFunction>[0]) => consoleApi.deleteFunction(req), onSuccess: refresh }),
     applyApi: useMutation({ mutationFn: (req: Parameters<typeof consoleApi.applyApi>[0]) => consoleApi.applyApi(req), onSuccess: refresh }),
     deleteApi: useMutation({ mutationFn: (req: Parameters<typeof consoleApi.deleteApi>[0]) => consoleApi.deleteApi(req), onSuccess: refresh }),
+    createApiKey: useMutation({ mutationFn: (req: Parameters<typeof consoleApi.createApiKey>[0]) => consoleApi.createApiKey(req), onSuccess: refresh }),
+    deleteApiKey: useMutation({ mutationFn: (req: Parameters<typeof consoleApi.deleteApiKey>[0]) => consoleApi.deleteApiKey(req), onSuccess: refresh }),
     syncAlerts: useMutation({ mutationFn: () => consoleApi.syncAlerts({}) }),
   };
 }

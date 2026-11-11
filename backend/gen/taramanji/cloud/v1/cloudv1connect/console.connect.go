@@ -67,6 +67,12 @@ const (
 	// ConsoleServiceDeleteApiProcedure is the fully-qualified name of the ConsoleService's DeleteApi
 	// RPC.
 	ConsoleServiceDeleteApiProcedure = "/taramanji.cloud.v1.ConsoleService/DeleteApi"
+	// ConsoleServiceCreateApiKeyProcedure is the fully-qualified name of the ConsoleService's
+	// CreateApiKey RPC.
+	ConsoleServiceCreateApiKeyProcedure = "/taramanji.cloud.v1.ConsoleService/CreateApiKey"
+	// ConsoleServiceDeleteApiKeyProcedure is the fully-qualified name of the ConsoleService's
+	// DeleteApiKey RPC.
+	ConsoleServiceDeleteApiKeyProcedure = "/taramanji.cloud.v1.ConsoleService/DeleteApiKey"
 	// ConsoleServiceListBucketsProcedure is the fully-qualified name of the ConsoleService's
 	// ListBuckets RPC.
 	ConsoleServiceListBucketsProcedure = "/taramanji.cloud.v1.ConsoleService/ListBuckets"
@@ -135,6 +141,9 @@ type ConsoleServiceClient interface {
 	PreviewApi(context.Context, *connect.Request[v1.PreviewApiRequest]) (*connect.Response[v1.PreviewApiResponse], error)
 	ApplyApi(context.Context, *connect.Request[v1.ApplyApiRequest]) (*connect.Response[v1.ApplyApiResponse], error)
 	DeleteApi(context.Context, *connect.Request[v1.DeleteApiRequest]) (*connect.Response[v1.DeleteApiResponse], error)
+	// API キー: 作るとキーを 1 回だけ返す（YAML にはハッシュだけを残す）
+	CreateApiKey(context.Context, *connect.Request[v1.CreateApiKeyRequest]) (*connect.Response[v1.CreateApiKeyResponse], error)
+	DeleteApiKey(context.Context, *connect.Request[v1.DeleteApiKeyRequest]) (*connect.Response[v1.DeleteApiKeyResponse], error)
 	// バケット: ファイルの置き場（<環境>/buckets/<名前>.yaml の ConfigMap）。外には CDN（ログインあり）か、
 	// 公開をオンにしたバケットだけ <バケット>-storage-cloud.taramanji.com（ログインなし）で出せる
 	ListBuckets(context.Context, *connect.Request[v1.ListBucketsRequest]) (*connect.Response[v1.ListBucketsResponse], error)
@@ -247,6 +256,18 @@ func NewConsoleServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 			connect.WithSchema(consoleServiceMethods.ByName("DeleteApi")),
 			connect.WithClientOptions(opts...),
 		),
+		createApiKey: connect.NewClient[v1.CreateApiKeyRequest, v1.CreateApiKeyResponse](
+			httpClient,
+			baseURL+ConsoleServiceCreateApiKeyProcedure,
+			connect.WithSchema(consoleServiceMethods.ByName("CreateApiKey")),
+			connect.WithClientOptions(opts...),
+		),
+		deleteApiKey: connect.NewClient[v1.DeleteApiKeyRequest, v1.DeleteApiKeyResponse](
+			httpClient,
+			baseURL+ConsoleServiceDeleteApiKeyProcedure,
+			connect.WithSchema(consoleServiceMethods.ByName("DeleteApiKey")),
+			connect.WithClientOptions(opts...),
+		),
 		listBuckets: connect.NewClient[v1.ListBucketsRequest, v1.ListBucketsResponse](
 			httpClient,
 			baseURL+ConsoleServiceListBucketsProcedure,
@@ -354,6 +375,8 @@ type consoleServiceClient struct {
 	previewApi          *connect.Client[v1.PreviewApiRequest, v1.PreviewApiResponse]
 	applyApi            *connect.Client[v1.ApplyApiRequest, v1.ApplyApiResponse]
 	deleteApi           *connect.Client[v1.DeleteApiRequest, v1.DeleteApiResponse]
+	createApiKey        *connect.Client[v1.CreateApiKeyRequest, v1.CreateApiKeyResponse]
+	deleteApiKey        *connect.Client[v1.DeleteApiKeyRequest, v1.DeleteApiKeyResponse]
 	listBuckets         *connect.Client[v1.ListBucketsRequest, v1.ListBucketsResponse]
 	createBucket        *connect.Client[v1.CreateBucketRequest, v1.CreateBucketResponse]
 	updateBucket        *connect.Client[v1.UpdateBucketRequest, v1.UpdateBucketResponse]
@@ -429,6 +452,16 @@ func (c *consoleServiceClient) ApplyApi(ctx context.Context, req *connect.Reques
 // DeleteApi calls taramanji.cloud.v1.ConsoleService.DeleteApi.
 func (c *consoleServiceClient) DeleteApi(ctx context.Context, req *connect.Request[v1.DeleteApiRequest]) (*connect.Response[v1.DeleteApiResponse], error) {
 	return c.deleteApi.CallUnary(ctx, req)
+}
+
+// CreateApiKey calls taramanji.cloud.v1.ConsoleService.CreateApiKey.
+func (c *consoleServiceClient) CreateApiKey(ctx context.Context, req *connect.Request[v1.CreateApiKeyRequest]) (*connect.Response[v1.CreateApiKeyResponse], error) {
+	return c.createApiKey.CallUnary(ctx, req)
+}
+
+// DeleteApiKey calls taramanji.cloud.v1.ConsoleService.DeleteApiKey.
+func (c *consoleServiceClient) DeleteApiKey(ctx context.Context, req *connect.Request[v1.DeleteApiKeyRequest]) (*connect.Response[v1.DeleteApiKeyResponse], error) {
+	return c.deleteApiKey.CallUnary(ctx, req)
 }
 
 // ListBuckets calls taramanji.cloud.v1.ConsoleService.ListBuckets.
@@ -527,6 +560,9 @@ type ConsoleServiceHandler interface {
 	PreviewApi(context.Context, *connect.Request[v1.PreviewApiRequest]) (*connect.Response[v1.PreviewApiResponse], error)
 	ApplyApi(context.Context, *connect.Request[v1.ApplyApiRequest]) (*connect.Response[v1.ApplyApiResponse], error)
 	DeleteApi(context.Context, *connect.Request[v1.DeleteApiRequest]) (*connect.Response[v1.DeleteApiResponse], error)
+	// API キー: 作るとキーを 1 回だけ返す（YAML にはハッシュだけを残す）
+	CreateApiKey(context.Context, *connect.Request[v1.CreateApiKeyRequest]) (*connect.Response[v1.CreateApiKeyResponse], error)
+	DeleteApiKey(context.Context, *connect.Request[v1.DeleteApiKeyRequest]) (*connect.Response[v1.DeleteApiKeyResponse], error)
 	// バケット: ファイルの置き場（<環境>/buckets/<名前>.yaml の ConfigMap）。外には CDN（ログインあり）か、
 	// 公開をオンにしたバケットだけ <バケット>-storage-cloud.taramanji.com（ログインなし）で出せる
 	ListBuckets(context.Context, *connect.Request[v1.ListBucketsRequest]) (*connect.Response[v1.ListBucketsResponse], error)
@@ -633,6 +669,18 @@ func NewConsoleServiceHandler(svc ConsoleServiceHandler, opts ...connect.Handler
 		ConsoleServiceDeleteApiProcedure,
 		svc.DeleteApi,
 		connect.WithSchema(consoleServiceMethods.ByName("DeleteApi")),
+		connect.WithHandlerOptions(opts...),
+	)
+	consoleServiceCreateApiKeyHandler := connect.NewUnaryHandler(
+		ConsoleServiceCreateApiKeyProcedure,
+		svc.CreateApiKey,
+		connect.WithSchema(consoleServiceMethods.ByName("CreateApiKey")),
+		connect.WithHandlerOptions(opts...),
+	)
+	consoleServiceDeleteApiKeyHandler := connect.NewUnaryHandler(
+		ConsoleServiceDeleteApiKeyProcedure,
+		svc.DeleteApiKey,
+		connect.WithSchema(consoleServiceMethods.ByName("DeleteApiKey")),
 		connect.WithHandlerOptions(opts...),
 	)
 	consoleServiceListBucketsHandler := connect.NewUnaryHandler(
@@ -751,6 +799,10 @@ func NewConsoleServiceHandler(svc ConsoleServiceHandler, opts ...connect.Handler
 			consoleServiceApplyApiHandler.ServeHTTP(w, r)
 		case ConsoleServiceDeleteApiProcedure:
 			consoleServiceDeleteApiHandler.ServeHTTP(w, r)
+		case ConsoleServiceCreateApiKeyProcedure:
+			consoleServiceCreateApiKeyHandler.ServeHTTP(w, r)
+		case ConsoleServiceDeleteApiKeyProcedure:
+			consoleServiceDeleteApiKeyHandler.ServeHTTP(w, r)
 		case ConsoleServiceListBucketsProcedure:
 			consoleServiceListBucketsHandler.ServeHTTP(w, r)
 		case ConsoleServiceCreateBucketProcedure:
@@ -836,6 +888,14 @@ func (UnimplementedConsoleServiceHandler) ApplyApi(context.Context, *connect.Req
 
 func (UnimplementedConsoleServiceHandler) DeleteApi(context.Context, *connect.Request[v1.DeleteApiRequest]) (*connect.Response[v1.DeleteApiResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.cloud.v1.ConsoleService.DeleteApi is not implemented"))
+}
+
+func (UnimplementedConsoleServiceHandler) CreateApiKey(context.Context, *connect.Request[v1.CreateApiKeyRequest]) (*connect.Response[v1.CreateApiKeyResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.cloud.v1.ConsoleService.CreateApiKey is not implemented"))
+}
+
+func (UnimplementedConsoleServiceHandler) DeleteApiKey(context.Context, *connect.Request[v1.DeleteApiKeyRequest]) (*connect.Response[v1.DeleteApiKeyResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.cloud.v1.ConsoleService.DeleteApiKey is not implemented"))
 }
 
 func (UnimplementedConsoleServiceHandler) ListBuckets(context.Context, *connect.Request[v1.ListBucketsRequest]) (*connect.Response[v1.ListBucketsResponse], error) {
