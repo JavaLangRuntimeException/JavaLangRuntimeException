@@ -52,7 +52,7 @@ var (
 	imageRe = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._/:@-]{0,254}$`)
 )
 
-// EnvVar はコンテナの環境変数（秘密は入れない。YAML は git に残る）
+// EnvVar はコンテナの環境変数（秘密は入れない。YAML は git に残る。秘密はシークレットにして Secrets でつなぐ）
 type EnvVar struct {
 	Name  string
 	Value string
@@ -75,6 +75,8 @@ type FunctionSpec struct {
 	// Databases・Buckets はつなぐデータベースとバケットの名前。接続先の Secret を、接頭辞を付けた環境変数として入れる
 	Databases []string
 	Buckets   []string
+	// Secrets は環境変数に入れるシークレット（API キーなど）。値は YAML に書かず、コントローラーが関数の namespace に置く Secret から入る
+	Secrets []SecretRef
 }
 
 // FieldError はどの項目がなぜ通らないか
@@ -103,6 +105,12 @@ func (s FunctionSpec) Normalize() FunctionSpec {
 		}
 	}
 	s.Databases, s.Buckets = connections(s.Databases), connections(s.Buckets)
+	if len(s.Secrets) == 0 {
+		s.Secrets = nil
+	}
+	for i, r := range s.Secrets {
+		s.Secrets[i] = SecretRef{Env: strings.TrimSpace(r.Env), Secret: strings.TrimSpace(r.Secret)}
+	}
 	s.Alerts = ordered(s.Alerts, alertIDs())
 	s.Notify = ordered(s.Notify, NotifyChannels)
 	return s
@@ -151,6 +159,18 @@ func (s FunctionSpec) Validate() error {
 		}
 		seen[e.Name] = true
 	}
+	if len(s.Secrets) > MaxFunctionSecrets {
+		return fieldErr("secrets", "シークレットは %d 個までです", MaxFunctionSecrets)
+	}
+	for _, r := range s.Secrets {
+		if !envNameRe.MatchString(r.Env) || seen[r.Env] {
+			return fieldErr("secrets", "環境変数の名前 %q が正しくないか、ほかの環境変数と重複しています", r.Env)
+		}
+		seen[r.Env] = true
+		if !ValidName(r.Secret) {
+			return fieldErr("secrets", "シークレット %q の名前が正しくありません", r.Secret)
+		}
+	}
 	for _, a := range s.Alerts {
 		if _, ok := AlertPresetOf(a); !ok {
 			return fieldErr("alerts", "監視 %q はありません", a)
@@ -174,6 +194,15 @@ func (s FunctionSpec) Validate() error {
 	return nil
 }
 
+// SecretNames はつなぐシークレットの名前（重複を除き、名前の順）
+func (s FunctionSpec) SecretNames() []string {
+	names := make([]string, 0, len(s.Secrets))
+	for _, r := range s.Secrets {
+		names = append(names, r.Secret)
+	}
+	return connections(names)
+}
+
 // Custom は型の値から CPU・メモリを変えているか
 func (s FunctionSpec) Custom() bool {
 	t, ok := InstanceTypeOf(s.InstanceType)
@@ -195,8 +224,21 @@ type typeMeta struct {
 }
 
 type k8sEnv struct {
-	Name  string `yaml:"name"`
-	Value string `yaml:"value"`
+	Name string `yaml:"name"`
+	// Value はふつうの環境変数（空の値も書く）。シークレットのものは ValueFrom
+	Value     *string       `yaml:"value,omitempty"`
+	ValueFrom *k8sEnvSource `yaml:"valueFrom,omitempty"`
+}
+
+type k8sKeyRef struct {
+	Name string `yaml:"name"`
+	Key  string `yaml:"key"`
+}
+
+type k8sEnvSource struct {
+	SecretKeyRef *k8sKeyRef `yaml:"secretKeyRef,omitempty"`
+	// Other は fieldRef・configMapKeyRef など（手で書いた YAML のもの。フォームでは扱わない）
+	Other map[string]any `yaml:",inline"`
 }
 
 type k8sEnvFrom struct {
@@ -299,14 +341,19 @@ type Registration struct {
 	MemoryBytes int64
 	Databases   []string
 	Buckets     []string
+	Secrets     []string
 }
 
-// RegistrationData は登録の ConfigMap の data
+// RegistrationData は登録の ConfigMap の data。シークレットはつないだときだけ書く（前からある YAML を変えないため）
 func (s FunctionSpec) RegistrationData() map[string]string {
-	return map[string]string{
+	data := map[string]string{
 		RegistrationCPU: strconv.FormatInt(s.CPUMillis, 10), RegistrationMemory: strconv.FormatInt(s.MemoryBytes/mib, 10),
 		RegistrationDBs: strings.Join(s.Databases, ","), RegistrationBuckets: strings.Join(s.Buckets, ","),
 	}
+	if names := s.SecretNames(); len(names) > 0 {
+		data[RegistrationSecrets] = strings.Join(names, ",")
+	}
+	return data
 }
 
 // ParseRegistration は登録の ConfigMap の data を読む（コントローラー用）。読めなければ ok = false
@@ -316,8 +363,9 @@ func ParseRegistration(name string, data map[string]string) (Registration, bool)
 	if err1 != nil || err2 != nil || !ValidName(name) || cpu < MinCPUMillis || cpu > MaxCPUMillis || mem*mib < MinMemoryBytes || mem*mib > MaxMemoryBytes {
 		return Registration{}, false
 	}
-	r := Registration{Name: name, CPUMillis: cpu, MemoryBytes: mem * mib, Databases: splitList(data[RegistrationDBs]), Buckets: splitList(data[RegistrationBuckets])}
-	for _, n := range append(slices.Clone(r.Databases), r.Buckets...) {
+	r := Registration{Name: name, CPUMillis: cpu, MemoryBytes: mem * mib, Databases: splitList(data[RegistrationDBs]), Buckets: splitList(data[RegistrationBuckets]),
+		Secrets: splitList(data[RegistrationSecrets])}
+	for _, n := range slices.Concat(r.Databases, r.Buckets, r.Secrets) {
 		if !ValidName(n) {
 			return Registration{}, false
 		}
@@ -353,7 +401,11 @@ func RenderFunctionYAML(s FunctionSpec, ns string) (string, error) {
 		ContainerPort int32  `yaml:"containerPort"`
 	}{Name: portName, ContainerPort: s.Port})
 	for _, e := range s.Env {
-		c.Env = append(c.Env, k8sEnv(e))
+		c.Env = append(c.Env, k8sEnv{Name: e.Name, Value: &e.Value})
+	}
+	// シークレットは値を書かず、コントローラーが関数の namespace に置く Secret（secret-<名前>）から入れる
+	for _, r := range s.Secrets {
+		c.Env = append(c.Env, k8sEnv{Name: r.Env, ValueFrom: &k8sEnvSource{SecretKeyRef: &k8sKeyRef{Name: SecretObjectName(r.Secret), Key: SecretValueKey}}})
 	}
 	// つないだデータベース・バケットの接続先（コントローラーが作る Secret）を、接頭辞を付けて環境変数にする
 	for _, d := range s.Databases {
@@ -556,7 +608,24 @@ func ParseFunctionYAML(name, src, ns string) (*ParsedFunction, error) {
 		spec.Port = c.Ports[0].ContainerPort
 	}
 	for _, e := range c.Env {
-		spec.Env = append(spec.Env, EnvVar(e))
+		switch {
+		case e.ValueFrom == nil:
+			v := ""
+			if e.Value != nil {
+				v = *e.Value
+			}
+			spec.Env = append(spec.Env, EnvVar{Name: e.Name, Value: v})
+		case e.ValueFrom.SecretKeyRef != nil:
+			// 読ませてよい Secret はシークレット（secret-<名前>）だけ。ほかの Secret（イメージを読む認証情報など）は読ませない
+			ref := e.ValueFrom.SecretKeyRef
+			s, ok := strings.CutPrefix(ref.Name, "secret-")
+			if !ok || !ValidName(s) || ref.Key != SecretValueKey {
+				return nil, fieldErr("yaml", "環境変数 %s の secretKeyRef は、シークレット（name: secret-<名前>、key: %s）だけにしてください", e.Name, SecretValueKey)
+			}
+			spec.Secrets = append(spec.Secrets, SecretRef{Env: e.Name, Secret: s})
+		default:
+			// fieldRef・configMapKeyRef など。入れられるが、フォームでは扱わない（フォームで編集できなくなる）
+		}
 	}
 	for _, e := range c.EnvFrom {
 		if n, ok := strings.CutPrefix(e.SecretRef.Name, "db-"); ok {
@@ -582,7 +651,7 @@ func ParseFunctionYAML(name, src, ns string) (*ParsedFunction, error) {
 	spec = spec.Normalize()
 	// 登録は Deployment と同じ中身でなければならない（コントローラーは登録を見て、namespace の枠と接続先の Secret を作る）
 	if reg.Metadata.Labels[LabelFunction] != name || !maps.Equal(reg.Data, spec.RegistrationData()) {
-		return nil, fieldErr("yaml", "登録の ConfigMap（ラベル %s と data）が Deployment の CPU・メモリ・つなぐものと合っていません", LabelFunction)
+		return nil, fieldErr("yaml", "登録の ConfigMap（ラベル %s と data）が Deployment の CPU・メモリ・つなぐもの（データベース・バケット・シークレット）と合っていません", LabelFunction)
 	}
 	for _, a := range spec.Alerts {
 		if _, ok := AlertPresetOf(a); !ok {

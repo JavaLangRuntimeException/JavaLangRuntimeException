@@ -79,9 +79,11 @@ func status(t *testing.T, a *fakeApplier, key string) Status {
 func TestSync(t *testing.T) {
 	target := service.APITarget{HostSuffix: "-cloud.taramanji.com", InvokerNamespace: "taramanji-cloud"}
 	api, _ := service.RenderAPIYAML(service.APISpec{Name: "shop", Routes: []service.APIRoute{{Path: "/", Function: "blog"}}}, target)
+	secret, _ := service.RenderSecretYAML("anthropic", "QUJD")
 	src := &fakeSource{head: "aaaaaaaaaa", files: map[string][]gateway.ResourceFile{
 		gateway.KindFunctions: {{Name: "blog", YAML: functionYAML(t, "blog", "ghcr.io/me/blog:v1"), Revision: "r1"}},
 		gateway.KindAPIs:      {{Name: "shop", YAML: api, Revision: "r2"}},
+		gateway.KindSecrets:   {{Name: "anthropic", YAML: secret, Revision: "r5"}},
 	}}
 	ap := &fakeApplier{objects: map[string]map[string]any{}, namespaces: map[string]bool{}}
 	reconciled := 0
@@ -95,7 +97,9 @@ func TestSync(t *testing.T) {
 	if err := d.Sync(ctx); err != nil {
 		t.Fatal(err)
 	}
-	for _, k := range []string{"ConfigMap/taramanji-cloud-apps/function-blog", "HTTPRoute/taramanji-cloud-apps/shop", "Deployment/taramanji-cloud-fn-blog/blog", "Service/taramanji-cloud-fn-blog/blog"} {
+	for _, k := range []string{"ConfigMap/taramanji-cloud-apps/function-blog", "HTTPRoute/taramanji-cloud-apps/shop", "Deployment/taramanji-cloud-fn-blog/blog", "Service/taramanji-cloud-fn-blog/blog",
+		// シークレット（暗号のまま）は共有の namespace に入る。復号は Sealed Secrets がする
+		"SealedSecret/taramanji-cloud-apps/secret-anthropic"} {
 		if _, ok := ap.objects[k]; !ok {
 			t.Errorf("%s が入っていない", k)
 		}

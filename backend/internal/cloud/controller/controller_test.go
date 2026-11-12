@@ -19,11 +19,36 @@ type fakeCluster struct {
 	secrets   map[string]gateway.LabeledObject
 	data      map[string]map[string]string
 	annotated int
+	// shared は Sealed Secrets が共有の namespace に作った Secret（シークレット）
+	shared []gateway.LabeledObject
+	// deployments は「namespace/名前」→ Pod テンプレートの注釈（あるものだけ）。podPatches は書いた回数
+	deployments map[string]map[string]string
+	podPatches  int
 }
 
 func newCluster(cms ...gateway.LabeledObject) *fakeCluster {
 	return &fakeCluster{configMaps: cms, namespaces: map[string]map[string]string{}, objects: map[string]map[string]any{},
-		secrets: map[string]gateway.LabeledObject{}, data: map[string]map[string]string{}}
+		secrets: map[string]gateway.LabeledObject{}, data: map[string]map[string]string{}, deployments: map[string]map[string]string{}}
+}
+
+func (f *fakeCluster) SharedSecrets(_ context.Context, key string) ([]gateway.LabeledObject, error) {
+	out := []gateway.LabeledObject{}
+	for _, s := range f.shared {
+		if _, ok := s.Labels[key]; ok {
+			out = append(out, s)
+		}
+	}
+	return out, nil
+}
+
+func (f *fakeCluster) SetPodAnnotation(_ context.Context, ns, name, key, value string) error {
+	a, ok := f.deployments[ns+"/"+name]
+	if !ok || a[key] == value {
+		return nil
+	}
+	a[key] = value
+	f.podPatches++
+	return nil
 }
 
 func (f *fakeCluster) ConfigMaps(_ context.Context, key string) ([]gateway.LabeledObject, error) {
@@ -319,5 +344,85 @@ func TestRegistrationValidation(t *testing.T) {
 	}
 	if len(cluster.namespaces) != 0 || !strings.Contains(cluster.configMaps[0].Annotations[service.AnnotationStatus], "読めません") {
 		t.Fatalf("上限を超える登録では namespace を作らない: %v", cluster.namespaces)
+	}
+}
+
+func sealed(name, value string) gateway.LabeledObject {
+	return gateway.LabeledObject{Name: "secret-" + name, Labels: map[string]string{service.LabelKind: service.KindSecret, service.LabelSecret: name},
+		Data: map[string]string{service.SecretValueKey: value}}
+}
+
+func TestSecrets(t *testing.T) {
+	reg := registration("blog", "", "")
+	reg.Data[service.RegistrationSecrets] = "anthropic,passcode"
+	cluster := newCluster(reg, registration("other", "", ""))
+	cluster.shared = []gateway.LabeledObject{sealed("anthropic", "sk-1"),
+		// 名前の決まりに合わないものは使わない
+		{Name: "secret-x", Labels: map[string]string{service.LabelSecret: "passcode"}, Data: map[string]string{service.SecretValueKey: "wrong"}}}
+	ctl := newController(cluster, &fakeEngine{users: map[string]string{}}, &fakeEngine{users: map[string]string{}})
+	ctx := context.Background()
+	if err := ctl.Reconcile(ctx); err != nil {
+		t.Fatal(err)
+	}
+	// まだ復号されていないシークレットがあれば、状態に書き、Pod は入れ替えない
+	if st := cluster.configMaps[0].Annotations[service.AnnotationStatus]; !strings.Contains(st, "シークレット passcode") {
+		t.Fatalf("status: %s", st)
+	}
+	if got := cluster.data["taramanji-cloud-fn-blog/secret-anthropic"]; got[service.SecretValueKey] != "sk-1" {
+		t.Fatalf("写したシークレット: %v", got)
+	}
+	if l := cluster.secrets["taramanji-cloud-fn-blog/secret-anthropic"].Labels; l[labelManaged] != managedValue || l[service.LabelSecret] != "anthropic" {
+		t.Fatalf("labels: %v", l)
+	}
+	// つないでいない関数には置かない
+	for k := range cluster.secrets {
+		if strings.HasPrefix(k, "taramanji-cloud-fn-other/secret-") {
+			t.Fatalf("つないでいない関数に %s", k)
+		}
+	}
+
+	// 復号されたら使えるようになり、動いている関数の Pod テンプレートに値の印を書く
+	cluster.shared = append(cluster.shared, sealed("passcode", "1234"))
+	cluster.deployments["taramanji-cloud-fn-blog/blog"] = map[string]string{}
+	if err := ctl.Reconcile(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if st := cluster.configMaps[0].Annotations[service.AnnotationStatus]; st != service.StatusReady {
+		t.Fatalf("status: %s", st)
+	}
+	v1 := cluster.deployments["taramanji-cloud-fn-blog/blog"][service.AnnotationSecretsVersion]
+	if len(v1) != 16 || strings.Contains(v1, "1234") || cluster.podPatches != 1 {
+		t.Fatalf("印: %q %d", v1, cluster.podPatches)
+	}
+	// 値が同じなら書かない（Pod は入れ替わらない）
+	if err := ctl.Reconcile(ctx); err != nil || cluster.podPatches != 1 {
+		t.Fatalf("同じ値: %v %d", err, cluster.podPatches)
+	}
+	// 値が変わったら、写したものも印も変わる
+	cluster.shared[2] = sealed("passcode", "5678")
+	if err := ctl.Reconcile(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if cluster.data["taramanji-cloud-fn-blog/secret-passcode"][service.SecretValueKey] != "5678" ||
+		cluster.deployments["taramanji-cloud-fn-blog/blog"][service.AnnotationSecretsVersion] == v1 || cluster.podPatches != 2 {
+		t.Fatalf("変えたあと: %v %d", cluster.deployments, cluster.podPatches)
+	}
+	// 印はマスターキーで変わる（値だけからは作れない）
+	values := map[string]string{"anthropic": "sk-1", "passcode": "5678"}
+	if SecretsVersion(key, []string{"passcode", "anthropic"}, values) != SecretsVersion(key, []string{"anthropic", "passcode"}, values) ||
+		SecretsVersion([]byte("other"), []string{"anthropic", "passcode"}, values) == SecretsVersion(key, []string{"anthropic", "passcode"}, values) {
+		t.Fatal("印は名前の順によらず、マスターキーで変わる")
+	}
+
+	// 外したシークレットは関数の namespace から消える
+	cluster.configMaps[0].Data[service.RegistrationSecrets] = "anthropic"
+	if err := ctl.Reconcile(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := cluster.secrets["taramanji-cloud-fn-blog/secret-passcode"]; ok {
+		t.Fatal("外したシークレットが残っている")
+	}
+	if _, ok := cluster.secrets["taramanji-cloud-fn-blog/secret-anthropic"]; !ok {
+		t.Fatal("つないだままのシークレットまで消えた")
 	}
 }

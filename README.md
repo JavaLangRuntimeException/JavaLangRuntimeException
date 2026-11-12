@@ -39,7 +39,7 @@
 | | 何か | URL |
 |---|---|---|
 | **taramanji.com** | ポートフォリオ・予約・お問い合わせ・カレンダー同期（gws） | [taramanji.com](https://taramanji.com) ・ gws.taramanji.com |
-| **taramanji cloud** | 自分専用の小さなクラウド（関数・API Gateway・ストレージ・CDN・データベース） | cloud.taramanji.com（自分だけ） |
+| **taramanji cloud** | 自分専用の小さなクラウド（関数・API Gateway・ストレージ・CDN・データベース・シークレット） | cloud.taramanji.com（自分だけ） |
 
 ### いまのサーバー
 

@@ -125,6 +125,24 @@ type DeleteDatabaseInput struct {
 	Revision string
 }
 
+type ListSecretsInput struct{}
+
+type CreateSecretInput struct {
+	Name  string
+	Value string
+}
+
+type UpdateSecretInput struct {
+	Name     string
+	Value    string
+	Revision string
+}
+
+type DeleteSecretInput struct {
+	Name     string
+	Revision string
+}
+
 type ListDeploymentsInput struct{}
 
 type SyncAlertsInput struct{}
@@ -173,6 +191,7 @@ type GetHostingOptionsOutput struct {
 	StorageEnabled     bool              `json:"storage_enabled"`
 	DnsEnabled         bool              `json:"dns_enabled"`
 	DatabasesEnabled   bool              `json:"databases_enabled"`
+	SecretsEnabled     bool              `json:"secrets_enabled"`
 }
 
 type ListFunctionsOutput struct {
@@ -277,6 +296,19 @@ type ListDatabasesOutput struct {
 
 type CreateDatabaseOutput struct {
 	Database *Database `json:"database"`
+}
+
+type ListSecretsOutput struct {
+	Secrets []*Secret `json:"secrets"`
+	Enabled bool      `json:"enabled"`
+}
+
+type CreateSecretOutput struct {
+	Secret *Secret `json:"secret"`
+}
+
+type UpdateSecretOutput struct {
+	Secret *Secret `json:"secret"`
 }
 
 type ListDeploymentsOutput struct {
@@ -412,17 +444,18 @@ type Function struct {
 }
 
 type FunctionSpec struct {
-	Name         string    `json:"name"`
-	Image        string    `json:"image"`
-	Port         int32     `json:"port"`
-	InstanceType string    `json:"instance_type"`
-	CpuMillis    int64     `json:"cpu_millis"`
-	Memory       int64     `json:"memory"`
-	Env          []*EnvVar `json:"env"`
-	Alerts       []string  `json:"alerts"`
-	Notify       []string  `json:"notify"`
-	Databases    []string  `json:"databases"`
-	Buckets      []string  `json:"buckets"`
+	Name         string       `json:"name"`
+	Image        string       `json:"image"`
+	Port         int32        `json:"port"`
+	InstanceType string       `json:"instance_type"`
+	CpuMillis    int64        `json:"cpu_millis"`
+	Memory       int64        `json:"memory"`
+	Env          []*EnvVar    `json:"env"`
+	Alerts       []string     `json:"alerts"`
+	Notify       []string     `json:"notify"`
+	Databases    []string     `json:"databases"`
+	Buckets      []string     `json:"buckets"`
+	Secrets      []*SecretEnv `json:"secrets"`
 }
 
 type InstanceFamily struct {
@@ -459,6 +492,19 @@ type Quota struct {
 	Cpu           *Amount `json:"cpu"`
 	Pods          *Amount `json:"pods"`
 	VolumeStorage *Amount `json:"volume_storage"`
+}
+
+type Secret struct {
+	Name      string   `json:"name"`
+	Source    *Source  `json:"source"`
+	Status    string   `json:"status"`
+	Ready     bool     `json:"ready"`
+	Functions []string `json:"functions"`
+}
+
+type SecretEnv struct {
+	Name   string `json:"name"`
+	Secret string `json:"secret"`
 }
 
 type Series struct {
@@ -523,6 +569,10 @@ type ConsoleUsecase interface {
 	ListDatabases(ctx context.Context, input ListDatabasesInput) (*ListDatabasesOutput, error)
 	CreateDatabase(ctx context.Context, input CreateDatabaseInput) (*CreateDatabaseOutput, error)
 	DeleteDatabase(ctx context.Context, input DeleteDatabaseInput) error
+	ListSecrets(ctx context.Context, input ListSecretsInput) (*ListSecretsOutput, error)
+	CreateSecret(ctx context.Context, input CreateSecretInput) (*CreateSecretOutput, error)
+	UpdateSecret(ctx context.Context, input UpdateSecretInput) (*UpdateSecretOutput, error)
+	DeleteSecret(ctx context.Context, input DeleteSecretInput) error
 	ListDeployments(ctx context.Context, input ListDeploymentsInput) (*ListDeploymentsOutput, error)
 	SyncAlerts(ctx context.Context, input SyncAlertsInput) (*SyncAlertsOutput, error)
 }

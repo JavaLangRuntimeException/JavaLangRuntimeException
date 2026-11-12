@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { databaseStatus, engineLabel, envPrefix, familyOf, groupByFamily } from "./hosting";
+import { databaseStatus, engineLabel, envPrefix, familyOf, groupByFamily, looksSecret, secretStatus, secretValueNote } from "./hosting";
 import { aliasLabelError, cachePresets, crumbsOf, distributionFormErrors, distributionFormOf, distributionSpecOf, emptyBehavior, emptyDistributionForm, entriesOf, formatCache, MAX_BEHAVIORS } from "./hosting";
 import { apiFormErrors, apiFormOf, apiSpecOf, emptyApiForm, emptyForm, formatIdle, formErrors, formOf, isCustom, specOf, statusOf, toggle, typeOptions, withInstanceType } from "./hosting";
 
@@ -186,5 +186,34 @@ describe("インスタンスタイプの系統", () => {
       ["c1", ["c1.small"]],
       ["r1", ["r1.small"]],
     ]);
+  });
+});
+
+describe("シークレット", () => {
+  const ok = { ...emptyForm(types), name: "blog", image: "ghcr.io/me/blog:v1", env: [{ name: "MODE", value: "prod" }] };
+  it("環境変数とシークレットを送り、読み戻せる。足しただけの空の行は送らない", () => {
+    const spec = specOf({ ...ok, secrets: [{ name: " ANTHROPIC_API_KEY ", secret: "anthropic" }, { name: "", secret: "" }] });
+    expect(spec.secrets).toEqual([{ name: "ANTHROPIC_API_KEY", secret: "anthropic" }]);
+    expect(formOf(spec).secrets).toEqual([{ name: "ANTHROPIC_API_KEY", secret: "anthropic" }]);
+  });
+  it("シークレットの行の間違い（未選択・名前・ほかの環境変数との重複）", () => {
+    expect(formErrors({ ...ok, secrets: [{ name: "KEY", secret: "a" }] }, limits)).toEqual({});
+    expect(formErrors({ ...ok, secrets: [{ name: "KEY", secret: "" }] }, limits).secrets).toBe("シークレットを選んでください");
+    expect(formErrors({ ...ok, secrets: [{ name: "1KEY", secret: "a" }] }, limits).secrets).toBeDefined();
+    expect(formErrors({ ...ok, secrets: [{ name: "MODE", secret: "a" }] }, limits).secrets).toBeDefined();
+    expect(formErrors({ ...ok, secrets: [{ name: "K", secret: "a" }, { name: "K", secret: "b" }] }, limits).secrets).toBeDefined();
+  });
+  it("秘密らしい名前に気づく", () => {
+    for (const n of ["ANTHROPIC_API_KEY", "APP_PASSCODE", "GITHUB_TOKEN", "DB_PASSWORD", "client_secret", "API_KEY", "PRIVATE_KEY"]) expect(looksSecret(n), n).toBe(true);
+    for (const n of ["MODE", "NODE_ENV", "PORT", "KEYBOARD_LAYOUT", "TOKENIZER", "PUBLIC_URL"]) expect(looksSecret(n), n).toBe(false);
+  });
+  it("状態と、値の前後の空白", () => {
+    expect(secretStatus({ ready: true, status: "ready", problem: "" })).toEqual({ label: "使用可能", level: "ok" });
+    expect(secretStatus({ ready: false, status: "pending", problem: "" }).label).toBe("作成中");
+    expect(secretStatus({ ready: false, status: "復号できません: no key", problem: "" })).toMatchObject({ label: "復号できません", level: "bad" });
+    expect(secretStatus({ ready: false, status: "", problem: "YAML が壊れています" }).label).toBe("YAML に問題");
+    expect(secretValueNote("sk-1")).toBeUndefined();
+    expect(secretValueNote("sk-1\n")).toBeDefined();
+    expect(secretValueNote(" sk-1")).toBeDefined();
   });
 });

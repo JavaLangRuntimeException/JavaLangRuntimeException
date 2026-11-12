@@ -31,8 +31,8 @@ const (
 	historyLimit = 10
 )
 
-// Kinds はリポジトリのディレクトリ（入れる順）
-var Kinds = []string{gateway.KindDatabases, gateway.KindBuckets, gateway.KindFunctions, gateway.KindAPIs, gateway.KindCDN}
+// Kinds はリポジトリのディレクトリ（入れる順。シークレットは、それを読む関数より先）
+var Kinds = []string{gateway.KindDatabases, gateway.KindBuckets, gateway.KindSecrets, gateway.KindFunctions, gateway.KindAPIs, gateway.KindCDN}
 
 type (
 	Status = service.DeployStatus
@@ -251,6 +251,8 @@ func (d *Deployer) objects(kind string, f gateway.ResourceFile) ([]object, error
 		_, err = service.ParseBucketYAML(f.Name, f.YAML, d.c.Target)
 	case gateway.KindDatabases:
 		_, err = service.ParseDatabaseYAML(f.Name, f.YAML)
+	case gateway.KindSecrets:
+		err = service.ParseSecretYAML(f.Name, f.YAML)
 	default:
 		err = fmt.Errorf("知らない種類 %q", kind)
 	}

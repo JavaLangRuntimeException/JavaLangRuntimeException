@@ -34,6 +34,8 @@ var deployKinds = map[string]kindAPI{
 	"ConfigMap":             {"", "v1", "configmaps"},
 	"PersistentVolumeClaim": {"", "v1", "persistentvolumeclaims"},
 	"HTTPRoute":             {"gateway.networking.k8s.io", "v1", "httproutes"},
+	// シークレット（暗号化した値。Sealed Secrets が復号して、共有の namespace に Secret を作る）
+	"SealedSecret": {"bitnami.com", "v1alpha1", "sealedsecrets"},
 }
 
 func (a kindAPI) prefix() string {

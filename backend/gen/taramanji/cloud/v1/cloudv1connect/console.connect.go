@@ -115,6 +115,18 @@ const (
 	// ConsoleServiceDeleteDatabaseProcedure is the fully-qualified name of the ConsoleService's
 	// DeleteDatabase RPC.
 	ConsoleServiceDeleteDatabaseProcedure = "/taramanji.cloud.v1.ConsoleService/DeleteDatabase"
+	// ConsoleServiceListSecretsProcedure is the fully-qualified name of the ConsoleService's
+	// ListSecrets RPC.
+	ConsoleServiceListSecretsProcedure = "/taramanji.cloud.v1.ConsoleService/ListSecrets"
+	// ConsoleServiceCreateSecretProcedure is the fully-qualified name of the ConsoleService's
+	// CreateSecret RPC.
+	ConsoleServiceCreateSecretProcedure = "/taramanji.cloud.v1.ConsoleService/CreateSecret"
+	// ConsoleServiceUpdateSecretProcedure is the fully-qualified name of the ConsoleService's
+	// UpdateSecret RPC.
+	ConsoleServiceUpdateSecretProcedure = "/taramanji.cloud.v1.ConsoleService/UpdateSecret"
+	// ConsoleServiceDeleteSecretProcedure is the fully-qualified name of the ConsoleService's
+	// DeleteSecret RPC.
+	ConsoleServiceDeleteSecretProcedure = "/taramanji.cloud.v1.ConsoleService/DeleteSecret"
 	// ConsoleServiceListDeploymentsProcedure is the fully-qualified name of the ConsoleService's
 	// ListDeployments RPC.
 	ConsoleServiceListDeploymentsProcedure = "/taramanji.cloud.v1.ConsoleService/ListDeployments"
@@ -172,6 +184,16 @@ type ConsoleServiceClient interface {
 	CreateDatabase(context.Context, *connect.Request[v1.CreateDatabaseRequest]) (*connect.Response[v1.CreateDatabaseResponse], error)
 	// どの関数にもつながれていないデータベースだけ消せる。中身は残る（ログインだけ止める）
 	DeleteDatabase(context.Context, *connect.Request[v1.DeleteDatabaseRequest]) (*connect.Response[v1.DeleteDatabaseResponse], error)
+	// ---- シークレット ----
+	// API キー・パスワードなどの秘密の値（<環境>/secrets/<名前>.yaml の SealedSecret）。値はクラスターの Sealed Secrets の公開鍵で
+	// 暗号化してからコミットする（git にも画面にも平文では出ない。読み戻せないので、変えるときは上書きする）。
+	// つなぎ方は、関数の「シークレット」に環境変数の名前と一緒に足す（その関数の namespace にだけ置かれる）
+	ListSecrets(context.Context, *connect.Request[v1.ListSecretsRequest]) (*connect.Response[v1.ListSecretsResponse], error)
+	CreateSecret(context.Context, *connect.Request[v1.CreateSecretRequest]) (*connect.Response[v1.CreateSecretResponse], error)
+	// 値を上書きする。つないだ関数は、動いていれば新しい値で入れ替わる
+	UpdateSecret(context.Context, *connect.Request[v1.UpdateSecretRequest]) (*connect.Response[v1.UpdateSecretResponse], error)
+	// どの関数にもつながれていないシークレットだけ消せる
+	DeleteSecret(context.Context, *connect.Request[v1.DeleteSecretRequest]) (*connect.Response[v1.DeleteSecretResponse], error)
 	// ---- デプロイの様子 ----
 	// コントローラー（デプロイヤー）が、リポジトリの YAML をクラスターに入れた結果と履歴（Argo CD は使わない）
 	ListDeployments(context.Context, *connect.Request[v1.ListDeploymentsRequest]) (*connect.Response[v1.ListDeploymentsResponse], error)
@@ -358,6 +380,30 @@ func NewConsoleServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 			connect.WithSchema(consoleServiceMethods.ByName("DeleteDatabase")),
 			connect.WithClientOptions(opts...),
 		),
+		listSecrets: connect.NewClient[v1.ListSecretsRequest, v1.ListSecretsResponse](
+			httpClient,
+			baseURL+ConsoleServiceListSecretsProcedure,
+			connect.WithSchema(consoleServiceMethods.ByName("ListSecrets")),
+			connect.WithClientOptions(opts...),
+		),
+		createSecret: connect.NewClient[v1.CreateSecretRequest, v1.CreateSecretResponse](
+			httpClient,
+			baseURL+ConsoleServiceCreateSecretProcedure,
+			connect.WithSchema(consoleServiceMethods.ByName("CreateSecret")),
+			connect.WithClientOptions(opts...),
+		),
+		updateSecret: connect.NewClient[v1.UpdateSecretRequest, v1.UpdateSecretResponse](
+			httpClient,
+			baseURL+ConsoleServiceUpdateSecretProcedure,
+			connect.WithSchema(consoleServiceMethods.ByName("UpdateSecret")),
+			connect.WithClientOptions(opts...),
+		),
+		deleteSecret: connect.NewClient[v1.DeleteSecretRequest, v1.DeleteSecretResponse](
+			httpClient,
+			baseURL+ConsoleServiceDeleteSecretProcedure,
+			connect.WithSchema(consoleServiceMethods.ByName("DeleteSecret")),
+			connect.WithClientOptions(opts...),
+		),
 		listDeployments: connect.NewClient[v1.ListDeploymentsRequest, v1.ListDeploymentsResponse](
 			httpClient,
 			baseURL+ConsoleServiceListDeploymentsProcedure,
@@ -403,6 +449,10 @@ type consoleServiceClient struct {
 	listDatabases       *connect.Client[v1.ListDatabasesRequest, v1.ListDatabasesResponse]
 	createDatabase      *connect.Client[v1.CreateDatabaseRequest, v1.CreateDatabaseResponse]
 	deleteDatabase      *connect.Client[v1.DeleteDatabaseRequest, v1.DeleteDatabaseResponse]
+	listSecrets         *connect.Client[v1.ListSecretsRequest, v1.ListSecretsResponse]
+	createSecret        *connect.Client[v1.CreateSecretRequest, v1.CreateSecretResponse]
+	updateSecret        *connect.Client[v1.UpdateSecretRequest, v1.UpdateSecretResponse]
+	deleteSecret        *connect.Client[v1.DeleteSecretRequest, v1.DeleteSecretResponse]
 	listDeployments     *connect.Client[v1.ListDeploymentsRequest, v1.ListDeploymentsResponse]
 	syncAlerts          *connect.Client[v1.SyncAlertsRequest, v1.SyncAlertsResponse]
 }
@@ -547,6 +597,26 @@ func (c *consoleServiceClient) DeleteDatabase(ctx context.Context, req *connect.
 	return c.deleteDatabase.CallUnary(ctx, req)
 }
 
+// ListSecrets calls taramanji.cloud.v1.ConsoleService.ListSecrets.
+func (c *consoleServiceClient) ListSecrets(ctx context.Context, req *connect.Request[v1.ListSecretsRequest]) (*connect.Response[v1.ListSecretsResponse], error) {
+	return c.listSecrets.CallUnary(ctx, req)
+}
+
+// CreateSecret calls taramanji.cloud.v1.ConsoleService.CreateSecret.
+func (c *consoleServiceClient) CreateSecret(ctx context.Context, req *connect.Request[v1.CreateSecretRequest]) (*connect.Response[v1.CreateSecretResponse], error) {
+	return c.createSecret.CallUnary(ctx, req)
+}
+
+// UpdateSecret calls taramanji.cloud.v1.ConsoleService.UpdateSecret.
+func (c *consoleServiceClient) UpdateSecret(ctx context.Context, req *connect.Request[v1.UpdateSecretRequest]) (*connect.Response[v1.UpdateSecretResponse], error) {
+	return c.updateSecret.CallUnary(ctx, req)
+}
+
+// DeleteSecret calls taramanji.cloud.v1.ConsoleService.DeleteSecret.
+func (c *consoleServiceClient) DeleteSecret(ctx context.Context, req *connect.Request[v1.DeleteSecretRequest]) (*connect.Response[v1.DeleteSecretResponse], error) {
+	return c.deleteSecret.CallUnary(ctx, req)
+}
+
 // ListDeployments calls taramanji.cloud.v1.ConsoleService.ListDeployments.
 func (c *consoleServiceClient) ListDeployments(ctx context.Context, req *connect.Request[v1.ListDeploymentsRequest]) (*connect.Response[v1.ListDeploymentsResponse], error) {
 	return c.listDeployments.CallUnary(ctx, req)
@@ -606,6 +676,16 @@ type ConsoleServiceHandler interface {
 	CreateDatabase(context.Context, *connect.Request[v1.CreateDatabaseRequest]) (*connect.Response[v1.CreateDatabaseResponse], error)
 	// どの関数にもつながれていないデータベースだけ消せる。中身は残る（ログインだけ止める）
 	DeleteDatabase(context.Context, *connect.Request[v1.DeleteDatabaseRequest]) (*connect.Response[v1.DeleteDatabaseResponse], error)
+	// ---- シークレット ----
+	// API キー・パスワードなどの秘密の値（<環境>/secrets/<名前>.yaml の SealedSecret）。値はクラスターの Sealed Secrets の公開鍵で
+	// 暗号化してからコミットする（git にも画面にも平文では出ない。読み戻せないので、変えるときは上書きする）。
+	// つなぎ方は、関数の「シークレット」に環境変数の名前と一緒に足す（その関数の namespace にだけ置かれる）
+	ListSecrets(context.Context, *connect.Request[v1.ListSecretsRequest]) (*connect.Response[v1.ListSecretsResponse], error)
+	CreateSecret(context.Context, *connect.Request[v1.CreateSecretRequest]) (*connect.Response[v1.CreateSecretResponse], error)
+	// 値を上書きする。つないだ関数は、動いていれば新しい値で入れ替わる
+	UpdateSecret(context.Context, *connect.Request[v1.UpdateSecretRequest]) (*connect.Response[v1.UpdateSecretResponse], error)
+	// どの関数にもつながれていないシークレットだけ消せる
+	DeleteSecret(context.Context, *connect.Request[v1.DeleteSecretRequest]) (*connect.Response[v1.DeleteSecretResponse], error)
 	// ---- デプロイの様子 ----
 	// コントローラー（デプロイヤー）が、リポジトリの YAML をクラスターに入れた結果と履歴（Argo CD は使わない）
 	ListDeployments(context.Context, *connect.Request[v1.ListDeploymentsRequest]) (*connect.Response[v1.ListDeploymentsResponse], error)
@@ -788,6 +868,30 @@ func NewConsoleServiceHandler(svc ConsoleServiceHandler, opts ...connect.Handler
 		connect.WithSchema(consoleServiceMethods.ByName("DeleteDatabase")),
 		connect.WithHandlerOptions(opts...),
 	)
+	consoleServiceListSecretsHandler := connect.NewUnaryHandler(
+		ConsoleServiceListSecretsProcedure,
+		svc.ListSecrets,
+		connect.WithSchema(consoleServiceMethods.ByName("ListSecrets")),
+		connect.WithHandlerOptions(opts...),
+	)
+	consoleServiceCreateSecretHandler := connect.NewUnaryHandler(
+		ConsoleServiceCreateSecretProcedure,
+		svc.CreateSecret,
+		connect.WithSchema(consoleServiceMethods.ByName("CreateSecret")),
+		connect.WithHandlerOptions(opts...),
+	)
+	consoleServiceUpdateSecretHandler := connect.NewUnaryHandler(
+		ConsoleServiceUpdateSecretProcedure,
+		svc.UpdateSecret,
+		connect.WithSchema(consoleServiceMethods.ByName("UpdateSecret")),
+		connect.WithHandlerOptions(opts...),
+	)
+	consoleServiceDeleteSecretHandler := connect.NewUnaryHandler(
+		ConsoleServiceDeleteSecretProcedure,
+		svc.DeleteSecret,
+		connect.WithSchema(consoleServiceMethods.ByName("DeleteSecret")),
+		connect.WithHandlerOptions(opts...),
+	)
 	consoleServiceListDeploymentsHandler := connect.NewUnaryHandler(
 		ConsoleServiceListDeploymentsProcedure,
 		svc.ListDeployments,
@@ -858,6 +962,14 @@ func NewConsoleServiceHandler(svc ConsoleServiceHandler, opts ...connect.Handler
 			consoleServiceCreateDatabaseHandler.ServeHTTP(w, r)
 		case ConsoleServiceDeleteDatabaseProcedure:
 			consoleServiceDeleteDatabaseHandler.ServeHTTP(w, r)
+		case ConsoleServiceListSecretsProcedure:
+			consoleServiceListSecretsHandler.ServeHTTP(w, r)
+		case ConsoleServiceCreateSecretProcedure:
+			consoleServiceCreateSecretHandler.ServeHTTP(w, r)
+		case ConsoleServiceUpdateSecretProcedure:
+			consoleServiceUpdateSecretHandler.ServeHTTP(w, r)
+		case ConsoleServiceDeleteSecretProcedure:
+			consoleServiceDeleteSecretHandler.ServeHTTP(w, r)
 		case ConsoleServiceListDeploymentsProcedure:
 			consoleServiceListDeploymentsHandler.ServeHTTP(w, r)
 		case ConsoleServiceSyncAlertsProcedure:
@@ -981,6 +1093,22 @@ func (UnimplementedConsoleServiceHandler) CreateDatabase(context.Context, *conne
 
 func (UnimplementedConsoleServiceHandler) DeleteDatabase(context.Context, *connect.Request[v1.DeleteDatabaseRequest]) (*connect.Response[v1.DeleteDatabaseResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.cloud.v1.ConsoleService.DeleteDatabase is not implemented"))
+}
+
+func (UnimplementedConsoleServiceHandler) ListSecrets(context.Context, *connect.Request[v1.ListSecretsRequest]) (*connect.Response[v1.ListSecretsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.cloud.v1.ConsoleService.ListSecrets is not implemented"))
+}
+
+func (UnimplementedConsoleServiceHandler) CreateSecret(context.Context, *connect.Request[v1.CreateSecretRequest]) (*connect.Response[v1.CreateSecretResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.cloud.v1.ConsoleService.CreateSecret is not implemented"))
+}
+
+func (UnimplementedConsoleServiceHandler) UpdateSecret(context.Context, *connect.Request[v1.UpdateSecretRequest]) (*connect.Response[v1.UpdateSecretResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.cloud.v1.ConsoleService.UpdateSecret is not implemented"))
+}
+
+func (UnimplementedConsoleServiceHandler) DeleteSecret(context.Context, *connect.Request[v1.DeleteSecretRequest]) (*connect.Response[v1.DeleteSecretResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("taramanji.cloud.v1.ConsoleService.DeleteSecret is not implemented"))
 }
 
 func (UnimplementedConsoleServiceHandler) ListDeployments(context.Context, *connect.Request[v1.ListDeploymentsRequest]) (*connect.Response[v1.ListDeploymentsResponse], error) {

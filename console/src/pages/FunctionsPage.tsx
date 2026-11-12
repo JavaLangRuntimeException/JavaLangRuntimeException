@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router";
-import { consoleApi, useBuckets, useComputeMutations, useDatabases, useFunctions, useHostingOptions } from "@/api/console";
+import { consoleApi, useBuckets, useComputeMutations, useDatabases, useFunctions, useHostingOptions, useSecrets } from "@/api/console";
 import { describeMutationError } from "@/api/errors";
 import type { Function as Fn, GetHostingOptionsResponse } from "@/api/gen/taramanji/cloud/v1/console_pb";
 import { btn, btnPrimary, Field, input, Legend, Status } from "@/components/Form";
@@ -20,6 +20,7 @@ import {
   formErrors,
   formOf,
   isCustom,
+  looksSecret,
   notifyLabel,
   specOf,
   statusOf,
@@ -262,6 +263,7 @@ function Editor({ fn, opt, onClose }: { fn: Fn | null; opt: GetHostingOptionsRes
 
       <InstanceTypePicker form={form} types={types} families={opt.instanceFamilies} limits={limits} errors={{ cpuMillis: err("cpuMillis"), memoryMib: err("memoryMib") }} onChange={setForm} />
       <EnvEditor form={form} error={err("env")} onChange={set} />
+      <SecretPicker form={form} opt={opt} error={err("secrets")} onChange={set} />
       <ConnectionPicker form={form} onChange={set} />
       <AlertPicker form={form} opt={opt} onChange={set} />
     </ResourceEditor>
@@ -345,9 +347,11 @@ function InstanceTypePicker({
 
 function EnvEditor({ form, error, onChange }: { form: FunctionForm; error?: string; onChange: (p: Partial<FunctionForm>) => void }) {
   const update = (i: number, patch: Partial<{ name: string; value: string }>) => onChange({ env: form.env.map((e, j) => (j === i ? { ...e, ...patch } : e)) });
+  // 値の入った、秘密らしい名前の環境変数
+  const suspicious = form.env.filter((e) => e.value !== "" && looksSecret(e.name)).map((e) => e.name.trim());
   return (
     <fieldset>
-      <Legend info={<>関数に渡す設定の値です。YAML に書かれて git に残るので、パスワードやトークンなどの秘密は入れないでください。データベースやバケットの接続先は、下の「つなぐ」で選ぶと自動で入ります。</>}>環境変数</Legend>
+      <Legend info={<>関数に渡す設定の値です。YAML に書かれて git に残るので、パスワードやトークンなどの秘密は入れないでください（秘密は下の「シークレット」でつなぎます）。データベースやバケットの接続先は、下の「つなぐ」で選ぶと自動で入ります。</>}>環境変数</Legend>
       <div className="space-y-2">
         {form.env.map((e, i) => (
           // 行に固有の ID がないので、並びの位置をキーにする（並べ替えはしない）
@@ -364,6 +368,55 @@ function EnvEditor({ form, error, onChange }: { form: FunctionForm; error?: stri
         環境変数を足す
       </button>
       <p className={`mt-1 text-xs ${error ? "text-bad" : "text-muted"}`}>{error ?? "秘密（パスワード・トークン）は入れないでください。YAML は git に残ります。"}</p>
+      {suspicious.length > 0 && (
+        <p role="status" className="mt-2 rounded border border-line bg-surface-2 px-3 py-2 text-warn">
+          {suspicious.join("・")} は秘密の値に見えます。ここに入れると git に平文で残ります。<Link to="/secrets" className="text-accent hover:underline">シークレット</Link>を作り、下の「シークレット」で同じ名前の環境変数につないでください。
+        </p>
+      )}
+    </fieldset>
+  );
+}
+
+/** シークレットを環境変数につなぐ。YAML にはシークレットの名前だけが残り、値はコントローラーがこの関数の namespace にだけ置く */
+function SecretPicker({ form, opt, error, onChange }: { form: FunctionForm; opt: GetHostingOptionsResponse; error?: string; onChange: (p: Partial<FunctionForm>) => void }) {
+  const secrets = useSecrets(true).data?.secrets ?? [];
+  const update = (i: number, patch: Partial<{ name: string; secret: string }>) => onChange({ secrets: form.secrets.map((s, j) => (j === i ? { ...s, ...patch } : s)) });
+  // 一覧にないもの（消された）も、選んだまま見えるように残す
+  const names = [...secrets.map((s) => s.name), ...form.secrets.map((s) => s.secret).filter((n) => n !== "" && !secrets.some((s) => s.name === n))];
+  return (
+    <fieldset>
+      <Legend info={<>API キーやパスワードなど、git に残したくない値です。<Link to="/secrets" className="text-accent hover:underline">Secrets</Link> で作ったシークレットを選ぶと、その値が環境変数として関数に入ります。YAML にはシークレットの名前だけが残り、値は暗号化したものしかリポジトリにありません。値を上書きすると、動いている関数は新しい値で入れ替わります。</>}>シークレット</Legend>
+      {!opt.secretsEnabled ? (
+        <p className="text-ink-2">この環境ではシークレットを使えません（Sealed Secrets がつながっていません）。</p>
+      ) : (
+        <>
+          <div className="space-y-2">
+            {form.secrets.map((s, i) => (
+              <div key={i} className="flex gap-2">
+                <input className={`${input} font-mono text-[13px]`} aria-label="環境変数の名前" placeholder="API_KEY" value={s.name} onChange={(ev) => update(i, { name: ev.target.value })} spellCheck={false} />
+                <select className={input} aria-label="シークレット" value={s.secret} onChange={(ev) => update(i, { secret: ev.target.value })}>
+                  <option value="">シークレットを選ぶ</option>
+                  {names.map((n) => (
+                    <option key={n} value={n}>
+                      {n}
+                      {secrets.some((x) => x.name === n) ? "" : "（見つかりません）"}
+                    </option>
+                  ))}
+                </select>
+                <button type="button" className={`${btn} shrink-0 whitespace-nowrap`} aria-label={`${s.name || "この行"} を消す`} onClick={() => onChange({ secrets: form.secrets.filter((_, j) => j !== i) })}>
+                  外す
+                </button>
+              </div>
+            ))}
+          </div>
+          <button type="button" className={`${btn} mt-2`} onClick={() => onChange({ secrets: [...form.secrets, { name: "", secret: "" }] })}>
+            シークレットをつなぐ
+          </button>
+          <p className={`mt-1 text-xs ${error ? "text-bad" : "text-muted"}`}>
+            {error ?? (secrets.length === 0 ? <>まだシークレットがありません。<Link to="/secrets" className="text-accent hover:underline">Secrets</Link> で作ってから選んでください。</> : "値は画面にも git にも出ません。")}
+          </p>
+        </>
+      )}
     </fieldset>
   );
 }

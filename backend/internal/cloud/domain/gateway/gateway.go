@@ -83,6 +83,7 @@ const (
 	KindBuckets   = "buckets"
 	KindCDN       = "cdn"
 	KindDatabases = "databases"
+	KindSecrets   = "secrets"
 )
 
 // ResourceFile はアプリ用のリポジトリにある、リソース（関数・API）1 つの YAML
@@ -230,6 +231,27 @@ type ResourceCluster interface {
 	// PutSecret は Secret を置く。data のキーが DockerConfigKey だけなら、イメージを読むための Secret（kubernetes.io/dockerconfigjson）にする
 	PutSecret(ctx context.Context, ns, name string, labels, data map[string]string) error
 	DeleteSecret(ctx context.Context, ns, name string) error
+	// SharedSecrets は共有の namespace の、ラベル labelKey が付いた Secret（中身も）。Sealed Secrets が復号して作ったシークレットを読む
+	SharedSecrets(ctx context.Context, labelKey string) ([]LabeledObject, error)
+	// SetPodAnnotation は namespace ns の Deployment name の Pod テンプレートの注釈 key を value にする。
+	// 違うときだけ書く（変わると Pod が入れ替わる）。Deployment がまだなければ何もしない
+	SetPodAnnotation(ctx context.Context, ns, name, key, value string) error
+}
+
+// SealedState は SealedSecret 1 つの状態（Sealed Secrets が復号して Secret を作れたか）
+type SealedState struct {
+	// Synced は復号できて Secret ができている。Message は、できていないときの理由（まだ見ていないときは空）
+	Synced  bool
+	Message string
+}
+
+// SecretSealer はシークレットの値を、クラスターの Sealed Secrets の公開鍵で暗号化する。復号できるのはクラスターの中の Sealed Secrets だけ。
+// 暗号は共有の namespace とオブジェクトの名前に結びつく（ほかの名前・namespace に写しても復号できない）
+type SecretSealer interface {
+	// Seal は値を暗号化して、SealedSecret の encryptedData に書く形（base64）で返す
+	Seal(ctx context.Context, objectName string, value []byte) (string, error)
+	// Sealed は共有の namespace の SealedSecret の状態（オブジェクトの名前 → 状態）
+	Sealed(ctx context.Context) (map[string]SealedState, error)
 }
 
 // DockerConfigKey はイメージを読むための Secret のキー
@@ -260,7 +282,7 @@ type ManagedObject struct {
 }
 
 // Applier はデプロイヤーが Kubernetes にオブジェクトを入れる・消す口。
-// 扱う種類は Deployment・Service・ConfigMap・PersistentVolumeClaim・HTTPRoute だけ
+// 扱う種類は Deployment・Service・ConfigMap・PersistentVolumeClaim・HTTPRoute・SealedSecret だけ
 type Applier interface {
 	// Apply は server-side apply で入れる（obj は metadata.namespace 付きの 1 オブジェクト）
 	Apply(ctx context.Context, obj map[string]any) error
