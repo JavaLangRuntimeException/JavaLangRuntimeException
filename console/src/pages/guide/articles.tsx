@@ -78,13 +78,13 @@ export const articles: Article[] = [
             ["入口", "ホスト名", "ログイン", "向いている使い方"],
             ["コンソール", <C>cloud.taramanji.com</C>, "あり（自分だけ）", "管理"],
             ["CDN", cdnHost, "あり（自分だけ）", "自分だけのアプリ。画面と /api をパスごとの元でまとめる"],
-            ["API Gateway", apiHost, "なし（誰でも）", "公開する API・Webhook・スクリプトから呼ぶ。認証は関数か API キー"],
+            ["API Gateway", apiHost, "あり（自分だけ）", "API を単体で使う。ブラウザ以外からは cloudflared access curl"],
             ["公開バケット", storageHost, "なし（誰でも）", "画像やサイトの配信。公開をオンにしたバケットだけ"],
           ]}
         />
-        <Note kind="warn" title="ログインなしの入口は、誰でも届きます">
-          API Gateway の関数は、インターネットの誰からでも呼ばれます。認証が要る処理は、関数の中で確かめてください。公開バケットのファイルは、URL を知っている人なら誰でも読めます（一覧は出ません）。秘密のファイルは置かないでください。
-          ログインが要る CDN は、開くと Google のログインが出て、管理者のアカウントだけが通ります。ブラウザ以外から呼ぶときは <C>cloudflared access curl</C> を使います。
+        <Note kind="warn" title="公開バケットだけは、誰でも届きます">
+          公開をオンにしたバケットのファイルは、URL を知っている人なら誰でも読めます（一覧は出ません）。秘密のファイルは置かないでください。
+          CDN と API Gateway は、開くと Google のログインが出て、管理者のアカウントだけが通ります。ブラウザ以外から呼ぶときは <C>cloudflared access curl</C> を使います。
         </Note>
 
         <H2 id="yaml">設定は YAML で残る</H2>
@@ -187,7 +187,7 @@ CMD ["node", "server.js"]
             <To to="/apis">API Gateway</To> を開き、「API を作る」を押します。
           </li>
           <li>
-            名前（例: <C>hello</C>）を入れます。<C>https://hello-apigw-cloud.taramanji.com</C> で公開されます（ログインなし）。
+            名前（例: <C>hello</C>）を入れます。<C>https://hello-apigw-cloud.taramanji.com</C> で呼べるようになります（ログインあり）。
           </li>
           <li>
             ルートは最初から <C>/ → hello</C> が入っています。そのまま「作る」を押します。DNS も自動で登録されます。
@@ -200,19 +200,20 @@ CMD ["node", "server.js"]
 
         <H2 id="call">4. 呼んでみる</H2>
         <P>
-          ブラウザで <C>https://hello-apigw-cloud.taramanji.com/</C> を開くか、ターミナルから呼びます。API Gateway はログインなしなので、そのまま届きます。
+          ブラウザで <C>https://hello-apigw-cloud.taramanji.com/</C> を開きます。API Gateway は Cloudflare Access の後ろにあるので、最初に Google のログインが出ます。
+          ターミナルから呼ぶときは <C>cloudflared access curl</C> を使います（最初の 1 回はブラウザでログインします）。
         </P>
-        <Code lang="sh">{`curl https://hello-apigw-cloud.taramanji.com/`}</Code>
+        <Code lang="sh">{`cloudflared access curl https://hello-apigw-cloud.taramanji.com/`}</Code>
         <P>
           最初の 1 回は関数の起動を待つので、数秒かかります。2 回目からはすぐ返ります。関数の画面で、状態が「実行中」に変わるのを確かめてください。
         </P>
-        <Note kind="warn" title="誰でも呼べます">
-          API Gateway はログインなしなので、GitHub や Stripe などの Webhook も受けられます。その代わり、インターネットの誰からでも呼ばれます。
+        <Note kind="warn" title="外部のサービスからは呼べません">
+          API Gateway はログインの後ろにあるので、GitHub や Stripe などの Webhook は届きません（Access のサービストークンが要ります）。
           自分だけが使うなら、API を「API キー」にして、ブラウザからは CDN の「パスごとの元」で <C>/api</C> をこの API に向けてください。CDN（ログイン済み）を通ったリクエストには API キーが要りません（<To to="/guide/static-site">静的なサイトをバケットと CDN で配る</To>）。
         </Note>
 
         <H2 id="auth">5. API キーと CORS</H2>
-        <P>API Gateway は誰でも呼べます。呼べる人を絞るときは、API の画面の「認証」を「API キー」にします（AWS の API Gateway の API キーと同じ考え方）。</P>
+        <P>API Gateway はログインの後ろにありますが、さらにキーを求めることもできます。API の画面の「認証」を「API キー」にします（AWS の API Gateway の API キーと同じ考え方）。</P>
         <Steps>
           <li>API の画面で「認証」を「API キー」にして保存します。</li>
           <li>
@@ -698,7 +699,7 @@ spec:
 
         <H2 id="isolation">囲い</H2>
         <UL>
-          <li>CDN（{cdnHost}）は Cloudflare Access の後ろにあり、使えるのは管理者のアカウントだけです。API Gateway と公開バケットはログインなしです。</li>
+          <li>CDN（{cdnHost}）と API Gateway（{apiHost}）は Cloudflare Access の後ろにあり、使えるのは管理者のアカウントだけです。公開をオンにしたバケットだけ、ログインなしです。</li>
           <li>
             関数は 1 つずつ別の namespace（<C>taramanji-cloud-fn-&lt;名前&gt;</C>）で動きます。namespace と囲い（量の上限・通信の制限・Pod Security・権限）は
             コントローラーが作り、YAML のリポジトリからは作れません。
