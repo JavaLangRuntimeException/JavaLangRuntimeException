@@ -14,6 +14,7 @@ import (
 	"errors"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -380,13 +381,40 @@ func (i *Invoker) doWake(name string, s *fnState) {
 				return err
 			}
 		}
-		return nil
+		// Pod が Ready になっても、アプリが待ち受けを始めるまでは「接続を拒否」になる（readinessProbe のない関数・起動に時間のかかるアプリ）。
+		// つながるまで待ってから渡す（POST など本文のあるリクエストは、つながらなくてもやり直せないため）
+		return i.waitListening(ctx, name)
 	}()
 	i.mu.Lock()
 	s.ready, s.err = err == nil, err
 	close(s.waking)
 	s.waking = nil
 	i.mu.Unlock()
+}
+
+// waitListening は関数の Service に TCP でつながるまで待つ
+func (i *Invoker) waitListening(ctx context.Context, name string) error {
+	target := i.c.Upstream(name)
+	addr := target.Host
+	if target.Port() == "" {
+		port := "80"
+		if target.Scheme == "https" {
+			port = "443"
+		}
+		addr = net.JoinHostPort(target.Hostname(), port)
+	}
+	for {
+		conn, err := (&net.Dialer{Timeout: time.Second}).DialContext(ctx, "tcp", addr)
+		if err == nil {
+			_ = conn.Close()
+			return nil
+		}
+		select {
+		case <-ctx.Done():
+			return errors.New("timed out waiting for the function to listen")
+		case <-time.After(pollEvery):
+		}
+	}
 }
 
 func (i *Invoker) proxy(name string, ttl int, corsManaged bool) *httputil.ReverseProxy {
