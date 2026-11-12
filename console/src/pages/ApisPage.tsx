@@ -32,7 +32,7 @@ export function ApisPage() {
         description={
           opt ? (
             <>
-              <Mono>https://&lt;名前&gt;{opt.apiHostSuffix}</Mono> で公開し、パスごとに関数へ渡します（ログインなし。認証は関数か API キーで）。関数が 0 台なら、最初のリクエストで起こします。
+              <Mono>https://&lt;名前&gt;{opt.apiHostSuffix}</Mono> で出し、パスごとに関数へ渡します（Cloudflare Access のログインあり）。関数が 0 台なら、最初のリクエストで起こします。
             </>
           ) : (
             "ホスト名を付けて公開し、パスごとに関数へ渡します。"
@@ -199,7 +199,7 @@ function Editor({
     >
       <Field
         label="名前"
-        info={<>公開するホスト名の先頭です。<code>&lt;名前&gt;{opt.apiHostSuffix}</code> になり、DNS は作ったときに自動で登録されます。ログインなしで誰でも呼べるので、認証は関数側で確かめてください。CDN と同じ名前は使えません。</>}
+        info={<>公開するホスト名の先頭です。<code>&lt;名前&gt;{opt.apiHostSuffix}</code> になり、DNS は作ったときに自動で登録されます。開くと Cloudflare Access のログインが出ます（自分だけ）。CDN と同じ名前は使えません。</>}
         error={showErrors ? errors.name : undefined}
         hint={
           <>
@@ -253,7 +253,7 @@ function Editor({
         <Legend
           info={
             <>
-              API Gateway はログインなしで、誰でも呼べます。「API キー」にすると、API Gateway が <code>x-api-key</code> ヘッダーのキーを確かめ、違えば関数を起こさずに 401 を返します。
+              API Gateway は Cloudflare Access のログインの後ろにあります。「API キー」にすると、そのうえで API Gateway が <code>x-api-key</code> ヘッダーのキーを確かめ、違えば関数を起こさずに 401 を返します（CDN を通ったリクエストには求めません）。
               通ったときは、キーの名前が <code>X-Api-Key-Name</code> で関数に届きます（キーそのものは届きません）。キーは保存したあと、下の「API キー」で作ります。
               ブラウザの JavaScript に書いたキーは誰でも見られるので、ブラウザから呼ぶ API の利用者の確認は、関数側（ログインなど）で行ってください。
             </>
@@ -264,7 +264,7 @@ function Editor({
         <div className="flex flex-wrap gap-2">
           {(
             [
-              ["none", "なし", "誰でも呼べる。認証が要るなら関数の中で確かめる"],
+              ["none", "なし", "ログインした人なら呼べる（Cloudflare Access）"],
               ["api_key", "API キー", "x-api-key のキーが当たったときだけ関数に渡す"],
             ] as const
           ).map(([value, label, note]) => (

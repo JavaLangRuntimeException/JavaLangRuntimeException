@@ -104,7 +104,7 @@ export function OverviewPage() {
             <dd className="min-w-0 break-all">
               {data ? <Mono>https://&lt;名前&gt;{data.cdnHostSuffix}</Mono> : <Skeleton className="h-5 w-64" />}
             </dd>
-            <dt className="text-muted">API Gateway（ログインなし）</dt>
+            <dt className="text-muted">API Gateway（ログインあり）</dt>
             <dd className="min-w-0 break-all">
               {data ? <Mono>https://&lt;名前&gt;{data.hostingHostSuffix}</Mono> : <Skeleton className="h-5 w-64" />}
             </dd>
@@ -114,7 +114,7 @@ export function OverviewPage() {
             </dd>
           </dl>
           <p className="border-t border-line px-4 py-2.5 text-[13px] text-muted">
-            サービスごとにホスト名が分かれています。CDN は自分だけ（Cloudflare Access）、API Gateway と公開をオンにしたバケットは誰でも届きます。
+            サービスごとにホスト名が分かれています。CDN と API Gateway は自分だけ（Cloudflare Access）、公開をオンにしたバケットだけは誰でも届きます。
           </p>
         </Panel>
       </div>

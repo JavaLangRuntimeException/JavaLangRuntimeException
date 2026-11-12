@@ -133,7 +133,7 @@ func HostOf(name, hostSuffix string) string { return name + hostSuffix }
 // 公開ホスト名のサービスの印。<名前>-<印>-cloud.taramanji.com のように、サービスごとにホスト名を分ける。
 // 入口の守り方（Cloudflare Access のログインの有無）をホスト名のワイルドカードで分けられるようにするため:
 //   - cdn:     CDN（ログインあり。*-cdn-cloud.taramanji.com を Access で守る）
-//   - apigw:   API Gateway（ログインなし。認証は API キーか関数）
+//   - apigw:   API Gateway（ログインあり。*-apigw-cloud も Access で守る。API キーも足せる）
 //   - storage: 公開バケット（ログインなし。公開をオンにしたバケットだけ）
 //
 // 印が違えば、名前が何であってもホスト名はぶつからない（末尾が -cdn・-apigw・-storage のどれかに決まる）

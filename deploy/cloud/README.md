@@ -14,10 +14,10 @@ taramanji.com・gws.taramanji.com と同じクラスター（kind）で動くが
 | 入口 | ホスト名 | ログイン |
 |---|---|---|
 | CDN | `<名前>-cdn-cloud.taramanji.com` | あり（Cloudflare Access。自分だけ） |
-| API Gateway | `<名前>-apigw-cloud.taramanji.com` | なし（認証は関数か API キー） |
+| API Gateway | `<名前>-apigw-cloud.taramanji.com` | あり（Cloudflare Access。自分だけ。API キーも足せる） |
 | 公開バケット | `<バケット>-storage-cloud.taramanji.com` | なし（公開をオンにしたバケットだけ。既定はオフ） |
 
-印が違えばホスト名はぶつからない（末尾が -cdn・-apigw・-storage のどれかに決まる）。Access は `*-cdn-cloud` だけを守るので、ワイルドカード同士の優先順位に頼らない。
+印が違えばホスト名はぶつからない（末尾が -cdn・-apigw・-storage のどれかに決まる）。Access は `*-cdn-cloud` と `*-apigw-cloud` を守り、`*-storage-cloud` は守らないので、ワイルドカード同士の優先順位に頼らない。
 
 **アプリ（関数・API・CDN・バケット・データベース）は本番だけ**。stg・dev には基盤（コンソール・cloud-api・cloud-gw・コントローラー・ストレージ・PostgreSQL・Redis）だけを置き、基盤そのものを試すのに使う（アプリ用のリポジトリを渡さないので、コンソールからアプリは作れず、デプロイヤーも動かない。`components/nonprod`）。
 
@@ -59,16 +59,17 @@ VM のメモリを増やしたら `overlays/prod/workloads` の枠を広げる�
 
 ## ログイン（Cloudflare Access）
 
-コンソールと CDN は Cloudflare Access の後ろに置く（stg・dev と同じ。`deploy/cloudflare/access.py`）。API Gateway と公開バケットは、AWS の API Gateway・S3 のように単体で使えるよう、ログインなしにする。
+コンソール・CDN・API Gateway は Cloudflare Access の後ろに置く（stg・dev と同じ。`deploy/cloudflare/access.py`）。公開バケットだけは、画像やサイトを誰にでも配れるよう、ログインなしにする。
 
 | Access のアプリ | ホスト名 |
 |---|---|
 | `taramanji-cloud` | `cloud`・`cloud-stg`・`cloud-dev`.taramanji.com（コンソール。API は JWT の aud も確かめる） |
-| `taramanji-cloud-apps` | `*-cdn-cloud`・`*-cdn-cloud-stg`・`*-cdn-cloud-dev`.taramanji.com（CDN だけ。API Gateway・公開バケットは守らない） |
+| `taramanji-cloud-apps` | `*-cdn-cloud`・`*-apigw-cloud`（と `-stg`・`-dev`）.taramanji.com（CDN と API Gateway。公開バケットは守らない） |
 
 - ブラウザで開くと Google のログインが出て、`ADMIN_EMAIL` のアカウントだけが通る。セッションは 24 時間
 - CDN をブラウザ以外（curl・スクリプト）から呼ぶときは `cloudflared access curl https://<名前>-cdn-cloud.taramanji.com/`（最初にブラウザでログインする）
-- API Gateway（`-apigw-cloud`）はログインなしなので、Webhook も受けられる。その代わり誰でも呼べる。自分だけの API は API キーで守り、ブラウザからは CDN の「パスごとの元」で `/api` をその API に向ける（CDN を通ったものには API キーが要らない）
+- API Gateway（`-apigw-cloud`）もログインの後ろなので、Webhook は受けられない（Access のサービストークンが要る）。ブラウザ以外からは `cloudflared access curl`。
+  CDN の「パスごとの元」で `/api` を API に向けたときは、CDN から API への受け渡しはクラスターの中なので、もう一度ログインは要らない
 - 公開バケット（`-storage-cloud`）は 1 ファイルずつの取得だけ（一覧・書き込みはできない）。5 分キャッシュ
 - **レート制限**: cloud-gw が利用者（`Cf-Connecting-Ip`）ごとに 1 秒 20 回・続けて 60 回まで（`GATEWAY_RATE_PER_SEC`・`GATEWAY_RATE_BURST`）。超えたら関数を起こさずに 429。
   Pod ごとに数える（2 台なら最大で 2 倍）。Cloudflare の無料プランのレート制限はホスト名で絞れない（パスだけ）ので、cloud-gw で絞る
