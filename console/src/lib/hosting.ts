@@ -9,6 +9,9 @@ export type Limits = { minCpu: number; maxCpu: number; minMemoryMib: number; max
 
 export type EnvRow = { name: string; value: string };
 
+/** 環境変数 name に、シークレット secret の値を入れる（YAML には値でなく、シークレットの名前だけが残る） */
+export type SecretRow = { name: string; secret: string };
+
 /** フォームの状態。数は入力の途中（空・範囲外）を持てるよう文字列で持つ */
 export type FunctionForm = {
   name: string;
@@ -23,6 +26,8 @@ export type FunctionForm = {
   /** つなぐデータベースとバケットの名前 */
   databases: string[];
   buckets: string[];
+  /** 環境変数に入れるシークレット */
+  secrets: SecretRow[];
 };
 
 type ApiType = { name: string; cpuMillis: bigint | number; memory: bigint | number };
@@ -46,6 +51,7 @@ export function emptyForm(types: readonly TypeOption[]): FunctionForm {
     notify: [],
     databases: [],
     buckets: [],
+    secrets: [],
   };
 }
 
@@ -72,6 +78,7 @@ type ApiSpec = {
   notify: readonly string[];
   databases: readonly string[];
   buckets: readonly string[];
+  secrets: readonly { name: string; secret: string }[];
 };
 
 export function formOf(spec: ApiSpec): FunctionForm {
@@ -87,6 +94,7 @@ export function formOf(spec: ApiSpec): FunctionForm {
     notify: [...spec.notify],
     databases: [...spec.databases],
     buckets: [...spec.buckets],
+    secrets: spec.secrets.map((s) => ({ name: s.name, secret: s.secret })),
   };
 }
 
@@ -104,6 +112,7 @@ export function specOf(form: FunctionForm) {
     notify: form.notify,
     databases: form.databases,
     buckets: form.buckets,
+    secrets: form.secrets.filter((s) => s.name.trim() !== "" || s.secret !== "").map((s) => ({ name: s.name.trim(), secret: s.secret })),
   };
 }
 
@@ -126,7 +135,17 @@ export function formErrors(form: FunctionForm, limits: Limits): Partial<Record<k
     e.memoryMib = `${limits.minMemoryMib}〜${limits.maxMemoryMib} MiB`;
   const names = form.env.map((v) => v.name.trim()).filter((n) => n !== "");
   if (names.some((n) => !ENV_RE.test(n)) || new Set(names).size !== names.length) e.env = "名前は英数字と _ だけで、重複させないでください";
+  const secretRows = form.secrets.filter((s) => s.name.trim() !== "" || s.secret !== "");
+  const secretNames = secretRows.map((s) => s.name.trim());
+  if (secretRows.some((s) => s.secret === "")) e.secrets = "シークレットを選んでください";
+  else if (secretNames.some((n) => !ENV_RE.test(n) || names.includes(n)) || new Set(secretNames).size !== secretNames.length)
+    e.secrets = "名前は英数字と _ だけで、ほかの環境変数と重複させないでください";
   return e;
+}
+
+/** 秘密らしい名前（KEY・TOKEN・SECRET・PASSWORD など）。ふつうの環境変数に入れると YAML（git）に平文で残るので、シークレットを勧める */
+export function looksSecret(name: string): boolean {
+  return /(^|_)(API_?KEY|KEY|TOKEN|SECRET|PASSWORD|PASSWD|PASSCODE|PASS|PRIVATE|CREDENTIALS?)(_|$)/i.test(name.trim());
 }
 
 export function toggle(list: readonly string[], value: string): string[] {
@@ -391,6 +410,20 @@ export function databaseStatus(db: { ready: boolean; status: string; problem: st
   if (db.ready) return { label: "使用可能", level: "ok" };
   if (db.status === "" || db.status === "pending") return { label: "作成中", level: "warn" };
   return { label: "エラー", level: "bad", detail: db.status };
+}
+
+/** シークレットの状態の一文。作成中は、Sealed Secrets がまだ復号していない（数秒〜数十秒） */
+export function secretStatus(secret: { ready: boolean; status: string; problem: string }): { label: string; level: "ok" | "warn" | "bad"; detail?: string } {
+  if (secret.problem) return { label: "YAML に問題", level: "bad", detail: secret.problem };
+  if (secret.ready) return { label: "使用可能", level: "ok" };
+  if (secret.status === "" || secret.status === "pending") return { label: "作成中", level: "warn" };
+  return { label: "復号できません", level: "bad", detail: `${secret.status}（値を上書きすると直ります）` };
+}
+
+/** 値の前後の空白・改行（貼り付けで入りやすい）。そのまま保存されるので、気づけるように一文を返す */
+export function secretValueNote(value: string): string | undefined {
+  if (value === "" || value.trim() === value) return undefined;
+  return "前後に空白か改行があります。そのまま保存されます（要らなければ消してください）";
 }
 
 // ---- インスタンスタイプの系統 ----

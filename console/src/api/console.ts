@@ -127,6 +127,30 @@ export function useDatabaseMutations() {
   };
 }
 
+const secretsKey = ["console", "secrets"] as const;
+
+/** シークレットの一覧（名前・状態・つないでいる関数。値は返らない）。作成中が使用可能に変わるのを見るので短めに読み直す */
+export function useSecrets(enabled: boolean) {
+  return useQuery({
+    queryKey: secretsKey,
+    queryFn: ({ signal }) => consoleApi.listSecrets({}, { signal }),
+    enabled,
+    staleTime: 10_000,
+    refetchInterval: 20_000,
+  });
+}
+
+/** 値は送ったら手元に残さない（キャッシュにも入れない。応答にも値は入っていない） */
+export function useSecretMutations() {
+  const qc = useQueryClient();
+  const refresh = () => void qc.invalidateQueries({ queryKey: secretsKey });
+  return {
+    create: useMutation({ mutationFn: (req: { name: string; value: string }) => consoleApi.createSecret(req), onSuccess: refresh }),
+    update: useMutation({ mutationFn: (req: { name: string; value: string; revision: string }) => consoleApi.updateSecret(req), onSuccess: refresh }),
+    remove: useMutation({ mutationFn: (req: { name: string; revision: string }) => consoleApi.deleteSecret(req), onSuccess: refresh }),
+  };
+}
+
 /** デプロイの様子（コントローラーがリポジトリの YAML を入れた結果と履歴）。保存のあと 15 秒ほどで変わるので短めに読み直す */
 export function useDeployments() {
   return useQuery({
@@ -191,6 +215,7 @@ export function useComputeMutations() {
     void qc.invalidateQueries({ queryKey: apisKey });
     void qc.invalidateQueries({ queryKey: ["console", "databases"] });
     void qc.invalidateQueries({ queryKey: ["console", "buckets"] });
+    void qc.invalidateQueries({ queryKey: secretsKey });
     void qc.invalidateQueries({ queryKey: ["console", "capacity"] });
   };
   return {

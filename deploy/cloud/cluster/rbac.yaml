@@ -82,7 +82,7 @@ rules:
     verbs: ["get", "list"]
 ---
 # コントローラー（cloud-ctl）: 関数ごとの namespace と、その囲い・接続先の Secret を作る・消す。
-# デプロイヤー（同じ Pod）: アプリ用のリポジトリの YAML（Deployment・Service・ConfigMap・PVC・HTTPRoute）を入れる・消す（Argo CD は使わない）。
+# デプロイヤー（同じ Pod）: アプリ用のリポジトリの YAML（Deployment・Service・ConfigMap・PVC・HTTPRoute・SealedSecret）を入れる・消す（Argo CD は使わない）。
 # 入れる前に、種類・namespace・名前の決まりをコードで確かめる
 # 触るのは自分が作った（ラベル managed-by=cloud-ctl の）、名前の決まり（taramanji-cloud-fn-<名前> など）に合うものだけ（コードで確かめる）。
 # RoleBinding で渡せるのは、上の 2 つの ClusterRole だけ（bind の resourceNames）
@@ -111,6 +111,10 @@ rules:
     verbs: ["get", "list", "create", "update", "patch", "delete"]
   - apiGroups: ["gateway.networking.k8s.io"]
     resources: ["httproutes"]
+    verbs: ["get", "list", "create", "update", "patch", "delete"]
+  # シークレット（暗号化した値）。復号は Sealed Secrets がする（cloud-ctl は秘密鍵を持たない）
+  - apiGroups: ["bitnami.com"]
+    resources: ["sealedsecrets"]
     verbs: ["get", "list", "create", "update", "patch", "delete"]
   - apiGroups: ["rbac.authorization.k8s.io"]
     resources: ["clusterroles"]

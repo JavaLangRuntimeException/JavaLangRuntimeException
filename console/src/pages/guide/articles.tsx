@@ -489,6 +489,92 @@ const { objects } = await (await fetch(\`\${base}?prefix=uploads/\`, { headers: 
     ),
   },
   {
+    slug: "secrets",
+    title: "API キーやパスワードを関数に渡す",
+    summary: "シークレットを作って関数の環境変数につなぐ。値は暗号化して置かれ、git にも画面にも平文では出ません。",
+    minutes: 5,
+    icon: "secrets",
+    kind: "tutorial",
+    toc: [
+      { id: "why", label: "なぜシークレットにするか" },
+      { id: "create", label: "1. シークレットを作る" },
+      { id: "attach", label: "2. 関数につなぐ" },
+      { id: "rotate", label: "値を変える" },
+      { id: "how", label: "しくみ" },
+      { id: "delete", label: "消すとき" },
+    ],
+    body: () => (
+      <>
+        <H2 id="why">なぜシークレットにするか</H2>
+        <P>
+          関数の「環境変数」に書いた値は、YAML としてリポジトリ（git）に残ります。API キーやパスワードをそこに書くと、リポジトリを読める人・履歴に残ったものから漏れます。
+          シークレットにすると、git には暗号化したものだけが残り、値はクラスターの中でだけ復号されて、つないだ関数にだけ渡ります。
+        </P>
+        <Note kind="warn" title="もう環境変数に書いてしまった値は">
+          git の履歴に残っています。シークレットに移したうえで、発行元（Anthropic のコンソールなど）でキーを作り直し、古いキーを無効にしてください。
+        </Note>
+
+        <H2 id="create">1. シークレットを作る</H2>
+        <Steps>
+          <li>
+            <To to="/secrets">Secrets Manager</To> を開き、「シークレットを作る」を押します。
+          </li>
+          <li>
+            名前（例: <C>anthropic-api-key</C>）と値を入れて「作る」を押します。値はこのあと二度と表示されません。
+          </li>
+          <li>数秒〜数十秒で状態が「使用可能」になります（クラスターが復号できた印です）。</li>
+        </Steps>
+
+        <H2 id="attach">2. 関数につなぐ</H2>
+        <Steps>
+          <li>関数の名前を押して開きます。</li>
+          <li>
+            「シークレット」の「シークレットをつなぐ」を押し、環境変数の名前（例: <C>ANTHROPIC_API_KEY</C>）と、シークレットを選びます。
+          </li>
+          <li>「保存する」を押します。関数の中では、ふつうの環境変数として読めます。</li>
+        </Steps>
+        <Code lang="Node.js">{`
+const apiKey = process.env.ANTHROPIC_API_KEY;
+`}</Code>
+        <P>1 つのシークレットを、複数の関数や、1 つの関数の複数の環境変数につなげます。1 つの関数につなげるのは 20 個までです。</P>
+
+        <H2 id="rotate">値を変える</H2>
+        <P>
+          シークレットを開いて「値を上書きする」に新しい値を入れます。つないでいる関数は、動いていれば 1 分ほどで新しい値の Pod に入れ替わります（0 台なら、次に起きたときから新しい値です）。
+          関数の YAML は変わりません。
+        </P>
+
+        <H2 id="how">しくみ</H2>
+        <UL>
+          <li>
+            コンソールは値を受け取るとすぐ、クラスターの Sealed Secrets の公開鍵で暗号化し、<C>&lt;環境&gt;/secrets/&lt;名前&gt;.yaml</C>（SealedSecret）としてコミットします。値そのものは保存しません。
+          </li>
+          <li>暗号は、この環境の共有の namespace とシークレットの名前に結びついています。YAML を別の名前や別のクラスターに写しても復号できません。</li>
+          <li>
+            クラスターの中で Sealed Secrets が復号し、コントローラーが、つないだ関数の namespace にだけ Secret（<C>secret-&lt;名前&gt;</C>）を置きます。ほかの関数からは読めません。
+          </li>
+          <li>
+            関数の YAML には、<C>valueFrom.secretKeyRef</C> でシークレットの名前だけが書かれます。
+          </li>
+        </UL>
+        <Code lang="関数の YAML（抜粋）">{`
+env:
+  - name: ANTHROPIC_API_KEY
+    valueFrom:
+      secretKeyRef:
+        name: secret-anthropic-api-key
+        key: value
+`}</Code>
+
+        <H2 id="delete">消すとき</H2>
+        <UL>
+          <li>関数がつないでいるシークレットは消せません。先に関数の「シークレット」から外します。</li>
+          <li>消しても、git の履歴には暗号化したものが残ります（クラスターの鍵がなければ読めません）。漏れた値は、消すだけでなく発行元で無効にしてください。</li>
+        </UL>
+      </>
+    ),
+  },
+  {
     slug: "yaml",
     title: "YAML で管理する",
     summary: "コンソールが書く YAML の置き場と形。手で書いて push する方法と、その決まりごと。",
@@ -516,6 +602,7 @@ const { objects } = await (await fetch(\`\${base}?prefix=uploads/\`, { headers: 
             ["バケット", <C>&lt;環境&gt;/buckets/&lt;名前&gt;.yaml</C>, "ConfigMap"],
             ["CDN", <C>&lt;環境&gt;/cdn/&lt;名前&gt;.yaml</C>, "HTTPRoute"],
             ["データベース", <C>&lt;環境&gt;/databases/&lt;名前&gt;.yaml</C>, "ConfigMap"],
+            ["シークレット", <C>&lt;環境&gt;/secrets/&lt;名前&gt;.yaml</C>, "SealedSecret（暗号化した値）"],
           ]}
         />
 
@@ -616,7 +703,7 @@ spec:
           </li>
           <li>登録の data（CPU・メモリ・つなぐもの）は、Deployment と同じ値にします。ずれていると「YAML に問題」になります。</li>
           <li>
-            置けるのは Deployment・Service・ConfigMap・PersistentVolumeClaim（関数）と HTTPRoute（API・CDN）だけです。Secret は置けません。
+            置けるのは Deployment・Service・ConfigMap・PersistentVolumeClaim（関数）と HTTPRoute（API・CDN）、SealedSecret（シークレット）だけです。平文の Secret は置けません。
           </li>
           <li>
             中のオブジェクトの名前は、ファイルの名前か <C>&lt;名前&gt;-…</C> で始めます。
@@ -628,6 +715,10 @@ spec:
           <li>
             envFrom で読めるのは、つないだデータベース（<C>db-&lt;名前&gt;</C>）とバケット（<C>bucket-&lt;名前&gt;</C>）の Secret だけです。
           </li>
+          <li>
+            <C>valueFrom.secretKeyRef</C> で読めるのは、シークレット（<C>name: secret-&lt;名前&gt;</C>・<C>key: value</C>）だけです。登録の data の <C>secrets</C> にも、その名前を書きます。
+          </li>
+          <li>シークレットの YAML は、コンソールで作るのが前提です（値の暗号化はコンソールがします）。手で書くときは、コンソールが作る形から変えられません。</li>
         </UL>
         <P>決まりに合わない YAML は、一覧に「YAML に問題」と出ます。push する前に、コンソールの「YAML」タブに貼って保存すると、その場で確かめられます。</P>
 

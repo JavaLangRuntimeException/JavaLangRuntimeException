@@ -3,6 +3,8 @@
 //   - 関数ごとの namespace と、その囲い（ResourceQuota・LimitRange・NetworkPolicy・Pod Security・権限）を作る
 //   - 共有の PostgreSQL / Redis から、データベースとユーザーを切り出す
 //   - 接続先（URL・パスワード・トークン）の Secret を、それをつないだ関数の namespace にだけ作る
+//   - シークレット（Sealed Secrets が共有の namespace で復号したもの）を、それをつないだ関数の namespace にだけ写す。
+//     値が変わったら、動いている関数の Pod を入れ替える（環境変数は起動したときにしか読まれない）
 //
 // 関数の namespace と囲いは、アプリ用のリポジトリからは作れない（リポジトリのトークンが漏れても、囲いのない namespace は作れない）。
 // パスワードとトークンはマスターキーから導くので、どこにも保存しない。
@@ -11,9 +13,13 @@ package controller
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"log/slog"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -129,6 +135,18 @@ func (c *Controller) Reconcile(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	sealed, err := c.c.Cluster.SharedSecrets(ctx, service.LabelSecret)
+	if err != nil {
+		return err
+	}
+	// シークレットの名前 → 値（Sealed Secrets が secret-<名前> に復号したもの）
+	secrets := map[string]string{}
+	for _, s := range sealed {
+		name := s.Labels[service.LabelSecret]
+		if v, ok := s.Data[service.SecretValueKey]; ok && service.ValidName(name) && s.Name == service.SecretObjectName(name) {
+			secrets[name] = v
+		}
+	}
 
 	// 1. データベースとバケット。共有の namespace に接続先の Secret の元を置く（定義が消えたかを知る印にもなる）
 	ready := map[string]connection{}
@@ -179,7 +197,7 @@ func (c *Controller) Reconcile(ctx context.Context) error {
 		ns := service.FunctionNamespace(c.c.Env, name)
 		wantNS[ns] = true
 		status := service.StatusReady
-		if err := c.ensureFunction(ctx, reg, ns, ready); err != nil {
+		if err := c.ensureFunction(ctx, reg, ns, ready, secrets); err != nil {
 			c.c.Log.Warn("function namespace failed", "function", name, "error", err)
 			status = err.Error()
 		}
@@ -203,11 +221,11 @@ func (c *Controller) Reconcile(ctx context.Context) error {
 	}
 
 	// 4. 定義が消えたデータベース・バケット: 共有の namespace の Secret を消し、データベースはログインを止める
-	secrets, err := c.c.Cluster.Secrets(ctx, "", labelManaged+"="+managedValue)
+	managed, err := c.c.Cluster.Secrets(ctx, "", labelManaged+"="+managedValue)
 	if err != nil {
 		return err
 	}
-	for _, s := range secrets {
+	for _, s := range managed {
 		if want[s.Name] {
 			continue
 		}
@@ -253,8 +271,8 @@ func (c *Controller) ensureDatabase(ctx context.Context, name, engine string) (c
 	return conn, nil
 }
 
-// ensureFunction は関数の namespace と囲いを作り、つないだものの接続先の Secret を置く
-func (c *Controller) ensureFunction(ctx context.Context, reg service.Registration, ns string, ready map[string]connection) error {
+// ensureFunction は関数の namespace と囲いを作り、つないだものの接続先とシークレットの Secret を置く
+func (c *Controller) ensureFunction(ctx context.Context, reg service.Registration, ns string, ready map[string]connection, secrets map[string]string) error {
 	labels := map[string]string{labelManaged: managedValue, service.LabelFunction: reg.Name}
 	nsLabels := map[string]string{
 		labelManaged: managedValue, labelRegistry: c.c.Registry, labelTier: tierFunction, labelEnv: c.c.Env, service.LabelFunction: reg.Name,
@@ -293,11 +311,31 @@ func (c *Controller) ensureFunction(ctx context.Context, reg service.Registratio
 			missing = append(missing, "バケット "+b)
 		}
 	}
-	secrets, err := c.c.Cluster.Secrets(ctx, ns, labelManaged+"="+managedValue)
+	missingSecret := false
+	for _, s := range reg.Secrets {
+		name := service.SecretObjectName(s)
+		wantSecrets[name] = true
+		v, ok := secrets[s]
+		if !ok {
+			missing, missingSecret = append(missing, "シークレット "+s), true
+			continue
+		}
+		labels := map[string]string{labelManaged: managedValue, service.LabelFunction: reg.Name, service.LabelKind: service.KindSecret, service.LabelSecret: s}
+		if err := c.c.Cluster.PutSecret(ctx, ns, name, labels, map[string]string{service.SecretValueKey: v}); err != nil {
+			return fmt.Errorf("シークレット %s を置けませんでした: %w", s, err)
+		}
+	}
+	// シークレットの値が変わったら Pod を入れ替える（Pod テンプレートの注釈を変える。0 台なら次に起きたときに新しい値で起きる）
+	if len(reg.Secrets) > 0 && !missingSecret {
+		if err := c.c.Cluster.SetPodAnnotation(ctx, ns, reg.Name, service.AnnotationSecretsVersion, SecretsVersion(c.c.MasterKey, reg.Secrets, secrets)); err != nil {
+			c.c.Log.Warn("restart for secrets failed", "function", reg.Name, "error", err)
+		}
+	}
+	existing, err := c.c.Cluster.Secrets(ctx, ns, labelManaged+"="+managedValue)
 	if err != nil {
 		return err
 	}
-	for _, s := range secrets {
+	for _, s := range existing {
 		if !wantSecrets[s.Name] {
 			if err := c.c.Cluster.DeleteSecret(ctx, ns, s.Name); err != nil {
 				return err
@@ -308,6 +346,17 @@ func (c *Controller) ensureFunction(ctx context.Context, reg service.Registratio
 		return fmt.Errorf("つなぐ %s がまだ使えません（使えるようになると、関数が起動できるようになります）", strings.Join(missing, "・"))
 	}
 	return nil
+}
+
+// SecretsVersion はつないだシークレットの値から作る印（値が変わると変わる）。
+// マスターキーの HMAC なので、注釈（Argo CD やコンソールから見える）から値は推し量れない
+func SecretsVersion(masterKey []byte, names []string, values map[string]string) string {
+	m := hmac.New(sha256.New, masterKey)
+	sorted := slices.Sorted(slices.Values(names))
+	for _, n := range sorted {
+		fmt.Fprintf(m, "%s\n%d\n%s\n", n, len(values[n]), values[n])
+	}
+	return hex.EncodeToString(m.Sum(nil))[:16]
 }
 
 func (c *Controller) copySecret(ctx context.Context, ns, name string, ready map[string]connection) bool {

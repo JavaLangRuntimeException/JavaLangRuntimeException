@@ -119,7 +119,7 @@ func (h *ConsoleHandler) GetHostingOptions(ctx context.Context, req *connect.Req
 			out = append(out, consoleInstanceFamilyToPb(v))
 		}
 		return out
-	}(out.InstanceFamilies), StorageEnabled: out.StorageEnabled, DnsEnabled: out.DnsEnabled, DatabasesEnabled: out.DatabasesEnabled}), nil
+	}(out.InstanceFamilies), StorageEnabled: out.StorageEnabled, DnsEnabled: out.DnsEnabled, DatabasesEnabled: out.DatabasesEnabled, SecretsEnabled: out.SecretsEnabled}), nil
 }
 
 func (h *ConsoleHandler) ListFunctions(ctx context.Context, req *connect.Request[cloudv1.ListFunctionsRequest]) (*connect.Response[cloudv1.ListFunctionsResponse], error) {
@@ -428,6 +428,56 @@ func (h *ConsoleHandler) DeleteDatabase(ctx context.Context, req *connect.Reques
 	return connect.NewResponse(&cloudv1.DeleteDatabaseResponse{}), nil
 }
 
+func (h *ConsoleHandler) ListSecrets(ctx context.Context, req *connect.Request[cloudv1.ListSecretsRequest]) (*connect.Response[cloudv1.ListSecretsResponse], error) {
+	out, err := h.usecase.ListSecrets(ctx, usecase.ListSecretsInput{})
+	if err != nil {
+		return nil, errs.ToConnect(ctx, err)
+	}
+	return connect.NewResponse(&cloudv1.ListSecretsResponse{Secrets: func(l []*usecase.Secret) []*cloudv1.Secret {
+		if l == nil {
+			return nil
+		}
+		out := make([]*cloudv1.Secret, 0, len(l))
+		for _, v := range l {
+			out = append(out, consoleSecretToPb(v))
+		}
+		return out
+	}(out.Secrets), Enabled: out.Enabled}), nil
+}
+
+func (h *ConsoleHandler) CreateSecret(ctx context.Context, req *connect.Request[cloudv1.CreateSecretRequest]) (*connect.Response[cloudv1.CreateSecretResponse], error) {
+	out, err := h.usecase.CreateSecret(ctx, usecase.CreateSecretInput{
+		Name:  req.Msg.GetName(),
+		Value: req.Msg.GetValue(),
+	})
+	if err != nil {
+		return nil, errs.ToConnect(ctx, err)
+	}
+	return connect.NewResponse(&cloudv1.CreateSecretResponse{Secret: consoleSecretToPb(out.Secret)}), nil
+}
+
+func (h *ConsoleHandler) UpdateSecret(ctx context.Context, req *connect.Request[cloudv1.UpdateSecretRequest]) (*connect.Response[cloudv1.UpdateSecretResponse], error) {
+	out, err := h.usecase.UpdateSecret(ctx, usecase.UpdateSecretInput{
+		Name:     req.Msg.GetName(),
+		Value:    req.Msg.GetValue(),
+		Revision: req.Msg.GetRevision(),
+	})
+	if err != nil {
+		return nil, errs.ToConnect(ctx, err)
+	}
+	return connect.NewResponse(&cloudv1.UpdateSecretResponse{Secret: consoleSecretToPb(out.Secret)}), nil
+}
+
+func (h *ConsoleHandler) DeleteSecret(ctx context.Context, req *connect.Request[cloudv1.DeleteSecretRequest]) (*connect.Response[cloudv1.DeleteSecretResponse], error) {
+	if err := h.usecase.DeleteSecret(ctx, usecase.DeleteSecretInput{
+		Name:     req.Msg.GetName(),
+		Revision: req.Msg.GetRevision(),
+	}); err != nil {
+		return nil, errs.ToConnect(ctx, err)
+	}
+	return connect.NewResponse(&cloudv1.DeleteSecretResponse{}), nil
+}
+
 func (h *ConsoleHandler) ListDeployments(ctx context.Context, req *connect.Request[cloudv1.ListDeploymentsRequest]) (*connect.Response[cloudv1.ListDeploymentsResponse], error) {
 	out, err := h.usecase.ListDeployments(ctx, usecase.ListDeploymentsInput{})
 	if err != nil {
@@ -713,6 +763,26 @@ func consoleEnvVarToPb(u *usecase.EnvVar) *cloudv1.EnvVar {
 	}
 }
 
+func consolePbToSecretEnv(p *cloudv1.SecretEnv) *usecase.SecretEnv {
+	if p == nil {
+		return nil
+	}
+	return &usecase.SecretEnv{
+		Name:   p.GetName(),
+		Secret: p.GetSecret(),
+	}
+}
+
+func consoleSecretEnvToPb(u *usecase.SecretEnv) *cloudv1.SecretEnv {
+	if u == nil {
+		return nil
+	}
+	return &cloudv1.SecretEnv{
+		Name:   u.Name,
+		Secret: u.Secret,
+	}
+}
+
 func consolePbToFunctionSpec(p *cloudv1.FunctionSpec) *usecase.FunctionSpec {
 	if p == nil {
 		return nil
@@ -738,6 +808,16 @@ func consolePbToFunctionSpec(p *cloudv1.FunctionSpec) *usecase.FunctionSpec {
 		Notify:    p.GetNotify(),
 		Databases: p.GetDatabases(),
 		Buckets:   p.GetBuckets(),
+		Secrets: func(l []*cloudv1.SecretEnv) []*usecase.SecretEnv {
+			if l == nil {
+				return nil
+			}
+			out := make([]*usecase.SecretEnv, 0, len(l))
+			for _, v := range l {
+				out = append(out, consolePbToSecretEnv(v))
+			}
+			return out
+		}(p.GetSecrets()),
 	}
 }
 
@@ -766,6 +846,16 @@ func consoleFunctionSpecToPb(u *usecase.FunctionSpec) *cloudv1.FunctionSpec {
 		Notify:    u.Notify,
 		Databases: u.Databases,
 		Buckets:   u.Buckets,
+		Secrets: func(l []*usecase.SecretEnv) []*cloudv1.SecretEnv {
+			if l == nil {
+				return nil
+			}
+			out := make([]*cloudv1.SecretEnv, 0, len(l))
+			for _, v := range l {
+				out = append(out, consoleSecretEnvToPb(v))
+			}
+			return out
+		}(u.Secrets),
 	}
 }
 
@@ -1125,6 +1215,32 @@ func consoleDatabaseToPb(u *usecase.Database) *cloudv1.Database {
 		Status:    u.Status,
 		Ready:     u.Ready,
 		EnvNames:  u.EnvNames,
+		Functions: u.Functions,
+	}
+}
+
+func consolePbToSecret(p *cloudv1.Secret) *usecase.Secret {
+	if p == nil {
+		return nil
+	}
+	return &usecase.Secret{
+		Name:      p.GetName(),
+		Source:    consolePbToSource(p.GetSource()),
+		Status:    p.GetStatus(),
+		Ready:     p.GetReady(),
+		Functions: p.GetFunctions(),
+	}
+}
+
+func consoleSecretToPb(u *usecase.Secret) *cloudv1.Secret {
+	if u == nil {
+		return nil
+	}
+	return &cloudv1.Secret{
+		Name:      u.Name,
+		Source:    consoleSourceToPb(u.Source),
+		Status:    u.Status,
+		Ready:     u.Ready,
 		Functions: u.Functions,
 	}
 }

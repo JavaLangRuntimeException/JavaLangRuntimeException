@@ -24,6 +24,7 @@ func (u *ConsoleUsecaseImpl) GetHostingOptions(_ context.Context, _ GetHostingOp
 		ApiHostSuffix: u.d.APITarget.Suffix(service.HostAPI), CdnHostSuffix: u.d.APITarget.Suffix(service.HostCDN), StorageHostSuffix: u.d.APITarget.Suffix(service.HostStorage),
 		CustomDomainZone: u.customDomainZone(), CachePurgeEnabled: u.d.Purger != nil,
 		StorageEnabled: u.d.Objects != nil, DnsEnabled: u.d.DNS != nil, DatabasesEnabled: u.d.DatabasesEnabled,
+		SecretsEnabled: u.d.Sealer != nil,
 	}
 	for _, t := range service.InstanceTypes {
 		out.InstanceTypes = append(out.InstanceTypes, &InstanceType{Name: t.Name, Family: service.FamilyOf(t.Name), Memory: t.MemoryBytes, CpuMillis: t.CPUMillis})
@@ -92,14 +93,23 @@ func functionSpecOf(s *FunctionSpec) service.FunctionSpec {
 			out.Env = append(out.Env, service.EnvVar{Name: e.Name, Value: e.Value})
 		}
 	}
+	for _, e := range s.Secrets {
+		if e != nil {
+			out.Secrets = append(out.Secrets, service.SecretRef{Env: e.Name, Secret: e.Secret})
+		}
+	}
 	return out.Normalize()
 }
 
 func functionSpecOut(s service.FunctionSpec) *FunctionSpec {
 	out := &FunctionSpec{Name: s.Name, Image: s.Image, Port: s.Port, InstanceType: s.InstanceType,
-		CpuMillis: s.CPUMillis, Memory: s.MemoryBytes, Env: []*EnvVar{}, Alerts: s.Alerts, Notify: s.Notify, Databases: s.Databases, Buckets: s.Buckets}
+		CpuMillis: s.CPUMillis, Memory: s.MemoryBytes, Env: []*EnvVar{}, Alerts: s.Alerts, Notify: s.Notify, Databases: s.Databases, Buckets: s.Buckets,
+		Secrets: []*SecretEnv{}}
 	for _, e := range s.Env {
 		out.Env = append(out.Env, &EnvVar{Name: e.Name, Value: e.Value})
+	}
+	for _, r := range s.Secrets {
+		out.Secrets = append(out.Secrets, &SecretEnv{Name: r.Env, Secret: r.Secret})
 	}
 	return out
 }
@@ -107,7 +117,7 @@ func functionSpecOut(s service.FunctionSpec) *FunctionSpec {
 // functionOf はリポジトリの YAML と、クラスターの状態（なければ nil）から関数を作る。
 // 手で push した YAML が読めないときも一覧から消さず、problem に理由を入れる
 func (u *ConsoleUsecaseImpl) functionOf(f gateway.ResourceFile, w *gateway.Workload, apis []string) *Function {
-	fn := &Function{Spec: &FunctionSpec{Name: f.Name, Env: []*EnvVar{}, Alerts: []string{}, Notify: []string{}, Databases: []string{}, Buckets: []string{}}, Apis: apis,
+	fn := &Function{Spec: &FunctionSpec{Name: f.Name, Env: []*EnvVar{}, Alerts: []string{}, Notify: []string{}, Databases: []string{}, Buckets: []string{}, Secrets: []*SecretEnv{}}, Apis: apis,
 		Source: &Source{Yaml: f.YAML, Revision: f.Revision, URL: u.d.Apps.URL(gateway.KindFunctions, f.Name)}}
 	if fn.Apis == nil {
 		fn.Apis = []string{}

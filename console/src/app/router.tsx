@@ -4,6 +4,7 @@ import { CapacityPage } from "@/pages/CapacityPage";
 import { ApisPage } from "@/pages/ApisPage";
 import { CdnPage } from "@/pages/CdnPage";
 import { DatabasesPage } from "@/pages/DatabasesPage";
+import { SecretsPage } from "@/pages/SecretsPage";
 import { FunctionsPage } from "@/pages/FunctionsPage";
 import { GuidePage } from "@/pages/GuidePage";
 import { MetricsPage } from "@/pages/MetricsPage";
@@ -23,6 +24,7 @@ export const router = createBrowserRouter([
       { path: "apis", element: <ApisPage /> },
       { path: "cdn", element: <CdnPage /> },
       { path: "databases", element: <DatabasesPage /> },
+      { path: "secrets", element: <SecretsPage /> },
       { path: "guide", element: <GuidePage /> },
       { path: "guide/:slug", element: <GuidePage /> },
       { path: "*", element: <NotFoundPage /> },

@@ -161,7 +161,7 @@ metadata:
 `mail` は SES のメール、`discord` は Discord に飛ぶ（Datadog の Webhook `taramanji-cloud-mail`・`taramanji-cloud-discord` →
 Cloudflare Worker `taramanji-uptime`）。コンソールで保存・削除したときにそろえる。YAML を手で push したときは、コンソールの「監視を同期」を押す。
 
-まだないもの: 自分で決める秘密の環境変数・非公開イメージは扱えない（データベースとバケットの接続先は「つなぐ」で入る）。
+秘密の値（API キーなど）は環境変数に書かず、シークレット（下の「シークレット」）にしてつなぐ。データベースとバケットの接続先は「つなぐ」で入る。
 
 ## オブジェクトストレージと CDN
 
@@ -198,17 +198,17 @@ S3 と CloudFront にあたるもの。
 関数は 1 つずつ別の namespace で動く（`taramanji-cloud-fn-<名前>`。アプリは本番だけ）。
 
 - 関数の YAML は、**登録**の ConfigMap `function-<名前>`（環境の共有の namespace。CPU・メモリ・つなぐもの）と、関数の namespace に入る Deployment・Service
-- コントローラー（cloud-ctl）が登録を見て、namespace と囲いを作る。**アプリ用のリポジトリからは作れない**（デプロイヤーは Deployment・Service・ConfigMap・PVC・HTTPRoute しか入れない）
+- コントローラー（cloud-ctl）が登録を見て、namespace と囲いを作る。**アプリ用のリポジトリからは作れない**（デプロイヤーは Deployment・Service・ConfigMap・PVC・HTTPRoute・SealedSecret しか入れない）
   - Pod Security: baseline（特権コンテナ・hostPath 不可）
   - ResourceQuota: 登録した CPU・メモリの 2 台分（入れ替えのあいだだけ 2 台）、NodePort・LoadBalancer は 0。優先度 `cloud-workload` のない Pod は作れない
   - LimitRange: コンテナ 1 つは登録した量まで
   - NetworkPolicy: 受けるのは API Gateway（cloud-gw）からだけ。出られるのは DNS・この環境の PostgreSQL / Redis / ストレージ・インターネット（LAN 不可）
   - default の ServiceAccount はトークンを持たない。cloud-gw は台数だけ、cloud-api は読むだけ（RoleBinding を namespace ごとに作る）
-  - つないだデータベース・バケットの接続先の Secret は、その関数の namespace にだけ置く
+  - つないだデータベース・バケットの接続先と、つないだシークレットの Secret は、その関数の namespace にだけ置く
 - 登録が消えたら、namespace ごと消す（自分が作った、この環境の、名前の決まりに合うものだけ）
 - 関数のメモリの合計（本番 2.5 GiB）は、API Gateway が関数を起こすときに確かめる（`FUNCTION_MEMORY_CAP_MIB`）。
   超えるなら起こさず 503。コンソールの「容量」も同じ枠で数える
-- 環境の共有の namespace（`taramanji-cloud-apps` など）には、API・CDN の HTTPRoute と、登録・バケット・データベースの定義（ConfigMap）だけを置く。Pod は 0 個
+- 環境の共有の namespace（`taramanji-cloud-apps` など）には、API・CDN の HTTPRoute と、登録・バケット・データベースの定義（ConfigMap）、シークレット（SealedSecret と、Sealed Secrets が復号した Secret）だけを置く。Pod は 0 個
 
 ## 非公開のイメージ（GHCR・Docker Hub）
 
@@ -255,6 +255,24 @@ S3 と CloudFront にあたるもの。
 - **メモリ**: PostgreSQL は上限 256 MiB、Redis は上限 128 MiB（`maxmemory` 96 MB。満杯になると書き込みがエラーになる）。
   関数の合計の枠とは別に、コンソールの namespace で使う。3 環境で 6 台動く
 - バックアップは、まだない
+
+## シークレット（Secrets Manager）
+
+API キー・パスワードなど、git に平文で残したくない値を関数に渡す。
+
+| リソース | YAML の場所 | 中身 |
+|---|---|---|
+| シークレット | `<環境>/secrets/<名前>.yaml` | SealedSecret `secret-<名前>`（値は `encryptedData.value` の 1 つだけ。ラベル `cloud.taramanji.com/secret`） |
+
+- **暗号化**: cloud-api が値を受け取るとすぐ、クラスターの Sealed Secrets の公開鍵（Kubernetes API の Service プロキシから読む）で暗号化してコミットする。
+  kubeseal の strict スコープと同じ形で、共有の namespace と名前に結びつく（別の名前・namespace・クラスターでは復号できない）。cloud-api は値を保存も表示もしない
+- **復号**: Sealed Secrets が共有の namespace に Secret `secret-<名前>` を作る。コントローラーが、それをつないだ関数の namespace にだけ写す
+- **つなぎ方**: 関数の「シークレット」で、環境変数の名前とシークレットを選ぶ（YAML では `valueFrom.secretKeyRef`。`name: secret-<名前>`・`key: value` だけ読める。登録の data の `secrets` にも名前が入る）
+- **値を変える**: コンソールで上書きする。コントローラーが値の印（マスターキーの HMAC。値は推し量れない）を関数の Pod テンプレートの注釈
+  `cloud.taramanji.com/secrets-version` に書くので、動いている関数は新しい値の Pod に入れ替わる（0 台なら次に起きたときから）
+- **消すとき**: どの関数にもつながれていないものだけ消せる。git の履歴には暗号化したものが残るので、漏れた値は発行元で無効にする
+- 「復号できません」になったら（Sealed Secrets の鍵を作り直したときなど）、値を上書きすれば直る
+- 本番だけ（アプリは本番だけ）
 
 
 ## 構成

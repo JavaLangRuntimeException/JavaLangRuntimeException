@@ -38,6 +38,8 @@ type Deps struct {
 	Purger gateway.CachePurger
 	// State はデータベースの状態（コントローラーが書く）を読む。nil なら状態は出さない
 	State gateway.ResourceState
+	// Sealer はシークレットの値を Sealed Secrets の公開鍵で暗号化する。nil ならシークレットは作れない
+	Sealer gateway.SecretSealer
 	// DatabasesEnabled は共有の PostgreSQL / Redis とコントローラーが動いているか（画面に出すだけ）
 	DatabasesEnabled bool
 	// IdleTimeout は関数を 0 台に戻すまでの時間（画面に出すだけ。実際に戻すのは API Gateway）

@@ -129,6 +129,11 @@ func (k *Kube) do(ctx context.Context, method, path, contentType string, body []
 	if out == nil {
 		return nil
 	}
+	// JSON でない応答（Sealed Secrets の公開鍵の PEM など）はそのまま返す
+	if raw, ok := out.(*[]byte); ok {
+		*raw = body
+		return nil
+	}
 	return json.Unmarshal(body, out)
 }
 

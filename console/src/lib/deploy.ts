@@ -36,7 +36,7 @@ export function ago(atMs: bigint | number, nowMs = Date.now()): string {
   return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
-const kindLabels: Record<string, string> = { functions: "Functions", apis: "API Gateway", cdn: "CDN", buckets: "Storage", databases: "Databases" };
+const kindLabels: Record<string, string> = { functions: "Functions", apis: "API Gateway", cdn: "CDN", buckets: "Storage", databases: "Databases", secrets: "Secrets Manager" };
 
 export function kindLabel(kind: string): string {
   return kindLabels[kind] ?? kind;

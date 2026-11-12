@@ -135,6 +135,8 @@ func main() {
 		APITarget: service.APITarget{HostSuffix: hostSuffix, InvokerNamespace: namespace, AliasZone: aliasZone},
 		Objects:   objects,
 		State:     kube,
+		// シークレットの値は、クラスターの Sealed Secrets の公開鍵で暗号化してからリポジトリに置く
+		Sealer: kube,
 		// 共有の PostgreSQL / Redis とコントローラー（cloud-ctl）を、この環境に入れてあるか
 		DatabasesEnabled: env.Optional("DATABASES_ENABLED", "") == "true",
 		DNS:              dns,

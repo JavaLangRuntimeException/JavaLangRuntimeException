@@ -43,13 +43,14 @@ func connectedBy(fns []service.FunctionSpec, pick func(service.FunctionSpec) []s
 func databasesOf(f service.FunctionSpec) []string { return f.Databases }
 func bucketsOf(f service.FunctionSpec) []string   { return f.Buckets }
 
-// checkConnections は、関数がつなごうとしているデータベースとバケットがあるか確かめる
+// checkConnections は、関数がつなごうとしているデータベース・バケット・シークレットがあるか確かめる
 // （ないものをつなぐと、接続先の Secret がなくて関数が起動できない）
 func (u *ConsoleUsecaseImpl) checkConnections(ctx context.Context, spec service.FunctionSpec) error {
 	for _, c := range []struct {
 		kind, label, field string
 		names              []string
-	}{{gateway.KindDatabases, "データベース", "databases", spec.Databases}, {gateway.KindBuckets, "バケット", "buckets", spec.Buckets}} {
+	}{{gateway.KindDatabases, "データベース", "databases", spec.Databases}, {gateway.KindBuckets, "バケット", "buckets", spec.Buckets},
+		{gateway.KindSecrets, "シークレット", "secrets", spec.SecretNames()}} {
 		if len(c.names) == 0 {
 			continue
 		}

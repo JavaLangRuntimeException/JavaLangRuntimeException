@@ -66,6 +66,17 @@ service ConsoleService {
   // どの関数にもつながれていないデータベースだけ消せる。中身は残る（ログインだけ止める）
   rpc DeleteDatabase(DeleteDatabaseRequest) returns (DeleteDatabaseResponse) {}
 
+  // ---- シークレット ----
+  // API キー・パスワードなどの秘密の値（<環境>/secrets/<名前>.yaml の SealedSecret）。値はクラスターの Sealed Secrets の公開鍵で
+  // 暗号化してからコミットする（git にも画面にも平文では出ない。読み戻せないので、変えるときは上書きする）。
+  // つなぎ方は、関数の「シークレット」に環境変数の名前と一緒に足す（その関数の namespace にだけ置かれる）
+  rpc ListSecrets(ListSecretsRequest) returns (ListSecretsResponse) {}
+  rpc CreateSecret(CreateSecretRequest) returns (CreateSecretResponse) {}
+  // 値を上書きする。つないだ関数は、動いていれば新しい値で入れ替わる
+  rpc UpdateSecret(UpdateSecretRequest) returns (UpdateSecretResponse) {}
+  // どの関数にもつながれていないシークレットだけ消せる
+  rpc DeleteSecret(DeleteSecretRequest) returns (DeleteSecretResponse) {}
+
   // ---- デプロイの様子 ----
   // コントローラー（デプロイヤー）が、リポジトリの YAML をクラスターに入れた結果と履歴（Argo CD は使わない）
   rpc ListDeployments(ListDeploymentsRequest) returns (ListDeploymentsResponse) {}
@@ -244,12 +255,20 @@ message GetHostingOptionsResponse {
   bool dns_enabled = 16;
   // データベースを切り出せるか（共有の PostgreSQL / Redis とコントローラーが動いているか）
   bool databases_enabled = 17;
+  // シークレットを作れるか（Sealed Secrets の公開鍵を読めるか）
+  bool secrets_enabled = 24;
 }
 
 message EnvVar {
   string name = 1;
-  // 秘密は入れない（YAML は git に残る）
+  // 秘密は入れない（YAML は git に残る）。秘密はシークレットにして SecretEnv でつなぐ
   string value = 2;
+}
+
+// 環境変数 name に、シークレット secret の値を入れる（YAML には値でなく、シークレットの名前だけが残る）
+message SecretEnv {
+  string name = 1;
+  string secret = 2;
 }
 
 // リポジトリにある YAML と、その版。どのリソースにも付く
@@ -284,6 +303,8 @@ message FunctionSpec {
   repeated string databases = 10;
   // つなぐバケットの名前。環境変数 BUCKET_<名前>_URL と BUCKET_<名前>_TOKEN が入る
   repeated string buckets = 11;
+  // 環境変数に入れるシークレット
+  repeated SecretEnv secrets = 12;
 }
 
 message Function {
@@ -642,6 +663,51 @@ message DeleteDatabaseRequest {
 
 message DeleteDatabaseResponse {}
 
+// シークレット。値は返さない（暗号化したものが source.yaml に入る）
+message Secret {
+  string name = 1;
+  Source source = 2;
+  // ready / pending / 復号できない理由
+  string status = 3;
+  bool ready = 4;
+  // このシークレットをつないでいる関数
+  repeated string functions = 5;
+}
+
+message ListSecretsRequest {}
+
+message ListSecretsResponse {
+  repeated Secret secrets = 1;
+  // シークレットを作れるか（Sealed Secrets の公開鍵を読めるか）
+  bool enabled = 2;
+}
+
+message CreateSecretRequest {
+  string name = 1;
+  string value = 2;
+}
+
+message CreateSecretResponse {
+  Secret secret = 1;
+}
+
+message UpdateSecretRequest {
+  string name = 1;
+  string value = 2;
+  string revision = 3;
+}
+
+message UpdateSecretResponse {
+  Secret secret = 1;
+}
+
+message DeleteSecretRequest {
+  string name = 1;
+  string revision = 2;
+}
+
+message DeleteSecretResponse {}
+
 message DeploymentEvent {
   int64 at_ms = 1;
   string commit = 2;
@@ -653,7 +719,7 @@ message DeploymentEvent {
 
 // 1 つのリソース（関数・API・CDN・バケット・データベース）のデプロイの様子
 message Deployment {
-  // functions / apis / cdn / buckets / databases
+  // functions / apis / cdn / buckets / databases / secrets
   string kind = 1;
   string name = 2;
   string state = 3;

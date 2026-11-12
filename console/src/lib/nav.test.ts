@@ -13,7 +13,8 @@ describe("サービスの一覧", () => {
     expect(new Set(services.map((s) => s.id)).size).toBe(services.length);
   });
   it("名前と説明で絞り込み、空の分類は出さない", () => {
-    expect(filterGroups("")).toHaveLength(6);
+    expect(filterGroups("")).toHaveLength(7);
+    expect(filterGroups("secret").flatMap((g) => g.services.map((s) => s.id))).toEqual(["secrets"]);
     expect(filterGroups("api").flatMap((g) => g.services.map((s) => s.id))).toEqual(["apis"]);
     expect(filterGroups("バケット").flatMap((g) => g.services.map((s) => s.id))).toEqual(["cdn", "storage"]);
     expect(filterGroups("zzz")).toEqual([]);

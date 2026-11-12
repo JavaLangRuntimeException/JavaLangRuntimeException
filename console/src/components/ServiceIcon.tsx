@@ -11,6 +11,7 @@ const orange = "#d45b07"; // コンピューティング
 const purple = "#7b3fe4"; // ネットワーキング
 const green = "#3f8624"; // ストレージ
 const blue = "#2e5fd0"; // データベース
+const red = "#c7262c"; // セキュリティ
 const pink = "#c7305f"; // 管理
 const navy = "#232f3e";
 
@@ -59,6 +60,16 @@ const glyphs: Record<ServiceId, Glyph> = {
       <>
         <ellipse cx="12" cy="6.5" rx="6.5" ry="2.5" />
         <path d="M5.5 6.5v11c0 1.4 2.9 2.5 6.5 2.5s6.5-1.1 6.5-2.5v-11M5.5 12c0 1.4 2.9 2.5 6.5 2.5s6.5-1.1 6.5-2.5" />
+      </>
+    ),
+  },
+  // シークレット: 錠前（鍵穴つき）
+  secrets: {
+    color: red,
+    paths: (
+      <>
+        <rect x="6" y="10.5" width="12" height="9" />
+        <path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5M12 14v2.5" />
       </>
     ),
   },
