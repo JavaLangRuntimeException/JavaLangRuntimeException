@@ -67,17 +67,19 @@ const RESULTS: { measure: L10n; quad: string; stand: string; posture: string; ro
   { measure: { ja: "自分の力強さの知覚", en: "Perceived Strength" }, quad: "4.94", stand: "4.15", posture: ".014*", row: "4.69", swing: "4.40", gesture: "—" },
 ];
 
-const BIBTEX = `@inproceedings{tanahashi2026quadrupedal,
-  author    = {Tanahashi, Shuta and Hashiguchi, Satoshi and Nakamura, Fumihiko and Kataoka, Yuta and Shibata, Fumihisa and Mohr, Peter and Stanescu, Ana and Mori, Shohei and Kimura, Asako},
-  title     = {${TITLE}},
-  booktitle = {32nd ACM Symposium on Virtual Reality Software and Technology (VRST '26)},
-  year      = {2026},
-  month     = nov,
-  location  = {Sendai, Japan},
-  publisher = {Association for Computing Machinery},
-  address   = {New York, NY, USA},
-  isbn      = {979-8-4007-2811-2},
-  doi       = {${DOI}},
+// ACM DL の「Export Citation → BibTeX」と同じ形（AHs '26 のデモと同じ並び）。pages / numpages / keywords は出版後に ACM DL の値で足す
+const BIBTEX = `@inproceedings{${DOI},
+author = {Tanahashi, Shuta and Hashiguchi, Satoshi and Nakamura, Fumihiko and Kataoka, Yuta and Shibata, Fumihisa and Mohr, Peter and Stanescu, Ana and Mori, Shohei and Kimura, Asako},
+title = {${TITLE}},
+year = {2026},
+isbn = {9798400728112},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/${DOI}},
+doi = {${DOI}},
+booktitle = {Proceedings of the 32nd ACM Symposium on Virtual Reality Software and Technology},
+location = {Sendai, Japan},
+series = {VRST '26}
 }`;
 
 const LIST = "flex flex-col gap-2 ps-5 marker:text-text-tertiary [list-style:disc]";
