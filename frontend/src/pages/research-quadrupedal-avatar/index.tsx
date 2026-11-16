@@ -67,7 +67,7 @@ const RESULTS: { measure: L10n; quad: string; stand: string; posture: string; ro
   { measure: { ja: "自分の力強さの知覚", en: "Perceived Strength" }, quad: "4.94", stand: "4.15", posture: ".014*", row: "4.69", swing: "4.40", gesture: "—" },
 ];
 
-// ACM DL の「Export Citation → BibTeX」と同じ形（AHs '26 のデモと同じ並び）。pages / numpages / keywords は出版後に ACM DL の値で足す
+// ACM DL の「Export Citation → BibTeX」の書き出しそのまま
 const BIBTEX = `@inproceedings{${DOI},
 author = {Tanahashi, Shuta and Hashiguchi, Satoshi and Nakamura, Fumihiko and Kataoka, Yuta and Shibata, Fumihisa and Mohr, Peter and Stanescu, Ana and Mori, Shohei and Kimura, Asako},
 title = {${TITLE}},
@@ -77,7 +77,11 @@ publisher = {Association for Computing Machinery},
 address = {New York, NY, USA},
 url = {https://doi.org/${DOI}},
 doi = {${DOI}},
+abstract = {Virtual reality (VR) lets users embody non-humanoid avatars, but quadrupedal locomotion is challenging because its gait differs fundamentally from human bipedal movement. Prior work shows that gesture congruence and physical posture each enhance embodiment, yet their influence on users’ self-perception during quadrupedal locomotion remains underexplored. We drive a quadruped avatar’s plantigrade gait from hand movements alone, avoiding whole-body fatigue. Because the forelimbs map onto human arms, the technique splits into two axes, body posture and hand-gesture mapping. In a within-subjects study (N = 24) crossing two postures (pseudo-quadrupedal, standing) with two gesture mappings (Rowing, Swinging), both manipulations enhance body ownership and agency, with no detectable interaction. Avatar-consistent self-perception further differs across the four configurations, reflecting posture, viewpoint, and scale rather than locomotion alone. Finally, perceived skill is higher for Rowing in the pseudo-quadrupedal posture than in standing, which also raises physical workload. These results unify the two frameworks into a single design space for plantigrade quadrupedal avatar locomotion that trades off embodiment quality against workload.},
 booktitle = {Proceedings of the 32nd ACM Symposium on Virtual Reality Software and Technology},
+articleno = {8},
+numpages = {12},
+keywords = {Virtual Reality, Avatar Embodiment, Non-Humanoid Avatars, Locomotion, Quadrupedal Motion},
 location = {Sendai, Japan},
 series = {VRST '26}
 }`;
