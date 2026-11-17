@@ -103,6 +103,12 @@ export default function ResearchQuadrupedalAvatarPage() {
           <ButtonLink variant="secondary" href={`https://doi.org/${DOI}`} target="_blank" rel="noopener noreferrer">
             {t({ ja: "論文（ACM DL）", en: "Paper (ACM DL)" })}
           </ButtonLink>
+          <ButtonLink variant="secondary" href="https://www.youtube.com/watch?v=4AH5MBR8dko" target="_blank" rel="noopener noreferrer">
+            {t({ ja: "動画（YouTube）", en: "Video (YouTube)" })}
+          </ButtonLink>
+          <ButtonLink variant="secondary" href="/research/quadrupedal-avatar/vrst2026-slides.pdf" target="_blank" rel="noopener noreferrer">
+            {t({ ja: "発表スライド", en: "Presentation Slides" })}
+          </ButtonLink>
           <ButtonLink variant="secondary" href="#bibtex">
             BibTeX
           </ButtonLink>
