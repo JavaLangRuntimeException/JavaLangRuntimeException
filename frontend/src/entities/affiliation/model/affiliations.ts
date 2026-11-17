@@ -5,7 +5,7 @@ export type AffiliationCategory =
     | "community"
     | "engineer"
     | "photographer"
-    | "community_director"
+    | "community_manager"
     | "event_management"
     | "conference_staff"
     | "technical_mentor";
@@ -127,12 +127,12 @@ export const affiliations: Affiliation[] = [
         }
     },
 
-    // community_director / organizer
+    // community_manager / organizer
     {
-        label: { ja: "JINEN株式会社 STECH Community Director", en: "JINEN Inc. STECH Community Director" },
+        label: { ja: "JINEN株式会社 STECH Community Manager", en: "JINEN Inc. STECH Community Manager" },
         color: "bg-blue-900",
         href: "https://jinnen.co.jp/",
-        category: "community_director",
+        category: "community_manager",
         description: {
             ja: "学生エンジニアコミュニティSTECHの運営サポートや各種コミュニティの運営・企画やコミュニティに関する営業を行っています。",
             en: "Supporting the operation of the STECH student engineer community, planning and running various communities, and doing community-related business development.",
@@ -143,7 +143,7 @@ export const affiliations: Affiliation[] = [
         label: { ja: "kyoto.go Organizer", en: "kyoto.go Organizer" },
         color: "bg-violet-600",
         href: "https://x.com/kyotogolang",
-        category: "community_director",
+        category: "community_manager",
         description: {
             ja: "京都のGo当地コミュニティを主催し、定期的な勉強会やイベントを開催しています。",
             en: "Organizing the local Go community in Kyoto, with regular study sessions and events.",
@@ -153,7 +153,7 @@ export const affiliations: Affiliation[] = [
         label: { ja: "biwako.go Organizer", en: "biwako.go Organizer" },
         color: "bg-amber-800",
         href: "https://x.com/biwakogolang",
-        category: "community_director",
+        category: "community_manager",
         description: {
             ja: "滋賀のGo当地コミュニティを主催し、定期的な勉強会やイベントを開催しています。",
             en: "Organizing the local Go community in Shiga, with regular study sessions and events.",

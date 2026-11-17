@@ -8,19 +8,19 @@ export type LinkCard = {
   imgSrc: string;
   title: Text;
   description: Text;
-  backText: Text;
+  backText?: Text;
 };
 
 export const linkCards: LinkCard[] = [
-  // Portfolio → Home
-  { href: "/", imgSrc: "/profile_taramanji.png", title: "Home", description: { ja: "ホームの画面へ", en: "Go to the home page" }, backText: { ja: "ホームへ", en: "Home" } },
   // Twitter
   {
     href: "https://twitter.com/javalangruntime",
     imgSrc: "/twitter.png",
     title: "X (Twitter)",
-    description: "@JavaLangRuntime",
-    backText: { ja: "なぜJavaの実行時のエラーにしたか？", en: "Why name myself after a Java runtime error?" },
+    description: {
+      ja: "@JavaLangRuntime — 技術・登壇・イベントの近況を発信しています",
+      en: "@JavaLangRuntime — updates on tech, talks and events",
+    },
   },
   // Instagram
   {
@@ -28,17 +28,15 @@ export const linkCards: LinkCard[] = [
     imgSrc: "/instagram.jpeg",
     title: "Instagram",
     description: "@manjiin773tara",
-    backText: { ja: "カメラマンとしての活動を投稿しています", en: "Posting my work as a photographer" },
   },
   // MIXI2
   {
     href: "https://mixi.social/@JavaLangRuntime",
     imgSrc: "/mixi2.png",
     title: "MiXi2",
-    description: "@JavaLangRuntime",
-    backText: {
-      ja: "それは私が一番みたエラーだからです(本音はJavaLangRuntimeExceptionを調べたエンジニアがこのサイトに来る誘導...?)",
-      en: "Because it's the error I've seen the most (honestly, maybe a way to lure engineers who search for JavaLangRuntimeException to this site...?)",
+    description: {
+      ja: "@JavaLangRuntime — 日々のつぶやきやコミュニティでの交流",
+      en: "@JavaLangRuntime — everyday posts and community chat",
     },
   },
   // GitHub
@@ -46,8 +44,10 @@ export const linkCards: LinkCard[] = [
     href: "https://github.com/javalangruntimeexception",
     imgSrc: "/github.png",
     title: "GitHub",
-    description: "@JavaLangRuntimeException",
-    backText: { ja: "実はJavaLangRuntimeExceptionは結構な種類があるよ！", en: "Fun fact: there are quite a few kinds of JavaLangRuntimeException!" },
+    description: {
+      ja: "@JavaLangRuntimeException — 開発中のプロダクトやソースコードを公開しています",
+      en: "@JavaLangRuntimeException — source code for products I build",
+    },
   },
   // LinkedIn
   {
@@ -55,7 +55,6 @@ export const linkCards: LinkCard[] = [
     imgSrc: "/linkedin.png",
     title: "LinkedIn",
     description: "Profile",
-    backText: { ja: "つながりましょう", en: "Let's connect" },
   },
   // Credly
   {
@@ -63,7 +62,6 @@ export const linkCards: LinkCard[] = [
     imgSrc: "/credly.svg",
     title: "Credly",
     description: "@javalangruntimeexception",
-    backText: { ja: "取得した資格のバッジ", en: "Badges for my certifications" },
   },
   // Qiita
   {
@@ -71,7 +69,6 @@ export const linkCards: LinkCard[] = [
     imgSrc: "/qiita.png",
     title: "Published Articles(Qiita)",
     description: "@JavaLangRuntimeException",
-    backText: { ja: "記事一覧", en: "All articles" },
   },
   // Speaker Deck
   {
@@ -79,7 +76,6 @@ export const linkCards: LinkCard[] = [
     imgSrc: "/speakerdeck.jpeg",
     title: "Speaker Deck",
     description: "@JavaLangRuntimeException",
-    backText: { ja: "登壇スライド", en: "Talk slides" },
   },
   // ORCID
   {
@@ -87,26 +83,19 @@ export const linkCards: LinkCard[] = [
     imgSrc: "/ORCID_logo.png",
     title: "ORCID",
     description: "0009-0005-4751-648X",
-    backText: { ja: "出した論文ここに記載します", en: "My published papers are listed here" },
+  },
+  // Google Scholar
+  {
+    href: "https://scholar.google.co.jp/citations?user=Sr7nBe8AAAAJ",
+    imgSrc: "/google_scholar.svg",
+    title: "Google Scholar",
+    description: { ja: "論文と被引用数", en: "Papers and citations" },
   },
   // Teratail
-  { href: "https://teratail.com/users/JavaLangRuntime", imgSrc: "/teratail.png", title: "Teratail", description: "@JavaLangRuntime", backText: "Q&A" },
-  // 1on1予約
   {
-    href: "/reserve",
-    imgSrc: "/image2.png",
-    title: { ja: "お打ち合わせ予約", en: "Book a Meeting" },
-    description: { ja: "お打ち合わせのの予約はこちら", en: "Book a meeting here" },
-    backText: { ja: "なんでも話しましょう！", en: "Let's talk about anything!" },
-  },
-  {
-    title: { ja: "お問い合わせ", en: "Contact" },
-    description: "Contact Form",
-    href: "/contact",
-    imgSrc: "/mail.png",
-    backText: {
-      ja: "お問い合わせフォームから\nご連絡いただけます。\n\nご質問やご相談が\nございましたら\nお気軽にどうぞ。",
-      en: "You can reach me through\nthe contact form.\n\nFeel free to send\nany questions or requests.",
-    },
+    href: "https://teratail.com/users/JavaLangRuntime",
+    imgSrc: "/teratail.png",
+    title: "Teratail",
+    description: "@JavaLangRuntime",
   },
 ];

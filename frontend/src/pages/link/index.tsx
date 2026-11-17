@@ -7,7 +7,13 @@ export default function LinksPage() {
   const t = useT();
   return (
     <PageContainer>
-      <PageHeader title={t({ ja: "リンク集", en: "Links" })} />
+      <PageHeader
+        title={t({ ja: "リンク集", en: "Links" })}
+        description={t({
+          ja: "X・Instagram・GitHub などのソーシャルメディアや、記事・登壇資料・論文の公開先をまとめています。",
+          en: "My social media accounts (X, Instagram, GitHub and more), plus where I publish articles, talk slides and papers.",
+        })}
+      />
       <LinkCardsGrid cards={linkCards} />
       <p className="mt-10 text-center text-body-2-regular text-text-tertiary">
         {t({
