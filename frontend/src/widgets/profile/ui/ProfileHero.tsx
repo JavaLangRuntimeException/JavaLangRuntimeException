@@ -86,7 +86,7 @@ export function ProfileHero() {
               <br />
               XR Researcher
               <br />
-              Community Director
+              Community Manager
             </p>
           </motion.div>
         </div>

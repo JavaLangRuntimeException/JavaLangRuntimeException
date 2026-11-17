@@ -23,7 +23,7 @@ function CardBody({ item }: { item: LinkCard }) {
             "transition-[scale,filter,opacity] duration-500 ease-out motion-reduce:transition-none",
             photo
               ? "size-full object-cover group-hover:scale-105"
-              : "h-12 w-auto max-w-[45%] rounded-md object-contain opacity-70 grayscale group-hover:opacity-100 group-hover:grayscale-0 group-focus-visible:opacity-100 group-focus-visible:grayscale-0",
+              : "h-20 w-auto max-w-[60%] rounded-lg object-contain opacity-70 grayscale group-hover:opacity-100 group-hover:grayscale-0 group-focus-visible:opacity-100 group-focus-visible:grayscale-0",
           )}
         />
       </div>
