@@ -1,0 +1,3 @@
+# gitleaks が誤検知した、テスト用の使い捨ての値（秘密ではない）。指紋 = コミット:ファイル:ルール:行
+# engines_test.go の 16 進 32 文字のテスト用パスワード（今は strings.Repeat で書いている）
+616226d0d2f06b56f42e5e8809d4958550a5e7d8:backend/internal/cloud/infra/gateway/engines_test.go:generic-api-key:18

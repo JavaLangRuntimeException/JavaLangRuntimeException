@@ -1,0 +1,37 @@
+# CLAUDE.md（console）
+
+taramanji cloud（家の kind の上で動く自分専用の小さな AWS）のマネジメントコンソール。
+React 19 + Vite + TypeScript + React Router v8 + Tailwind CSS v4 + TanStack Query。使うのは管理者 1 人だけ。
+
+- 公開先: https://cloud.taramanji.com（本番）/ cloud-stg.taramanji.com / cloud-dev.taramanji.com
+- 前に Cloudflare Access（Google ログイン）がいて、API も Access の JWT を確かめる。`unauthenticated` / `permission_denied` は「ログインの期限切れ」として、読み直し（Access の再ログイン）を案内する
+- API は同じオリジンの Connect（`taramanji.cloud.v1.ConsoleService`、proto は `../backend/proto/taramanji/cloud/v1/console.proto`）
+- `src/api/gen` は `npm run gen`（buf + protoc-gen-es）が作るファイル。手で直さない。proto を変えたら作り直してコミットする（Docker のビルドは proto を見られないため）
+- 外部の CDN・フォント・スクリプトは使わない（nginx の CSP が `'self'` だけ）。グラフはライブラリを使わず SVG で描く（`src/components/LineChart.tsx`）
+- 見た目は AWS のコンソールにならう: 暗い色の上の帯（ロゴ・「サービス」メニュー・環境・アカウント）、左にサービスの一覧（分類ごと）、右にパンくず → 見出し → 面（`Panel`）。主ボタン（作る・保存する）は橙、リンクと選択中は青
+- サービスの一覧は `src/lib/nav.ts`（メニュー・左のナビ・ホーム・パンくずが見る）。アイコンは `src/components/ServiceIcon.tsx`: 分類ごとの色の四角に、同じ太さの白い線画を 1 つ。グラデーション・飾りは使わず、外部のアイコン集も使わない
+- 色は `src/app/styles.css` の変数だけで決める。ライト / ダークは OS の設定に従う。グラフの系列色（`--s1`〜`--s8`）は検証済みの並びなので順番を変えない
+- 本番以外（stg / dev）はヘッダーの色付きバッジと上端の帯で示す。取り違え防止のため消さない
+
+## 構成
+
+- `src/app` 起動・ルーティング・QueryClient・全体の CSS
+- `src/api` Connect のクライアント、クエリのフック、エラーの判定
+- `src/components` 画面の部品（AppShell・Panel・LineChart など）
+- `src/pages` 画面（ホーム・容量・メトリクス・関数・API Gateway・ストレージ・CDN・データベース・ガイド）
+  - 関数（`FunctionsPage.tsx`）と API（`ApisPage.tsx`）は、フォームか YAML で編集する（`components/ResourceEditor.tsx`）。保存先はアプリ専用リポジトリの YAML で、クラスターには Argo CD が入れる（`deploy/cloud/README.md`）
+- 設定の欄には「i」（`InfoTip`）で補足説明を付ける。`Field` は `info`、fieldset の見出しは `Legend` の `info` に渡す。欄を足したら説明も足す
+- デプロイの様子（`components/Deploy.tsx`）: コントローラーがリポジトリの YAML を入れた結果。一覧は `DeployBadge`、編集画面の下は `DeployHistory`、Console Home は `RecentDeployments`
+- ガイド（`/guide`）の記事は `src/pages/guide/articles.tsx`。部品は `src/components/Doc.tsx`。機能を変えたら、ここの説明も合わせて直す
+- `src/lib` 表示の整形・軸の計算・ナビの定義（純粋な関数はここに置いてテストする）
+
+## コマンド
+
+```sh
+npm run dev        # 開発サーバー。RPC は GATEWAY_URL（既定 http://localhost:8080）へ送る
+npm run gen        # proto から src/api/gen を作る
+npm run typecheck
+npm run lint       # oxlint
+npm test           # vitest
+npm run build
+```

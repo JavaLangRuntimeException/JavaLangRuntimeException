@@ -23,15 +23,17 @@ function CardBody({ item }: { item: LinkCard }) {
             "transition-[scale,filter,opacity] duration-500 ease-out motion-reduce:transition-none",
             photo
               ? "size-full object-cover group-hover:scale-105"
-              : "h-12 w-auto max-w-[45%] rounded-md object-contain opacity-70 grayscale group-hover:opacity-100 group-hover:grayscale-0 group-focus-visible:opacity-100 group-focus-visible:grayscale-0",
+              : "h-20 w-auto max-w-[60%] rounded-lg object-contain opacity-70 grayscale group-hover:opacity-100 group-hover:grayscale-0 group-focus-visible:opacity-100 group-focus-visible:grayscale-0",
           )}
         />
       </div>
       <div className="flex flex-1 flex-col gap-1.5 p-5">
         <h3 className="text-[1.0625rem] font-semibold text-text-primary transition-colors group-hover:text-accent-300">{title}</h3>
         <p className="text-body-2-regular text-text-secondary">{text(item.description)}</p>
-        {/* 旧サイトではカードの裏面にあった一言。常に見せる */}
-        <p className="mt-auto whitespace-pre-line pt-4 text-[0.875rem] leading-[1.75] text-text-tertiary">{text(item.backText)}</p>
+        {/* 旧サイトではカードの裏面にあった一言。あるときだけ見せる */}
+        {item.backText != null && (
+          <p className="mt-auto whitespace-pre-line pt-4 text-[0.875rem] leading-[1.75] text-text-tertiary">{text(item.backText)}</p>
+        )}
       </div>
     </>
   );

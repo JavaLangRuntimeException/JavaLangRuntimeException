@@ -1,0 +1,135 @@
+# コンソールの API が Mac mini 全体の容量（ノードの容量と実際の使用量）を読む。読むだけ
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cloud-api-nodes
+rules:
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list"]
+  - apiGroups: ["metrics.k8s.io"]
+    resources: ["nodes"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cloud-api-nodes
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cloud-api-nodes
+subjects:
+  - { kind: ServiceAccount, name: cloud-api, namespace: taramanji-cloud }
+  - { kind: ServiceAccount, name: cloud-api, namespace: taramanji-cloud-stg }
+  - { kind: ServiceAccount, name: cloud-api, namespace: taramanji-cloud-dev }
+---
+# 関数ごとの namespace（taramanji-cloud-fn-<名前> など）を見つけるために、namespace の一覧を読む（cloud-api・cloud-gw）。
+# 中のものに触れる権限は、コントローラーが namespace ごとに RoleBinding で渡す
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cloud-namespace-reader
+rules:
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cloud-namespace-reader
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cloud-namespace-reader
+subjects:
+  - { kind: ServiceAccount, name: cloud-api, namespace: taramanji-cloud }
+  - { kind: ServiceAccount, name: cloud-api, namespace: taramanji-cloud-stg }
+  - { kind: ServiceAccount, name: cloud-api, namespace: taramanji-cloud-dev }
+  - { kind: ServiceAccount, name: cloud-gw, namespace: taramanji-cloud }
+  - { kind: ServiceAccount, name: cloud-gw, namespace: taramanji-cloud-stg }
+  - { kind: ServiceAccount, name: cloud-gw, namespace: taramanji-cloud-dev }
+---
+# 関数の namespace の中で、API Gateway（cloud-gw）が関数を起こす・寝かせる（台数と、最後のリクエストの時刻の注釈だけ）。
+# ClusterRole だが、使うのはコントローラーが関数の namespace ごとに作る RoleBinding から（クラスター全体には渡さない）
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cloud-function-scaler
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "patch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments/scale"]
+    verbs: ["get", "patch"]
+---
+# 関数の namespace の中を、コンソールの API（cloud-api）が読む（状態・容量）。Secret は読めない
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cloud-function-reader
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["pods", "resourcequotas"]
+    verbs: ["get", "list"]
+  - apiGroups: ["metrics.k8s.io"]
+    resources: ["pods"]
+    verbs: ["get", "list"]
+---
+# コントローラー（cloud-ctl）: 関数ごとの namespace と、その囲い・接続先の Secret を作る・消す。
+# デプロイヤー（同じ Pod）: アプリ用のリポジトリの YAML（Deployment・Service・ConfigMap・PVC・HTTPRoute・SealedSecret）を入れる・消す（Argo CD は使わない）。
+# 入れる前に、種類・namespace・名前の決まりをコードで確かめる
+# 触るのは自分が作った（ラベル managed-by=cloud-ctl の）、名前の決まり（taramanji-cloud-fn-<名前> など）に合うものだけ（コードで確かめる）。
+# RoleBinding で渡せるのは、上の 2 つの ClusterRole だけ（bind の resourceNames）
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cloud-ctl
+rules:
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list", "create", "update", "delete"]
+  - apiGroups: [""]
+    resources: ["resourcequotas", "limitranges", "serviceaccounts", "secrets"]
+    verbs: ["get", "list", "create", "update", "delete"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["networkpolicies"]
+    verbs: ["get", "list", "create", "update", "delete"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["rolebindings"]
+    verbs: ["get", "list", "create", "update", "delete"]
+  - apiGroups: [""]
+    resources: ["configmaps", "services", "persistentvolumeclaims"]
+    verbs: ["get", "list", "create", "update", "patch", "delete"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "create", "update", "patch", "delete"]
+  - apiGroups: ["gateway.networking.k8s.io"]
+    resources: ["httproutes"]
+    verbs: ["get", "list", "create", "update", "patch", "delete"]
+  # シークレット（暗号化した値）。復号は Sealed Secrets がする（cloud-ctl は秘密鍵を持たない）
+  - apiGroups: ["bitnami.com"]
+    resources: ["sealedsecrets"]
+    verbs: ["get", "list", "create", "update", "patch", "delete"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["clusterroles"]
+    verbs: ["bind"]
+    resourceNames: ["cloud-function-scaler", "cloud-function-reader"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: cloud-ctl
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cloud-ctl
+subjects:
+  - { kind: ServiceAccount, name: cloud-ctl, namespace: taramanji-cloud }
+  - { kind: ServiceAccount, name: cloud-ctl, namespace: taramanji-cloud-stg }
+  - { kind: ServiceAccount, name: cloud-ctl, namespace: taramanji-cloud-dev }

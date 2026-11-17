@@ -1,0 +1,48 @@
+# taramanji-cloud-stg・taramanji-cloud-dev の共通部分（本番との違い）。各環境の overlays/<env>/app が components で読み込む。
+#   - 1 台ずつ・カナリアなし（Rollout は 1 台ずつ入れ替えるだけ。taramanji の stg・dev と同じ）
+#   - アプリ（関数・API・バケット・CDN・データベース）は置かない。アプリは本番（taramanji-cloud-apps）だけ。
+#     アプリ用のリポジトリ（APPS_REPO）を渡さないので、コンソールはアプリを作れず、デプロイヤーも動かない。
+#     基盤（コンソール・cloud-api・cloud-gw・コントローラー・ストレージ・PostgreSQL・Redis）は、基盤そのものを試すために動かす
+# namespace・ホスト名・イメージの版は各 overlay で決める
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+resources:
+  - rollouts.yaml
+  - rbac.yaml
+patches:
+  # Pod は Rollout が持つので、Deployment 自体は 0 台（workloadRef の作法。本番と同じ）
+  - target: { kind: Deployment, labelSelector: "app.kubernetes.io/name in (cloud-api,cloud-gw,console)" }
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 0
+  # アプリの API の HTTPRoute を置く namespace がないので、cloud-gw への参照の許可は要らない
+  - target: { kind: ReferenceGrant, name: apis-to-cloud-gw }
+    patch: |-
+      $patch: delete
+      apiVersion: gateway.networking.k8s.io/v1beta1
+      kind: ReferenceGrant
+      metadata: { name: any }
+  # アプリ用のリポジトリを渡さない（空なら使わない）
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata: { name: cloud-api }
+      spec:
+        template:
+          spec:
+            containers:
+              - name: app
+                env:
+                  - { name: APPS_REPO, value: "" }
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata: { name: cloud-ctl }
+      spec:
+        template:
+          spec:
+            containers:
+              - name: app
+                env:
+                  - { name: APPS_REPO, value: "" }

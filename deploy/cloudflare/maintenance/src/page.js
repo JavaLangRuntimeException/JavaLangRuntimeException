@@ -81,7 +81,7 @@ export const MAINTENANCE_HTML = `<!doctype html>
     display: flex; justify-content: space-between; gap: 12px; padding: 10px 16px;
     border-bottom: 1px solid var(--border); color: var(--text-3);
   }
-  .term-body { padding: 14px 16px 16px; min-height: 196px; color: var(--text-2); }
+  .term-body { padding: 14px 16px 16px; min-height: 150px; color: var(--text-2); }
   .term-body div { white-space: pre-wrap; word-break: break-all; }
   .term-body .cmd { color: var(--text); }
   .term-body .warn { color: var(--warn); }
@@ -129,7 +129,7 @@ export const MAINTENANCE_HTML = `<!doctype html>
     <p class="en reveal d1" lang="en">taramanji.com is under maintenance. Please check back shortly.</p>
 
     <div class="term reveal d2" aria-hidden="true">
-      <div class="term-head"><span>taramanji@mac-mini: ~</span><span>zsh</span></div>
+      <div class="term-head"><span>taramanji.com</span><span>zsh</span></div>
       <div class="term-body" id="term"></div>
     </div>
 
@@ -170,17 +170,14 @@ export const MAINTENANCE_HTML = `<!doctype html>
     })();
   }
 
-  /* ターミナル: 落ちたところから戻すまでの作業を打ち込む */
+  /* ターミナル: 戻るのを待っている様子（中の構成には触れない） */
   var SCRIPT = [
     ["cmd", "$ curl -sI https://taramanji.com | head -1"],
     ["warn", "HTTP/2 503"],
-    ["cmd", "$ kubectl get nodes"],
-    ["", "NAME                      STATUS     AGE"],
-    ["warn", "taramanji-control-plane   NotReady   41d"],
-    ["cmd", "$ kubectl rollout restart deploy -n taramanji"],
-    ["", "deployment.apps/web restarted"],
-    ["cmd", "$ kubectl rollout status deploy/web -n taramanji"],
-    ["", "Waiting for deployment \\"web\\" rollout to finish: 0 of 1 updated replicas are available..."]
+    ["cmd", "$ maintenance status"],
+    ["", "Under maintenance. Back soon."],
+    ["cmd", "$ wait --until online"],
+    ["", "Waiting for the server to come back online..."]
   ];
   var term = document.getElementById("term");
   function line(cls, s) { var d = document.createElement("div"); if (cls) d.className = cls; d.textContent = s; term.appendChild(d); return d; }
@@ -203,19 +200,8 @@ export const MAINTENANCE_HTML = `<!doctype html>
     })();
   }
 
-  /* 背景のコマンド（frontend の TerminalBackground と同じ種類） */
-  var BG = [
-    ["git clone https://github.com/taramanji/portfolio.git", ["Cloning into 'portfolio'...", "remote: Enumerating objects: 1247, done.", "Receiving objects: 100% (1247/1247), 4.82 MiB | 12.3 MiB/s, done."]],
-    ["cd portfolio && npm install", ["added 1432 packages in 28s", "182 packages are looking for funding"]],
-    ["docker compose up -d", ["[+] Running 3/3", " ✓ Container postgres    Started  0.8s", " ✓ Container redis       Started  0.6s", " ✓ Container app         Started  1.2s"]],
-    ["go build -o server ./cmd/api", ["compiling packages...", "linking...", "build complete: ./server"]],
-    ["kubectl get pods -n taramanji", ["NAME                     READY   STATUS             RESTARTS", "web-7f9c6d8b5-x2k4p      0/1     CrashLoopBackOff   4", "identity-5d8f7c9b-q8r2m  0/1     Pending            0"]],
-    ["kubectl describe node taramanji-control-plane", ["Conditions:", "  Ready   False   KubeletNotReady", "  MemoryPressure   True"]],
-    ["argocd app sync taramanji-prod", ["Operation:  Sync", "Phase:      Running", "Message:    waiting for healthy state"]],
-    ["cloudflared tunnel info taramanji", ["NAME: taramanji", "CONNECTOR ID   EDGE", "(no active connections)"]],
-    ["kubectl argo rollouts get rollout web", ["Status:  ◌ Progressing", "Strategy: Canary", "  Step:  0/8"]],
-    ["ssh mac-mini.tailnet 'orb restart'", ["Restarting OrbStack...", "done"]]
-  ];
+  /* 背景のコマンド（frontend の BACKGROUND_COMMANDS と同じもの） */
+  var BG = [["git clone https://github.com/taramanji/portfolio.git",["Cloning into 'portfolio'...","remote: Enumerating objects: 1247, done.","remote: Compressing objects: 100% (892/892), done.","Receiving objects: 100% (1247/1247), 4.82 MiB | 12.3 MiB/s, done."]],["cd portfolio && npm install",["added 1432 packages in 28s","182 packages are looking for funding"]],["docker compose up -d",["[+] Running 3/3"," ✓ Container postgres    Started  0.8s"," ✓ Container redis       Started  0.6s"," ✓ Container app         Started  1.2s"]],["go build -o server ./cmd/api",["compiling packages...","linking...","build complete: ./server"]],["kubectl get pods -n production",["NAME                        READY   STATUS    RESTARTS   AGE","api-server-7d4f8b6c9-x2k4l  1/1     Running   0          3d","worker-5b8c9d7f4-m9n2p       1/1     Running   0          3d","redis-master-0               1/1     Running   0          7d"]],["npm run build",["Creating an optimized production build...","Compiled successfully.","Route (app)              Size     First Load JS","┌ ○ /                    24.3 kB        142 kB","└ ○ /api/health          0 B            0 B","✓ Build completed in 12.4s"]],["terraform plan",["Refreshing Terraform state...","Plan: 3 to add, 1 to change, 0 to destroy."]],["curl -s https://api.example.com/health | jq .",["{","  \\"status\\": \\"healthy\\",","  \\"uptime\\": \\"99.98%\\",","  \\"latency_ms\\": 12","}"]],["git log --oneline -5",["a1b2c3d feat: add real-time notification system","e4f5g6h fix: resolve race condition in websocket handler","i7j8k9l refactor: migrate auth to middleware pattern","m0n1o2p docs: update API specification","q3r4s5t chore: bump dependencies"]],["python3 train.py --model transformer --epochs 100",["Loading dataset... 50,000 samples","Epoch [100/100] Loss: 0.0023 Acc: 98.7%","Model saved to ./checkpoints/best_model.pt"]],["aws s3 sync ./dist s3://portfolio-assets --delete",["upload: dist/index.html to s3://portfolio-assets/index.html","upload: dist/main.js to s3://portfolio-assets/main.js","Completed 24 file(s) with ~0 file(s) remaining"]],["cargo test --release",["running 47 tests","test result: ok. 47 passed; 0 failed; finished in 2.14s"]],["ssh deploy@production 'systemctl restart api'",["Connection to production established.","Restarting api.service...","api.service: Started successfully."]],["redis-cli INFO keyspace",["# Keyspace","db0:keys=2847,expires=1203,avg_ttl=3600000"]],["psql -c 'SELECT count(*) FROM users;'",[" count ","-------"," 12847","(1 row)"]],["helm upgrade --install api ./charts/api -n prod",["Release \\"api\\" has been upgraded.","STATUS: deployed","REVISION: 42"]]];
   if (!reduced) {
     var bg = document.getElementById("bg"), cols = window.innerWidth < 640 ? 2 : 3;
     for (var c = 0; c < cols; c++) (function (ci) {

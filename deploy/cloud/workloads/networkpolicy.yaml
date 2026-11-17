@@ -1,0 +1,8 @@
+# 共有の namespace には Pod を置かない（ResourceQuota で 0）。念のため、通信も全部止めておく
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]

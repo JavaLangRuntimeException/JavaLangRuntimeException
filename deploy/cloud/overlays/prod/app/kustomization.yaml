@@ -1,0 +1,115 @@
+# 本番のコンソール（namespace: cloud）。メトリクス（Datadog）を出すのは本番だけ
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: taramanji-cloud
+resources:
+  - ../../../base
+  - rollouts.yaml
+  - argoview.yaml
+
+# set-version.sh が書き換える（タグ v* の push で CI の deploy-prod ジョブ）。初回のリリースまでイメージはない
+images:
+  - { name: taramanji/cloud, newName: ghcr.io/javalangruntimeexception/taramanji-cloud, newTag: v0.2.20 }
+  - { name: taramanji/console, newName: ghcr.io/javalangruntimeexception/taramanji-console, newTag: v0.2.20 }
+
+patches:
+  # 2 台にして、片方の入れ替え中・ノードの drain 中も止めない
+  # cloud-api・cloud-gw・console の Pod は Rollout が持つ（カナリア）ので、Deployment 自体は 0 台（workloadRef の作法）。
+  # コントローラー（cloud-ctl）は 1 台のまま、入れ替えも Recreate のまま
+  - target: { kind: Deployment, labelSelector: "app.kubernetes.io/name in (cloud-api,cloud-gw,console)" }
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 0
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata: { name: cloud-api }
+      spec:
+        template:
+          spec:
+            containers:
+              - name: app
+                env:
+                  # コンソールのメトリクスで見る namespace（コンソール自身とアプリ用）
+                  - { name: METRICS_NAMESPACES, value: "taramanji-cloud,taramanji-cloud-apps,taramanji-cloud-fn-*" }
+                  # 本番の関数の合計の枠（Mac mini のメモリから、taramanji.com・gws の伸びしろを残した分）
+                  - { name: FUNCTION_MEMORY_CAP_MIB, value: "2560" }
+                  - { name: FUNCTION_CPU_CAP_MILLIS, value: "4000" }
+                  - { name: FUNCTION_POD_CAP, value: "30" }
+                  # CDN の独自ドメイン（<ラベル>.taramanji.com）。Access に登録するトークン CF_ACCESS_API_TOKEN は cloud-api-env（なければ使えない）
+                  - { name: CUSTOM_DOMAIN_ZONE, value: taramanji.com }
+                  - { name: CF_ACCOUNT_ID, value: f952fdc8cd122331a587b1ff4fdac99d }
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata: { name: cloud-ctl }
+      spec:
+        template:
+          spec:
+            containers:
+              - name: app
+                env:
+                  # CDN の独自ドメインを入れるとき、決まり（taramanji.com の 1 階層）を確かめるため
+                  - { name: CUSTOM_DOMAIN_ZONE, value: taramanji.com }
+                  # Argo CD の ApplicationSet（plugin ジェネレーター）からの問い合わせのトークン（argoview.yaml）
+                  - name: ARGOCD_PLUGIN_TOKEN
+                    valueFrom: { secretKeyRef: { name: cloud-api-env, key: ARGOCD_PLUGIN_TOKEN, optional: true } }
+                  # 非公開のイメージ（GHCR・Docker Hub）を読む認証情報（scripts/seal.sh。なければ公開のイメージだけ）
+                  - name: REGISTRY_DOCKERCONFIG
+                    valueFrom: { secretKeyRef: { name: cloud-registry, key: dockerconfigjson, optional: true } }
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata: { name: cloud-gw }
+      spec:
+        template:
+          spec:
+            containers:
+              - name: app
+                env:
+                  - { name: FUNCTION_MEMORY_CAP_MIB, value: "2560" }
+                  # アプリの監視を Datadog のモニターにする（アプリケーションキーに monitors_read・monitors_write が要る）
+                  - { name: ALERTS_ENABLED, value: "true" }
+
+  # 本番のバケットの置き場（VM のディスクから取る。アプリ用 namespace の枠とは別）
+  - target: { kind: StatefulSet, name: cloud-storage }
+    patch: |-
+      - op: replace
+        path: /spec/volumeClaimTemplates/0/spec/resources/requests/storage
+        value: 20Gi
+
+  - target: { kind: StatefulSet, name: cloud-postgres }
+    patch: |-
+      - op: replace
+        path: /spec/volumeClaimTemplates/0/spec/resources/requests/storage
+        value: 10Gi
+
+replacements:
+  - source: { kind: Deployment, name: cloud-api, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
+    targets:
+      - select: { kind: Deployment, name: cloud-api }
+        fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
+        options: { create: true }
+      - select: { kind: Rollout, name: cloud-api }
+        fieldPaths: ["spec.strategy.canary.analysis.args.[name=version].value"]
+  - source: { kind: Deployment, name: cloud-gw, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
+    targets:
+      - select: { kind: Deployment, name: cloud-gw }
+        fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
+        options: { create: true }
+  - source: { kind: StatefulSet, name: cloud-storage, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
+    targets:
+      - select: { kind: StatefulSet, name: cloud-storage }
+        fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
+        options: { create: true }
+  - source: { kind: Deployment, name: cloud-ctl, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
+    targets:
+      - select: { kind: Deployment, name: cloud-ctl }
+        fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
+        options: { create: true }
+  - source: { kind: Deployment, name: console, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
+    targets:
+      - select: { kind: Deployment, name: console }
+        fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
+        options: { create: true }

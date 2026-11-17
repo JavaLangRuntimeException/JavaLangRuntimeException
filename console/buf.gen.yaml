@@ -1,0 +1,11 @@
+# バックエンドと同じ proto から、コンソール用の Connect クライアントの型を作る（npm run gen）
+# 使うのは taramanji.cloud だけ（taramanji.com のサービスはコンソールから呼ばない）
+version: v2
+inputs:
+  - directory: ../backend/proto
+    paths: [../backend/proto/taramanji/cloud]
+plugins:
+  - local: protoc-gen-es
+    out: src/api/gen
+    opt: target=ts,import_extension=none
+clean: true

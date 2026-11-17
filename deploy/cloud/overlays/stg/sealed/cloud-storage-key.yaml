@@ -1,0 +1,13 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: cloud-storage-key
+  namespace: taramanji-cloud-stg
+spec:
+  encryptedData:
+    STORAGE_MASTER_KEY: AgBF65xY5kabVhtVomW5zjPwHbeSBS3xbyaO0fniRmAo8cqaicmGhtMFRg1QY8ntwsGUCyZVObta4kKxrbQcHWrE8CBInGChaOd0Lzmejexe9kRtjj5m/FvaJ+9H+SeP0sx1+GiPJEHtvfUgatlbnmCHjlb/bfJmEPdJFr4NHw5PpuaB166lXYXjI8PAj2WIPj7dthhFRLm56IJP0NbVgNwFb/oSlmXbWQcbNTdponwuBtKD6nJIi2j/PYMJJ7z/0lvaQdbbggOhDfSh+76w4ipPuro0Be1mmHRbZdwlWT3ZJ3PocPqQ8jQj6qQW8onQ+W8ETBrc3fz5vLvDGRJa/WyEIrQ6hJ5u/5AYqoay+CjoXUgBmM+NaKNldckJUIBNDFTdFa5HD08gjKNbUAXRq9S4J+QC3Kxzl/PazLW5vThidIMuzXapROJhoi2bI7sKenQOcxnMrzHYM00jBCzac3gx5AMu4z1FKttu19oOFt/B+w27Ng349NhJkcznGwPmb2HQmzZjdkhtjGVu0x3+TGiXAujnrJV5hOQy6SMgRa5Nmyy/zMIJRhMkIPvNllCLL/h3pifgVBYbl3WvIjxeYSXHe8u3yxLcbzhSV35ll6QIk/jWvuM1FSimdgRK3WDi3EBYZZw6noFPulYArI6XxU2ZKwNaECNL+2P4gh01CsOhJXnoUkwzunY6HXBhtACA99q5b2r/PwQyyof4OnHgyX9rxH9uvVTi5RDKK/uPpcVCZSAc/arlE2jiotOC5MHXDvS5h4CJpzbHAhCNFWgI5H4ZwA==
+  template:
+    metadata:
+      name: cloud-storage-key
+      namespace: taramanji-cloud-stg

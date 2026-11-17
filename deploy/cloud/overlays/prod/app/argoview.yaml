@@ -1,0 +1,31 @@
+# Argo CD の画面で関数の Pod を見るため（本番だけ。アプリは本番だけなので）。
+# Argo CD の ApplicationSet（deploy/gitops/apps/taramanji-cloud-functions.yaml）の plugin ジェネレーターが、
+# コントローラー（cloud-ctl）に今ある関数の名前を聞き、関数ごとに見るだけの Application を作る
+apiVersion: v1
+kind: Service
+metadata:
+  name: cloud-ctl
+  labels:
+    app.kubernetes.io/name: cloud-ctl
+spec:
+  selector:
+    app.kubernetes.io/name: cloud-ctl
+  ports:
+    - { name: http, port: 8080, targetPort: http }
+---
+# 受けるのは Argo CD の ApplicationSet コントローラーからだけ（トークンも確かめる）
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: from-argocd-applicationset
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: cloud-ctl
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: argocd } }
+          podSelector: { matchLabels: { app.kubernetes.io/name: argocd-applicationset-controller } }
+      ports:
+        - { port: 8080 }

@@ -1,0 +1,21 @@
+# taramanji cloud の dev。taramanji の dev01〜03 と同じ使い方: main への PR（と手動実行）で CI が版を書き換えて 1 台にし、ここが同期する。PR を閉じると 0 台（dev-park）。cloud の dev は 1 つだけ
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  annotations:
+    argocd.argoproj.io/compare-options: ServerSideDiff=true
+  name: taramanji-cloud-dev
+  namespace: argocd
+spec:
+  project: taramanji-cloud
+  source:
+    repoURL: git@github.com:JavaLangRuntimeException/JavaLangRuntimeException.git
+    targetRevision: main
+    path: deploy/cloud/overlays/dev
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: taramanji-cloud-dev
+  syncPolicy:
+    automated: { prune: true, selfHeal: true }
+    syncOptions:
+      - ServerSideApply=true

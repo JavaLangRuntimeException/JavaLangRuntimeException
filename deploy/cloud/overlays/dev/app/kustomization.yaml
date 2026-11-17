@@ -1,0 +1,128 @@
+# taramanji cloud の dev（cloud-dev.taramanji.com、namespace: taramanji-cloud-dev）。taramanji の dev01〜03 と同じ使い方:
+#   main への PR（と手動実行）で CI が版を書き換えて台数を 1 にし、Argo CD の taramanji-cloud-dev が同期する。
+#   その PR を閉じると（dev-park.yml）台数を 0 に戻して止める。dev は 1 つだけなので、PR が複数あれば最後に出したものが入る
+# 本番との違い: 1 台ずつ・カナリアなし・メトリクスなし（Datadog はこの namespace を集めない）・アプリ（関数など）なし
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: taramanji-cloud-dev
+resources:
+  - ../../../base
+components:
+  # 1 台ずつ・カナリアなし（Rollout）・アプリなし
+  - ../../../components/nonprod
+
+# set-version.sh が書き換える（CI の deploy-dev ジョブ）
+images:
+  - { name: taramanji/cloud, newName: ghcr.io/javalangruntimeexception/taramanji-cloud, newTag: sha-02f6c85 }
+  - { name: taramanji/console, newName: ghcr.io/javalangruntimeexception/taramanji-console, newTag: sha-02f6c85 }
+
+patches:
+  # 台数（PR を閉じたら 0 にして止める。replicas.yaml）
+  - path: replicas.yaml
+    target: { kind: Rollout }
+  - path: replicas.yaml
+    target: { kind: StatefulSet }
+  - path: replicas.yaml
+    target: { kind: Deployment, name: cloud-ctl }
+  - target: { kind: Deployment|StatefulSet, labelSelector: "app.kubernetes.io/name notin (cloud-postgres,cloud-redis)" }
+    patch: |-
+      - op: replace
+        path: /spec/template/metadata/labels/tags.datadoghq.com~1env
+        value: dev
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata: { name: cloud-api }
+      spec:
+        template:
+          spec:
+            containers:
+              - name: app
+                env:
+                  - { name: APP_ENV, value: dev }
+                  - { name: CLOUD_ENV, value: dev }
+                  - { name: APPS_NAMESPACE, value: taramanji-cloud-dev }
+                  - { name: CONSOLE_ORIGIN, value: "https://cloud-dev.taramanji.com" }
+                  - { name: HOST_SUFFIX, value: "-cloud-dev.taramanji.com" }
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata: { name: cloud-gw }
+      spec:
+        template:
+          spec:
+            containers:
+              - name: app
+                env:
+                  - { name: CLOUD_ENV, value: dev }
+                  - { name: APP_ENV, value: dev }
+                  - { name: APPS_NAMESPACE, value: taramanji-cloud-dev }
+                  - { name: HOST_SUFFIX, value: "-cloud-dev.taramanji.com" }
+  - patch: |-
+      apiVersion: apps/v1
+      kind: StatefulSet
+      metadata: { name: cloud-storage }
+      spec:
+        template:
+          spec:
+            containers:
+              - name: app
+                env:
+                  - { name: APP_ENV, value: dev }
+                  - { name: APPS_NAMESPACE, value: taramanji-cloud-dev }
+  - patch: |-
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata: { name: cloud-ctl }
+      spec:
+        template:
+          spec:
+            containers:
+              - name: app
+                env:
+                  - { name: CLOUD_ENV, value: dev }
+                  - { name: HOST_SUFFIX, value: "-cloud-dev.taramanji.com" }
+                  - { name: APP_ENV, value: dev }
+                  - { name: APPS_NAMESPACE, value: taramanji-cloud-dev }
+  - target: { kind: NetworkPolicy, name: to-cloud-storage }
+    patch: |-
+      - op: replace
+        path: /spec/ingress/2/from/0/namespaceSelector/matchLabels/cloud.taramanji.com~1registry
+        value: taramanji-cloud-dev
+  - target: { kind: NetworkPolicy, name: to-cloud-data }
+    patch: |-
+      - op: replace
+        path: /spec/ingress/0/from/1/namespaceSelector/matchLabels/cloud.taramanji.com~1registry
+        value: taramanji-cloud-dev
+  - target: { kind: HTTPRoute, name: console }
+    patch: |-
+      - op: replace
+        path: /spec/hostnames
+        value: ["cloud-dev.taramanji.com"]
+
+replacements:
+  - source: { kind: Deployment, name: cloud-api, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
+    targets:
+      - select: { kind: Deployment, name: cloud-api }
+        fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
+        options: { create: true }
+  - source: { kind: Deployment, name: cloud-gw, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
+    targets:
+      - select: { kind: Deployment, name: cloud-gw }
+        fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
+        options: { create: true }
+  - source: { kind: StatefulSet, name: cloud-storage, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
+    targets:
+      - select: { kind: StatefulSet, name: cloud-storage }
+        fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
+        options: { create: true }
+  - source: { kind: Deployment, name: cloud-ctl, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
+    targets:
+      - select: { kind: Deployment, name: cloud-ctl }
+        fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
+        options: { create: true }
+  - source: { kind: Deployment, name: console, fieldPath: "spec.template.spec.containers.0.image", options: { delimiter: ":", index: 1 } }
+    targets:
+      - select: { kind: Deployment, name: console }
+        fieldPaths: ["spec.template.metadata.labels.[tags.datadoghq.com/version]"]
+        options: { create: true }

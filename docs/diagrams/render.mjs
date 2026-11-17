@@ -20,6 +20,7 @@ const diagrams = [
   "backend-services",
   "backend-layers",
   "frontend",
+  "cloud",
 ];
 
 const browser = await chromium.launch();

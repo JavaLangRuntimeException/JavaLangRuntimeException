@@ -1,0 +1,77 @@
+# コンソールの API（その環境の namespace の ServiceAccount cloud-api）が、アプリ用 namespace の枠と使用量を読む。
+# subjects の namespace は overlays/<env>/workloads で書き換える
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cloud-api-capacity
+rules:
+  # データベースの状態（コントローラーが ConfigMap の注釈に書く）を読む。Secret は読めない
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list"]
+  # シークレットの状態（Sealed Secrets が復号できたか）を読む。中身は暗号のまま（Secret は読めない）
+  - apiGroups: ["bitnami.com"]
+    resources: ["sealedsecrets"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cloud-api-capacity
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: cloud-api-capacity
+subjects:
+  - kind: ServiceAccount
+    name: cloud-api
+    namespace: taramanji-cloud
+---
+# オブジェクトストレージ（cloud-storage）が、バケットの定義（ラベル付きの ConfigMap）を読む
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cloud-storage
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cloud-storage
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: cloud-storage
+subjects:
+  - kind: ServiceAccount
+    name: cloud-storage
+    namespace: taramanji-cloud
+---
+# コントローラー（cloud-ctl）: 定義（ConfigMap）を読んで状態を書き、接続先の Secret を作る・消す
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: cloud-ctl
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["get", "list", "patch"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "create", "update", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cloud-ctl
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: cloud-ctl
+subjects:
+  - kind: ServiceAccount
+    name: cloud-ctl
+    namespace: taramanji-cloud

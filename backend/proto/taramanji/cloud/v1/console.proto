@@ -1,0 +1,740 @@
+syntax = "proto3";
+
+package taramanji.cloud.v1;
+
+// taramanji cloud のマネジメントコンソール（cloud.taramanji.com）。
+// 全 RPC が Cloudflare Access の JWT（管理者 1 人）を要する。taramanji.com のセッションは使わない
+service ConsoleService {
+  rpc GetOverview(GetOverviewRequest) returns (GetOverviewResponse) {}
+  // メトリクスは本番だけ（dev / stg は metrics_enabled = false で、呼ぶと failed_precondition）
+  rpc GetMetrics(GetMetricsRequest) returns (GetMetricsResponse) {}
+  // あとどのくらいアプリを置けるか（この環境の枠と、Mac mini 全体の空き）。全環境で使える（Datadog は使わない）
+  rpc GetCapacity(GetCapacityRequest) returns (GetCapacityResponse) {}
+
+  // ---- コンピュート（関数）と API Gateway ----
+  // リソースの正は、アプリ専用の git リポジトリにある Kubernetes の YAML（<環境>/functions/<名前>.yaml・<環境>/apis/<名前>.yaml）。
+  // コンソールはそこにコミットするだけで、クラスターには Argo CD が入れる（手で YAML を push しても同じ扱い）
+
+  // 選べるもの（インスタンスタイプ・用意した監視・通知先）と、この環境で使える機能
+  rpc GetHostingOptions(GetHostingOptionsRequest) returns (GetHostingOptionsResponse) {}
+
+  // 関数: コンテナイメージを、リクエストが来たときだけ動かす（来なければ 0 台）。外からは API を通してだけ呼べる
+  rpc ListFunctions(ListFunctionsRequest) returns (ListFunctionsResponse) {}
+  // フォームの定義を YAML にして返す（保存はしない。確かめるだけ）
+  rpc PreviewFunction(PreviewFunctionRequest) returns (PreviewFunctionResponse) {}
+  // 作る・更新する。フォームの定義（spec）か、YAML そのもの（yaml）のどちらかを渡す
+  rpc ApplyFunction(ApplyFunctionRequest) returns (ApplyFunctionResponse) {}
+  rpc DeleteFunction(DeleteFunctionRequest) returns (DeleteFunctionResponse) {}
+
+  // API: 公開するホスト名（<名前>-cloud.taramanji.com）と、パスごとの渡し先の関数
+  rpc ListApis(ListApisRequest) returns (ListApisResponse) {}
+  rpc PreviewApi(PreviewApiRequest) returns (PreviewApiResponse) {}
+  rpc ApplyApi(ApplyApiRequest) returns (ApplyApiResponse) {}
+  rpc DeleteApi(DeleteApiRequest) returns (DeleteApiResponse) {}
+  // API キー: 作るとキーを 1 回だけ返す（YAML にはハッシュだけを残す）
+  rpc CreateApiKey(CreateApiKeyRequest) returns (CreateApiKeyResponse) {}
+  rpc DeleteApiKey(DeleteApiKeyRequest) returns (DeleteApiKeyResponse) {}
+
+  // ---- オブジェクトストレージと CDN ----
+
+  // バケット: ファイルの置き場（<環境>/buckets/<名前>.yaml の ConfigMap）。外には CDN（ログインあり）か、
+  // 公開をオンにしたバケットだけ <バケット>-storage-cloud.taramanji.com（ログインなし）で出せる
+  rpc ListBuckets(ListBucketsRequest) returns (ListBucketsResponse) {}
+  rpc CreateBucket(CreateBucketRequest) returns (CreateBucketResponse) {}
+  // 公開（ログインなしの配信）を切り替える
+  rpc UpdateBucket(UpdateBucketRequest) returns (UpdateBucketResponse) {}
+  // 空で、どの CDN からも使われていないバケットだけ消せる
+  rpc DeleteBucket(DeleteBucketRequest) returns (DeleteBucketResponse) {}
+  rpc ListObjects(ListObjectsRequest) returns (ListObjectsResponse) {}
+  rpc DeleteObject(DeleteObjectRequest) returns (DeleteObjectResponse) {}
+  // Cloudflare のエッジのキャッシュを消す（バケットなら、そのバケットを配っている公開の URL と CDN。CDN なら、その CDN のホスト名）。
+  // keys を渡すと、そのファイルの URL だけ消す（アップロードのあと）
+  rpc PurgeCache(PurgeCacheRequest) returns (PurgeCacheResponse) {}
+  // オブジェクトを置く・取り出すのは Connect ではなく HTTP: PUT / GET /_objects/<バケット>/<キー>
+
+  // CDN: 公開するホスト名（<名前>-cloud.taramanji.com）と、その元（バケットか関数）、キャッシュの長さ
+  rpc ListDistributions(ListDistributionsRequest) returns (ListDistributionsResponse) {}
+  rpc PreviewDistribution(PreviewDistributionRequest) returns (PreviewDistributionResponse) {}
+  rpc ApplyDistribution(ApplyDistributionRequest) returns (ApplyDistributionResponse) {}
+  rpc DeleteDistribution(DeleteDistributionRequest) returns (DeleteDistributionResponse) {}
+
+  // ---- データベース ----
+  // 共有の PostgreSQL / Redis から、データベース（とユーザー）を切り出す（<環境>/databases/<名前>.yaml の ConfigMap）。
+  // つなぎ方は、関数の「つなぐデータベース」に足す（接続先が環境変数に入る）。パスワードは画面にも git にも出ない
+  rpc ListDatabases(ListDatabasesRequest) returns (ListDatabasesResponse) {}
+  rpc CreateDatabase(CreateDatabaseRequest) returns (CreateDatabaseResponse) {}
+  // どの関数にもつながれていないデータベースだけ消せる。中身は残る（ログインだけ止める）
+  rpc DeleteDatabase(DeleteDatabaseRequest) returns (DeleteDatabaseResponse) {}
+
+  // ---- シークレット ----
+  // API キー・パスワードなどの秘密の値（<環境>/secrets/<名前>.yaml の SealedSecret）。値はクラスターの Sealed Secrets の公開鍵で
+  // 暗号化してからコミットする（git にも画面にも平文では出ない。読み戻せないので、変えるときは上書きする）。
+  // つなぎ方は、関数の「シークレット」に環境変数の名前と一緒に足す（その関数の namespace にだけ置かれる）
+  rpc ListSecrets(ListSecretsRequest) returns (ListSecretsResponse) {}
+  rpc CreateSecret(CreateSecretRequest) returns (CreateSecretResponse) {}
+  // 値を上書きする。つないだ関数は、動いていれば新しい値で入れ替わる
+  rpc UpdateSecret(UpdateSecretRequest) returns (UpdateSecretResponse) {}
+  // どの関数にもつながれていないシークレットだけ消せる
+  rpc DeleteSecret(DeleteSecretRequest) returns (DeleteSecretResponse) {}
+
+  // ---- デプロイの様子 ----
+  // コントローラー（デプロイヤー）が、リポジトリの YAML をクラスターに入れた結果と履歴（Argo CD は使わない）
+  rpc ListDeployments(ListDeploymentsRequest) returns (ListDeploymentsResponse) {}
+
+  // リポジトリの YAML に合わせて、Datadog のモニターを作り直す（git に直接 push したあとに呼ぶ）
+  rpc SyncAlerts(SyncAlertsRequest) returns (SyncAlertsResponse) {}
+}
+
+// コンソール自身を動かしている部品（API・画面・Redis）の状態
+message Component {
+  string name = 1;
+  int32 ready = 2;
+  int32 desired = 3;
+  // イメージのタグ（sha-xxxxxxx / v1.2.3）
+  string version = 4;
+}
+
+message GetOverviewRequest {}
+
+message GetOverviewResponse {
+  // prod / stg / dev
+  string environment = 1;
+  // Cloudflare Access でログインした人
+  string email = 2;
+  bool metrics_enabled = 3;
+  repeated Component components = 4;
+  // 公開バケットの URL の形（"https://<name>" + suffix）。例: "-storage-cloud.taramanji.com"
+  string storage_host_suffix = 5;
+  // API の URL の形。例: "-apigw-cloud.taramanji.com"
+  string hosting_host_suffix = 6;
+  // CDN の URL の形。例: "-cdn-cloud.taramanji.com"
+  string cdn_host_suffix = 7;
+}
+
+// 1 本の時系列
+message Series {
+  // 例: requests / errors_5xx / latency_p95 / cpu / memory
+  string metric = 1;
+  // 系列の分け方の値（ホスト名・デプロイ名）。全体なら空
+  string group = 2;
+  // 表示の単位: req/s・%・ms・mcores・bytes
+  string unit = 3;
+  repeated int64 timestamps_ms = 4;
+  repeated double values = 5;
+}
+
+message GetMetricsRequest {
+  // 1h / 1d / 7d
+  string range = 1;
+}
+
+message GetMetricsResponse {
+  repeated Series series = 1;
+}
+
+message GetCapacityRequest {}
+
+// 使っている量と上限。メモリ・ストレージはバイト、CPU はミリコア、Pod などは個数
+message Amount {
+  int64 used = 1;
+  int64 limit = 2;
+}
+
+// この環境のアプリ用 namespace の枠（ResourceQuota）。アプリが予約できる合計で、taramanji.com の分は含まない
+message Quota {
+  string namespace = 1;
+  // アプリのメモリの予約（requests = limits にそろえてあるので、そのまま実際に使える上限）
+  Amount memory = 2;
+  // CPU の上限（limits）の合計
+  Amount cpu = 3;
+  Amount pods = 4;
+  // ディスク付きのインスタンス・関数などの PVC の容量の合計
+  Amount volume_storage = 5;
+}
+
+// Mac mini 全体（kind の 3 ノードは同じ VM のメモリを分け合う）。taramanji.com・gws・基盤も含めた実際の使用量
+message Machine {
+  int64 memory_total = 1;
+  int64 memory_used = 2;
+  // taramanji.com・gws の伸びしろとして、アプリに渡さずに残しておく量
+  int64 memory_reserved = 3;
+  int64 cpu_total_millis = 4;
+  int64 cpu_used_millis = 5;
+}
+
+// アプリの大きさ（1 つあたり）ごとの「あと何個置けるか」
+message SizeFit {
+  // インスタンスタイプの名前（t1.small・c1.medium・r1.large など）
+  string name = 1;
+  int64 memory = 2;
+  int64 cpu_millis = 3;
+  int32 count = 4;
+  // 何が足りなくなって count で止まるか: quota_memory / quota_cpu / quota_pods / machine_memory
+  string limited_by = 5;
+}
+
+// アプリ用 namespace で動いている Pod ごとの実際の使用量（metrics-server）
+message PodUsage {
+  string name = 1;
+  int64 memory_used = 2;
+  int64 memory_limit = 3;
+  int64 cpu_used_millis = 4;
+}
+
+message GetCapacityResponse {
+  Quota quota = 1;
+  Machine machine = 2;
+  repeated SizeFit fits = 3;
+  repeated PodUsage pods = 4;
+}
+
+// インスタンスタイプ（EC2 と同じ「ファミリー + 世代 . サイズ」の名前）。選ぶと CPU とメモリが決まる
+message InstanceType {
+  // 例: t1.small
+  string name = 1;
+  // 例: t1
+  string family = 2;
+  int64 memory = 3;
+  int64 cpu_millis = 4;
+}
+
+// 用意してある監視（選ぶと Datadog のモニターになる）
+message AlertPreset {
+  // 例: cpu-high
+  string id = 1;
+  string label = 2;
+  string description = 3;
+}
+
+message GetHostingOptionsRequest {}
+
+// インスタンスタイプの系統（t1 汎用・c1 コンピューティング最適化・r1 メモリ最適化）
+message InstanceFamily {
+  string id = 1;
+  string label = 2;
+  string description = 3;
+}
+
+message GetHostingOptionsResponse {
+  repeated InstanceType instance_types = 1;
+  repeated AlertPreset alert_presets = 2;
+  // mail（SES）/ discord。Datadog のモニターは必ず作られる
+  repeated string notify_channels = 3;
+  // 型を選んだあとに個別に決められる範囲
+  int64 min_cpu_millis = 4;
+  int64 max_cpu_millis = 5;
+  int64 min_memory = 6;
+  int64 max_memory = 7;
+  reserved 8;
+  // リソースの YAML を置くリポジトリがつながっているか（false なら一覧も作成もできない）
+  bool store_enabled = 9;
+  // 監視を Datadog に作れるか（本番だけ）。false でも YAML には残せる
+  bool alerts_enabled = 10;
+  // YAML を置いているリポジトリ（owner/name）とディレクトリ
+  string repository = 11;
+  string directory = 12;
+  // リクエストが来なくなってから関数を 0 台に戻すまでの秒数
+  int32 idle_timeout_seconds = 13;
+  // 公開 URL のホスト名の共通の接尾辞。例: -cloud.taramanji.com。実際のホスト名は下の 3 つ（サービスごと）
+  string host_suffix = 14;
+  // API Gateway: <名前> + これ。例: -apigw-cloud.taramanji.com（ログインなし）
+  string api_host_suffix = 19;
+  // CDN: <名前> + これ。例: -cdn-cloud.taramanji.com（Cloudflare Access のログインあり）
+  string cdn_host_suffix = 20;
+  // 公開バケット: <バケット> + これ。例: -storage-cloud.taramanji.com（ログインなし）
+  string storage_host_suffix = 21;
+  // CDN の独自ドメインに使えるゾーン（taramanji.com）。空なら独自ドメインは使えない（Access と DNS のトークンがない環境）
+  string custom_domain_zone = 22;
+  // Cloudflare のキャッシュを消せるか（Cache Purge の権限のトークンがあるか）
+  bool cache_purge_enabled = 23;
+  // 系統（画面で型をまとめて見せる順）
+  repeated InstanceFamily instance_families = 18;
+  // オブジェクトストレージが動いているか
+  bool storage_enabled = 15;
+  // ホスト名の DNS を自動で登録できるか（false なら手で登録する）
+  bool dns_enabled = 16;
+  // データベースを切り出せるか（共有の PostgreSQL / Redis とコントローラーが動いているか）
+  bool databases_enabled = 17;
+  // シークレットを作れるか（Sealed Secrets の公開鍵を読めるか）
+  bool secrets_enabled = 24;
+}
+
+message EnvVar {
+  string name = 1;
+  // 秘密は入れない（YAML は git に残る）。秘密はシークレットにして SecretEnv でつなぐ
+  string value = 2;
+}
+
+// 環境変数 name に、シークレット secret の値を入れる（YAML には値でなく、シークレットの名前だけが残る）
+message SecretEnv {
+  string name = 1;
+  string secret = 2;
+}
+
+// リポジトリにある YAML と、その版。どのリソースにも付く
+message Source {
+  string yaml = 1;
+  // YAML の版。更新・削除のときに渡す（読んだあとに変わっていたら already_exists / app_conflict）
+  string revision = 2;
+  // フォームで編集できるか。false なら手で書き足した部分があるので YAML で編集する
+  bool form_editable = 3;
+  // YAML を GitHub で見る URL
+  string url = 4;
+  // YAML を読めなかった理由（手で push した YAML が壊れているとき。空なら問題なし）
+  string problem = 5;
+}
+
+// フォームで決められる範囲の関数の定義
+message FunctionSpec {
+  string name = 1;
+  string image = 2;
+  // コンテナが HTTP を受けるポート
+  int32 port = 3;
+  string instance_type = 4;
+  // 0 ならインスタンスタイプの値
+  int64 cpu_millis = 5;
+  int64 memory = 6;
+  repeated EnvVar env = 7;
+  // AlertPreset の id
+  repeated string alerts = 8;
+  // mail / discord
+  repeated string notify = 9;
+  // つなぐデータベースの名前。接続先が環境変数 DB_<名前>_URL などに入る
+  repeated string databases = 10;
+  // つなぐバケットの名前。環境変数 BUCKET_<名前>_URL と BUCKET_<名前>_TOKEN が入る
+  repeated string buckets = 11;
+  // 環境変数に入れるシークレット
+  repeated SecretEnv secrets = 12;
+}
+
+message Function {
+  FunctionSpec spec = 1;
+  Source source = 2;
+  // インスタンスタイプの値から CPU・メモリを変えているか
+  bool custom_resources = 3;
+  // クラスターでの状態。deployed = false ならまだ Argo CD が入れていない
+  bool deployed = 4;
+  // 動いている台数（0 なら寝ている。次のリクエストで起きる）
+  int32 ready = 5;
+  int32 desired = 6;
+  // この関数に渡している API の名前
+  repeated string apis = 7;
+}
+
+message ListFunctionsRequest {}
+
+message ListFunctionsResponse {
+  repeated Function functions = 1;
+}
+
+message PreviewFunctionRequest {
+  FunctionSpec spec = 1;
+}
+
+message PreviewFunctionResponse {
+  string yaml = 1;
+}
+
+message ApplyFunctionRequest {
+  // yaml が空なら spec から YAML を作る。yaml があればそれを確かめてそのまま置く（名前は spec.name）
+  FunctionSpec spec = 1;
+  string yaml = 2;
+  // 新しく作るときは空。更新のときは読んだ版
+  string revision = 3;
+}
+
+message ApplyFunctionResponse {
+  Function function = 1;
+  // 監視を Datadog に反映できなかった理由（YAML は保存済み。空なら問題なし）
+  string alerts_problem = 2;
+}
+
+message DeleteFunctionRequest {
+  string name = 1;
+  string revision = 2;
+}
+
+message DeleteFunctionResponse {
+  string alerts_problem = 1;
+}
+
+// パスの前方一致で、渡し先の関数を決める（長いパスが先に当たる）
+message ApiRoute {
+  // 例: / ・ /api
+  string path = 1;
+  string function = 2;
+}
+
+message ApiSpec {
+  // ホスト名の先頭（<名前>-apigw-cloud.taramanji.com）。CDN と合わせて、環境の中で重複できない
+  string name = 1;
+  repeated ApiRoute routes = 2;
+  // 認証: none（だれでも）/ api_key（x-api-key ヘッダーのキーを API Gateway が確かめる）
+  string auth = 3;
+  // ブラウザから呼んでよいオリジン（https://x-storage-cloud.taramanji.com など。* はどこからでも）。空なら CORS は関数まかせ
+  repeated string cors_origins = 4;
+  // API キー（見るだけ。作る・消すは CreateApiKey・DeleteApiKey。保存のときは今のキーをそのまま残す）
+  repeated ApiKey keys = 5;
+}
+
+// API キー（キーそのものは持たない）
+message ApiKey {
+  string name = 1;
+  // 見分けるための頭（tck_ と 8 文字）
+  string prefix = 2;
+}
+
+message Api {
+  ApiSpec spec = 1;
+  Source source = 2;
+  // 公開 URL のホスト名
+  string host = 3;
+}
+
+message ListApisRequest {}
+
+message ListApisResponse {
+  repeated Api apis = 1;
+}
+
+message PreviewApiRequest {
+  ApiSpec spec = 1;
+}
+
+message PreviewApiResponse {
+  string yaml = 1;
+}
+
+message ApplyApiRequest {
+  ApiSpec spec = 1;
+  string yaml = 2;
+  string revision = 3;
+}
+
+message ApplyApiResponse {
+  Api api = 1;
+  // DNS を登録できなかった理由（YAML は保存済み。空なら問題なし）
+  string dns_problem = 2;
+}
+
+message DeleteApiRequest {
+  string name = 1;
+  string revision = 2;
+}
+
+message DeleteApiResponse {
+  // DNS を消せなかった理由（YAML は消した。空なら問題なし）
+  string dns_problem = 1;
+}
+
+message CreateApiKeyRequest {
+  string api = 1;
+  // キーの名前（呼ぶ側の名前。関数には X-Api-Key-Name で渡る）
+  string name = 2;
+  string revision = 3;
+}
+
+message CreateApiKeyResponse {
+  Api api = 1;
+  // キーそのもの。ここで 1 回だけ返す（どこにも保存しない）
+  string key = 2;
+}
+
+message DeleteApiKeyRequest {
+  string api = 1;
+  string name = 2;
+  string revision = 3;
+}
+
+message DeleteApiKeyResponse {
+  Api api = 1;
+}
+
+message SyncAlertsRequest {}
+
+message SyncAlertsResponse {
+  int32 created = 1;
+  int32 updated = 2;
+  int32 deleted = 3;
+}
+
+message Bucket {
+  string name = 1;
+  Source source = 2;
+  // ストレージに作られたか（false ならまだ反映待ち）
+  bool ready = 3;
+  int64 objects = 4;
+  int64 bytes = 5;
+  // このバケットを元にしている CDN の名前
+  repeated string distributions = 6;
+  // 公開（ログインなしで https://<バケット>-storage-cloud.taramanji.com/<キー> から配る）。既定はオフ
+  bool public = 7;
+  // 公開しているときのホスト名
+  string public_host = 8;
+}
+
+message ListBucketsRequest {}
+
+message ListBucketsResponse {
+  repeated Bucket buckets = 1;
+}
+
+message CreateBucketRequest {
+  string name = 1;
+  bool public = 2;
+}
+
+message CreateBucketResponse {
+  Bucket bucket = 1;
+  // 公開のホスト名の DNS を登録できなかったときの理由
+  string dns_problem = 2;
+}
+
+message UpdateBucketRequest {
+  string name = 1;
+  bool public = 2;
+  string revision = 3;
+}
+
+message UpdateBucketResponse {
+  Bucket bucket = 1;
+  string dns_problem = 2;
+  // キャッシュを消せなかった理由（公開をやめたとき。空なら問題なし）
+  string cache_problem = 3;
+}
+
+message DeleteBucketRequest {
+  string name = 1;
+  string revision = 2;
+}
+
+message DeleteBucketResponse {
+  string dns_problem = 1;
+  string cache_problem = 2;
+}
+
+message StorageObject {
+  string key = 1;
+  int64 size = 2;
+  int64 modified_ms = 3;
+}
+
+message ListObjectsRequest {
+  string bucket = 1;
+  // この文字列で始まるキーだけ
+  string prefix = 2;
+}
+
+message ListObjectsResponse {
+  repeated StorageObject objects = 1;
+  // 1,000 件を超えていて、続きがある（prefix で絞る）
+  bool truncated = 2;
+}
+
+message DeleteObjectRequest {
+  string bucket = 1;
+  string key = 2;
+}
+
+message DeleteObjectResponse {
+  // キャッシュを消せなかった理由（空なら問題なし）
+  string cache_problem = 1;
+}
+
+message PurgeCacheRequest {
+  // bucket / cdn
+  string kind = 1;
+  string name = 2;
+  // バケットの中のキー（渡すと、そのファイルの URL だけを消す。100 個まで）
+  repeated string keys = 3;
+}
+
+message PurgeCacheResponse {
+  // キャッシュを消したホスト名
+  repeated string hosts = 1;
+  // 消せなかった理由（空なら問題なし）
+  string problem = 2;
+}
+
+message DistributionSpec {
+  // ホスト名の先頭（<名前>-cdn-cloud.taramanji.com）。API と合わせて、環境の中で重複できない
+  string name = 1;
+  // bucket / api（API Gateway。CloudFront の元を API Gateway にするのと同じ。API のルート・認証・CORS が効く）
+  string origin_type = 2;
+  string origin = 3;
+  // キャッシュさせる秒数（Cache-Control: public, max-age）。0 ならキャッシュさせない
+  int32 cache_seconds = 4;
+  // バケットが元のとき: ファイルがないパスに index.html を返す（SPA）
+  bool spa = 5;
+  // パスごとの元（CloudFront の behavior）。ここにないパスは、上の元（既定、/）に送る。長いパスが先に当たる
+  repeated DistributionBehavior behaviors = 6;
+  // 独自ドメイン（CloudFront の代替ドメイン名）。<ラベル>.taramanji.com だけ。CDN を作ったあとに足せる。
+  // 保存すると、Cloudflare Access に登録してから（ログインあり）DNS を作る
+  repeated string aliases = 7;
+}
+
+// DistributionBehavior は、パスの前方一致ごとの元。パスはそのまま元に渡る（取り除かない）
+message DistributionBehavior {
+  // / で始まるパス（/api など）。/ そのものは既定の元なので書かない
+  string path = 1;
+  // bucket / api（API Gateway。CloudFront の元を API Gateway にするのと同じ。API のルート・認証・CORS が効く）
+  string origin_type = 2;
+  string origin = 3;
+  int32 cache_seconds = 4;
+  bool spa = 5;
+}
+
+message Distribution {
+  DistributionSpec spec = 1;
+  Source source = 2;
+  string host = 3;
+}
+
+message ListDistributionsRequest {}
+
+message ListDistributionsResponse {
+  repeated Distribution distributions = 1;
+}
+
+message PreviewDistributionRequest {
+  DistributionSpec spec = 1;
+}
+
+message PreviewDistributionResponse {
+  string yaml = 1;
+}
+
+message ApplyDistributionRequest {
+  DistributionSpec spec = 1;
+  string yaml = 2;
+  string revision = 3;
+}
+
+message ApplyDistributionResponse {
+  Distribution distribution = 1;
+  string dns_problem = 2;
+  // 変えたときにキャッシュを消せなかった理由
+  string cache_problem = 3;
+}
+
+message DeleteDistributionRequest {
+  string name = 1;
+  string revision = 2;
+}
+
+message DeleteDistributionResponse {
+  string dns_problem = 1;
+  string cache_problem = 2;
+}
+
+message Database {
+  string name = 1;
+  // postgres / redis
+  string engine = 2;
+  Source source = 3;
+  // ready / pending / エラーの理由
+  string status = 4;
+  bool ready = 5;
+  // つないだ関数に入る環境変数の名前（値は出さない）
+  repeated string env_names = 6;
+  // このデータベースをつないでいる関数
+  repeated string functions = 7;
+}
+
+message ListDatabasesRequest {}
+
+message ListDatabasesResponse {
+  repeated Database databases = 1;
+}
+
+message CreateDatabaseRequest {
+  string name = 1;
+  string engine = 2;
+}
+
+message CreateDatabaseResponse {
+  Database database = 1;
+}
+
+message DeleteDatabaseRequest {
+  string name = 1;
+  string revision = 2;
+}
+
+message DeleteDatabaseResponse {}
+
+// シークレット。値は返さない（暗号化したものが source.yaml に入る）
+message Secret {
+  string name = 1;
+  Source source = 2;
+  // ready / pending / 復号できない理由
+  string status = 3;
+  bool ready = 4;
+  // このシークレットをつないでいる関数
+  repeated string functions = 5;
+}
+
+message ListSecretsRequest {}
+
+message ListSecretsResponse {
+  repeated Secret secrets = 1;
+  // シークレットを作れるか（Sealed Secrets の公開鍵を読めるか）
+  bool enabled = 2;
+}
+
+message CreateSecretRequest {
+  string name = 1;
+  string value = 2;
+}
+
+message CreateSecretResponse {
+  Secret secret = 1;
+}
+
+message UpdateSecretRequest {
+  string name = 1;
+  string value = 2;
+  string revision = 3;
+}
+
+message UpdateSecretResponse {
+  Secret secret = 1;
+}
+
+message DeleteSecretRequest {
+  string name = 1;
+  string revision = 2;
+}
+
+message DeleteSecretResponse {}
+
+message DeploymentEvent {
+  int64 at_ms = 1;
+  string commit = 2;
+  string revision = 3;
+  // applied / waiting / invalid / failed / deleted
+  string state = 4;
+  string message = 5;
+}
+
+// 1 つのリソース（関数・API・CDN・バケット・データベース）のデプロイの様子
+message Deployment {
+  // functions / apis / cdn / buckets / databases / secrets
+  string kind = 1;
+  string name = 2;
+  string state = 3;
+  string message = 4;
+  // 反映した YAML の版（git の blob の SHA の先頭）と、そのときのコミット
+  string revision = 5;
+  string commit = 6;
+  int64 at_ms = 7;
+  repeated DeploymentEvent history = 8;
+}
+
+message ListDeploymentsRequest {}
+
+message ListDeploymentsResponse {
+  repeated Deployment deployments = 1;
+  // デプロイヤーが動いているか（リポジトリのトークンがないと動かない）
+  bool enabled = 2;
+}

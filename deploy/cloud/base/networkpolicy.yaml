@@ -1,0 +1,73 @@
+# 既定は受信を全部拒否する。taramanji の namespace（とその Gateway）からは届かない
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+spec:
+  podSelector: {}
+  policyTypes: [Ingress]
+---
+# cloud の Gateway の Envoy（envoy-gateway-system の、owning-gateway-name=cloud の Pod）→ API と画面だけ。
+# 同じ namespace にいる taramanji の Gateway の Envoy からは届かない
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: from-cloud-gateway
+spec:
+  # ストレージ（cloud-storage）は Envoy から直接は受けない（下の to-cloud-storage だけ）
+  podSelector:
+    matchExpressions:
+      - { key: app.kubernetes.io/name, operator: In, values: [cloud-api, cloud-gw, console] }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: envoy-gateway-system } }
+          podSelector:
+            matchLabels:
+              gateway.envoyproxy.io/owning-gateway-name: cloud
+              gateway.envoyproxy.io/owning-gateway-namespace: taramanji-cloud-gateway
+      ports:
+        - { port: 8080 }
+---
+# オブジェクトストレージ: 読み書き（8080）は cloud-api から、読むだけ（8081）は CDN（cloud-gw）からだけ
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: to-cloud-storage
+spec:
+  podSelector:
+    matchLabels: { app.kubernetes.io/name: cloud-storage }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: { matchLabels: { app.kubernetes.io/name: cloud-api } }
+      ports:
+        - { port: 8080 }
+    - from:
+        - podSelector: { matchLabels: { app.kubernetes.io/name: cloud-gw } }
+      ports:
+        - { port: 8081 }
+    # バケットをつないだ関数（関数ごとの namespace。この環境のものだけ。overlays が環境ごとに書き換える）。トークンが要る
+    - from:
+        - namespaceSelector: { matchLabels: { cloud.taramanji.com/tier: function, cloud.taramanji.com/registry: taramanji-cloud-apps } }
+      ports:
+        - { port: 8080 }
+---
+# 共有の PostgreSQL / Redis: コントローラー（cloud-ctl）と、この環境の関数（関数ごとの namespace）からだけ。
+# 関数は自分のユーザーとパスワードでしか入れない
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: to-cloud-data
+spec:
+  podSelector:
+    matchExpressions:
+      - { key: app.kubernetes.io/name, operator: In, values: [cloud-postgres, cloud-redis] }
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: { matchLabels: { app.kubernetes.io/name: cloud-ctl } }
+        - namespaceSelector: { matchLabels: { cloud.taramanji.com/tier: function, cloud.taramanji.com/registry: taramanji-cloud-apps } }
+      ports:
+        - { port: 5432 }
+        - { port: 6379 }

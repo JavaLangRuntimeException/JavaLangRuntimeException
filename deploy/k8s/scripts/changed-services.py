@@ -16,14 +16,15 @@ import os
 import subprocess
 import sys
 
-GO_SERVICES = ["identity", "notification", "inquiry", "reservation", "worklocation", "content", "calendarsync", "analytics"]
-ALL = GO_SERVICES + ["web"]
+GO_SERVICES = ["identity", "notification", "inquiry", "reservation", "worklocation", "content", "calendarsync", "analytics", "cloud"]
+# console は taramanji cloud のコンソールの画面（console/）
+ALL = GO_SERVICES + ["web", "console"]
 ROOT = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True, check=True).stdout.strip()
 BACKEND = os.path.join(ROOT, "backend")
 
 # イメージの中身に関係しないファイル（変えてもビルドし直さない）
 DOC_NAMES = ("README.md", "CLAUDE.md", "AGENTS.md")
-DOC_DIRS = ("backend/.claude/", "backend/docs/", "frontend/.claude/", "frontend/.cursor/")
+DOC_DIRS = ("backend/.claude/", "backend/docs/", "frontend/.claude/", "frontend/.cursor/", "console/.claude/")
 # イメージの作り方そのもの。変わったら全部作り直す
 BUILD_FILES = (".github/workflows/build.yml",)
 
@@ -48,6 +49,9 @@ def services_for(files):
             return list(ALL)
         if f.startswith("frontend/"):
             hit.add("web")
+            continue
+        if f.startswith("console/"):
+            hit.add("console")
             continue
         if not f.startswith("backend/"):
             continue  # マニフェスト・ドキュメント・ほかのワークフローなどはイメージに入らない

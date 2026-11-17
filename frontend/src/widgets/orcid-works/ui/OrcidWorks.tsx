@@ -5,11 +5,22 @@ import { ORCID_SELF_NAME, ORCID_WORK_TYPE_LABELS, useOrcidWorks, type OrcidWork 
 import { useT } from "@/shared/lib/i18n";
 import { Section, Skeleton } from "@/shared/ui/layout";
 
+/** プロジェクトページで紹介している論文の DOI（ORCID 一覧からは除く） */
+const PROJECT_PAGE_DOIS = new Set(["10.1145/3822517.3848686"]);
+
+/** ORCID の DOI は "https://doi.org/" 付きや大文字のこともあるので揃えて比べる */
+function normalizeDoi(doi: string) {
+  return doi
+    .trim()
+    .replace(/^(https?:\/\/(dx\.)?doi\.org\/|doi:)/i, "")
+    .toLowerCase();
+}
+
 /** ORCID に登録した論文 */
 export function OrcidWorks() {
   const t = useT();
   const { data, isPending } = useOrcidWorks();
-  const works = data?.works ?? [];
+  const works = (data?.works ?? []).filter((work) => !work.doi || !PROJECT_PAGE_DOIS.has(normalizeDoi(work.doi)));
 
   return (
     <Section
@@ -50,9 +61,9 @@ function ProjectPageCard() {
   return (
     <Link
       to="/research/quadrupedal-avatar"
-      className="lift group grid gap-4 rounded-xl border border-border-button-default bg-background-primary-default p-5 outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] md:items-center"
+      className="lift group grid gap-4 rounded-xl border border-border-button-default bg-background-primary-default p-5 outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] md:items-center"
     >
-      <img src="/research/quadrupedal-avatar/teaser-v4.jpg" width={2116} height={600} alt="" loading="lazy" decoding="async" className="h-auto w-full rounded-lg" />
+      <img src="/research/quadrupedal-avatar/teaser-v4.jpg" width={2116} height={600} alt="" loading="lazy" decoding="async" className="h-auto w-full rounded-lg md:order-last" />
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <Chip color="lime" variant="caption">

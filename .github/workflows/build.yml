@@ -82,7 +82,8 @@ jobs:
       # arm64 は Mac mini の kind、amd64 は GKE 用
       - uses: docker/build-push-action@v6
         with:
-          context: ${{ matrix.service == 'web' && 'frontend' || 'backend' }}
+          # web は frontend/、console（taramanji cloud のコンソールの画面）は console/、ほかは Go（backend/）
+          context: ${{ matrix.service == 'web' && 'frontend' || matrix.service == 'console' && 'console' || 'backend' }}
           build-args: |
             SERVICE=${{ matrix.service }}
             VERSION=${{ steps.v.outputs.tag }}

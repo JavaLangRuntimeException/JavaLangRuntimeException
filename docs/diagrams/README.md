@@ -12,4 +12,4 @@ node docs/diagrams/render.mjs
 
 矢印は各 HTML の `window.LINKS` に「どの箱からどの箱へ」を書き、`_arrows.js` が箱の位置を測って SVG で引きます（gRPC などのロゴも線の上に置けます）。
 
-アイコンは `icons/` に置きます（Redis は [Icons8](https://img.icons8.com/color/1200/redis.jpg)、gRPC と Kubernetes のリソースは CNCF / kubernetes/community の公式、Vite などは simple-icons、Connect は connectrpc の GitHub のアイコン）。
+アイコンは `icons/` に置きます（taramanji cloud のサービスのアイコンは `icons/cloud/`。コンソールの `console/src/components/ServiceIcon.tsx` と同じ形。Redis は [Icons8](https://img.icons8.com/color/1200/redis.jpg)、gRPC と Kubernetes のリソースは CNCF / kubernetes/community の公式、Vite などは simple-icons、Connect は connectrpc の GitHub のアイコン）。

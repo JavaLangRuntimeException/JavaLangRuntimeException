@@ -3,8 +3,8 @@
 # 「変わったファイル → 作り直すサービス」の判定が、共通部分を変えたときに取りこぼさないことを確かめる。
 set -euo pipefail
 cd "$(dirname "$0")"
-GO_ALL="identity notification inquiry reservation worklocation content calendarsync analytics"
-ALL="$GO_ALL web"
+GO_ALL="identity notification inquiry reservation worklocation content calendarsync analytics cloud"
+ALL="$GO_ALL web console"
 fail=0
 
 check() {
@@ -24,6 +24,10 @@ check "identity"               backend/internal/identity/domain/service/login.go
 check "calendarsync"           backend/cmd/calendarsync/main.go
 check "web"                    frontend/src/main.tsx
 check "web"                    frontend/package.json
+check "cloud"                  backend/internal/cloud/usecase/console_usecase.go
+check "cloud"                  backend/pkg/util/cfaccess/cfaccess.go
+check "console"                console/src/main.tsx
+check "console"                console/nginx.conf
 
 # 共通部分 → 使っているサービスを全部（取りこぼさない）
 check "$GO_ALL"                backend/pkg/util/server/server.go
@@ -50,5 +54,7 @@ check ""                       backend/internal/content/usecase/content_usecase_
 check ""                       deploy/k8s/overlays/prod/apps/rollouts.yaml
 check ""                       .github/workflows/cd.yml
 check ""                       frontend/CLAUDE.md
+check ""                       console/CLAUDE.md
+check ""                       deploy/cloud/overlays/prod/app/kustomization.yaml
 
 exit $fail

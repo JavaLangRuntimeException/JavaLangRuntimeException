@@ -1,0 +1,68 @@
+# taramanji-cloud-stg・taramanji-cloud-dev の Rollout（taramanji の components/nonprod と同じ作り）。
+# カナリアの段や Datadog の判定はなく、1 台ずつ入れ替えるだけ。Rollouts の画面で各環境の版を本番と同じように見るため
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: cloud-api
+  labels:
+    app.kubernetes.io/name: cloud-api
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cloud-api
+  workloadRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: cloud-api
+    scaleDown: onsuccess
+  strategy:
+    canary:
+      maxSurge: 1
+      maxUnavailable: 0
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: cloud-gw
+  labels:
+    app.kubernetes.io/name: cloud-gw
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cloud-gw
+  workloadRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: cloud-gw
+    scaleDown: onsuccess
+  strategy:
+    canary:
+      maxSurge: 1
+      maxUnavailable: 0
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: console
+  labels:
+    app.kubernetes.io/name: console
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: console
+  workloadRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: console
+    scaleDown: onsuccess
+  strategy:
+    canary:
+      maxSurge: 1
+      maxUnavailable: 0

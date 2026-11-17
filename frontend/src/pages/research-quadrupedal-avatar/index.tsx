@@ -67,17 +67,23 @@ const RESULTS: { measure: L10n; quad: string; stand: string; posture: string; ro
   { measure: { ja: "自分の力強さの知覚", en: "Perceived Strength" }, quad: "4.94", stand: "4.15", posture: ".014*", row: "4.69", swing: "4.40", gesture: "—" },
 ];
 
-const BIBTEX = `@inproceedings{tanahashi2026quadrupedal,
-  author    = {Tanahashi, Shuta and Hashiguchi, Satoshi and Nakamura, Fumihiko and Kataoka, Yuta and Shibata, Fumihisa and Mohr, Peter and Stanescu, Ana and Mori, Shohei and Kimura, Asako},
-  title     = {${TITLE}},
-  booktitle = {32nd ACM Symposium on Virtual Reality Software and Technology (VRST '26)},
-  year      = {2026},
-  month     = nov,
-  location  = {Sendai, Japan},
-  publisher = {Association for Computing Machinery},
-  address   = {New York, NY, USA},
-  isbn      = {979-8-4007-2811-2},
-  doi       = {${DOI}},
+// ACM DL の「Export Citation → BibTeX」の書き出しそのまま
+const BIBTEX = `@inproceedings{${DOI},
+author = {Tanahashi, Shuta and Hashiguchi, Satoshi and Nakamura, Fumihiko and Kataoka, Yuta and Shibata, Fumihisa and Mohr, Peter and Stanescu, Ana and Mori, Shohei and Kimura, Asako},
+title = {${TITLE}},
+year = {2026},
+isbn = {9798400728112},
+publisher = {Association for Computing Machinery},
+address = {New York, NY, USA},
+url = {https://doi.org/${DOI}},
+doi = {${DOI}},
+abstract = {Virtual reality (VR) lets users embody non-humanoid avatars, but quadrupedal locomotion is challenging because its gait differs fundamentally from human bipedal movement. Prior work shows that gesture congruence and physical posture each enhance embodiment, yet their influence on users’ self-perception during quadrupedal locomotion remains underexplored. We drive a quadruped avatar’s plantigrade gait from hand movements alone, avoiding whole-body fatigue. Because the forelimbs map onto human arms, the technique splits into two axes, body posture and hand-gesture mapping. In a within-subjects study (N = 24) crossing two postures (pseudo-quadrupedal, standing) with two gesture mappings (Rowing, Swinging), both manipulations enhance body ownership and agency, with no detectable interaction. Avatar-consistent self-perception further differs across the four configurations, reflecting posture, viewpoint, and scale rather than locomotion alone. Finally, perceived skill is higher for Rowing in the pseudo-quadrupedal posture than in standing, which also raises physical workload. These results unify the two frameworks into a single design space for plantigrade quadrupedal avatar locomotion that trades off embodiment quality against workload.},
+booktitle = {Proceedings of the 32nd ACM Symposium on Virtual Reality Software and Technology},
+articleno = {8},
+numpages = {12},
+keywords = {Virtual Reality, Avatar Embodiment, Non-Humanoid Avatars, Locomotion, Quadrupedal Motion},
+location = {Sendai, Japan},
+series = {VRST '26}
 }`;
 
 const LIST = "flex flex-col gap-2 ps-5 marker:text-text-tertiary [list-style:disc]";
@@ -96,6 +102,12 @@ export default function ResearchQuadrupedalAvatarPage() {
         <div className="mt-6 mb-10 flex flex-wrap gap-2">
           <ButtonLink variant="secondary" href={`https://doi.org/${DOI}`} target="_blank" rel="noopener noreferrer">
             {t({ ja: "論文（ACM DL）", en: "Paper (ACM DL)" })}
+          </ButtonLink>
+          <ButtonLink variant="secondary" href="https://www.youtube.com/watch?v=4AH5MBR8dko" target="_blank" rel="noopener noreferrer">
+            {t({ ja: "動画（YouTube）", en: "Video (YouTube)" })}
+          </ButtonLink>
+          <ButtonLink variant="secondary" href="/research/quadrupedal-avatar/vrst2026-slides.pdf" target="_blank" rel="noopener noreferrer">
+            {t({ ja: "発表スライド", en: "Presentation Slides" })}
           </ButtonLink>
           <ButtonLink variant="secondary" href="#bibtex">
             BibTeX
