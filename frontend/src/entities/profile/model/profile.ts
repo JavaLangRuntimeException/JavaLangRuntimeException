@@ -41,6 +41,27 @@ export const socialLinks: SocialLink[] = [
   },
 ];
 
+// 検索・AI が「誰で、何をしている人か」を引用するための表記。
+// 英語はトップに出している肩書き、日本語はその同じ肩書き。
+export const personName = {
+  en: "Shuta Tanahashi",
+  ja: "棚橋 柊太",
+  handle: "taramanji",
+} as const;
+
+export const personRoles: { en: string; ja: string }[] = [
+  { en: "Software Engineer", ja: "ソフトウェアエンジニア・開発者" },
+  { en: "Backend Engineer", ja: "バックエンドエンジニア" },
+  { en: "Photographer", ja: "フォトグラファー" },
+  { en: "XR Researcher", ja: "XR研究者" },
+  { en: "Community Manager", ja: "コミュニティマネージャー" },
+];
+
+export const personTitle = "棚橋 柊太（Shuta Tanahashi）| taramanji";
+
+export const personDescription =
+  "棚橋 柊太（Shuta Tanahashi、taramanji）は、ソフトウェアエンジニア・開発者、バックエンドエンジニア、フォトグラファー、XR研究者、コミュニティマネージャーです。技術を価値に、好きを居場所に。";
+
 export type TaglineLine = {
   text: string;
   // アクセント色にする文字の範囲 [start, end)

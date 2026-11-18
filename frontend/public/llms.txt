@@ -1,0 +1,37 @@
+# taramanji
+
+> 棚橋 柊太（Shuta Tanahashi）の公式サイト。ハンドルネームは taramanji。ソフトウェアエンジニア・開発者、バックエンドエンジニア、フォトグラファー、XR研究者、コミュニティマネージャー。
+
+棚橋 柊太（Shuta Tanahashi、taramanji）は、ソフトウェアエンジニア・開発者、バックエンドエンジニア、フォトグラファー、XR研究者、コミュニティマネージャーです。
+
+## Names
+
+- Name: Shuta Tanahashi
+- 日本語名: 棚橋 柊太
+- 表記ゆれ: 棚橋柊太
+- Handle: taramanji
+- ORCID: 0009-0005-4751-648X
+
+## Roles
+
+- Software Engineer（ソフトウェアエンジニア・開発者）
+- Backend Engineer（バックエンドエンジニア）
+- Photographer（フォトグラファー）
+- XR Researcher（XR研究者）
+- Community Manager（コミュニティマネージャー）
+
+## Pages
+
+- [Home](https://taramanji.com/): プロフィール、所属、資格、論文、記事
+- [Research](https://taramanji.com/research/quadrupedal-avatar): VRST '26 論文。四足歩行アバターの身体化（XR研究）
+- [Links](https://taramanji.com/link): SNS とプロフィールへのリンク
+- [Contact](https://taramanji.com/contact): 問い合わせ
+
+## Profiles
+
+- [ORCID](https://orcid.org/0009-0005-4751-648X)
+- [GitHub](https://github.com/javalangruntimeexception)
+- [Google Scholar](https://scholar.google.co.jp/citations?user=Sr7nBe8AAAAJ)
+- [LinkedIn](https://www.linkedin.com/in/javalangruntimeexception/)
+- [X](https://twitter.com/javalangruntime)
+- [Speaker Deck](https://speakerdeck.com/javalangruntimeexception)
