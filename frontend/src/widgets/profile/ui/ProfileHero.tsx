@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useAtomValue } from "jotai";
 import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
-import { socialLinks, tagline } from "@/entities/profile";
+import { personName, personRoles, socialLinks, tagline } from "@/entities/profile";
 import { useT } from "@/shared/lib/i18n";
 import { introPlayingAtom } from "@/shared/model/intro";
 import { CURTAIN_EASE, DecodeText, EASE } from "@/shared/ui/motion";
@@ -76,18 +76,18 @@ export function ProfileHero() {
             </motion.p>
           </div>
           <motion.div {...fade(1.9)} className="mt-3 flex flex-col gap-1">
-            <p className="text-[1.125rem] font-semibold text-text-primary">Shuta Tanahashi</p>
-            <p className="text-[0.9375rem] leading-[1.9] text-text-secondary">
-              Software Engineer
-              <br />
-              Backend Engineer
-              <br />
-              Photographer
-              <br />
-              XR Researcher
-              <br />
-              Community Manager
+            <p className="text-[1.125rem] font-semibold text-text-primary">
+              <span lang="en">{personName.en}</span>
+              <span lang="ja" className="ms-2 text-[0.9375rem] font-medium text-text-secondary">{personName.ja}</span>
             </p>
+            <ul className="text-[0.9375rem] leading-[1.9] text-text-secondary">
+              {personRoles.map((role) => (
+                <li key={role.en}>
+                  <span lang="en">{role.en}</span>
+                  <span lang="ja" className="text-text-tertiary"> / {role.ja}</span>
+                </li>
+              ))}
+            </ul>
           </motion.div>
         </div>
       </div>

@@ -6,6 +6,8 @@ import { OrcidWorks } from "@/widgets/orcid-works";
 import { ProfileHero } from "@/widgets/profile";
 import { PublishedArticles } from "@/widgets/published-articles";
 import { SkillBadges } from "@/widgets/skills";
+import { personDescription, personTitle } from "@/entities/profile";
+import { withEnvTitle } from "@/shared/config/site";
 import { PageContainer } from "@/shared/ui/layout";
 import { useT } from "@/shared/lib/i18n";
 
@@ -13,6 +15,9 @@ export default function HomePage() {
   const t = useT();
   return (
     <PageContainer className="flex flex-col gap-4">
+      <title>{withEnvTitle(personTitle)}</title>
+      <meta name="description" content={personDescription} />
+      <link rel="canonical" href="https://taramanji.com/" />
       <ProfileHero />
       <div>
         <NavCards

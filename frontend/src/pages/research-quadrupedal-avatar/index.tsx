@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button, ButtonLink } from "@/components/base/buttons/button";
+import { withEnvTitle } from "@/shared/config/site";
 import { useT, type L10n } from "@/shared/lib/i18n";
 import { PageContainer, PageHeader, Section } from "@/shared/ui/layout";
 import { Still } from "@/shared/ui/motion";
@@ -92,6 +93,35 @@ export default function ResearchQuadrupedalAvatarPage() {
   const t = useT();
   return (
     <Still>
+      <title>{withEnvTitle(`${TITLE} | Shuta Tanahashi (taramanji)`)}</title>
+      <meta
+        name="description"
+        content="棚橋 柊太（Shuta Tanahashi / taramanji）の XR 研究。VRST '26 論文 Embodying a Quadrupedal Avatar Through Posture- and Hand-Gesture-Congruent Locomotion。"
+      />
+      <link rel="canonical" href="https://taramanji.com/research/quadrupedal-avatar" />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "ScholarlyArticle",
+            headline: TITLE,
+            inLanguage: "en",
+            url: "https://taramanji.com/research/quadrupedal-avatar",
+            sameAs: `https://doi.org/${DOI}`,
+            datePublished: "2026-11-16",
+            publisher: { "@type": "Organization", name: "Association for Computing Machinery" },
+            author: {
+              "@type": "Person",
+              "@id": "https://taramanji.com/#shuta-tanahashi",
+              name: "Shuta Tanahashi",
+              alternateName: ["taramanji", "棚橋 柊太", "棚橋柊太"],
+              url: "https://taramanji.com/",
+              jobTitle: ["XR Researcher", "XR研究者"],
+            },
+          }),
+        }}
+      />
       <PageContainer>
         <PageHeader
           eyebrow={t({ ja: "VRST '26 · 2026 年 11 月 16〜18 日 · 仙台", en: "VRST '26 · November 16–18, 2026 · Sendai, Japan" })}
