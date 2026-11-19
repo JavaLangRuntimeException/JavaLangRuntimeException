@@ -15,8 +15,6 @@ spec:
         - { path: { type: PathPrefix, value: /admin } }
         - { path: { type: PathPrefix, value: /assets/ } }
         - { path: { type: Exact, value: /favicon.ico } }
-        - { path: { type: Exact, value: /favicon.svg } }
-        - { path: { type: Exact, value: /apple-touch-icon.png } }
         - { path: { type: Exact, value: /image.ico } }
       backendRefs:
         - { name: web, port: 8080, weight: 100 }
