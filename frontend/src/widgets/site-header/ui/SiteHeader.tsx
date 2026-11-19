@@ -26,7 +26,8 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 w-full overflow-x-clip border-b border-separator-border bg-background-full/80 backdrop-blur-md">
       <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-2 px-3 sm:gap-4 sm:px-4">
-        <Link to="/" className="text-headline-semibold whitespace-nowrap text-text-primary transition-transform active:scale-[.97]">
+        <Link to="/" className="flex shrink-0 items-center gap-2 text-headline-semibold whitespace-nowrap text-text-primary transition-transform active:scale-[.97]">
+          <img src="/logo-mark.svg" alt="" width={45} height={28} className="h-7 w-auto" />
           taramanji
         </Link>
         <div className="hidden min-w-0 flex-1 overflow-hidden sm:block">
