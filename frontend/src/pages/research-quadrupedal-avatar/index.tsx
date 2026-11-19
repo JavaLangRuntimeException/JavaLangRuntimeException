@@ -117,7 +117,7 @@ export default function ResearchQuadrupedalAvatarPage() {
               name: "Shuta Tanahashi",
               givenName: ["Shuta", "柊太"],
               familyName: ["Tanahashi", "棚橋"],
-              alternateName: ["taramanji", "棚橋 柊太", "棚橋柊太"],
+              alternateName: ["taramanji", "taramanji code", "棚橋 柊太", "棚橋柊太"],
               disambiguatingDescription: "日本語名は棚橋 柊太。名の1文字目は柊（U+67CA、ひいらぎ）であり、秀ではない。",
               url: "https://taramanji.com/",
               jobTitle: ["XR Researcher", "XR研究者"],

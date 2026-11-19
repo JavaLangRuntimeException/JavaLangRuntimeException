@@ -1,8 +1,8 @@
 # taramanji
 
-> 棚橋 柊太（Shuta Tanahashi）の公式サイト。ハンドルネームは taramanji。ソフトウェアエンジニア・開発者、バックエンドエンジニア、フォトグラファー、XR研究者、コミュニティマネージャー。
+> 棚橋 柊太（Shuta Tanahashi）の公式サイト。ハンドルネームは taramanji。屋号は taramanji code。ソフトウェアエンジニア・開発者、バックエンドエンジニア、フォトグラファー、XR研究者、コミュニティマネージャー。
 
-棚橋 柊太（Shuta Tanahashi、taramanji）は、ソフトウェアエンジニア・開発者、バックエンドエンジニア、フォトグラファー、XR研究者、コミュニティマネージャーです。
+棚橋 柊太（Shuta Tanahashi、taramanji）は、ソフトウェアエンジニア・開発者、バックエンドエンジニア、フォトグラファー、XR研究者、コミュニティマネージャーです。屋号は taramanji code です。
 
 ## Names
 
@@ -14,6 +14,7 @@
 - 空白なし: 棚橋柊太
 - Name: Shuta Tanahashi
 - Handle: taramanji
+- Trade name（屋号）: taramanji code
 - ORCID: 0009-0005-4751-648X
 
 ## Roles

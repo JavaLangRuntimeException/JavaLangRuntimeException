@@ -60,6 +60,9 @@ export const personRoles: { en: string; ja: string }[] = [
 
 export const personTitle = "taramanji";
 
+// 屋号。個人の名前・ハンドルとは別に、この表記のまま書く。
+export const tradeName = "taramanji code";
+
 export const personDescription =
   "Shuta Tanahashi (taramanji) is a software engineer and developer, backend engineer, photographer, XR researcher, and community manager.";
 

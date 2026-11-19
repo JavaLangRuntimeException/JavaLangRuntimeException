@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useAtomValue } from "jotai";
 import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
-import { personName, personRoles, socialLinks, tagline } from "@/entities/profile";
+import { personName, personRoles, socialLinks, tagline, tradeName } from "@/entities/profile";
 import { useT } from "@/shared/lib/i18n";
 import { introPlayingAtom } from "@/shared/model/intro";
 import { CURTAIN_EASE, DecodeText, EASE } from "@/shared/ui/motion";
@@ -57,6 +57,10 @@ export function ProfileHero() {
           <h1 className="text-[3rem] font-semibold leading-none tracking-[-0.02em] text-text-primary sm:text-[4rem]">
             <DecodeText text="taramanji" ready={ready} delay={200} timing={{ stagger: 55, settle: 280 }} />
           </h1>
+          <p className="flex items-center justify-center gap-2 text-[0.9375rem] leading-[1.8] text-text-secondary sm:justify-start">
+            <img src="/logo-mark.svg" alt="" width={36} height={22} className="h-5 w-auto" />
+            {t({ ja: `屋号は ${tradeName} です。`, en: `The trade name is ${tradeName}.` })}
+          </p>
           <div className="relative mt-4 flex flex-col gap-2 ps-4 text-start">
             {/* 左の線は上から伸びる */}
             <motion.span
