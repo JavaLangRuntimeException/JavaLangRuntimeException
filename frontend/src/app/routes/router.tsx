@@ -20,6 +20,7 @@ const siteRoutes = [
   { path: "/blogs", lazy: page(() => import("@/pages/blogs")) },
   { path: "/portfolio", lazy: page(() => import("@/pages/portfolio")) },
   { path: "/research/quadrupedal-avatar", lazy: page(() => import("@/pages/research-quadrupedal-avatar")) },
+  { path: "/research/walking-in-place", lazy: page(() => import("@/pages/research-walking-in-place")) },
   { path: "/contact", lazy: page(() => import("@/pages/contact")) },
   { path: "/reserve", lazy: page(() => import("@/pages/reserve")) },
   { path: "/location", lazy: page(() => import("@/pages/location")) },

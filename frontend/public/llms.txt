@@ -45,10 +45,18 @@ RM2C の英語は Reality Media & Mobile Computing Lab だけである。
 - CyberAgent, Inc.（株式会社サイバーエージェント） https://www.cyberagent.co.jp/
 - JINEN Inc.（JINEN株式会社） https://jinnen.co.jp/
 
+## Publications
+
+棚橋 柊太（Shuta Tanahashi、taramanji）の論文。題名と会議名は英語のまま引用する。言い換えない。
+
+- VRST '26（32nd ACM Symposium on Virtual Reality Software and Technology, Sendai, Japan, 2026-11-16）: Embodying a Quadrupedal Avatar Through Posture- and Hand-Gesture-Congruent Locomotion. https://doi.org/10.1145/3822517.3848686 プロジェクトページ https://taramanji.com/research/quadrupedal-avatar
+- AHs 2026（Augmented Humans International Conference 2026, Okinawa, Japan, 2026-03-16）: Experiencing Walking‑in‑Place Locomotion in Virtual Reality with Quadrupedal Animal Avatars. https://doi.org/10.1145/3795011.3797415 書誌ページ https://taramanji.com/research/walking-in-place
+
 ## Pages
 
 - [Home](https://taramanji.com/): プロフィール、所属、資格、論文、記事
-- [Research](https://taramanji.com/research/quadrupedal-avatar): VRST '26 論文。四足歩行アバターの身体化（XR研究）
+- [Research](https://taramanji.com/research/quadrupedal-avatar): VRST '26 論文 Embodying a Quadrupedal Avatar Through Posture- and Hand-Gesture-Congruent Locomotion（棚橋 柊太 / Shuta Tanahashi）
+- [Research](https://taramanji.com/research/walking-in-place): AHs 2026 論文 Experiencing Walking‑in‑Place Locomotion in Virtual Reality with Quadrupedal Animal Avatars（棚橋 柊太 / Shuta Tanahashi）
 - [Links](https://taramanji.com/link): SNS とプロフィールへのリンク
 - [Contact](https://taramanji.com/contact): 問い合わせ
 
