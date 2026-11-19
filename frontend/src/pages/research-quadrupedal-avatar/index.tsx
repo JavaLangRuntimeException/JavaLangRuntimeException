@@ -93,12 +93,25 @@ export default function ResearchQuadrupedalAvatarPage() {
   const t = useT();
   return (
     <Still>
-      <title>{withEnvTitle(`${TITLE} | Shuta Tanahashi (taramanji)`)}</title>
+      <title>{withEnvTitle(`${TITLE} | 棚橋 柊太（Shuta Tanahashi）`)}</title>
       <meta
         name="description"
         content="棚橋 柊太（Shuta Tanahashi / taramanji）の XR 研究。VRST '26 論文 Embodying a Quadrupedal Avatar Through Posture- and Hand-Gesture-Congruent Locomotion。"
       />
       <link rel="canonical" href="https://taramanji.com/research/quadrupedal-avatar" />
+      <meta name="citation_title" content={TITLE} />
+      <meta name="citation_author" content="Tanahashi, Shuta" />
+      <meta name="citation_author" content="Hashiguchi, Satoshi" />
+      <meta name="citation_author" content="Nakamura, Fumihiko" />
+      <meta name="citation_author" content="Kataoka, Yuta" />
+      <meta name="citation_author" content="Shibata, Fumihisa" />
+      <meta name="citation_author" content="Mohr, Peter" />
+      <meta name="citation_author" content="Stanescu, Ana" />
+      <meta name="citation_author" content="Mori, Shohei" />
+      <meta name="citation_author" content="Kimura, Asako" />
+      <meta name="citation_publication_date" content="2026/11/16" />
+      <meta name="citation_conference_title" content="32nd ACM Symposium on Virtual Reality Software and Technology" />
+      <meta name="citation_doi" content={DOI} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -107,6 +120,7 @@ export default function ResearchQuadrupedalAvatarPage() {
             "@type": "ScholarlyArticle",
             headline: TITLE,
             inLanguage: "en",
+            description: "棚橋 柊太（Shuta Tanahashi）による VRST '26 の論文。Embodying a Quadrupedal Avatar Through Posture- and Hand-Gesture-Congruent Locomotion。",
             url: "https://taramanji.com/research/quadrupedal-avatar",
             sameAs: `https://doi.org/${DOI}`,
             datePublished: "2026-11-16",
@@ -129,7 +143,12 @@ export default function ResearchQuadrupedalAvatarPage() {
         <PageHeader
           eyebrow={t({ ja: "VRST '26 · 2026 年 11 月 16〜18 日 · 仙台", en: "VRST '26 · November 16–18, 2026 · Sendai, Japan" })}
           title={TITLE}
-          description={t({ ja: "姿勢と手のジェスチャーを一致させた移動による、四足歩行アバターの身体化", en: undefined })}
+          description={
+            <>
+              <p>棚橋 柊太（Shuta Tanahashi）による VRST '26 の論文です。</p>
+              {t({ ja: <p>姿勢と手のジェスチャーを一致させた移動による、四足歩行アバターの身体化</p>, en: undefined })}
+            </>
+          }
         />
         <Authors />
         <div className="mt-6 mb-10 flex flex-wrap gap-2">
@@ -386,8 +405,14 @@ function Authors() {
                 decoding="async"
                 className="aspect-square w-full max-w-24 rounded-full border border-separator-border object-cover"
               />
-              <span lang="en" className="text-body-2-regular text-text-primary underline-offset-2 group-hover:underline">
-                {a.name}
+              <span className="text-body-2-regular text-text-primary underline-offset-2 group-hover:underline">
+                {a.name === "Shuta Tanahashi" ? (
+                  <>
+                    <span lang="ja">棚橋 柊太</span>（<span lang="en">Shuta Tanahashi</span>）
+                  </>
+                ) : (
+                  <span lang="en">{a.name}</span>
+                )}
                 <sup className="ms-0.5 text-text-tertiary">
                   {a.affiliations.join(",")}
                   {a.lastAuthor && "*"}

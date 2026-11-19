@@ -1,12 +1,9 @@
 import { Fragment } from "react";
 import { Link } from "react-router";
 import { Chip } from "@/components/base/badges/chip";
-import { ORCID_SELF_NAME, ORCID_WORK_TYPE_LABELS, useOrcidWorks, type OrcidWork } from "@/entities/publication";
+import { ORCID_SELF_NAME, ORCID_WORK_TYPE_LABELS, PAPER_DOIS, PAPERS, formatAuthor, useOrcidWorks, type OrcidWork, type Paper } from "@/entities/publication";
 import { useT } from "@/shared/lib/i18n";
 import { Section, Skeleton } from "@/shared/ui/layout";
-
-/** プロジェクトページで紹介している論文の DOI（ORCID 一覧からは除く） */
-const PROJECT_PAGE_DOIS = new Set(["10.1145/3822517.3848686"]);
 
 /** ORCID の DOI は "https://doi.org/" 付きや大文字のこともあるので揃えて比べる */
 function normalizeDoi(doi: string) {
@@ -20,21 +17,27 @@ function normalizeDoi(doi: string) {
 export function OrcidWorks() {
   const t = useT();
   const { data, isPending } = useOrcidWorks();
-  const works = (data?.works ?? []).filter((work) => !work.doi || !PROJECT_PAGE_DOIS.has(normalizeDoi(work.doi)));
+  const works = (data?.works ?? []).filter((work) => !work.doi || !PAPER_DOIS.has(normalizeDoi(work.doi)));
 
   return (
     <Section
       id="publications"
       title="Publications"
+      description="棚橋 柊太（Shuta Tanahashi）の論文です。題名と会議名は英語のままです。"
     >
-      <ProjectPageCard />
+      <ul className="flex flex-col gap-3">
+        {PAPERS.map((paper) => (
+          <li key={paper.id}>
+            <PaperCard paper={paper} />
+          </li>
+        ))}
+      </ul>
       {isPending && (
         <div className="flex flex-col gap-3" aria-busy="true">
           <p className="text-body-2-regular text-text-tertiary">{t({ ja: "論文を取得中...", en: "Loading publications..." })}</p>
           <Skeleton className="h-32" />
         </div>
       )}
-      {!isPending && works.length === 0 && <p className="text-body-2-regular text-text-tertiary">{t({ ja: "論文がまだありません", en: "No publications yet." })}</p>}
       {!isPending && works.length > 0 && (
         <ul className="flex flex-col gap-3">
           {works.map((work) => (
@@ -56,28 +59,43 @@ export function OrcidWorks() {
   );
 }
 
-/** プロジェクトページのある論文（ORCID の一覧より上に置く） */
-function ProjectPageCard() {
-  return (
-    <Link
-      to="/research/quadrupedal-avatar"
-      className="lift group grid gap-4 rounded-xl border border-border-button-default bg-background-primary-default p-5 outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] md:items-center"
-    >
-      <img src="/research/quadrupedal-avatar/teaser-v4.jpg" width={2116} height={600} alt="" loading="lazy" decoding="async" className="h-auto w-full rounded-lg md:order-last" />
+function PaperCard({ paper }: { paper: Paper }) {
+  const body = (
+    <>
+      {paper.id === "vrst-2026" && (
+        <img src="/research/quadrupedal-avatar/teaser-v4.jpg" width={2116} height={600} alt="" loading="lazy" decoding="async" className="h-auto w-full rounded-lg md:order-last" />
+      )}
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <Chip color="lime" variant="caption">
-            Project Page
+            {paper.acronym}
           </Chip>
-          <span className="text-caption-1-regular text-text-tertiary">VRST '26</span>
         </div>
-        <h3 className="text-headline-semibold text-text-primary">Embodying a Quadrupedal Avatar Through Posture- and Hand-Gesture-Congruent Locomotion</h3>
+        <h3 className="text-headline-semibold text-text-primary" lang="en">
+          {paper.title}
+        </h3>
         <p className="text-body-2-regular text-text-secondary">
-          <span className="font-semibold text-text-primary underline underline-offset-2">Shuta Tanahashi</span>, Satoshi Hashiguchi, Fumihiko Nakamura, Yuta Kataoka, Fumihisa Shibata, Peter Mohr, Ana Stanescu, Shohei Mori,
-          Asako Kimura
+          {paper.authors.map((author, i) => (
+            <Fragment key={author}>
+              {i > 0 && ", "}
+              <span className={author === "Shuta Tanahashi" ? "font-semibold text-text-primary underline underline-offset-2" : undefined}>{formatAuthor(author)}</span>
+            </Fragment>
+          ))}
         </p>
-        <p className="text-body-2-regular italic text-text-tertiary">32nd ACM Symposium on Virtual Reality Software and Technology (VRST '26), Sendai, Japan</p>
+        <p className="text-body-2-regular italic text-text-tertiary" lang="en">
+          {paper.venue}
+        </p>
       </div>
+    </>
+  );
+  const className = `lift group grid gap-4 rounded-xl border border-border-button-default bg-background-primary-default p-5 outline-none focus-visible:ring-2 focus-visible:ring-border-focus-ring ${paper.id === "vrst-2026" ? "md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] md:items-center" : ""}`;
+  return paper.external ? (
+    <a href={paper.href} target="_blank" rel="noopener noreferrer" className={className}>
+      {body}
+    </a>
+  ) : (
+    <Link to={paper.href} className={className}>
+      {body}
     </Link>
   );
 }
@@ -97,7 +115,7 @@ function WorkCard({ work }: { work: OrcidWork }) {
           {work.authors.map((author, i) => (
             <Fragment key={i}>
               {i > 0 && ", "}
-              <span className={author === ORCID_SELF_NAME ? "font-semibold text-text-primary underline underline-offset-2" : undefined}>{author}</span>
+              <span className={author === ORCID_SELF_NAME ? "font-semibold text-text-primary underline underline-offset-2" : undefined}>{formatAuthor(author)}</span>
             </Fragment>
           ))}
         </p>
