@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="taramanji">
-  <rect width="200" height="200" fill="#0e0e10"/>
-  <g transform="translate(20 50)">
-    <polyline points="40,24 14,50 40,76" fill="none" stroke="#f2f2f0" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
-    <polyline points="120,24 146,50 120,76" fill="none" stroke="#f2f2f0" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
-    <path fill="#5BD69A" fill-rule="evenodd" d="M93.08 9.75 Q94.92 21.96 101.35 25.98 Q98.50 34.73 107.30 43.39 Q98.02 48.12 103.93 59.71 Q92.91 63.87 93.56 73.75 Q83.68 74.41 78.52 84.34 Q72.70 84.39 66.92 90.25 Q65.70 82.11 61.02 78.66 Q62.68 67.59 55.06 61.24 Q61.41 53.63 54.93 43.79 Q66.52 37.88 61.80 28.61 Q74.00 26.77 76.85 18.02 Q84.42 18.55 93.08 9.75 Z M66.40 36.40 L82.72 36.40 L82.72 47.28 L88.16 47.28 L88.16 36.40 L93.60 36.40 L93.60 52.72 L82.72 52.72 L82.72 58.16 L93.60 58.16 L93.60 63.60 L77.28 63.60 L77.28 52.72 L71.84 52.72 L71.84 63.60 L66.40 63.60 L66.40 47.28 L77.28 47.28 L77.28 41.84 L66.40 41.84 Z"/>
-  </g>
-</svg>
