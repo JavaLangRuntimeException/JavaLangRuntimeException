@@ -57,10 +57,10 @@ export const personRoles: { en: string; ja: string }[] = [
   { en: "Community Manager", ja: "コミュニティマネージャー" },
 ];
 
-export const personTitle = "棚橋 柊太（Shuta Tanahashi）| taramanji";
+export const personTitle = "taramanji";
 
 export const personDescription =
-  "棚橋 柊太（Shuta Tanahashi、taramanji）は、ソフトウェアエンジニア・開発者、バックエンドエンジニア、フォトグラファー、XR研究者、コミュニティマネージャーです。技術を価値に、好きを居場所に。";
+  "Shuta Tanahashi (taramanji) is a software engineer and developer, backend engineer, photographer, XR researcher, and community manager.";
 
 export type TaglineLine = {
   text: string;

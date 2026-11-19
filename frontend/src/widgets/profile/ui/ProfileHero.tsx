@@ -51,7 +51,7 @@ export function ProfileHero() {
           animate={reduced ? undefined : ready ? { clipPath: "inset(0% 0% 0% 0%)", transitionEnd: { clipPath: "none" } } : { clipPath: "inset(100% 0% 0% 0%)" }}
           transition={ready ? { duration: 0.9, ease: CURTAIN_EASE, delay: 0.15 } : { duration: 0 }}
         >
-          <img src="/profile_taramanji.png" alt={t({ ja: "棚橋 柊太", en: "Shuta Tanahashi" })} className="size-32 rounded-full object-cover ring-1 ring-separator-border sm:size-44" />
+          <img src="/profile_taramanji.png" alt="taramanji" className="size-32 rounded-full object-cover ring-1 ring-separator-border sm:size-44" />
         </motion.div>
         <div className="flex min-w-0 flex-col gap-3">
           <h1 className="text-[3rem] font-semibold leading-none tracking-[-0.02em] text-text-primary sm:text-[4rem]">
@@ -77,14 +77,12 @@ export function ProfileHero() {
           </div>
           <motion.div {...fade(1.9)} className="mt-3 flex flex-col gap-1">
             <p className="text-[1.125rem] font-semibold text-text-primary">
-              <span lang="en">{personName.en}</span>
-              <span lang="ja" className="ms-2 text-[0.9375rem] font-medium text-text-secondary">{personName.ja}</span>
+              <span lang="en">{personName.handle}</span>
             </p>
             <ul className="text-[0.9375rem] leading-[1.9] text-text-secondary">
               {personRoles.map((role) => (
                 <li key={role.en}>
                   <span lang="en">{role.en}</span>
-                  <span lang="ja" className="text-text-tertiary"> / {role.ja}</span>
                 </li>
               ))}
             </ul>
