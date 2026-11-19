@@ -43,6 +43,7 @@ export const socialLinks: SocialLink[] = [
 
 // 検索・AI が「誰で、何をしている人か」を引用するための表記。
 // 英語はトップに出している肩書き、日本語はその同じ肩書き。
+// 日本語名の漢字は「柊太」（柊は U+67CA）。llms.txt と index.html も同じ字にする。
 export const personName = {
   en: "Shuta Tanahashi",
   ja: "棚橋 柊太",
