@@ -31,6 +31,7 @@ export const affiliations: Affiliation[] = [
         }
     },
     {
+        // 英語は公式表記。llms.txt と index.html の JSON-LD / noscript も同じ文字列にする
         label: { ja: "リアリティメディア & モバイルコンピューティング研究室(RM2C)", en: "Reality Media & Mobile Computing Lab (RM2C)" },
         color: "bg-blue-600",
         href: "https://www.rm2c.ise.ritsumei.ac.jp/",
