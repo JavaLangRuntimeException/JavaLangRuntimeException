@@ -2,4 +2,4 @@
 # PR を出すと 1 に（cd の deploy-dev）、その PR を閉じると 0 に戻る（dev-park.yml）
 - op: replace
   path: /spec/replicas
-  value: 1
+  value: 0
