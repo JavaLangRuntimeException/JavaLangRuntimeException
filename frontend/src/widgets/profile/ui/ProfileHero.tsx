@@ -57,6 +57,14 @@ export function ProfileHero() {
           <h1 className="text-[3rem] font-semibold leading-none tracking-[-0.02em] text-text-primary sm:text-[4rem]">
             <DecodeText text="taramanji" ready={ready} delay={200} timing={{ stagger: 55, settle: 280 }} />
           </h1>
+          <p className="flex items-center justify-center gap-2 text-[0.9375rem] leading-none text-text-primary sm:justify-start">
+            <img src="/logo-mark.svg" alt="" width={36} height={22} className="h-5 w-auto" />
+            <span className="flex items-baseline gap-1.5">
+              <span className="font-semibold">taramanji</span>
+              {/* code の緑は logo-mark.svg と同じ #5BD69A */}
+              <span className="text-[#5BD69A]">code</span>
+            </span>
+          </p>
           <div className="relative mt-4 flex flex-col gap-2 ps-4 text-start">
             {/* 左の線は上から伸びる */}
             <motion.span
