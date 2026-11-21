@@ -1,0 +1,116 @@
+# cloudflare: deploy/cloudflare/ の Worker（uptime・maintenance）をテストして出す
+#   main への PR    → 変わった Worker のテストだけ
+#   main への push  → 変わった Worker をテストして wrangler deploy
+#   手動実行        → 選んだ Worker（all ならすべて）をテストして wrangler deploy
+# Environment「cloudflare」（main だけ）の secret CLOUDFLARE_API_TOKEN が要る。権限: Account › Workers Scripts › Edit、Account › Workers KV Storage › Edit、
+#   Account › Account Settings › Read、Zone（taramanji.com）› Workers Routes › Edit
+# Worker の secrets（SES のキー・Discord の Webhook など）は wrangler deploy では消えないので、ここでは扱わない
+name: cloudflare
+
+on:
+  pull_request:
+    branches: [main]
+    paths: ["deploy/cloudflare/**", ".github/workflows/cloudflare.yml"]
+  push:
+    branches: [main]
+    paths: ["deploy/cloudflare/**", ".github/workflows/cloudflare.yml"]
+  workflow_dispatch:
+    inputs:
+      worker:
+        description: 出す Worker
+        type: choice
+        options: [all, uptime, maintenance]
+        default: all
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cloudflare-${{ github.ref }}-${{ github.event_name }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  # 変わった Worker（package.json があるディレクトリ）を選ぶ。ワークフロー自体を変えたときはすべて
+  changed:
+    runs-on: ubuntu-latest
+    outputs:
+      workers: ${{ steps.pick.outputs.workers }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: pick
+        env:
+          EVENT: ${{ github.event_name }}
+          INPUT: ${{ inputs.worker }}
+          BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.sha }}
+        run: |
+          all=$(for d in deploy/cloudflare/*/; do if [ -f "$d/package.json" ]; then basename "$d"; fi; done)
+          if [ "$EVENT" = workflow_dispatch ]; then
+            if [ "$INPUT" = all ]; then picked=$all; else picked=$INPUT; fi
+          elif [ -z "$BASE" ] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            picked=$all
+          else
+            files=$(git diff --name-only "$BASE" "$HEAD")
+            if echo "$files" | grep -qx .github/workflows/cloudflare.yml; then
+              picked=$all
+            else
+              picked=$(for w in $all; do if echo "$files" | grep -q "^deploy/cloudflare/$w/"; then echo "$w"; fi; done)
+            fi
+          fi
+          json=$(printf '%s\n' $picked | jq -R . | jq -sc 'map(select(. != ""))')
+          echo "workers=$json" >> "$GITHUB_OUTPUT"
+          echo "対象: $json"
+
+  test:
+    needs: changed
+    if: needs.changed.outputs.workers != '[]'
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        worker: ${{ fromJSON(needs.changed.outputs.workers) }}
+    defaults:
+      run:
+        working-directory: deploy/cloudflare/${{ matrix.worker }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: deploy/cloudflare/${{ matrix.worker }}/package-lock.json
+      - run: npm ci
+      - run: npm test
+      # 出す前に組み立てられるかを見る（Cloudflare には何も送らない）
+      - run: npx wrangler deploy --dry-run --outdir dist
+
+  deploy:
+    needs: [changed, test]
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && needs.changed.outputs.workers != '[]'
+    runs-on: ubuntu-latest
+    # CLOUDFLARE_API_TOKEN は Environment「cloudflare」の secret（Deployment branches を main だけにして、PR からは読めなくする）
+    environment: cloudflare
+    strategy:
+      fail-fast: false
+      matrix:
+        worker: ${{ fromJSON(needs.changed.outputs.workers) }}
+    # Worker ごとに 1 本ずつ（続けてマージしたときに古い版で上書きしない）
+    concurrency:
+      group: cloudflare-deploy-${{ matrix.worker }}
+      cancel-in-progress: false
+    defaults:
+      run:
+        working-directory: deploy/cloudflare/${{ matrix.worker }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: deploy/cloudflare/${{ matrix.worker }}/package-lock.json
+      - run: npm ci
+      - run: npx wrangler deploy --message "${GITHUB_SHA::7} ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
