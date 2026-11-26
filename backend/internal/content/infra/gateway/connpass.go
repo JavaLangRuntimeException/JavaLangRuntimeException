@@ -23,6 +23,11 @@ var (
 	leadingDigits   = regexp.MustCompile(`^\s*(\d+)`)
 )
 
+// connpassUA は connpass への User-Agent。connpass の前段の AWS WAF は、ブラウザの User-Agent なのに
+// JavaScript のチャレンジを解かない取得に HTTP 202（本文なし）を返し、Go の既定の User-Agent は 403 にする。
+// 取得元を名乗る User-Agent なら HTML が返る。
+const connpassUA = "taramanji-content/1.0 (+https://taramanji.com)"
+
 type connpassClient struct{ client *http.Client }
 
 func NewConnpass() gateway.Connpass { return &connpassClient{client: httpx.New(scrapeTimeout)} }
@@ -43,7 +48,7 @@ func (c *connpassClient) OwnedEvents(ctx context.Context, nickname string) ([]ga
 
 // parse はプロフィールページから主催イベントを読む
 func (c *connpassClient) parse(ctx context.Context, pageURL string) ([]gateway.ConnpassEvent, error) {
-	doc, err := fetchDocument(ctx, c.client, pageURL)
+	doc, err := fetchDocumentAs(ctx, c.client, pageURL, connpassUA)
 	if err != nil {
 		return nil, err
 	}

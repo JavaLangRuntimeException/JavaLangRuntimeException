@@ -72,8 +72,13 @@ func (q *qiitaClient) ListItems(ctx context.Context, page, perPage int, timeout 
 }
 
 func fetchDocument(ctx context.Context, client *http.Client, url string) (*goquery.Document, error) {
+	return fetchDocumentAs(ctx, client, url, httpx.ChromeUA)
+}
+
+// fetchDocumentAs は User-Agent を指定して HTML を取得する
+func fetchDocumentAs(ctx context.Context, client *http.Client, url, userAgent string) (*goquery.Document, error) {
 	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	req.Header.Set("User-Agent", httpx.ChromeUA)
+	req.Header.Set("User-Agent", userAgent)
 	req.Header.Set("Accept", acceptHTML)
 	req.Header.Set("Accept-Language", acceptLanguage)
 	res, err := client.Do(req)
