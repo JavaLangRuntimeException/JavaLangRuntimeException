@@ -21,10 +21,10 @@ images:
   - { name: taramanji/inquiry, newName: ghcr.io/javalangruntimeexception/taramanji-inquiry, newTag: sha-2ee085d }
   - { name: taramanji/reservation, newName: ghcr.io/javalangruntimeexception/taramanji-reservation, newTag: sha-2ee085d }
   - { name: taramanji/worklocation, newName: ghcr.io/javalangruntimeexception/taramanji-worklocation, newTag: sha-2ee085d }
-  - { name: taramanji/content, newName: ghcr.io/javalangruntimeexception/taramanji-content, newTag: sha-2ee085d }
+  - { name: taramanji/content, newName: ghcr.io/javalangruntimeexception/taramanji-content, newTag: sha-b10216a }
   - { name: taramanji/calendarsync, newName: ghcr.io/javalangruntimeexception/taramanji-calendarsync, newTag: sha-2ee085d }
   - { name: taramanji/analytics, newName: ghcr.io/javalangruntimeexception/taramanji-analytics, newTag: sha-2ee085d }
-  - { name: taramanji/web, newName: ghcr.io/javalangruntimeexception/taramanji-web, newTag: sha-93c1027 }
+  - { name: taramanji/web, newName: ghcr.io/javalangruntimeexception/taramanji-web, newTag: sha-b10216a }
 
 patches:
   - target: { kind: Deployment }
