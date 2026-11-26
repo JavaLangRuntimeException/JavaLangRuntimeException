@@ -28,6 +28,7 @@ export const certifications: Certification[] = [
     href: "https://cloud.google.com/learn/certification/associate-google-workspace-administrator",
     achieved: { ja: "2026年11月26日 取得", en: "Earned Nov 26, 2026" },
     color: "bg-blue-700",
+    badge: "/badge_gcp_workspace_admin.png",
   },
   {
     name: { ja: "AWS 認定ソリューションアーキテクト – アソシエイト(SAA-C03)", en: "AWS Certified Solutions Architect – Associate (SAA-C03)" },
