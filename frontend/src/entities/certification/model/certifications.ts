@@ -26,6 +26,7 @@ export const certifications: Certification[] = [
       en: "Validates the ability to manage and operate Google Workspace users, groups, security, data, and app settings to meet an organization's requirements.",
     },
     href: "https://cloud.google.com/learn/certification/associate-google-workspace-administrator",
+    achieved: { ja: "2026年11月26日 取得", en: "Earned Nov 26, 2026" },
     color: "bg-blue-700",
   },
   {
