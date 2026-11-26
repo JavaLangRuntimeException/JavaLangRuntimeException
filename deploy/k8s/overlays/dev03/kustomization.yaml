@@ -25,10 +25,10 @@ images:
   - { name: taramanji/inquiry, newName: ghcr.io/javalangruntimeexception/taramanji-inquiry, newTag: sha-2ee085d }
   - { name: taramanji/reservation, newName: ghcr.io/javalangruntimeexception/taramanji-reservation, newTag: sha-2ee085d }
   - { name: taramanji/worklocation, newName: ghcr.io/javalangruntimeexception/taramanji-worklocation, newTag: sha-2ee085d }
-  - { name: taramanji/content, newName: ghcr.io/javalangruntimeexception/taramanji-content, newTag: sha-2ee085d }
+  - { name: taramanji/content, newName: ghcr.io/javalangruntimeexception/taramanji-content, newTag: sha-e1e2994 }
   - { name: taramanji/calendarsync, newName: ghcr.io/javalangruntimeexception/taramanji-calendarsync, newTag: sha-2ee085d }
   - { name: taramanji/analytics, newName: ghcr.io/javalangruntimeexception/taramanji-analytics, newTag: sha-2ee085d }
-  - { name: taramanji/web, newName: ghcr.io/javalangruntimeexception/taramanji-web, newTag: sha-a4a128f }
+  - { name: taramanji/web, newName: ghcr.io/javalangruntimeexception/taramanji-web, newTag: sha-e1e2994 }
 
 patches:
   # 台数（PR を閉じたら 0 にして止める。replicas.yaml）
