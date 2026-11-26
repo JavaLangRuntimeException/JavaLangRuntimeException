@@ -37,7 +37,7 @@ export const VRST_2026: Paper = {
 
 export const AHS_2026: Paper = {
     id: "ahs-2026",
-    acronym: "AHs 2026",
+    acronym: "AHs '26",
     title: "Experiencing Walking‑in‑Place Locomotion in Virtual Reality with Quadrupedal Animal Avatars",
     venue: "Augmented Humans International Conference 2026 (AHs 2026), Okinawa, Japan",
     date: "2026-03-16",
