@@ -52,7 +52,6 @@ export const personName = {
 
 export const personRoles: { en: string; ja: string }[] = [
   { en: "Software Engineer", ja: "ソフトウェアエンジニア・開発者" },
-  { en: "Backend Engineer", ja: "バックエンドエンジニア" },
   { en: "Photographer", ja: "フォトグラファー" },
   { en: "XR Researcher", ja: "XR研究者" },
   { en: "Community Manager", ja: "コミュニティマネージャー" },
@@ -61,7 +60,7 @@ export const personRoles: { en: string; ja: string }[] = [
 export const personTitle = "taramanji";
 
 export const personDescription =
-  "Shuta Tanahashi (taramanji, 棚橋 柊太) is a software engineer and developer, backend engineer, photographer, XR researcher, and community manager. Papers: VRST '26 “Embodying a Quadrupedal Avatar Through Posture- and Hand-Gesture-Congruent Locomotion”; AHs 2026 “Experiencing Walking‑in‑Place Locomotion in Virtual Reality with Quadrupedal Animal Avatars”.";
+  "Shuta Tanahashi (taramanji, 棚橋 柊太) is a software engineer and developer, photographer, XR researcher, and community manager. Papers: VRST '26 “Embodying a Quadrupedal Avatar Through Posture- and Hand-Gesture-Congruent Locomotion”; AHs 2026 “Experiencing Walking‑in‑Place Locomotion in Virtual Reality with Quadrupedal Animal Avatars”.";
 
 export type TaglineLine = {
   text: string;

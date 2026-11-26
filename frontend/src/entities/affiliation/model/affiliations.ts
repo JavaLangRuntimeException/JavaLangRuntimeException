@@ -65,7 +65,7 @@ export const affiliations: Affiliation[] = [
     },
     {
         label: { ja: "学生エンジニアコミュニティSTECH", en: "STECH Student Engineer Community" },
-        color: "bg-sky-600",
+        color: "bg-sky-400",
         href: "https://stech.jinnen.co.jp/",
         category: "community",
         description: {
@@ -107,7 +107,7 @@ export const affiliations: Affiliation[] = [
     },
     {
         label: { ja: "株式会社888 受託開発事業部長", en: "888 Inc. Head of Contract Development" },
-        color: "bg-yellow-900",
+        color: "bg-yellow-500",
         href: "https://888incs.com",
         category: "engineer",
         description: {
@@ -182,16 +182,6 @@ export const affiliations: Affiliation[] = [
         description: {
             ja: "Go言語に関するカンファレンスであるGoConferenceの運営スタッフとして参加しています。",
             en: "Volunteering as organizing staff for GoConference, a conference about the Go language.",
-        }
-    },
-    {
-        label: { ja: "GoWorkshopConference Staff", en: "GoWorkshopConference Staff" },
-        color: "bg-fuchsia-600",
-        href: "https://gwc.gocon.jp/",
-        category: "conference_staff",
-        description: {
-            ja: "Go言語に関するワークショップイベントであるGoWorkshopConferenceの企画・運営に携わっています。",
-            en: "Helping plan and run GoWorkshopConference, a workshop event about the Go language.",
         }
     },
     {
