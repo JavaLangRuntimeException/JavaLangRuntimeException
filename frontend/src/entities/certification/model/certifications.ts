@@ -19,6 +19,18 @@ export type Certification = {
 
 export const certifications: Certification[] = [
   {
+    name: { ja: "Google Cloud 認定 Associate Google Workspace Administrator", en: "Google Cloud Certified Associate Google Workspace Administrator" },
+    issuer: { ja: "Google Cloud", en: "Google Cloud" },
+    description: {
+      ja: "Google Workspace のユーザー・グループ・セキュリティ・データ・アプリの設定を、組織の要件に合わせて管理・運用できることを認定する資格。",
+      en: "Validates the ability to manage and operate Google Workspace users, groups, security, data, and app settings to meet an organization's requirements.",
+    },
+    href: "https://cloud.google.com/learn/certification/associate-google-workspace-administrator",
+    achieved: { ja: "2026年11月26日 取得", en: "Earned Nov 26, 2026" },
+    color: "bg-blue-700",
+    badge: "/badge_gcp_workspace_admin.png",
+  },
+  {
     name: { ja: "AWS 認定ソリューションアーキテクト – アソシエイト(SAA-C03)", en: "AWS Certified Solutions Architect – Associate (SAA-C03)" },
     issuer: { ja: "Amazon Web Services", en: "Amazon Web Services" },
     description: {
